@@ -15,6 +15,7 @@ import {
   User,
   Shield,
   FileText,
+  ClipboardCheck,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -30,9 +31,9 @@ type Role = 'teacher' | 'student' | 'parent';
 const navItems = {
   teacher: [
     { href: '/dashboard/teacher', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/teacher/students', label: 'Students', icon: Users },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
     { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
+    { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: ClipboardCheck },
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
   ],
   student: [

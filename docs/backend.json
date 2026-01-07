@@ -191,36 +191,41 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Attendance",
       "type": "object",
-      "description": "Represents a student's attendance record.",
+      "description": "Represents a student's attendance record for a specific batch and date.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Attendance entity."
         },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to the student. (Relationship: Student 1:N Attendance)"
-        },
         "teacherId": {
           "type": "string",
           "description": "Reference to the teacher. (Relationship: Teacher 1:N Attendance)"
         },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the batch. (Relationship: Batch 1:N Attendance)"
+        },
         "date": {
           "type": "string",
           "description": "Date of the attendance record.",
-          "format": "date-time"
+          "format": "date"
         },
-        "isPresent": {
-          "type": "boolean",
-          "description": "Indicates whether the student was present."
+        "presentStudentIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of student user IDs who were present."
+        },
+        "absentStudentIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of student user IDs who were absent."
         }
       },
       "required": [
         "id",
-        "studentId",
         "teacherId",
-        "date",
-        "isPresent"
+        "batchId",
+        "date"
       ]
     },
     "TestResult": {
@@ -235,31 +240,43 @@
         },
         "studentId": {
           "type": "string",
-          "description": "Reference to the student. (Relationship: Student 1:N TestResult)"
+          "description": "Reference to the student (their user ID). (Relationship: User 1:N TestResult)"
         },
         "teacherId": {
           "type": "string",
           "description": "Reference to the teacher. (Relationship: Teacher 1:N TestResult)"
         },
-        "testId": {
-          "type": "string",
-          "description": "Reference to the test. (Relationship: StudyMaterial 1:N TestResult. StudyMaterial.type must equal 'test')"
+        "testName": {
+            "type": "string",
+            "description": "The name of the test (e.g., 'Unit Test 1')."
+        },
+        "subject": {
+            "type": "string",
+            "description": "The subject of the test."
         },
         "marks": {
           "type": "number",
           "description": "Marks obtained by the student."
         },
-        "remarks": {
-          "type": "string",
-          "description": "Teacher's remarks on the test."
+        "maxMarks": {
+          "type": "number",
+          "description": "The maximum possible marks for the test."
+        },
+        "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the result was recorded."
         }
       },
       "required": [
         "id",
         "studentId",
         "teacherId",
-        "testId",
-        "marks"
+        "testName",
+        "subject",
+        "marks",
+        "maxMarks",
+        "date"
       ]
     },
     "Batch": {

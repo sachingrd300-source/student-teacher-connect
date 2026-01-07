@@ -60,10 +60,12 @@ import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/no
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import Link from 'next/link';
 
 
 type StudentProfile = {
   id: string; 
+  userId: string;
   name: string;
   isApproved: boolean;
   teacherId: string | null;
@@ -136,7 +138,6 @@ export default function TeacherDashboardPage() {
 
   const handleApprove = (student: StudentProfile) => {
     if (!firestore || !student.id) return;
-    // student.id from the 'users' collection is the userId
     const studentUserDocRef = doc(firestore, 'users', student.id);
     updateDocumentNonBlocking(studentUserDocRef, { isApproved: true });
     toast({ title: "Student Approved", description: `${student.name} has been enrolled.` });
@@ -158,10 +159,9 @@ export default function TeacherDashboardPage() {
 
   const handleCreateBatch = async () => {
     if (!firestore || !teacher || !newBatchName) return;
-    const batchId = uuidv4(); // Generate a single unique ID
+    const batchId = uuidv4();
     const batchRef = doc(firestore, 'batches', batchId);
     
-    // Use the SAME ID for the document path and the 'id' field inside the document
     setDocumentNonBlocking(batchRef, {
       id: batchId,
       name: newBatchName,
@@ -426,9 +426,9 @@ export default function TeacherDashboardPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View Profile</DropdownMenuItem>
-                              <DropdownMenuItem>Enter Marks</DropdownMenuItem>
-                              <DropdownMenuItem>Mark Attendance</DropdownMenuItem>
+                              <DropdownMenuItem asChild><Link href={`/dashboard/teacher/student/${student.id}`}>View Profile</Link></DropdownMenuItem>
+                              <DropdownMenuItem asChild><Link href={`/dashboard/teacher/performance?studentId=${student.id}`}>Enter Marks</Link></DropdownMenuItem>
+                              <DropdownMenuItem asChild><Link href={`/dashboard/teacher/attendance`}>Mark Attendance</Link></DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleRemove(student)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
