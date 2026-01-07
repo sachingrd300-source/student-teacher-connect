@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -34,9 +33,11 @@ import {
   CalendarDays,
   Video,
   MapPin,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { studentData, teacherData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 
 const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
@@ -59,23 +60,30 @@ type Schedule = {
 export default function StudentDashboardPage() {
   const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching data
+    // Simulate checking connection status and fetching data
     setTimeout(() => {
-        const scheduleData = Object.entries(teacherData.schedule).map(([date, item], index) => ({
-            id: `sch-${index}`,
-            topic: item.topic,
-            subject: 'Mathematics', // Assuming a default for demo
-            date: new Date(date),
-            time: '10:00 AM', // Assuming a default for demo
-            type: (item.topic === 'Holiday' ? 'Offline' : 'Online') as 'Online' | 'Offline',
-            locationOrLink: item.topic === 'Holiday' ? 'N/A' : 'https://meet.google.com/xyz-abc-pqr'
-        }));
-      setSchedule(scheduleData);
+        if (isConnected) {
+            const scheduleData = Object.entries(teacherData.schedule).map(([date, item], index) => ({
+                id: `sch-${index}`,
+                topic: item.topic,
+                subject: 'Mathematics', // Assuming a default for demo
+                date: new Date(date),
+                time: '10:00 AM', // Assuming a default for demo
+                type: (item.topic === 'Holiday' ? 'Offline' : 'Online') as 'Online' | 'Offline',
+                locationOrLink: item.topic === 'Holiday' ? 'N/A' : 'https://meet.google.com/xyz-abc-pqr'
+            }));
+          setSchedule(scheduleData);
+        }
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [isConnected]);
+
+  const handleConnectionSuccess = () => {
+    setIsConnected(true);
+  };
 
   if (isLoading) {
     return (
@@ -88,9 +96,16 @@ export default function StudentDashboardPage() {
           <Skeleton className="h-32 w-full rounded-xl" />
           <Skeleton className="h-32 w-full rounded-xl" />
         </div>
-        <Skeleton className="h-12 w-96 rounded-lg" />
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
+    );
+  }
+
+  if (!isConnected) {
+    return (
+        <div className="flex items-center justify-center min-h-[calc(100vh-15rem)]">
+            <ConnectTeacherForm onConnectionSuccess={handleConnectionSuccess} />
+        </div>
     );
   }
 
@@ -143,7 +158,7 @@ export default function StudentDashboardPage() {
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
               <CardTitle>Study Materials</CardTitle>
-              <CardDescription>Browse and download notes, DPPs, tests, and more.</CardDescription>
+              <CardDescription>Browse and download notes, DPPs, tests, and more from your teacher.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -214,7 +229,7 @@ export default function StudentDashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Upcoming Classes</CardTitle>
-                    <CardDescription>Here is your schedule for the upcoming days.</CardDescription>
+                    <CardDescription>Here is your schedule for the upcoming days from your teacher.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      {schedule && schedule.length > 0 ? (
