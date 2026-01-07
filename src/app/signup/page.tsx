@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,7 @@ const teacherSchema = baseSchema.extend({
 });
 
 const studentSchema = baseSchema.extend({
-  teacherCode: z.string().optional(),
+  teacherId: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ['confirmPassword'],
@@ -115,25 +116,25 @@ function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof tea
 function StudentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof studentSchema>) => void; }) {
     const form = useForm<z.infer<typeof studentSchema>>({
       resolver: zodResolver(studentSchema),
-      defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', teacherCode: '' },
+      defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', teacherId: '' },
     });
   
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
-            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="Jane Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField
               control={form.control}
-              name="teacherCode"
+              name="teacherId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Teacher Code (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter code if you have one" {...field} />
+                    <Input placeholder="Enter code (e.g., TCH-xxxx)" {...field} />
                   </FormControl>
                   <FormDescription>
-                    If you are not studying with a specific teacher, you can leave this field blank.
+                  If you have a teacher's code, enter it here to send an enrollment request.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -156,7 +157,7 @@ function ParentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof pare
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
-            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="Jane Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Smith" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="studentId" render={({ field }) => ( <FormItem> <FormLabel>Your Child's Student ID</FormLabel> <FormControl> <Input placeholder="Enter your child's unique ID" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
@@ -182,19 +183,20 @@ export default function SignUpPage() {
             if (signupData) {
                 const { role, values } = JSON.parse(signupData);
                 
-                const commonData = {
+                // Create user profile document in 'users' collection
+                const userDocRef = doc(firestore, 'users', user.uid);
+                const userData = {
                     id: user.uid,
                     name: values.name,
                     mobileNumber: values.mobileNumber,
                     email: user.email,
                     role: role,
+                    // Role specific fields are added here for querying
+                    ...(role === 'student' && { isApproved: !values.teacherId, teacherId: values.teacherId || null })
                 };
-                
-                // Create user profile document
-                const userDocRef = doc(firestore, 'users', user.uid);
-                setDocumentNonBlocking(userDocRef, commonData, { merge: true });
+                setDocumentNonBlocking(userDocRef, userData, { merge: true });
 
-                // Create role-specific document
+                // Create role-specific document in its own collection
                 let roleDocRef;
                 let roleData;
 
@@ -202,20 +204,19 @@ export default function SignUpPage() {
                     const teacherId = `TCH-${uuidv4().slice(0,4)}`;
                     roleDocRef = doc(firestore, 'teachers', teacherId);
                     roleData = {
-                        id: teacherId,
+                        id: teacherId, // This is the verification code
                         userId: user.uid,
-                        verificationCode: teacherId,
                         subjects: values.subjects,
                         className: values.className,
                     };
                 } else if (role === 'student') {
+                    // Student-specific data stored in the 'students' collection
                     const studentId = `STU-${uuidv4().slice(0,4)}`;
                     roleDocRef = doc(firestore, 'students', studentId);
                     roleData = {
                         id: studentId,
                         userId: user.uid,
-                        isApproved: !values.teacherCode,
-                        teacherId: values.teacherCode || null,
+                        // This data is now on the user object, but can be duplicated here if needed
                     };
                 } else if (role === 'parent') {
                     const parentId = `PAR-${uuidv4().slice(0,4)}`;
@@ -224,6 +225,7 @@ export default function SignUpPage() {
                         id: parentId,
                         userId: user.uid,
                         studentId: values.studentId,
+                        // teacherId will be populated upon approval
                     };
                 }
                 
@@ -306,3 +308,5 @@ export default function SignUpPage() {
         </div>
     )
 }
+
+    
