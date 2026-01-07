@@ -83,11 +83,15 @@ export default function LoginPage() {
         throw new Error("User data not found.");
       }
     } catch (error: any) {
-      console.error('Login failed:', error);
+      console.error('Login failed:', error.code);
+      let description = 'An unexpected error occurred. Please try again.';
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        description = 'Invalid email or password. Please try again.';
+      }
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred. Please try again.',
+        description: description,
       });
       setIsLoading(false);
     }
