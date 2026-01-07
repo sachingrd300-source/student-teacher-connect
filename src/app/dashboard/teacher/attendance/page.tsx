@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ClipboardCheck, CalendarIcon } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { collection, query, where, doc, getDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -70,22 +70,52 @@ export default function AttendancePage() {
     // Fetch Students for the selected Batch
     const studentsQuery = useMemoFirebase(() => {
         if(!teacher || !selectedBatchId) return null;
+        const selectedBatch = batches?.find(b => b.id === selectedBatchId);
+        if (!selectedBatch) return null;
         return query(
             collection(firestore, 'users'), 
+            where('role', '==', 'student'),
             where('teacherId', '==', teacher.id),
-            where('batch', '==', batches?.find(b => b.id === selectedBatchId)?.name)
+            where('batch', '==', selectedBatch.name)
         );
     }, [firestore, teacher, selectedBatchId, batches]);
     const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
 
-    // Update local attendance state when students are loaded
-    useMemo(() => {
-        const initialAttendance: Record<string, boolean> = {};
-        students?.forEach(student => {
-            initialAttendance[student.id] = true; // Default to present
-        });
-        setAttendance(initialAttendance);
-    }, [students]);
+    // Fetch existing attendance record for the selected date and batch
+    const attendanceRecordQuery = useMemoFirebase(() => {
+        if (!selectedDate || !selectedBatchId) return null;
+        const dateString = format(startOfDay(selectedDate), 'yyyy-MM-dd');
+        const attendanceId = `${dateString}-${selectedBatchId}`;
+        return doc(firestore, 'attendances', attendanceId);
+    }, [firestore, selectedDate, selectedBatchId]);
+
+    // When students load or change, initialize attendance state
+    useEffect(() => {
+        const getInitialAttendance = async () => {
+            const initialAttendance: Record<string, boolean> = {};
+
+            if (attendanceRecordQuery) {
+                const docSnap = await getDoc(attendanceRecordQuery);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    (data.presentStudentIds || []).forEach((id: string) => initialAttendance[id] = true);
+                    (data.absentStudentIds || []).forEach((id: string) => initialAttendance[id] = false);
+                }
+            }
+
+            students?.forEach(student => {
+                if (initialAttendance[student.id] === undefined) {
+                    initialAttendance[student.id] = true; // Default to present if no record exists
+                }
+            });
+            setAttendance(initialAttendance);
+        };
+        
+        if (students) {
+            getInitialAttendance();
+        }
+    }, [students, attendanceRecordQuery]);
+
 
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
         setAttendance(prev => ({ ...prev, [studentId]: isPresent }));
@@ -200,3 +230,5 @@ export default function AttendancePage() {
         </div>
     );
 }
+
+    

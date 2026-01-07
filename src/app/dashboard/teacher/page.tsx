@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -57,12 +57,14 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { collection, query, where, doc, getDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
 
 type StudentProfile = {
@@ -90,6 +92,7 @@ type Batch = {
 
 export default function TeacherDashboardPage() {
   const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isAddStudentOpen, setAddStudentOpen] = useState(false);
@@ -146,6 +149,10 @@ export default function TeacherDashboardPage() {
     if (!firestore || !student.id) return;
     const studentUserDocRef = doc(firestore, 'users', student.id);
     updateDocumentNonBlocking(studentUserDocRef, { isApproved: true });
+    
+    const studentDocRef = doc(firestore, 'students', student.id);
+    updateDocumentNonBlocking(studentDocRef, { isApproved: true });
+
     toast({ title: "Student Approved", description: `${student.name} has been enrolled.` });
   };
   
@@ -153,6 +160,10 @@ export default function TeacherDashboardPage() {
     if (!firestore || !student.id) return;
     const studentUserDocRef = doc(firestore, 'users', student.id);
     updateDocumentNonBlocking(studentUserDocRef, { teacherId: null, isApproved: false });
+    
+    const studentDocRef = doc(firestore, 'students', student.id);
+    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false });
+
     toast({ variant: "destructive", title: "Student Denied", description: `${student.name}'s request has been denied.` });
   };
   
@@ -160,6 +171,10 @@ export default function TeacherDashboardPage() {
     if (!firestore || !student.id) return;
     const studentUserDocRef = doc(firestore, 'users', student.id);
     updateDocumentNonBlocking(studentUserDocRef, { teacherId: null, isApproved: false, batch: null });
+
+    const studentDocRef = doc(firestore, 'students', student.id);
+    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false, batch: null });
+
     toast({ variant: "destructive", title: "Student Removed", description: `${student.name} has been removed from your roster.` });
   };
 
@@ -188,40 +203,59 @@ export default function TeacherDashboardPage() {
       return;
     }
     
-    const studentUserId = uuidv4();
+    // NOTE: This creates a new user. This is a simplified flow for manual adding.
+    // In a real app, you might want to invite an existing user.
     const email = `${newStudentMobile}@edconnect.pro`;
-    const selectedBatch = batches?.find(b => b.id === selectedBatchId);
+    const password = `${newStudentMobile}pass`; // Simple default password
 
-    const userDocRef = doc(firestore, 'users', studentUserId);
-    const userData = {
-      id: studentUserId,
-      name: newStudentName,
-      mobileNumber: newStudentMobile,
-      email: email,
-      role: 'student',
-      isApproved: true, 
-      teacherId: teacher.id,
-      batch: selectedBatch?.name || null,
-      avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
-    };
-    
-    setDocumentNonBlocking(userDocRef, userData, { merge: false });
+    try {
+        const tempAuth = auth;
+        const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
+        const newStudentUser = userCredential.user;
+        const studentUserId = newStudentUser.uid;
 
-    const studentDocRef = doc(firestore, 'students', studentUserId);
-    setDocumentNonBlocking(studentDocRef, {
-        id: studentUserId,
-        userId: studentUserId,
-        teacherId: teacher.id,
-        isApproved: true,
-        batch: selectedBatch?.name || null,
-    }, {merge: false})
+        const selectedBatch = batches?.find(b => b.id === selectedBatchId);
+
+        const userDocRef = doc(firestore, 'users', studentUserId);
+        const userData = {
+          id: studentUserId,
+          name: newStudentName,
+          mobileNumber: newStudentMobile,
+          email: email,
+          role: 'student',
+          isApproved: true, 
+          teacherId: teacher.id,
+          batch: selectedBatch?.name || null,
+          avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
+        };
+        
+        // This will create/overwrite the user doc
+        setDocumentNonBlocking(userDocRef, userData, { merge: false });
+
+        const studentDocRef = doc(firestore, 'students', studentUserId);
+        setDocumentNonBlocking(studentDocRef, {
+            id: studentUserId,
+            userId: studentUserId,
+            teacherId: teacher.id,
+            isApproved: true,
+            batch: selectedBatch?.name || null,
+        }, {merge: false})
 
 
-    toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.`});
-    setNewStudentName('');
-    setNewStudentMobile('');
-    setSelectedBatchId('');
-    setAddStudentOpen(false);
+        toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster. Their temporary password is "${password}".`});
+        setNewStudentName('');
+        setNewStudentMobile('');
+        setSelectedBatchId('');
+        setAddStudentOpen(false);
+
+    } catch (error: any) {
+        console.error("Error adding student:", error);
+        let description = 'Could not add the student. Please try again.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'A student with this mobile number already exists.'
+        }
+        toast({ variant: 'destructive', title: 'Error', description });
+    }
   }
 
   const handleAssignBatch = (studentId: string, batchId: string) => {
@@ -375,7 +409,7 @@ export default function TeacherDashboardPage() {
                     <DialogHeader>
                       <DialogTitle>Add New Student</DialogTitle>
                       <DialogDescription>
-                        Manually add a new student to your roster and assign them to a batch.
+                        Manually add a new student to your roster and assign them to a batch. A temporary password will be created for them.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -502,3 +536,5 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
+
+    

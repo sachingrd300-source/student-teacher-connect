@@ -76,8 +76,8 @@ export default function ParentDashboardPage() {
 
   // 3. Fetch student's related data
   const studentMaterialsQuery = useMemoFirebase(() => 
-    studentId ? query(collection(firestore, 'study_materials'), where('assignedTo', 'array-contains', studentId), limit(4)) : null
-  , [firestore, studentId]);
+    student?.teacherId ? query(collection(firestore, 'study_materials'), where('teacherId', '==', student.teacherId), limit(4)) : null
+  , [firestore, student]);
   const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(studentMaterialsQuery);
 
   const studentPerformanceQuery = useMemoFirebase(() => 
@@ -160,7 +160,7 @@ export default function ParentDashboardPage() {
             <ClipboardList className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2</div>
+            <div className="text-2xl font-bold">+{studyMaterials?.filter(m => m.type === 'DPP').length || 0}</div>
             <p className="text-xs text-muted-foreground">New practice papers available.</p>
           </CardContent>
         </Card>
@@ -218,3 +218,5 @@ export default function ParentDashboardPage() {
     </div>
   );
 }
+
+    

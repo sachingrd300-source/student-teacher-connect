@@ -59,7 +59,6 @@ const parentSchema = baseSchema.extend({
 
 type Role = 'student' | 'teacher' | 'parent';
 
-// Abstracted Form for Teacher
 function TeacherSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.infer<typeof teacherSchema>) => void; isSubmitting: boolean; }) {
   const form = useForm<z.infer<typeof teacherSchema>>({
     resolver: zodResolver(teacherSchema),
@@ -81,7 +80,6 @@ function TeacherSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.in
   );
 }
 
-// Abstracted Form for Student
 function StudentSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.infer<typeof studentSchema>) => void; isSubmitting: boolean; }) {
     const form = useForm<z.infer<typeof studentSchema>>({
       resolver: zodResolver(studentSchema),
@@ -102,7 +100,6 @@ function StudentSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.in
     );
 }
 
-// Abstracted Form for Parent
 function ParentSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.infer<typeof parentSchema>) => void; isSubmitting: boolean; }) {
     const form = useForm<z.infer<typeof parentSchema>>({
       resolver: zodResolver(parentSchema),
@@ -114,7 +111,7 @@ function ParentSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.inf
         <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Smith" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
-            <FormField control={form.control} name="studentId" render={({ field }) => ( <FormItem> <FormLabel>Your Child's Student ID</FormLabel> <FormControl> <Input placeholder="Enter your child's unique ID" {...field} /> </FormControl> <FormDescription>You can get this ID from your child's school or teacher.</FormDescription> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="studentId" render={({ field }) => ( <FormItem> <FormLabel>Your Child's Student ID</FormLabel> <FormControl> <Input placeholder="Enter your child's unique ID" {...field} /> </FormControl> <FormDescription>You can get this ID from your child or their teacher.</FormDescription> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <Button type="submit" className="w-full" disabled={isSubmitting}> {isSubmitting ? "Creating Account..." : "Create Parent Account"} </Button>
@@ -130,20 +127,26 @@ export default function SignUpPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { user, isUserLoading } = useUser();
+    
+    // Hooks must be called at the top level
     const teacherForm = useForm<z.infer<typeof teacherSchema>>({ resolver: zodResolver(teacherSchema) });
     const studentForm = useForm<z.infer<typeof studentSchema>>({ resolver: zodResolver(studentSchema) });
     const parentForm = useForm<z.infer<typeof parentSchema>>({ resolver: zodResolver(parentSchema) });
     
-    // We can't easily share a single isSubmitting state without a more complex state management.
-    // For this case, we check one of the forms. A more advanced solution might use a shared state.
     const isAnyFormSubmitting = teacherForm.formState.isSubmitting || studentForm.formState.isSubmitting || parentForm.formState.isSubmitting;
 
     // Redirect if user is already logged in
     useEffect(() => {
-        if (user) {
-            router.push('/dashboard');
+        if (!isUserLoading && user) {
+            const userDocRef = doc(firestore, 'users', user.uid);
+            getDoc(userDocRef).then(docSnap => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    router.push(`/dashboard/${userData.role}`);
+                }
+            })
         }
-    }, [user, router]);
+    }, [user, isUserLoading, router, firestore]);
     
     const getEmailFromMobile = (mobile: string) => `${mobile}@edconnect.pro`;
 
@@ -171,7 +174,8 @@ export default function SignUpPage() {
                 avatarUrl: `https://picsum.photos/seed/${newUser.uid}/100/100`,
             };
             
-            await setDoc(userDocRef, userData, { merge: true });
+            // This is handled in the role-specific logic below
+            // await setDoc(userDocRef, userData, { merge: true });
             
             // Step 3: Create role-specific document
             if (role === 'teacher') {
@@ -186,6 +190,8 @@ export default function SignUpPage() {
                     experience: 'Not specified',
                     address: 'Not specified',
                 });
+                await setDoc(userDocRef, userData, { merge: true });
+
             } else if (role === 'student') {
                 const studentDocRef = doc(firestore, 'students', newUser.uid);
                 await setDoc(studentDocRef, {
@@ -194,12 +200,14 @@ export default function SignUpPage() {
                     isApproved: !values.teacherId, 
                     teacherId: values.teacherId || null,
                 });
+                // Also update the main user doc with student-specific fields
                 await setDoc(userDocRef, { 
+                    ...userData,
                     isApproved: !values.teacherId, 
                     teacherId: values.teacherId || null 
                 }, { merge: true });
+
             } else if (role === 'parent') {
-                // Ensure the student ID exists before creating the parent profile
                 const studentUserDoc = await getDoc(doc(firestore, 'users', values.studentId));
                 if (!studentUserDoc.exists() || studentUserDoc.data().role !== 'student') {
                     throw new Error("Invalid Student ID provided. Please check and try again.");
@@ -209,17 +217,15 @@ export default function SignUpPage() {
                     id: newUser.uid,
                     userId: newUser.uid,
                     studentId: values.studentId,
-                    // Denormalize teacherId for easy access if available on student
                     teacherId: studentUserDoc.data().teacherId || null,
                 });
+                await setDoc(userDocRef, userData, { merge: true });
             }
 
             toast({
                 title: "Account Created!",
-                description: "Your profile has been saved. You are now being logged in.",
+                description: "Your profile has been saved. Redirecting to your dashboard...",
             });
-            // The onAuthStateChanged listener in the provider will handle redirection
-            router.push(`/dashboard/${role}`);
 
         } catch (error: any) {
             console.error("SignUp Error:", error);
