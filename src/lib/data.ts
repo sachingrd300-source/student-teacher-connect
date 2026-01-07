@@ -133,4 +133,6 @@ export const shopItemsData = [
     price: '$45.00',
     imageUrl: 'https://picsum.photos/seed/book2/300/200'
   }
-]
+];
+
+    

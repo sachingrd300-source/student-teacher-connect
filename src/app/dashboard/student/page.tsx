@@ -35,7 +35,6 @@ import {
   CalendarDays,
   Video,
   MapPin,
-  Link as LinkIcon,
   ShoppingCart,
   BookCopy,
 } from 'lucide-react';
@@ -253,7 +252,7 @@ export default function StudentDashboardPage() {
               {shopItemsData.map((item) => (
                 <Card key={item.id} className="overflow-hidden flex flex-col">
                   <div className="relative h-48 w-full">
-                    <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" />
+                    <Image src={item.imageUrl} alt={item.title} fill objectFit="cover" />
                   </div>
                   <CardHeader>
                     <CardTitle className="text-lg">{item.title}</CardTitle>
@@ -344,3 +343,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
