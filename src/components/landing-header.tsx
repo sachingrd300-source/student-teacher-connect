@@ -20,9 +20,12 @@ export function LandingHeader() {
           <Link href="#pricing" className="text-foreground/60 transition-colors hover:text-foreground/80">Pricing</Link>
           <Link href="#contact" className="text-foreground/60 transition-colors hover:text-foreground/80">Contact</Link>
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <Button asChild>
-            <Link href="/dashboard">Dashboard</Link>
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          <Button variant="ghost" asChild>
+            <Link href="/login">Login</Link>
+          </Button>
+           <Button asChild>
+            <Link href="/signup">Sign Up</Link>
           </Button>
           <Sheet>
             <SheetTrigger asChild>
@@ -44,8 +47,11 @@ export function LandingHeader() {
                     <Link href="#contact" className="text-foreground/60 hover:text-foreground">Contact</Link>
                 </nav>
                 <div className="mt-auto flex flex-col gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/login">Login</Link>
+                    </Button>
                     <Button asChild>
-                        <Link href="/dashboard">Dashboard</Link>
+                        <Link href="/signup">Sign Up</Link>
                     </Button>
                 </div>
               </div>
