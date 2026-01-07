@@ -144,7 +144,9 @@ export default function SchedulePage() {
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="subject" className="text-right">Subject*</Label>
                                 <Select onValueChange={setSubject} value={subject}>
-                                    <SelectTrigger className="col-span-3"><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select a subject" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                     </SelectContent>
@@ -174,7 +176,9 @@ export default function SchedulePage() {
                              <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="type" className="text-right">Type*</Label>
                                 <Select onValueChange={(v) => setClassType(v as any)} value={classType}>
-                                    <SelectTrigger className="col-span-3"><SelectValue placeholder="Select class type" /></SelectTrigger>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select class type" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="Online">Online</SelectItem>
                                         <SelectItem value="Offline">Offline</SelectItem>
@@ -235,3 +239,5 @@ export default function SchedulePage() {
         </div>
     );
 }
+
+    

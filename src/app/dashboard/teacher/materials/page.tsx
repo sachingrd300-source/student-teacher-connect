@@ -170,7 +170,9 @@ export default function MaterialsPage() {
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="subject" className="text-right">Subject*</Label>
                                 <Select onValueChange={setSubject} value={subject}>
-                                    <SelectTrigger className="col-span-3"><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select a subject" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                     </SelectContent>
@@ -179,7 +181,9 @@ export default function MaterialsPage() {
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="batch" className="text-right">Batch</Label>
                                 <Select onValueChange={setBatch} value={batch}>
-                                    <SelectTrigger className="col-span-3"><SelectValue placeholder="All Students" /></SelectTrigger>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="All Students" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Students</SelectItem>
                                         {batches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
@@ -193,7 +197,9 @@ export default function MaterialsPage() {
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="type" className="text-right">Type*</Label>
                                 <Select onValueChange={setMaterialType} value={materialType}>
-                                    <SelectTrigger className="col-span-3"><SelectValue placeholder="Select material type" /></SelectTrigger>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select material type" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {materialTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                                     </SelectContent>
@@ -261,5 +267,6 @@ export default function MaterialsPage() {
             </Card>
         </div>
     );
+}
 
     
