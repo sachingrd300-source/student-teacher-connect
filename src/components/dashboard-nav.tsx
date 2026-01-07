@@ -7,15 +7,10 @@ import { cn } from '@/lib/utils';
 import {
   Home,
   BookOpenCheck,
-  BarChart3,
-  CalendarDays,
-  Settings,
-  LogOut,
   User,
-  Shield,
   FileText,
-  ClipboardCheck,
   Users,
+  LogOut,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -33,9 +28,9 @@ const navItems = {
     { href: '/dashboard/teacher', label: 'Dashboard', icon: Home },
     { href: '/dashboard/teacher/profile', label: 'My Profile', icon: User },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
-    { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
-    { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: ClipboardCheck },
-    { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
+    { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: FileText },
+    { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: FileText },
+    { href: '/dashboard/teacher/performance', label: 'Performance', icon: FileText },
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
@@ -50,7 +45,7 @@ const roleIcons = {
 
 export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
-  const items = navItems[role];
+  const items = navItems[role] || [];
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {

@@ -35,6 +35,7 @@ export default function LearningPassportPage() {
 
   useEffect(() => {
     setIsLoading(true);
+    // Simulate fetching data for the logged-in student
     setTimeout(() => {
         setStudentAttendance(studentData.attendanceRecords.map((att, i) => ({
             id: `att-${i}`,

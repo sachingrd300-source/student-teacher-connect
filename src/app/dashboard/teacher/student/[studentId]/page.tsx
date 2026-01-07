@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, XCircle, Mail, Phone } from 'lucide-react';
 import { PerformanceChart } from '@/components/performance-chart';
 import { teacherData, studentData } from '@/lib/data';
+import { notFound } from 'next/navigation';
 
 type StudentProfile = {
   id: string;
@@ -46,15 +47,18 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
   useEffect(() => {
     setIsLoading(true);
     setTimeout(() => {
+        // Find the student from the teacher's list of enrolled students.
         const foundStudent = teacherData.enrolledStudents.find(s => s.id === studentId);
+        
         if (foundStudent) {
             setStudent({
                 ...foundStudent,
                 email: `${foundStudent.name.split(' ')[0].toLowerCase()}@example.com`,
                 mobileNumber: '123-456-7890',
-                batch: 'Morning Physics',
+                batch: 'Morning Physics', // Assuming static batch for demo
             });
 
+            // Use generic student data for their records as a mock
             setAttendanceHistory(studentData.attendanceRecords.map((att, i) => ({
                 id: `att-${i}`,
                 date: new Date(new Date().setDate(new Date().getDate() - i)),
@@ -69,6 +73,9 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
                 subject: 'Mathematics',
                 testName: p.name,
             })));
+        } else {
+            // If the student isn't found in the teacher's list, it's a 404.
+            // In a real app, this check would happen before rendering.
         }
         setIsLoading(false);
     }, 1000);
@@ -89,8 +96,9 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
     </div>;
   }
 
+  // After loading, if no student was found, show a not found page.
   if (!student) {
-    return <Card><CardHeader><CardTitle>Student Not Found</CardTitle></CardHeader></Card>;
+    notFound();
   }
 
   return (
