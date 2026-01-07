@@ -435,7 +435,7 @@ export default function TeacherDashboardPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                </Body>
+                </TableBody>
               </Table>
             ) : !isLoadingEnrolled && (
               <p className="text-sm text-center text-muted-foreground py-8">No students enrolled yet.</p>
