@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,6 @@ import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -307,5 +305,3 @@ export default function SignUpPage() {
         </div>
     )
 }
-
-    
