@@ -1,15 +1,15 @@
 
 /**
  * Core Philosophy: This ruleset enforces a role-based access model for an
- * educational application (EduConnect Pro) with three primary roles: Teacher,
- * Student, and Parent. Authorization is primarily determined by denormalized
+ * educational application (EduConnect Pro) with two primary roles: Teacher and
+ * Student. Authorization is primarily determined by denormalized
  * relationships stored directly within documents (e.g., a `teacherId` field
  * on a student's record) rather than by custom claims or global roles. This
  * allows for efficient and secure access control.
  *
  * Data Structure: The data is organized into a flat structure with top-level
  * collections for each primary entity (`users`, `teachers`, `students`,
- * `parents`, `study_materials`, etc.). This structural segregation ensures that
+ * `study_materials`, etc.). This structural segregation ensures that
  * each collection has a clear and homogeneous security posture.
  *
  * Key Security Decisions:
@@ -98,17 +98,6 @@ service cloud.firestore {
         let teacherDoc = get(/databases/$(database)/documents/teachers/$(teacherIdOnStudent));
         return teacherDoc.exists && teacherDoc.data.userId == request.auth.uid;
     }
-
-    function isParentOfStudent(studentUserId) {
-        // Find the parent document for the requesting user
-        let parentDocs = firestore.get(/databases/$(database)/documents/parents?userId=$(request.auth.uid)).docs;
-        if (parentDocs.size() == 0) {
-            return false;
-        }
-        let parentDoc = parentDocs[0];
-        // Check if the parent's studentId matches the student being accessed
-        return parentDoc.data.studentId == studentUserId;
-    }
     
     //-------------------------------------------------------------------------
     // Collection Rules
@@ -119,11 +108,10 @@ service cloud.firestore {
      * - Owner can create, update, delete.
      * - A teacher can read their approved students' user docs.
      * - A student can read their own user doc.
-     * - A parent can read their own child's user doc.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isTeacherOfStudent(userId) || isParentOfStudent(userId);
+      allow get: if isOwner(userId) || isTeacherOfStudent(userId);
       allow list: if isTeacher(request.auth.uid); // Teachers can list students under them.
       allow create: if isOwner(userId) || isTeacher(request.auth.uid); // Teachers can create students
       allow update: if isOwner(userId) || (isTeacher(request.auth.uid) && isTeacherOfStudent(userId)); // Teacher can approve student
@@ -137,7 +125,7 @@ service cloud.firestore {
      */
     match /teachers/{teacherId} {
       allow get: if isSignedIn(); // Any signed-in user can read teacher profiles
-      allow list: if false; // Prevent listing all teachers
+      allow list: if isSignedIn(); // Allow listing tutors
       allow create: if isOwner(getAfter(/databases/$(database)/documents/teachers/$(teacherId)).data.userId);
       allow update, delete: if isOwner(resource.data.userId) && isExistingDoc();
     }
@@ -150,24 +138,11 @@ service cloud.firestore {
      * @path /students/{studentId}
      */
     match /students/{studentId} {
-      allow get: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId) || isParentOfStudent(resource.data.userId);
+      allow get: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
       allow list: if false;
       allow create: if isOwner(request.resource.data.userId) || isTeacher(request.auth.uid);
       allow update: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
       allow delete: if isOwner(resource.data.userId) && isExistingDoc();
-    }
-
-    /**
-     * @description Parent profiles.
-     * @path /parents/{parentId}
-     */
-    match /parents/{parentId} {
-      // Owner can manage their own profile
-      allow get, update, delete: if isOwner(resource.data.userId);
-      // Teacher of the linked student can read the parent profile
-      allow get: if isTeacherOfStudent(resource.data.studentId);
-      allow list: if false;
-      allow create: if isOwner(request.resource.data.userId);
     }
 
     /**
@@ -183,21 +158,21 @@ service cloud.firestore {
 
 
     /**
-     * @description Attendance records are managed by teachers. They are readable by the teacher and the associated student/parent.
+     * @description Attendance records are managed by teachers. They are readable by the teacher and the associated student.
      * @path /attendances/{attendanceId}
      */
     match /attendances/{attendanceId} {
-      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId) || isParentOfStudent(resource.data.studentId);
+      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId);
       allow list: if isSignedIn();
       allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
     }
 
     /**
-     * @description Test results are managed by teachers. They are readable by the teacher and the associated student/parent.
+     * @description Test results are managed by teachers. They are readable by the teacher and the associated student.
      * @path /test_results/{testResultId}
      */
     match /test_results/{testResultId} {
-      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId) || isParentOfStudent(resource.data.studentId);
+      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId);
       allow list: if isSignedIn();
       allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
     }
@@ -217,8 +192,7 @@ service cloud.firestore {
      * @path /schedules
      */
      match /schedules/{scheduleId} {
-        allow read: if isSignedIn(); 
-        allow list: if isSignedIn();
+        allow read, list: if isSignedIn(); 
         allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
      }
 

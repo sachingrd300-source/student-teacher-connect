@@ -66,10 +66,3 @@ export const studentData = {
     { date: '2024-07-26', status: 'Present' },
   ]
 };
-
-export const parentData = {
-  name: "David Johnson",
-  avatarUrl: 'https://picsum.photos/seed/parent-avatar/100/100',
-  childName: "Alice Johnson",
-  childData: studentData,
-};

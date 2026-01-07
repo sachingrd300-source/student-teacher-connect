@@ -14,12 +14,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { DashboardNav } from '@/components/dashboard-nav';
-import { teacherData, studentData, parentData } from '@/lib/data';
+import { teacherData, studentData } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell } from 'lucide-react';
 import Link from 'next/link';
 
-type Role = 'teacher' | 'student' | 'parent';
+type Role = 'teacher' | 'student';
 
 export default function DashboardLayout({
   children,
@@ -31,7 +31,6 @@ export default function DashboardLayout({
   const getRole = (): Role => {
     if (pathname.startsWith('/dashboard/teacher')) return 'teacher';
     if (pathname.startsWith('/dashboard/student')) return 'student';
-    if (pathname.startsWith('/dashboard/parent')) return 'parent';
     return 'student'; // default
   };
 
@@ -40,7 +39,6 @@ export default function DashboardLayout({
   const userData = {
     teacher: teacherData,
     student: studentData,
-    parent: parentData,
   }[role];
 
   return (

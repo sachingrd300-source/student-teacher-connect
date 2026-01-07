@@ -26,7 +26,7 @@ import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
 
-type Role = 'teacher' | 'student' | 'parent';
+type Role = 'teacher' | 'student';
 
 const navItems = {
   teacher: [
@@ -41,15 +41,11 @@ const navItems = {
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
   ],
-  parent: [
-    { href: '/dashboard/parent', label: 'Dashboard', icon: Home },
-  ],
 };
 
 const roleIcons = {
   teacher: <User className="h-5 w-5" />,
   student: <BookOpenCheck className="h-5 w-5" />,
-  parent: <Shield className="h-5 w-5" />,
 };
 
 export function DashboardNav({ role }: { role: Role }) {
