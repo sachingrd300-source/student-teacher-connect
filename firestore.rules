@@ -214,10 +214,11 @@ service cloud.firestore {
 
     /**
      * @description Schedules are managed by teachers and readable by relevant users.
-     * @path /schedules/{scheduleId}
+     * @path /schedules
      */
      match /schedules/{scheduleId} {
-        allow read, list: if isSignedIn(); // Simplified for now
+        allow read: if isSignedIn(); 
+        allow list: if isSignedIn();
         allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
      }
 
