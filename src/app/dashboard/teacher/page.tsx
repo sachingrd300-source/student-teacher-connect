@@ -75,6 +75,11 @@ type StudentProfile = {
   batch?: string;
 };
 
+type TeacherProfile = {
+  id: string;
+  userId: string;
+}
+
 type Batch = {
   id: string;
   name: string;
@@ -103,7 +108,7 @@ export default function TeacherDashboardPage() {
     user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
   , [firestore, user]);
 
-  const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection(teacherIdQuery);
+  const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<TeacherProfile>(teacherIdQuery);
   const teacher = teacherDocs?.[0];
 
   const studentRequestsQuery = useMemoFirebase(() => {
@@ -426,9 +431,15 @@ export default function TeacherDashboardPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild><Link href={`/dashboard/teacher/student/${student.id}`}>View Profile</Link></DropdownMenuItem>
-                              <DropdownMenuItem asChild><Link href={`/dashboard/teacher/performance?studentId=${student.id}`}>Enter Marks</Link></DropdownMenuItem>
-                              <DropdownMenuItem asChild><Link href={`/dashboard/teacher/attendance`}>Mark Attendance</Link></DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/teacher/student/${student.id}`}>View Profile</Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/teacher/performance?studentId=${student.id}`}>Enter Marks</Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/teacher/attendance`}>Mark Attendance</Link>
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleRemove(student)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
