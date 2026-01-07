@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/collapsible';
 import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
+import { Skeleton } from './ui/skeleton';
 
 type Role = 'teacher' | 'student' | 'parent';
 
