@@ -130,7 +130,14 @@ export default function SignUpPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { user, isUserLoading } = useUser();
+    const teacherForm = useForm<z.infer<typeof teacherSchema>>({ resolver: zodResolver(teacherSchema) });
+    const studentForm = useForm<z.infer<typeof studentSchema>>({ resolver: zodResolver(studentSchema) });
+    const parentForm = useForm<z.infer<typeof parentSchema>>({ resolver: zodResolver(parentSchema) });
     
+    // We can't easily share a single isSubmitting state without a more complex state management.
+    // For this case, we check one of the forms. A more advanced solution might use a shared state.
+    const isAnyFormSubmitting = teacherForm.formState.isSubmitting || studentForm.formState.isSubmitting || parentForm.formState.isSubmitting;
+
     // Redirect if user is already logged in
     useEffect(() => {
         if (user) {
@@ -239,17 +246,6 @@ export default function SignUpPage() {
       )
     }
 
-    // Since we redirect on user, this form is only shown when no user is logged in.
-    // The useForm hook's isSubmitting state can be used for each form.
-    const teacherForm = useForm<z.infer<typeof teacherSchema>>({ resolver: zodResolver(teacherSchema) });
-    const studentForm = useForm<z.infer<typeof studentSchema>>({ resolver: zodResolver(studentSchema) });
-    const parentForm = useForm<z.infer<typeof parentSchema>>({ resolver: zodResolver(parentSchema) });
-    
-    // We can't easily share a single isSubmitting state without a more complex state management.
-    // For this case, we check one of the forms. A more advanced solution might use a shared state.
-    const isAnyFormSubmitting = teacherForm.formState.isSubmitting || studentForm.formState.isSubmitting || parentForm.formState.isSubmitting;
-
-
     return (
         <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 overflow-hidden">
              <div className="absolute inset-0 z-0 opacity-50 bg-grid-pattern"></div>
@@ -295,3 +291,5 @@ export default function SignUpPage() {
         </div>
     )
 }
+
+    
