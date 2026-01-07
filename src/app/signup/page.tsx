@@ -207,7 +207,7 @@ export default function SignUpPage() {
                     };
                 } else if (role === 'student') {
                     // Student-specific data stored in the 'students' collection
-                    const studentId = `STU-${uuidv4().slice(0,4).toUpperCase()}`;
+                    const studentId = user.uid; // Use user's UID as student ID
                     roleDocRef = doc(firestore, 'students', studentId);
                     roleData = {
                         id: studentId,
@@ -215,8 +215,15 @@ export default function SignUpPage() {
                         isApproved: !values.teacherId, 
                         teacherId: values.teacherId || null,
                     };
+                    // Also update the main user doc with student info
+                     const userUpdateData = {
+                        studentId: studentId,
+                     };
+                     updateDocumentNonBlocking(userDocRef, userUpdateData);
+
+
                 } else if (role === 'parent') {
-                    const parentId = `PAR-${uuidv4().slice(0,4).toUpperCase()}`;
+                    const parentId = user.uid;
                     roleDocRef = doc(firestore, 'parents', parentId);
                     roleData = {
                         id: parentId,
@@ -305,5 +312,3 @@ export default function SignUpPage() {
         </div>
     )
 }
-
-    

@@ -65,7 +65,7 @@ import Link from 'next/link';
 
 type StudentProfile = {
   id: string; 
-  userId: string;
+  userId?: string; // This might be the doc id from users collection.
   name: string;
   isApproved: boolean;
   teacherId: string | null;
@@ -456,5 +456,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    
