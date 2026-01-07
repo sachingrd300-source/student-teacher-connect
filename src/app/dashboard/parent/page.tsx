@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -15,7 +18,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { parentData } from '@/lib/data';
-import { PerformanceChart } from '@/components/performance-chart';
 import {
   FileText,
   ClipboardList,
@@ -27,6 +29,17 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const PerformanceChart = dynamic(
+  () => import('@/components/performance-chart').then((mod) => mod.PerformanceChart),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[250px] w-full" />,
+  }
+);
+
 
 const materialIcons = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
