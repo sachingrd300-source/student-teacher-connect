@@ -1,3 +1,4 @@
+
 export type Student = {
   id: string;
   name: string;
@@ -66,3 +67,30 @@ export const studentData = {
     { date: '2024-07-26', status: 'Present' },
   ]
 };
+
+export const tutorsData = [
+    {
+        id: 'TUT01',
+        name: 'Dr. Evelyn Reed',
+        avatarUrl: 'https://picsum.photos/seed/teacher-avatar/100/100',
+        subjects: ['Mathematics', 'Physics'],
+        experience: '5 Years',
+        location: 'New York, NY',
+    },
+    {
+        id: 'TUT02',
+        name: 'Johnathan Doe',
+        avatarUrl: 'https://picsum.photos/seed/tutor2/100/100',
+        subjects: ['Chemistry', 'Biology'],
+        experience: '8 Years',
+        location: 'Boston, MA',
+    },
+    {
+        id: 'TUT03',
+        name: 'Maria Garcia',
+        avatarUrl: 'https://picsum.photos/seed/tutor3/100/100',
+        subjects: ['English', 'History'],
+        experience: '10 Years',
+        location: 'San Francisco, CA',
+    }
+];
