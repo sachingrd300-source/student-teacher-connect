@@ -110,7 +110,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) || isTeacherOfStudent(userId);
       allow list: if isTeacher(); // Teachers can list students under them.
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId) || isTeacher(); // Teachers can create students
       allow update: if isOwner(userId) || (isTeacher() && isTeacherOfStudent(userId)); // Teacher can approve student
       allow delete: if isOwner(userId);
     }
@@ -137,7 +137,7 @@ service cloud.firestore {
     match /students/{studentId} {
       allow get: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
       allow list: if false;
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) || isTeacher();
       allow update: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
       allow delete: if isOwner(resource.data.userId) && isExistingDoc();
     }
@@ -181,6 +181,17 @@ service cloud.firestore {
     match /test_results/{testResultId} {
       allow get: if isSpecificTeacher(resource.data.teacherId) || isOwner(getUserDoc(resource.data.studentId).data.userId);
       allow list: if isSignedIn();
+      allow create: if isSpecificTeacher(request.resource.data.teacherId);
+      allow update, delete: if isSpecificTeacher(resource.data.teacherId) && isExistingDoc();
+    }
+    
+    /**
+     * @description Batches are managed by teachers.
+     * @path /batches/{batchId}
+     */
+    match /batches/{batchId} {
+      allow read: if isSpecificTeacher(resource.data.teacherId) || isTeacherOfStudent(request.auth.uid);
+      allow list: if isTeacher();
       allow create: if isSpecificTeacher(request.resource.data.teacherId);
       allow update, delete: if isSpecificTeacher(resource.data.teacherId) && isExistingDoc();
     }

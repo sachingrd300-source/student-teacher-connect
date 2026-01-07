@@ -34,6 +34,10 @@ import {
   BarChart3,
   CalendarCheck2
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const materialIcons = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
@@ -43,7 +47,38 @@ const materialIcons = {
 };
 
 export default function StudentDashboardPage() {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [teacherCode, setTeacherCode] = useState('');
   const [isConnected, setIsConnected] = useState(studentData.isConnected);
+
+
+  const handleEnrollmentRequest = async () => {
+    if (!user || !firestore || !teacherCode) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please enter a valid teacher code.' });
+        return;
+    }
+    
+    // In a real app, you might query the 'teachers' collection by 'id'
+    const teacherDocRef = doc(firestore, 'teachers', teacherCode);
+    const teacherDoc = await getDoc(teacherDocRef);
+
+    if (!teacherDoc.exists()) {
+      toast({ variant: 'destructive', title: 'Invalid Code', description: 'No teacher found with that code.' });
+      return;
+    }
+    
+    const studentUserDocRef = doc(firestore, 'users', user.uid);
+    updateDocumentNonBlocking(studentUserDocRef, {
+        teacherId: teacherCode,
+        isApproved: false, // Teacher must approve
+    });
+
+    toast({ title: 'Request Sent!', description: "Your enrollment request has been sent to the teacher for approval."});
+    // You might want to update local state to show "Pending Approval"
+  }
+
 
   if (!isConnected) {
     return (
@@ -55,8 +90,8 @@ export default function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-                <Input placeholder="Teacher Verification Code" />
-                <Button className="w-full" onClick={() => setIsConnected(true)}>
+                <Input placeholder="Teacher Verification Code" value={teacherCode} onChange={(e) => setTeacherCode(e.target.value)} />
+                <Button className="w-full" onClick={handleEnrollmentRequest}>
                     Send Enrollment Request
                 </Button>
             </div>
@@ -188,3 +223,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
