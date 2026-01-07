@@ -1,0 +1,375 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the EduConnect Pro application. This can be a teacher, student, or parent.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user (teacher, student, parent).",
+          "format": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's name."
+        },
+        "mobileNumber": {
+          "type": "string",
+          "description": "The user's mobile number."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "name",
+        "mobileNumber"
+      ]
+    },
+    "Teacher": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Teacher",
+      "type": "object",
+      "description": "Represents a teacher in the EduConnect Pro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Teacher entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 Teacher)"
+        },
+        "verificationCode": {
+          "type": "string",
+          "description": "Verification code assigned to the teacher."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "verificationCode"
+      ]
+    },
+    "Student": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Student",
+      "type": "object",
+      "description": "Represents a student in the EduConnect Pro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Student entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 Student)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the teacher that accepted/enrolled this student.  Can be null for independent students. (Relationship: Teacher 1:N Student)"
+        },
+        "isApproved": {
+          "type": "boolean",
+          "description": "Indicates whether the student has been approved by a teacher."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    },
+    "Parent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Parent",
+      "type": "object",
+      "description": "Represents a parent in the EduConnect Pro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Parent entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 Parent)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the student the parent is associated with. (Relationship: Student 1:N Parent)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the teacher that manages the student, used for read-only access. (Relationship: Teacher 1:N Parent)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "studentId"
+      ]
+    },
+    "StudyMaterial": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudyMaterial",
+      "type": "object",
+      "description": "Represents study material uploaded by a teacher.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the StudyMaterial entity."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the teacher who uploaded the material. (Relationship: Teacher 1:N StudyMaterial)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the study material."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the study material."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "URL of the uploaded file.",
+          "format": "uri"
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date and time when the material was uploaded.",
+          "format": "date-time"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject of the study material."
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Chapter of the study material."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of study material, such as 'notes', 'dpp', 'test', etc."
+        }
+      },
+      "required": [
+        "id",
+        "teacherId",
+        "title",
+        "fileUrl",
+        "uploadDate",
+        "subject",
+        "type"
+      ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents a student's attendance record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Attendance entity."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the student. (Relationship: Student 1:N Attendance)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the teacher. (Relationship: Teacher 1:N Attendance)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the attendance record.",
+          "format": "date-time"
+        },
+        "isPresent": {
+          "type": "boolean",
+          "description": "Indicates whether the student was present."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "teacherId",
+        "date",
+        "isPresent"
+      ]
+    },
+    "TestResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TestResult",
+      "type": "object",
+      "description": "Represents a student's test result.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TestResult entity."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the student. (Relationship: Student 1:N TestResult)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the teacher. (Relationship: Teacher 1:N TestResult)"
+        },
+        "testId": {
+          "type": "string",
+          "description": "Reference to the test. (Relationship: StudyMaterial 1:N TestResult. StudyMaterial.type must equal 'test')"
+        },
+        "marks": {
+          "type": "number",
+          "description": "Marks obtained by the student."
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Teacher's remarks on the test."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "teacherId",
+        "testId",
+        "marks"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user information. Used primarily for authentication.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "teachers/{teacherId}",
+        "definition": {
+          "entityName": "Teacher",
+          "schema": {
+            "$ref": "#/backend/entities/Teacher"
+          },
+          "description": "Stores teacher-specific data.",
+          "params": [
+            {
+              "name": "teacherId",
+              "description": "The unique identifier for the teacher."
+            }
+          ]
+        }
+      },
+      {
+        "path": "students/{studentId}",
+        "definition": {
+          "entityName": "Student",
+          "schema": {
+            "$ref": "#/backend/entities/Student"
+          },
+          "description": "Stores student data, including a denormalized 'teacherId' for authorization.",
+          "params": [
+            {
+              "name": "studentId",
+              "description": "The unique identifier for the student."
+            }
+          ]
+        }
+      },
+      {
+        "path": "parents/{parentId}",
+        "definition": {
+          "entityName": "Parent",
+          "schema": {
+            "$ref": "#/backend/entities/Parent"
+          },
+          "description": "Stores parent data, including denormalized 'studentId' and 'teacherId' for authorization.",
+          "params": [
+            {
+              "name": "parentId",
+              "description": "The unique identifier for the parent."
+            }
+          ]
+        }
+      },
+      {
+        "path": "study_materials/{studyMaterialId}",
+        "definition": {
+          "entityName": "StudyMaterial",
+          "schema": {
+            "$ref": "#/backend/entities/StudyMaterial"
+          },
+          "description": "Stores study materials uploaded by teachers. Includes 'teacherId' for authorization.",
+          "params": [
+            {
+              "name": "studyMaterialId",
+              "description": "The unique identifier for the study material."
+            }
+          ]
+        }
+      },
+      {
+        "path": "attendances/{attendanceId}",
+        "definition": {
+          "entityName": "Attendance",
+          "schema": {
+            "$ref": "#/backend/entities/Attendance"
+          },
+          "description": "Stores attendance records for students, associated with a specific teacher.",
+          "params": [
+            {
+              "name": "attendanceId",
+              "description": "The unique identifier for the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "test_results/{testResultId}",
+        "definition": {
+          "entityName": "TestResult",
+          "schema": {
+            "$ref": "#/backend/entities/TestResult"
+          },
+          "description": "Stores test results for students, associated with the relevant teacher and test.",
+          "params": [
+            {
+              "name": "testResultId",
+              "description": "The unique identifier for the test result."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support EduConnect Pro's requirements for role-based access, real-time updates, and study material management while adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. Authorization Independence is achieved through denormalization of authorization-related data (e.g., teacherId on student and parent documents) to avoid `get()` calls in security rules. Structural Segregation is used to ensure that each collection has a homogeneous security posture.  Path-based ownership and membership maps are leveraged for access modeling. All IDs are auto-generated UUIDs.\n\nSpecifically:\n\n*   **Users**: Stores basic user information.  This collection is primarily used for authentication purposes and contains minimal data. The `users/{userId}` path provides a secure and easily managed structure for user-specific data.\n*   **Teachers**: Contains teacher-specific details. The `teachers/{teacherId}` path ensures that teacher data is isolated and accessible only to authorized users.\n*   **Students**: Stores student data, with a `teacherId` field denormalized for authorization. This allows students to be associated with teachers and enables efficient querying and rule creation based on teacher-student relationships.\n*   **Parents**: Contains parent data, including references to both the student and teacher. The `teacherId` is denormalized to grant read-only access based on the teacher-student relationship, thus enabling authorization independence.\n*   **StudyMaterials**: Contains study materials uploaded by teachers.  The `teacherId` ensures that only the teacher who uploaded the material can modify it. This supports the QAP that study materials are owned by teachers and enables secure listing.\n*   **Attendances**: Stores attendance records for students, associated with a specific teacher.  This structure facilitates efficient querying of attendance records by student and teacher.\n*   **TestResults**: Contains test results for students, also associated with the relevant teacher and test. The `teacherId` and `testId` ensure that only authorized teachers can access and modify test results, and that results can be easily queried by student, teacher, and test.\n\nThis design prioritizes data isolation and role-based access control, aligning with the application's security and scalability requirements."
+  }
+}
