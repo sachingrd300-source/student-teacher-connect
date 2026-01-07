@@ -14,6 +14,7 @@ import {
   LogOut,
   User,
   Shield,
+  FileText,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -34,6 +35,7 @@ const navItems = {
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
+    { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
     { href: '/dashboard/student/materials', label: 'Study Material', icon: BookOpenCheck },
     { href: '/dashboard/student/performance', label: 'My Performance', icon: BarChart3 },
     { href: '/dashboard/student/attendance', label: 'My Attendance', icon: CalendarDays },
