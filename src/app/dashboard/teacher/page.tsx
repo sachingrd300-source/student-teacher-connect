@@ -44,22 +44,19 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { teacherData } from '@/lib/data';
 import {
   Users,
-  UploadCloud,
   Check,
   X,
   MoreVertical,
-  BookOpen,
   Calendar,
   UserCheck,
   PlusCircle,
   Users2,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc, getDocs, writeBatch, addDoc, serverTimestamp } from 'firebase/firestore';
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -139,23 +136,23 @@ export default function TeacherDashboardPage() {
 
 
   const handleApprove = (student: StudentProfile) => {
-    if (!firestore || !student.id) return;
-    const studentDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentDocRef, { isApproved: true });
+    if (!firestore || !student.userId) return;
+    const studentUserDocRef = doc(firestore, 'users', student.id);
+    updateDocumentNonBlocking(studentUserDocRef, { isApproved: true });
     toast({ title: "Student Approved", description: `${student.name} has been enrolled.` });
   };
   
   const handleDeny = async (student: StudentProfile) => {
     if (!firestore || !student.id) return;
-    const studentDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false });
+    const studentUserDocRef = doc(firestore, 'users', student.id);
+    updateDocumentNonBlocking(studentUserDocRef, { teacherId: null, isApproved: false });
     toast({ variant: "destructive", title: "Student Denied", description: `${student.name}'s request has been denied.` });
   };
   
   const handleRemove = (student: StudentProfile) => {
     if (!firestore || !student.id) return;
-    const studentDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false, batch: null });
+    const studentUserDocRef = doc(firestore, 'users', student.id);
+    updateDocumentNonBlocking(studentUserDocRef, { teacherId: null, isApproved: false, batch: null });
     toast({ variant: "destructive", title: "Student Removed", description: `${student.name} has been removed from your roster.` });
   };
 
@@ -167,7 +164,7 @@ export default function TeacherDashboardPage() {
       id: batchId,
       name: newBatchName,
       teacherId: teacher.id,
-    }, {});
+    }, { merge: false });
     toast({ title: "Batch Created!", description: `Batch "${newBatchName}" has been successfully created.` });
     setNewBatchName('');
     setCreateBatchOpen(false);
@@ -179,16 +176,11 @@ export default function TeacherDashboardPage() {
       return;
     }
     
-    // This is a simplified flow. In a real app, you would send an invite
-    // and the student would complete the signup. Here we create the user directly.
     const studentUserId = uuidv4();
     const studentId = `STU-${uuidv4().slice(0, 4)}`;
     const email = `${newStudentMobile}@edconnect.pro`;
 
-    // Create user and student docs
     const userDocRef = doc(firestore, 'users', studentUserId);
-    const studentDocRef = doc(firestore, 'students', studentId);
-
     const userData = {
       id: studentUserId,
       name: newStudentName,
@@ -200,7 +192,9 @@ export default function TeacherDashboardPage() {
       batch: selectedBatch || null,
       avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
     };
+    setDocumentNonBlocking(userDocRef, userData, { merge: false });
 
+    const studentDocRef = doc(firestore, 'students', studentId);
     const studentData = {
       id: studentId,
       userId: studentUserId,
@@ -208,10 +202,7 @@ export default function TeacherDashboardPage() {
       isApproved: true,
       batch: selectedBatch || null,
     };
-    
-    // Use non-blocking writes
-    setDocumentNonBlocking(userDocRef, userData, {});
-    setDocumentNonBlocking(studentDocRef, studentData, {});
+    setDocumentNonBlocking(studentDocRef, studentData, { merge: false });
 
     toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.`});
     setNewStudentName('');
