@@ -2,12 +2,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Home,
   BookOpenCheck,
-  Users,
   BarChart3,
   CalendarDays,
   Settings,
@@ -25,9 +24,6 @@ import {
 import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
-import { useToast } from '@/hooks/use-toast';
 
 type Role = 'teacher' | 'student' | 'parent';
 
@@ -43,17 +39,9 @@ const navItems = {
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
-    // These pages don't exist, so commenting out for now
-    // { href: '/dashboard/student/materials', label: 'Study Material', icon: BookOpenCheck },
-    // { href: '/dashboard/student/performance', label: 'My Performance', icon: BarChart3 },
-    // { href: '/dashboard/student/attendance', label: 'My Attendance', icon: CalendarDays },
   ],
   parent: [
     { href: '/dashboard/parent', label: 'Dashboard', icon: Home },
-    // These pages don't exist, so commenting out for now
-    // { href: '/dashboard/parent/performance', label: 'Performance', icon: BarChart3 },
-    // { href: '/dashboard/parent/attendance', label: 'Attendance', icon: CalendarDays },
-    // { href: '/dashboard/parent/schedule', label: 'Class Schedule', icon: CalendarDays },
   ],
 };
 
@@ -67,30 +55,14 @@ export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const items = navItems[role];
   const [isClient, setIsClient] = useState(false);
-  const auth = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast({
-        title: 'Logged Out',
-        description: 'You have been successfully logged out.',
-      });
-      router.push('/');
-    } catch (error) {
-      console.error('Logout Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Logout Failed',
-        description: 'An error occurred while logging out.',
-      });
-    }
+  const handleLogout = () => {
+    // This is a mock function now. In a real app, this would sign the user out.
+    alert("Logout functionality is disabled in this demo.");
   };
 
 
@@ -131,8 +103,6 @@ export function DashboardNav({ role }: { role: Role }) {
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
           </div>
         </div>
       )}
@@ -140,14 +110,14 @@ export function DashboardNav({ role }: { role: Role }) {
 
       <div className="mt-auto flex flex-col gap-1 pt-4 border-t">
         <Link
-          href="#"
+          href="/dashboard"
           className={cn(
             buttonVariants({ variant: 'ghost' }),
             'justify-start gap-3'
           )}
         >
-          <Settings className="h-4 w-4" />
-          Settings
+          <Users className="h-4 w-4" />
+          Switch Role
         </Link>
         <button
           onClick={handleLogout}

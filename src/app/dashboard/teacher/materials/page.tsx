@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -45,33 +45,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, MoreVertical, BookOpenCheck } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
+import { teacherData } from '@/lib/data';
 
-type Teacher = { id: string; userId: string; subjects: string; };
-type Batch = { id: string; name: string; teacherId: string; };
 type StudyMaterial = {
     id: string;
     title: string;
-    description: string;
+    description?: string;
     subject: string;
     chapter: string;
     type: string;
-    batchId?: string;
-    uploadDate: any;
+    uploadDate: Date;
 };
 
 const materialTypes = ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"];
+const allBatches = [{ id: 'batch1', name: 'Morning Physics' }, { id: 'batch2', name: 'Evening Chemistry' }];
 
 export default function MaterialsPage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [isAddMaterialOpen, setAddMaterialOpen] = useState(false);
+    const [materials, setMaterials] = useState<StudyMaterial[]>([]);
     
     // Form state
     const [title, setTitle] = useState('');
@@ -81,51 +74,25 @@ export default function MaterialsPage() {
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
 
-    const teacherQuery = useMemoFirebase(() => 
-        user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
-    , [firestore, user]);
-
-    const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<Teacher>(teacherQuery);
-    const teacher = teacherDocs?.[0];
-    const teacherSubjects = teacher?.subjects.split(',').map(s => s.trim()) || [];
-
-    const batchesQuery = useMemoFirebase(() => {
-        if(!teacher) return null;
-        return query(collection(firestore, 'batches'), where('teacherId', '==', teacher.id));
-    }, [firestore, teacher]);
-
-    const materialsQuery = useMemoFirebase(() => {
-        if(!teacher) return null;
-        return query(collection(firestore, 'study_materials'), where('teacherId', '==', teacher.id), where('archived', '!=', true));
-    }, [firestore, teacher]);
-
-    const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
-    const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
+    const teacherSubjects = teacherData.subjects;
 
     const handleAddMaterial = async () => {
-        if (!firestore || !teacher || !title || !subject || !materialType) {
+        if (!title || !subject || !materialType) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
             return;
         }
 
-        const materialId = uuidv4();
-        const materialRef = doc(firestore, 'study_materials', materialId);
-        
-        const materialData = {
-            id: materialId,
-            teacherId: teacher.id,
+        const newMaterial: StudyMaterial = {
+            id: `mat-${Date.now()}`,
             title,
             description,
             subject,
-            batchId: batch || null,
             chapter,
             type: materialType,
-            fileUrl: 'https://example.com/placeholder.pdf', // Placeholder
-            uploadDate: serverTimestamp(),
-            archived: false
+            uploadDate: new Date(),
         };
 
-        setDocumentNonBlocking(materialRef, materialData, { merge: false });
+        setMaterials(prev => [newMaterial, ...prev]);
 
         toast({ title: 'Material Added', description: `${title} has been successfully uploaded.`});
         
@@ -186,7 +153,7 @@ export default function MaterialsPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Students</SelectItem>
-                                        {batches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                                        {allBatches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -223,7 +190,6 @@ export default function MaterialsPage() {
                     <CardDescription>A list of all the resources you have uploaded.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoadingMaterials && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
                     {materials && materials.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -243,7 +209,7 @@ export default function MaterialsPage() {
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
                                         <TableCell>{material.subject}</TableCell>
                                         <TableCell>{material.chapter || 'N/A'}</TableCell>
-                                        <TableCell>{material.uploadDate?.toDate().toLocaleDateString() || 'Just now'}</TableCell>
+                                        <TableCell>{material.uploadDate.toLocaleDateString() || 'Just now'}</TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -260,7 +226,7 @@ export default function MaterialsPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                    ) : !isLoadingMaterials && (
+                    ) : (
                         <p className="text-sm text-center text-muted-foreground py-8">You haven't uploaded any materials yet.</p>
                     )}
                 </CardContent>
@@ -268,5 +234,3 @@ export default function MaterialsPage() {
         </div>
     );
 }
-
-    

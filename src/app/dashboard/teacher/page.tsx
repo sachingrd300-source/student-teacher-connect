@@ -24,27 +24,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Users,
   Check,
@@ -52,222 +34,51 @@ import {
   MoreVertical,
   Calendar,
   UserCheck,
-  PlusCircle,
   Users2,
   ChevronDown,
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, getDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
+import { teacherData } from '@/lib/data';
 import Link from 'next/link';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '@/firebase';
-
 
 type StudentProfile = {
   id: string; 
   name: string;
-  isApproved: boolean;
-  teacherId: string | null;
   avatarUrl: string; 
   grade?: string; 
   attendance?: number; 
   batch?: string;
 };
 
-type TeacherProfile = {
-  id: string;
-  userId: string;
-}
-
-type Batch = {
-  id: string;
-  name: string;
-  teacherId: string;
-}
-
 
 export default function TeacherDashboardPage() {
-  const { user } = useUser();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const [isAddStudentOpen, setAddStudentOpen] = useState(false);
-  const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentMobile, setNewStudentMobile] = useState('');
-  const [selectedBatchId, setSelectedBatchId] = useState('');
-  const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
-  const [newBatchName, setNewBatchName] = useState('');
-  const [isClient, setIsClient] = useState(false);
+  const [studentRequests, setStudentRequests] = useState<StudentProfile[]>([]);
+  const [enrolledStudents, setEnrolledStudents] = useState<StudentProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
+    // Simulate fetching data
+    setTimeout(() => {
+      setStudentRequests(teacherData.studentRequests);
+      setEnrolledStudents(teacherData.enrolledStudents);
+      setIsLoading(false);
+    }, 1000);
   }, []);
 
-
-  const teacherIdQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
-  , [firestore, user]);
-
-  const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<TeacherProfile>(teacherIdQuery);
-  const teacher = teacherDocs?.[0];
-
-  const studentRequestsQuery = useMemoFirebase(() => {
-    if (!teacher) return null;
-    return query(
-      collection(firestore, 'users'), 
-      where('role', '==', 'student'),
-      where('teacherId', '==', teacher.id),
-      where('isApproved', '==', false)
-    );
-  }, [firestore, teacher]);
-
-  const enrolledStudentsQuery = useMemoFirebase(() => {
-    if (!teacher) return null;
-    return query(
-      collection(firestore, 'users'),
-      where('role', '==', 'student'),
-      where('teacherId', '==', teacher.id),
-      where('isApproved', '==', true)
-    );
-  }, [firestore, teacher]);
-
-  const batchesQuery = useMemoFirebase(() => {
-    if(!teacher) return null;
-    return query(collection(firestore, 'batches'), where('teacherId', '==', teacher.id));
-  }, [firestore, teacher]);
-
-  const { data: studentRequests, isLoading: isLoadingRequests } = useCollection<StudentProfile>(studentRequestsQuery);
-  const { data: enrolledStudents, isLoading: isLoadingEnrolled } = useCollection<StudentProfile>(enrolledStudentsQuery);
-  const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
-
-
-  const handleApprove = (student: StudentProfile) => {
-    if (!firestore || !student.id) return;
-    const studentUserDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentUserDocRef, { isApproved: true });
-    
-    const studentDocRef = doc(firestore, 'students', student.id);
-    updateDocumentNonBlocking(studentDocRef, { isApproved: true });
-
-    toast({ title: "Student Approved", description: `${student.name} has been enrolled.` });
+  const handleApprove = (studentId: string) => {
+    const student = studentRequests.find(s => s.id === studentId);
+    if (student) {
+        setStudentRequests(prev => prev.filter(s => s.id !== studentId));
+        setEnrolledStudents(prev => [...prev, {...student, grade: 'N/A', attendance: 100}]);
+    }
   };
   
-  const handleDeny = async (student: StudentProfile) => {
-    if (!firestore || !student.id) return;
-    const studentUserDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentUserDocRef, { teacherId: null, isApproved: false });
-    
-    const studentDocRef = doc(firestore, 'students', student.id);
-    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false });
-
-    toast({ variant: "destructive", title: "Student Denied", description: `${student.name}'s request has been denied.` });
+  const handleDeny = (studentId: string) => {
+    setStudentRequests(prev => prev.filter(s => s.id !== studentId));
   };
   
-  const handleRemove = (student: StudentProfile) => {
-    if (!firestore || !student.id) return;
-    const studentUserDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentUserDocRef, { teacherId: null, isApproved: false, batch: null });
-
-    const studentDocRef = doc(firestore, 'students', student.id);
-    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false, batch: null });
-
-    toast({ variant: "destructive", title: "Student Removed", description: `${student.name} has been removed from your roster.` });
-  };
-
-  const handleCreateBatch = async () => {
-    if (!firestore || !teacher || !newBatchName) {
-        toast({ variant: 'destructive', title: 'Missing Batch Name', description: 'Please enter a name for the batch.' });
-        return;
-    }
-    const batchId = uuidv4();
-    const batchRef = doc(firestore, 'batches', batchId);
-    
-    setDocumentNonBlocking(batchRef, {
-      id: batchId,
-      name: newBatchName,
-      teacherId: teacher.id,
-    }, { merge: false });
-
-    toast({ title: "Batch Created!", description: `Batch "${newBatchName}" has been successfully created.` });
-    setNewBatchName('');
-    setCreateBatchOpen(false);
-  }
-
-  const handleAddStudent = async () => {
-    if (!firestore || !teacher || !newStudentName || !newStudentMobile) {
-      toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all student details.' });
-      return;
-    }
-    
-    // NOTE: This creates a new user. This is a simplified flow for manual adding.
-    // In a real app, you might want to invite an existing user.
-    const email = `${newStudentMobile}@edconnect.pro`;
-    const password = `${newStudentMobile}pass`; // Simple default password
-
-    try {
-        const tempAuth = auth;
-        const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
-        const newStudentUser = userCredential.user;
-        const studentUserId = newStudentUser.uid;
-
-        const selectedBatch = batches?.find(b => b.id === selectedBatchId);
-
-        const userDocRef = doc(firestore, 'users', studentUserId);
-        const userData = {
-          id: studentUserId,
-          name: newStudentName,
-          mobileNumber: newStudentMobile,
-          email: email,
-          role: 'student',
-          isApproved: true, 
-          teacherId: teacher.id,
-          batch: selectedBatch?.name || null,
-          avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
-        };
-        
-        // This will create/overwrite the user doc
-        setDocumentNonBlocking(userDocRef, userData, { merge: false });
-
-        const studentDocRef = doc(firestore, 'students', studentUserId);
-        setDocumentNonBlocking(studentDocRef, {
-            id: studentUserId,
-            userId: studentUserId,
-            teacherId: teacher.id,
-            isApproved: true,
-            batch: selectedBatch?.name || null,
-        }, {merge: false})
-
-
-        toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster. Their temporary password is "${password}".`});
-        setNewStudentName('');
-        setNewStudentMobile('');
-        setSelectedBatchId('');
-        setAddStudentOpen(false);
-
-    } catch (error: any) {
-        console.error("Error adding student:", error);
-        let description = 'Could not add the student. Please try again.';
-        if (error.code === 'auth/email-already-in-use') {
-            description = 'A student with this mobile number already exists.'
-        }
-        toast({ variant: 'destructive', title: 'Error', description });
-    }
-  }
-
-  const handleAssignBatch = (studentId: string, batchId: string) => {
-    if (!firestore) return;
-    const studentUserDocRef = doc(firestore, 'users', studentId);
-    const selectedBatch = batches?.find(b => b.id === batchId);
-    updateDocumentNonBlocking(studentUserDocRef, { batch: selectedBatch?.name || null });
-
-    const studentDocRef = doc(firestore, 'students', studentId);
-    updateDocumentNonBlocking(studentDocRef, { batch: selectedBatch?.name || null });
-
-    toast({ title: "Batch Assigned", description: `Student has been assigned to ${selectedBatch?.name}.` });
+  const handleRemove = (studentId: string) => {
+    setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
   };
 
 
@@ -283,7 +94,7 @@ export default function TeacherDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoadingEnrolled ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudents?.length || 0}</div>}
+            {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudents?.length || 0}</div>}
             <p className="text-xs text-muted-foreground">Total active students</p>
           </CardContent>
         </Card>
@@ -293,7 +104,7 @@ export default function TeacherDashboardPage() {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoadingRequests ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold text-accent">{studentRequests?.length || 0}</div>}
+            {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold text-accent">{studentRequests?.length || 0}</div>}
             <p className="text-xs text-muted-foreground">Awaiting approval</p>
           </CardContent>
         </Card>
@@ -303,7 +114,7 @@ export default function TeacherDashboardPage() {
             <Users2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {isLoadingBatches ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{batches?.length || 0}</div>}
+             {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">2</div>}
             <p className="text-xs text-muted-foreground">Total student groups</p>
           </CardContent>
         </Card>
@@ -313,7 +124,7 @@ export default function TeacherDashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {isLoadingTeacher ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold"><Badge variant="secondary">{teacher?.id}</Badge></div>}
+             {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold"><Badge variant="secondary">{teacherData.id}</Badge></div>}
             <p className="text-xs text-muted-foreground">Share this with your students</p>
           </CardContent>
         </Card>
@@ -330,7 +141,7 @@ export default function TeacherDashboardPage() {
             <Button size="sm" variant="outline">View All</Button>
           </CardHeader>
           <CardContent>
-            {isLoadingRequests && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+            {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
             {studentRequests && studentRequests.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -350,10 +161,10 @@ export default function TeacherDashboardPage() {
                         {student.name}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        <Button onClick={() => handleApprove(student)} variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
+                        <Button onClick={() => handleApprove(student.id)} variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button onClick={() => handleDeny(student)} variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700">
+                        <Button onClick={() => handleDeny(student.id)} variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700">
                           <X className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -361,93 +172,23 @@ export default function TeacherDashboardPage() {
                   ))}
                 </TableBody>
               </Table>
-            ) : !isLoadingRequests && (
+            ) : !isLoading && (
               <p className="text-sm text-center text-muted-foreground py-4">No pending requests.</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Batch and Student Management */}
+        {/* Quick Actions */}
         <Card className="shadow-sm">
-          <CardHeader  className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle>Class Management</CardTitle>
-                <CardDescription>Create batches and add new students.</CardDescription>
-            </div>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Jump to common tasks.</CardDescription>
           </CardHeader>
-          <CardContent className="flex gap-4">
-              {isClient ? (<>
-                <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full"><Users2 className="mr-2 h-4 w-4" /> Create Batch</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Create New Batch</DialogTitle>
-                      <DialogDescription>
-                        Create a new batch to organize your students.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="batch-name" className="text-right">
-                          Batch Name
-                        </Label>
-                        <Input id="batch-name" value={newBatchName} onChange={(e) => setNewBatchName(e.target.value)} className="col-span-3" placeholder="e.g. Morning Physics" />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleCreateBatch}>Create Batch</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                <Dialog open={isAddStudentOpen} onOpenChange={setAddStudentOpen}>
-                  <DialogTrigger asChild>
-                      <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Add Student</Button>
-                  </DialogTrigger>
-                   <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Add New Student</DialogTitle>
-                      <DialogDescription>
-                        Manually add a new student to your roster and assign them to a batch. A temporary password will be created for them.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="student-name" className="text-right">Name</Label>
-                        <Input id="student-name" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} className="col-span-3" placeholder="Student's full name" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="student-mobile" className="text-right">Mobile</Label>
-                        <Input id="student-mobile" value={newStudentMobile} onChange={(e) => setNewStudentMobile(e.target.value)} className="col-span-3" placeholder="Student's mobile number" />
-                      </div>
-                       <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="batch-select" className="text-right">Batch</Label>
-                          <Select onValueChange={setSelectedBatchId} value={selectedBatchId}>
-                            <SelectTrigger className="col-span-3">
-                              <SelectValue placeholder="Assign to a batch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {isLoadingBatches && <SelectItem value="loading" disabled>Loading...</SelectItem>}
-                              {batches?.map(batch => (
-                                <SelectItem key={batch.id} value={batch.id}>{batch.name}</SelectItem>
-                              ))}
-                               {batches?.length === 0 && !isLoadingBatches && <p className="p-2 text-xs text-muted-foreground">No batches created yet.</p>}
-                            </SelectContent>
-                          </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddStudent}>Add Student</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </>) : (
-                <>
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </>
-              )}
+          <CardContent className="grid grid-cols-2 gap-4">
+              <Button variant="outline" asChild><Link href="/dashboard/teacher/schedule">Manage Schedule</Link></Button>
+              <Button variant="outline" asChild><Link href="/dashboard/teacher/materials">Upload Materials</Link></Button>
+              <Button variant="outline" asChild><Link href="/dashboard/teacher/attendance">Take Attendance</Link></Button>
+              <Button variant="outline" asChild><Link href="/dashboard/teacher/performance">Enter Marks</Link></Button>
           </CardContent>
         </Card>
       </div>
@@ -459,7 +200,7 @@ export default function TeacherDashboardPage() {
             <CardDescription>Manage grades and attendance for enrolled students.</CardDescription>
           </CardHeader>
           <CardContent>
-           {isLoadingEnrolled && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+           {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
            {enrolledStudents && enrolledStudents.length > 0 ? (
             <Table>
                 <TableHeader>
@@ -482,24 +223,8 @@ export default function TeacherDashboardPage() {
                         {student.name}
                       </TableCell>
                        <TableCell>
-                         {student.batch ? 
-                            <Badge variant="outline">{student.batch}</Badge> : 
-                            (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm">Assign <ChevronDown className="h-4 w-4 ml-1" /></Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        {batches?.map(b => (
-                                            <DropdownMenuItem key={b.id} onSelect={() => handleAssignBatch(student.id, b.id)}>
-                                                {b.name}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )
-                         }
-                        </TableCell>
+                        <Badge variant="outline">{student.batch || 'Morning'}</Badge>
+                       </TableCell>
                       <TableCell><Badge variant="secondary">{student.grade || 'N/A'}</Badge></TableCell>
                       <TableCell>{student.attendance || 100}%</TableCell>
                       <TableCell className="text-right">
@@ -520,7 +245,7 @@ export default function TeacherDashboardPage() {
                                 <Link href={`/dashboard/teacher/attendance`}>Mark Attendance</Link>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleRemove(student)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleRemove(student.id)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                       </TableCell>
@@ -528,7 +253,7 @@ export default function TeacherDashboardPage() {
                   ))}
                 </TableBody>
               </Table>
-            ) : !isLoadingEnrolled && (
+            ) : !isLoading && (
               <p className="text-sm text-center text-muted-foreground py-8">No students enrolled yet.</p>
             )}
           </CardContent>
@@ -536,5 +261,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    

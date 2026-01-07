@@ -1,10 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -22,78 +19,74 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { studentData } from '@/lib/data'; // Placeholder for name/avatar
-import { CheckCircle, XCircle, BookOpen, BarChart3, CalendarCheck2 } from 'lucide-react';
+import { studentData } from '@/lib/data';
+import { CheckCircle, XCircle, BarChart3, CalendarCheck2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock types for now, will be replaced with real types from backend.json
-type AttendanceRecord = { id: string; date: any; presentStudentIds: string[], absentStudentIds: string[] };
-type TestResult = { id: string; date: any; marks: number; maxMarks: number; studentId: string, subject: string, testName: string };
-
+type AttendanceRecord = { id: string; date: Date; status: 'Present' | 'Absent' };
+type TestResult = { id: string; date: Date; marks: number; maxMarks: number; subject: string, testName: string };
 
 export default function LearningPassportPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
+  const [studentAttendance, setStudentAttendance] = useState<AttendanceRecord[]>([]);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Memoized query for student's attendance
-  const attendanceQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(
-      collection(firestore, 'attendances'),
-      // This is not efficient, but works for a demo.
-      // A better solution would be to have a subcollection for each student's attendance.
-      // or an array of student UIDs on the attendance doc. We will check both present and absent arrays.
-      orderBy('date', 'desc')
-    );
-  }, [firestore, user]);
+  useEffect(() => {
+    setIsLoading(true);
+    setTimeout(() => {
+        setStudentAttendance(studentData.attendanceRecords.map((att, i) => ({
+            id: `att-${i}`,
+            date: new Date(att.date),
+            status: att.status as 'Present' | 'Absent',
+        })));
+        setTestResults(studentData.performance.map((p, i) => ({
+            id: `test-${i}`,
+            date: new Date(new Date().setDate(new Date().getDate() - (i*7))),
+            marks: p.score,
+            maxMarks: 100,
+            subject: 'Mathematics',
+            testName: p.name,
+        })));
+        setIsLoading(false);
+    }, 1000);
+  }, []);
 
-  // Memoized query for student's test results
-  const testResultsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(
-      collection(firestore, 'test_results'),
-      where('studentId', '==', user.uid),
-      orderBy('date', 'desc')
-    );
-  }, [firestore, user]);
-
-  const { data: rawAttendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
-  const { data: testResults, isLoading: isLoadingTests } = useCollection<TestResult>(testResultsQuery);
-  
-  const studentAttendance = useMemo(() => {
-    if (!user || !rawAttendanceRecords) return [];
-    return rawAttendanceRecords
-      .map(rec => {
-        const isPresent = rec.presentStudentIds?.includes(user.uid);
-        const isAbsent = rec.absentStudentIds?.includes(user.uid);
-        if (isPresent) return { id: rec.id, date: rec.date, status: 'Present' };
-        if (isAbsent) return { id: rec.id, date: rec.date, status: 'Absent' };
-        return null;
-      })
-      .filter(Boolean) as { id: string; date: any; status: 'Present' | 'Absent' }[];
-  }, [user, rawAttendanceRecords]);
-  
-  
   // Combine and sort all activities for a timeline view
   const timeline = useMemo(() => {
-    if (!studentAttendance || !testResults) return [];
-    
     const attendanceEvents = studentAttendance.map(a => ({ 
         type: 'attendance' as const, 
-        timestamp: a.date?.toDate() || new Date(), 
+        timestamp: a.date, 
         data: a 
     }));
     
-    const testEvents = (testResults || []).map(t => ({ 
+    const testEvents = testResults.map(t => ({ 
         type: 'test' as const, 
-        timestamp: t.date?.toDate() || new Date(), 
+        timestamp: t.date,
         data: t
     }));
 
     return [...attendanceEvents, ...testEvents].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [studentAttendance, testResults]);
 
+
+  if (isLoading) {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-9 w-64" />
+                <Skeleton className="h-16 w-16 rounded-full" />
+            </div>
+            <Separator />
+             <div className="grid gap-6 lg:grid-cols-2">
+                <Skeleton className="h-64 w-full rounded-xl" />
+                <Skeleton className="h-64 w-full rounded-xl" />
+            </div>
+            <Skeleton className="h-80 w-full rounded-xl" />
+        </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -116,7 +109,6 @@ export default function LearningPassportPage() {
             <CardDescription>Your complete attendance record across all classes.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingAttendance && <p>Loading attendance...</p>}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -127,7 +119,7 @@ export default function LearningPassportPage() {
               <TableBody>
                 {studentAttendance?.map((record) => (
                   <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.date?.toDate().toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{record.date.toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <Badge variant={record.status === 'Present' ? 'default' : 'destructive'}>
                         {record.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
@@ -138,7 +130,7 @@ export default function LearningPassportPage() {
                 ))}
               </TableBody>
             </Table>
-             {studentAttendance?.length === 0 && !isLoadingAttendance && <p className="text-center text-muted-foreground py-4">No attendance records found.</p>}
+             {studentAttendance?.length === 0 && <p className="text-center text-muted-foreground py-4">No attendance records found.</p>}
           </CardContent>
         </Card>
 
@@ -148,7 +140,6 @@ export default function LearningPassportPage() {
             <CardDescription>A log of all your test scores.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingTests && <p>Loading test results...</p>}
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -167,7 +158,7 @@ export default function LearningPassportPage() {
                     ))}
                 </TableBody>
             </Table>
-            {testResults?.length === 0 && !isLoadingTests && <p className="text-center text-muted-foreground py-4">No test results found.</p>}
+            {testResults?.length === 0 && <p className="text-center text-muted-foreground py-4">No test results found.</p>}
           </CardContent>
         </Card>
       </div>
@@ -178,7 +169,6 @@ export default function LearningPassportPage() {
         </CardHeader>
         <CardContent>
             <div className="space-y-4">
-                {(isLoadingAttendance || isLoadingTests) && <p>Loading timeline...</p>}
                 {timeline.map((item, index) => (
                     <div key={index} className="flex items-center gap-4">
                         <div className="flex-shrink-0">
@@ -205,7 +195,7 @@ export default function LearningPassportPage() {
                         </div>
                     </div>
                 ))}
-                {timeline.length === 0 && !isLoadingAttendance && !isLoadingTests && <p className="text-center text-muted-foreground py-4">No activities found in your timeline.</p>}
+                {timeline.length === 0 && <p className="text-center text-muted-foreground py-4">No activities found in your timeline.</p>}
             </div>
         </CardContent>
        </Card>

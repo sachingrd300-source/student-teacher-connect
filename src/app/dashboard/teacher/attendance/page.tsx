@@ -29,92 +29,57 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ClipboardCheck, CalendarIcon } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, getDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
-import { format, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
+import { teacherData } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
-type Teacher = { id: string; userId: string; };
-type Student = { id: string; name: string; batch: string; };
-type Batch = { id: string; name: string; teacherId: string; };
+type Student = { id: string; name: string; batch?: string; };
+type Batch = { id: string; name: string; };
+
+const allBatches: Batch[] = [
+    { id: 'batch1', name: 'Morning Physics' },
+    { id: 'batch2', name: 'Evening Chemistry' },
+];
 
 export default function AttendancePage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     
     // Filters
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-    const [selectedBatchId, setSelectedBatchId] = useState('');
+    const [selectedBatchId, setSelectedBatchId] = useState('batch1');
 
-    // Attendance state
+    // State
+    const [students, setStudents] = useState<Student[]>([]);
     const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+    const [isLoadingStudents, setIsLoadingStudents] = useState(true);
 
-    // Fetch Teacher
-    const teacherQuery = useMemoFirebase(() => 
-        user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
-    , [firestore, user]);
-    const { data: teacherDocs } = useCollection<Teacher>(teacherQuery);
-    const teacher = teacherDocs?.[0];
-
-    // Fetch Batches for Teacher
-    const batchesQuery = useMemoFirebase(() => {
-        if(!teacher) return null;
-        return query(collection(firestore, 'batches'), where('teacherId', '==', teacher.id));
-    }, [firestore, teacher]);
-    const { data: batches } = useCollection<Batch>(batchesQuery);
+    // Memoize batches to avoid re-renders
+    const batches = useMemo(() => allBatches, []);
     
     // Fetch Students for the selected Batch
-    const studentsQuery = useMemoFirebase(() => {
-        if(!teacher || !selectedBatchId) return null;
-        const selectedBatch = batches?.find(b => b.id === selectedBatchId);
-        if (!selectedBatch) return null;
-        return query(
-            collection(firestore, 'users'), 
-            where('role', '==', 'student'),
-            where('teacherId', '==', teacher.id),
-            where('batch', '==', selectedBatch.name)
-        );
-    }, [firestore, teacher, selectedBatchId, batches]);
-    const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
-
-    // Fetch existing attendance record for the selected date and batch
-    const attendanceRecordQuery = useMemoFirebase(() => {
-        if (!selectedDate || !selectedBatchId) return null;
-        const dateString = format(startOfDay(selectedDate), 'yyyy-MM-dd');
-        const attendanceId = `${dateString}-${selectedBatchId}`;
-        return doc(firestore, 'attendances', attendanceId);
-    }, [firestore, selectedDate, selectedBatchId]);
-
-    // When students load or change, initialize attendance state
     useEffect(() => {
-        const getInitialAttendance = async () => {
-            const initialAttendance: Record<string, boolean> = {};
-
-            if (attendanceRecordQuery) {
-                const docSnap = await getDoc(attendanceRecordQuery);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    (data.presentStudentIds || []).forEach((id: string) => initialAttendance[id] = true);
-                    (data.absentStudentIds || []).forEach((id: string) => initialAttendance[id] = false);
-                }
-            }
-
-            students?.forEach(student => {
-                if (initialAttendance[student.id] === undefined) {
-                    initialAttendance[student.id] = true; // Default to present if no record exists
-                }
-            });
-            setAttendance(initialAttendance);
-        };
-        
-        if (students) {
-            getInitialAttendance();
+        setIsLoadingStudents(true);
+        const selectedBatch = batches.find(b => b.id === selectedBatchId);
+        if (selectedBatch) {
+            // Simulate fetching students for the batch
+            setTimeout(() => {
+                const batchStudents = teacherData.enrolledStudents.map(s => ({...s, batch: 'Morning Physics'}));
+                setStudents(batchStudents);
+                // Initialize attendance state, defaulting all to present
+                const initialAttendance = batchStudents.reduce((acc, student) => {
+                    acc[student.id] = true;
+                    return acc;
+                }, {} as Record<string, boolean>);
+                setAttendance(initialAttendance);
+                setIsLoadingStudents(false);
+            }, 500);
+        } else {
+            setStudents([]);
+            setIsLoadingStudents(false);
         }
-    }, [students, attendanceRecordQuery]);
+    }, [selectedBatchId, batches]);
 
 
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
@@ -122,31 +87,14 @@ export default function AttendancePage() {
     };
 
     const handleSaveAttendance = async () => {
-        if (!firestore || !teacher || !selectedBatchId || !selectedDate) {
+        if (!selectedBatchId || !selectedDate) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and batch.' });
             return;
         }
 
         const presentStudentIds = Object.keys(attendance).filter(id => attendance[id]);
-        const absentStudentIds = Object.keys(attendance).filter(id => !attendance[id]);
         
-        // Use a consistent ID for the date to allow overwriting
-        const dateString = format(startOfDay(selectedDate), 'yyyy-MM-dd');
-        const attendanceId = `${dateString}-${selectedBatchId}`;
-        const attendanceRef = doc(firestore, 'attendances', attendanceId);
-
-        const attendanceData = {
-            id: attendanceId,
-            teacherId: teacher.id,
-            batchId: selectedBatchId,
-            date: startOfDay(selectedDate),
-            presentStudentIds,
-            absentStudentIds,
-        };
-
-        setDocumentNonBlocking(attendanceRef, attendanceData, { merge: true });
-
-        toast({ title: 'Attendance Saved', description: `Attendance for ${format(selectedDate, 'PPP')} has been recorded.` });
+        toast({ title: 'Attendance Saved', description: `Attendance for ${format(selectedDate, 'PPP')} has been recorded (${presentStudentIds.length}/${students.length} present).` });
     };
 
     return (
@@ -198,7 +146,7 @@ export default function AttendancePage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {isLoadingStudents && <TableRow><TableCell colSpan={2}>Loading students...</TableCell></TableRow>}
+                                    {isLoadingStudents && <TableRow><TableCell colSpan={2}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
                                     {students?.map((student) => (
                                         <TableRow key={student.id}>
                                             <TableCell className="font-medium">{student.name}</TableCell>
@@ -230,5 +178,3 @@ export default function AttendancePage() {
         </div>
     );
 }
-
-    

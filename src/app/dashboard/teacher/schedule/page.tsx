@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -31,30 +31,23 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { PlusCircle, CalendarDays, Video, MapPin, MoreVertical } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { teacherData } from '@/lib/data';
 
-type Teacher = { id: string; userId: string; subjects: string; };
-type Schedule = {
+type ScheduleItem = {
     id: string;
-    teacherId: string;
     topic: string;
     subject: string;
-    date: any; // Firestore timestamp or string
+    date: Date;
     time: string;
     type: 'Online' | 'Offline';
     locationOrLink: string;
 };
 
 export default function SchedulePage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [isAddClassOpen, setAddClassOpen] = useState(false);
     
@@ -66,44 +59,46 @@ export default function SchedulePage() {
     const [classType, setClassType] = useState<'Online' | 'Offline' | ''>('');
     const [locationOrLink, setLocationOrLink] = useState('');
 
-    const teacherQuery = useMemoFirebase(() => 
-        user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
-    , [firestore, user]);
+    // Data state
+    const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<Teacher>(teacherQuery);
-    const teacher = teacherDocs?.[0];
-    const teacherSubjects = teacher?.subjects.split(',').map(s => s.trim()) || [];
+    const teacherSubjects = teacherData.subjects;
 
-    const scheduleQuery = useMemoFirebase(() => {
-        if(!teacher) return null;
-        return query(collection(firestore, 'schedules'), where('teacherId', '==', teacher.id), where('archived', '!=', true));
-    }, [firestore, teacher]);
-
-    const { data: schedule, isLoading: isLoadingSchedule } = useCollection<Schedule>(scheduleQuery);
+    useEffect(() => {
+        setIsLoading(true);
+        setTimeout(() => {
+            const scheduleData = Object.entries(teacherData.schedule).map(([date, item], index) => ({
+                id: `sch-${index}`,
+                topic: item.topic,
+                subject: 'Mathematics', // Assuming a default for demo
+                date: new Date(date),
+                time: '10:00 AM', // Assuming a default for demo
+                type: (item.topic === 'Holiday' ? 'Offline' : 'Online') as 'Online' | 'Offline',
+                locationOrLink: item.topic === 'Holiday' ? 'N/A' : 'https://meet.google.com/xyz-abc-pqr'
+            }));
+            setSchedule(scheduleData);
+            setIsLoading(false);
+        }, 500);
+    }, []);
 
     const handleAddClass = async () => {
-        if (!firestore || !teacher || !topic || !subject || !date || !time || !classType) {
+        if (!topic || !subject || !date || !time || !classType) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all class details.' });
             return;
         }
 
-        const scheduleId = uuidv4();
-        const scheduleRef = doc(firestore, 'schedules', scheduleId);
-        
-        const scheduleData = {
-            id: scheduleId,
-            teacherId: teacher.id,
+        const newClass: ScheduleItem = {
+            id: `sch-${Date.now()}`,
             topic,
             subject,
-            date, // Firestore will convert JS Date to Timestamp
+            date,
             time,
             type: classType,
             locationOrLink,
-            createdAt: serverTimestamp(),
-            archived: false,
         };
 
-        setDocumentNonBlocking(scheduleRef, scheduleData, { merge: false });
+        setSchedule(prev => [...prev, newClass].sort((a,b) => a.date.getTime() - b.date.getTime()));
 
         toast({ title: 'Class Scheduled', description: `${topic} on ${format(date, "PPP")} has been added to your schedule.`});
         
@@ -203,7 +198,7 @@ export default function SchedulePage() {
                     <CardDescription>Here is your schedule for the upcoming days.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     {isLoadingSchedule && (
+                     {isLoading && (
                         <div className="space-y-4">
                            <Skeleton className="h-16 w-full" />
                            <Skeleton className="h-16 w-full" />
@@ -215,8 +210,8 @@ export default function SchedulePage() {
                             <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
-                                        <span>{item.date?.toDate().toLocaleDateString('en-US', { day: '2-digit' })}</span>
-                                        <span>{item.date?.toDate().toLocaleDateString('en-US', { month: 'short' })}</span>
+                                        <span>{item.date.toLocaleDateString('en-US', { day: '2-digit' })}</span>
+                                        <span>{item.date.toLocaleDateString('en-US', { month: 'short' })}</span>
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg">{item.topic}</h3>
@@ -230,7 +225,7 @@ export default function SchedulePage() {
                                 <Button variant="ghost" size="icon"><MoreVertical className="h-5 w-5"/></Button>
                             </div>
                         ))
-                     ) : !isLoadingSchedule && (
+                     ) : !isLoading && (
                         <p className="text-sm text-center text-muted-foreground py-8">You haven't scheduled any classes yet.</p>
                      )}
                 </CardContent>
@@ -239,5 +234,3 @@ export default function SchedulePage() {
         </div>
     );
 }
-
-    

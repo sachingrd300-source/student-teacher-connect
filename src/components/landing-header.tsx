@@ -21,6 +21,9 @@ export function LandingHeader() {
           <Link href="#contact" className="text-foreground/60 transition-colors hover:text-foreground/80">Contact</Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
+           <Button variant="outline" asChild>
+              <Link href="/dashboard">View Demo</Link>
+            </Button>
           <Button asChild>
             <Link href="/dashboard">Go to Dashboard</Link>
           </Button>

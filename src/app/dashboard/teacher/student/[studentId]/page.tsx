@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useMemo, useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -18,12 +19,10 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, XCircle, Mail, Phone } from 'lucide-react';
 import { PerformanceChart } from '@/components/performance-chart';
+import { teacherData, studentData } from '@/lib/data';
 
 type StudentProfile = {
   id: string;
@@ -34,46 +33,60 @@ type StudentProfile = {
   batch: string;
 };
 
-type AttendanceRecord = { id: string; date: any; presentStudentIds: string[], absentStudentIds: string[] };
-type TestResult = { id: string; date: any; marks: number; maxMarks: number; subject: string, testName: string };
+type AttendanceRecord = { id: string; date: Date; status: 'Present' | 'Absent' };
+type TestResult = { id: string; date: Date; marks: number; maxMarks: number; subject: string, testName: string };
 
 export default function StudentProfilePage({ params }: { params: { studentId: string } }) {
   const { studentId } = params;
-  const firestore = useFirestore();
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const studentDocRef = useMemoFirebase(() => 
-    studentId ? doc(firestore, 'users', studentId) : null
-  , [firestore, studentId]);
-  const { data: student, isLoading: isLoadingStudent } = useDoc<StudentProfile>(studentDocRef);
+  useEffect(() => {
+    setIsLoading(true);
+    setTimeout(() => {
+        const foundStudent = teacherData.enrolledStudents.find(s => s.id === studentId);
+        if (foundStudent) {
+            setStudent({
+                ...foundStudent,
+                email: `${foundStudent.name.split(' ')[0].toLowerCase()}@example.com`,
+                mobileNumber: '123-456-7890',
+                batch: 'Morning Physics',
+            });
 
-  // Get all attendance records where this student is present or absent
-  const attendanceQuery = useMemoFirebase(() => {
-    if (!studentId) return null;
-    return query(collection(firestore, 'attendances'));
-  }, [firestore, studentId]);
-  const { data: rawAttendance, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
-  const attendanceHistory = useMemo(() => {
-    return (rawAttendance || [])
-        .map(rec => {
-            if (rec.presentStudentIds?.includes(studentId)) return { ...rec, status: 'Present' };
-            if (rec.absentStudentIds?.includes(studentId)) return { ...rec, status: 'Absent' };
-            return null;
-        })
-        .filter(Boolean)
-        .sort((a,b) => b!.date.toDate() - a!.date.toDate());
-  }, [rawAttendance, studentId]);
+            setAttendanceHistory(studentData.attendanceRecords.map((att, i) => ({
+                id: `att-${i}`,
+                date: new Date(new Date().setDate(new Date().getDate() - i)),
+                status: att.status as 'Present' | 'Absent',
+            })));
 
-  const testResultsQuery = useMemoFirebase(() => {
-    if (!studentId) return null;
-    return query(collection(firestore, 'test_results'), where('studentId', '==', studentId));
-  }, [firestore, studentId]);
-  const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(testResultsQuery);
+            setTestResults(studentData.performance.map((p, i) => ({
+                id: `test-${i}`,
+                date: new Date(new Date().setDate(new Date().getDate() - (i * 7))),
+                marks: p.score,
+                maxMarks: 100,
+                subject: 'Mathematics',
+                testName: p.name,
+            })));
+        }
+        setIsLoading(false);
+    }, 1000);
+  }, [studentId]);
+
+
   const performanceChartData = useMemo(() => 
     testResults?.map(p => ({ name: p.testName, score: p.marks })) || []
   , [testResults]);
 
-  if (isLoadingStudent) {
-    return <Skeleton className="h-96 w-full" />;
+  if (isLoading) {
+    return <div className="space-y-6">
+        <Skeleton className="h-[300px] w-full" />
+        <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-96 w-full" />
+        </div>
+    </div>;
   }
 
   if (!student) {
@@ -114,29 +127,27 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
                 <CardTitle>Recent Attendance</CardTitle>
             </CardHeader>
             <CardContent>
-                {isLoadingAttendance ? <Skeleton className="h-40 w-full" /> : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead className="text-right">Status</TableHead>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {attendanceHistory.slice(0, 5).map((att) => (
+                            <TableRow key={att!.id}>
+                                <TableCell>{att!.date.toLocaleDateString()}</TableCell>
+                                <TableCell className="text-right">
+                                    <Badge variant={att!.status === 'Present' ? 'default' : 'destructive'}>
+                                        {att!.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+                                        {att!.status}
+                                    </Badge>
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {attendanceHistory.slice(0, 5).map((att) => (
-                                <TableRow key={att!.id}>
-                                    <TableCell>{att!.date.toDate().toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Badge variant={att!.status === 'Present' ? 'default' : 'destructive'}>
-                                            {att!.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-                                            {att!.status}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                )}
+                        ))}
+                    </TableBody>
+                </Table>
             </CardContent>
         </Card>
       </div>
@@ -146,7 +157,6 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
             <CardTitle>Test History</CardTitle>
         </CardHeader>
         <CardContent>
-        {isLoadingResults ? <Skeleton className="h-40 w-full" /> : (
              <Table>
                 <TableHeader>
                     <TableRow>
@@ -165,11 +175,9 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
                     ))}
                 </TableBody>
             </Table>
-        )}
         </CardContent>
        </Card>
 
     </div>
   );
 }
-

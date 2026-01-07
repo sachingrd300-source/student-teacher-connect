@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -30,8 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, limit } from 'firebase/firestore';
+import { parentData, studentData as childData } from '@/lib/data';
 
 const PerformanceChart = dynamic(
   () => import('@/components/performance-chart').then((mod) => mod.PerformanceChart),
@@ -49,47 +48,18 @@ const materialIcons: Record<string, JSX.Element> = {
   Solution: <CheckCircle className="h-5 w-5 text-green-500" />,
 };
 
-type ParentProfile = { id: string, studentId: string, userId: string };
-type StudentProfile = { id: string, name: string, attendance: number, avatarUrl: string };
-type StudyMaterial = { id: string, title: string, type: string, subject: string, date: any, isNew?: boolean };
-type PerformanceData = { name: string; score: number };
-type TestResult = { id: string; studentId: string; testName: string; subject: string; marks: number; maxMarks: number; date: any; };
-
-
 export default function ParentDashboardPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
+    const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch parent profile to find studentId
-  const parentQuery = useMemoFirebase(() =>
-    user ? query(collection(firestore, 'parents'), where('userId', '==', user.uid), limit(1)) : null
-  , [firestore, user]);
-  const { data: parentDocs, isLoading: isLoadingParent } = useCollection<ParentProfile>(parentQuery);
-  const parentProfile = parentDocs?.[0];
-  const studentId = parentProfile?.studentId;
+    useEffect(() => {
+        // Simulate data fetching
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
-  // 2. Fetch student's user profile using the studentId from the parent profile
-  const studentDocRef = useMemoFirebase(() => 
-    studentId ? doc(firestore, 'users', studentId) : null
-  , [firestore, studentId]);
-  const { data: student, isLoading: isLoadingStudent } = useDoc<StudentProfile>(studentDocRef);
-
-  // 3. Fetch student's related data
-  const studentMaterialsQuery = useMemoFirebase(() => 
-    student?.teacherId ? query(collection(firestore, 'study_materials'), where('teacherId', '==', student.teacherId), limit(4)) : null
-  , [firestore, student]);
-  const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(studentMaterialsQuery);
-
-  const studentPerformanceQuery = useMemoFirebase(() => 
-    studentId ? query(collection(firestore, 'test_results'), where('studentId', '==', studentId)) : null
-  , [firestore, studentId]);
-  const { data: performanceData, isLoading: isLoadingPerformance } = useCollection<TestResult>(studentPerformanceQuery);
-
-  const chartData = useMemo(() => 
-    performanceData?.map(p => ({ name: p.testName, score: p.marks })) || []
-  , [performanceData]);
-
-  if (isLoadingParent || isLoadingStudent) {
+  if (isLoading) {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -113,17 +83,6 @@ export default function ParentDashboardPage() {
     )
   }
 
-  if (!student) {
-    return (
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader>
-          <CardTitle>Student Not Found</CardTitle>
-          <CardDescription>We couldn't find the student profile. Please ensure your parent account is correctly linked to your child's student ID.</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
 
   return (
     <div className="space-y-6">
@@ -131,12 +90,12 @@ export default function ParentDashboardPage() {
         <div>
             <h1 className="text-3xl font-bold font-headline">Parent Dashboard</h1>
             <p className="text-muted-foreground">
-            Viewing progress for <span className="font-semibold text-primary">{student.name}</span>.
+            Viewing progress for <span className="font-semibold text-primary">{childData.name}</span>.
             </p>
         </div>
         <Avatar className="h-16 w-16 border-2 border-primary/50">
-            <AvatarImage src={student.avatarUrl} alt={student.name} />
-            <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
+            <AvatarImage src={childData.avatarUrl} alt={childData.name} />
+            <AvatarFallback>{childData.name?.charAt(0)}</AvatarFallback>
         </Avatar>
       </div>
       
@@ -150,7 +109,7 @@ export default function ParentDashboardPage() {
             <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{student.attendance || 'N/A'}%</div>
+            <div className="text-2xl font-bold">{childData.stats.attendance}%</div>
             <p className="text-xs text-muted-foreground">Excellent attendance record.</p>
           </CardContent>
         </Card>
@@ -160,7 +119,7 @@ export default function ParentDashboardPage() {
             <ClipboardList className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{studyMaterials?.filter(m => m.type === 'DPP').length || 0}</div>
+            <div className="text-2xl font-bold">+{childData.stats.newDpps}</div>
             <p className="text-xs text-muted-foreground">New practice papers available.</p>
           </CardContent>
         </Card>
@@ -170,7 +129,7 @@ export default function ParentDashboardPage() {
             <Pencil className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{childData.stats.pendingSubmissions}</div>
             <p className="text-xs text-muted-foreground">Assignments to be completed.</p>
           </CardContent>
         </Card>
@@ -178,7 +137,7 @@ export default function ParentDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Performance Chart */}
-        <PerformanceChart data={chartData} />
+        <PerformanceChart data={childData.performance} />
 
         {/* Recent Activity */}
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -187,7 +146,6 @@ export default function ParentDashboardPage() {
             <CardDescription>Latest study materials uploaded by the teacher.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingMaterials ? <Skeleton className="h-40 w-full" /> :
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -198,7 +156,7 @@ export default function ParentDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {studyMaterials?.slice(0, 4).map((material) => (
+                  {childData.studyMaterials.slice(0, 4).map((material) => (
                     <TableRow key={material.id}>
                       <TableCell className="font-medium">{materialIcons[material.type] || <BookOpen />}</TableCell>
                       <TableCell>
@@ -206,17 +164,14 @@ export default function ParentDashboardPage() {
                         {material.isNew && <Badge variant="outline" className="text-accent border-accent">New</Badge>}
                       </TableCell>
                       <TableCell>{material.subject}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{material.date?.toDate().toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{material.date}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            }
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-
-    

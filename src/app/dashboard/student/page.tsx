@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from '@/components/ui/card';
 import {
   Table,
@@ -20,7 +19,6 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PerformanceChart } from '@/components/performance-chart';
 import {
@@ -37,12 +35,8 @@ import {
   Video,
   MapPin,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, collection, query, where } from 'firebase/firestore';
+import { studentData, teacherData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useMemo } from 'react';
 
 const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
@@ -51,20 +45,11 @@ const materialIcons: Record<string, JSX.Element> = {
   Solution: <CheckCircle className="h-5 w-5 text-green-500" />,
 };
 
-type UserProfile = {
-  name: string;
-  isApproved: boolean;
-  teacherId: string | null;
-  attendance?: number;
-}
-type StudyMaterial = { id: string; title: string; type: string; subject: string; date: any; isNew?: boolean; };
-type TestResult = { id: string; testName: string; marks: number };
-type AttendanceRecord = { date: any; status: 'Present' | 'Absent' };
 type Schedule = {
     id: string;
     topic: string;
     subject: string;
-    date: any;
+    date: Date;
     time: string;
     type: 'Online' | 'Offline';
     locationOrLink: string;
@@ -72,125 +57,46 @@ type Schedule = {
 
 
 export default function StudentDashboardPage() {
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const [teacherCode, setTeacherCode] = useState('');
+  const [schedule, setSchedule] = useState<Schedule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const studentDocRef = useMemoFirebase(() => 
-    user ? doc(firestore, 'users', user.uid) : null
-  , [firestore, user]);
-  const { data: student, isLoading: isLoadingStudent } = useDoc<UserProfile>(studentDocRef);
+  useEffect(() => {
+    // Simulate fetching data
+    setTimeout(() => {
+        const scheduleData = Object.entries(teacherData.schedule).map(([date, item], index) => ({
+            id: `sch-${index}`,
+            topic: item.topic,
+            subject: 'Mathematics', // Assuming a default for demo
+            date: new Date(date),
+            time: '10:00 AM', // Assuming a default for demo
+            type: (item.topic === 'Holiday' ? 'Offline' : 'Online') as 'Online' | 'Offline',
+            locationOrLink: item.topic === 'Holiday' ? 'N/A' : 'https://meet.google.com/xyz-abc-pqr'
+        }));
+      setSchedule(scheduleData);
+      setIsLoading(false);
+    }, 1000);
+  }, []);
 
-  // Fetch materials, performance, and attendance for the student
-  const materialsQuery = useMemoFirebase(() => 
-    student?.teacherId ? query(collection(firestore, 'study_materials'), where('teacherId', '==', student.teacherId)) : null
-  , [firestore, student]);
-  const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
-
-  const performanceQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'test_results'), where('studentId', '==', user.uid)) : null
-  , [firestore, user]);
-  const { data: performanceData, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
-
-  const attendanceQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(
-        collection(firestore, 'attendances'), 
-        // This is inefficient, but we'll filter on the client. 
-        // For production, a dedicated student attendance sub-collection is better.
-        // This is inefficient, but we'll filter on the client. 
-        // For production, a dedicated student attendance sub-collection is better.
-    );
-  }, [firestore, user]);
-  const { data: rawAttendanceRecords, isLoading: isLoadingAttendance } = useCollection<{id: string, date: any, presentStudentIds: string[], absentStudentIds: string[] }>(attendanceQuery);
-
-  const scheduleQuery = useMemoFirebase(() => {
-    if(!student?.teacherId) return null;
-    return query(collection(firestore, 'schedules'), where('teacherId', '==', student.teacherId), where('archived', '!=', true));
-  }, [firestore, student]);
-  const { data: schedule, isLoading: isLoadingSchedule } = useCollection<Schedule>(scheduleQuery);
-
-
-  const attendanceRecords = useMemo(() => {
-    if (!user || !rawAttendanceRecords) return [];
-    return rawAttendanceRecords
-      .map(rec => {
-        const isPresent = rec.presentStudentIds?.includes(user.uid);
-        const isAbsent = rec.absentStudentIds?.includes(user.uid);
-        if (isPresent) return { id: rec.id, date: rec.date, status: 'Present' as const };
-        if (isAbsent) return { id: rec.id, date: rec.date, status: 'Absent' as const };
-        return null;
-      })
-      .filter(Boolean)
-      .sort((a,b) => b!.date.toDate() - a!.date.toDate()) as {id: string, date: any, status: 'Present'|'Absent'}[];
-  }, [user, rawAttendanceRecords]);
-
-
-  const handleEnrollmentRequest = async () => {
-    if (!user || !firestore || !teacherCode) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please enter a valid teacher code.' });
-        return;
-    }
-    
-    const teacherDocRef = doc(firestore, 'teachers', teacherCode);
-    const teacherDocSnap = await getDoc(teacherDocRef);
-
-    if (!teacherDocSnap.exists()) {
-      toast({ variant: 'destructive', title: 'Invalid Code', description: 'No teacher found with that code.' });
-      return;
-    }
-    
-    const studentUserDocRef = doc(firestore, 'users', user.uid);
-    updateDocumentNonBlocking(studentUserDocRef, {
-        teacherId: teacherCode,
-        isApproved: false, // Teacher must approve
-    });
-
-    toast({ title: 'Request Sent!', description: "Your enrollment request has been sent to the teacher for approval."});
-  }
-
-  if (isUserLoading || isLoadingStudent) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Skeleton className="h-64 w-full max-w-md rounded-xl" />
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold font-headline">
+            <Skeleton className="h-9 w-64" />
+        </h1>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+        </div>
+        <Skeleton className="h-12 w-96 rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
-
-  if (!student?.isApproved) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="w-full max-w-md shadow-xl transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl">Enroll with a Teacher</CardTitle>
-            <CardDescription>
-              {student?.teacherId ? "Your request is pending approval." : "Enter your teacher's verification code to access all features."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!student?.teacherId && (
-              <div className="space-y-4">
-                  <Input placeholder="Teacher Verification Code" value={teacherCode} onChange={(e) => setTeacherCode(e.target.value)} />
-                  <Button className="w-full" onClick={handleEnrollmentRequest}>
-                      Send Enrollment Request
-                  </Button>
-              </div>
-            )}
-          </CardContent>
-           <CardFooter>
-            <p className="text-xs text-muted-foreground text-center w-full">You can still access free study materials while you wait for approval.</p>
-           </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-  const chartData = performanceData?.map(p => ({ name: p.testName, score: p.marks })) || [];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-headline">Welcome back, {student?.name}!</h1>
+      <h1 className="text-3xl font-bold font-headline">Welcome back, {studentData.name}!</h1>
 
       {/* Stats Grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -200,7 +106,7 @@ export default function StudentDashboardPage() {
             <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{student?.attendance || 100}%</div>
+            <div className="text-2xl font-bold">{studentData.stats.attendance}%</div>
             <p className="text-xs text-muted-foreground">Last 30 days</p>
           </CardContent>
         </Card>
@@ -210,7 +116,7 @@ export default function StudentDashboardPage() {
             <ClipboardList className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{studyMaterials?.filter(m => m.type === 'DPP').length || 0}</div>
+            <div className="text-2xl font-bold">+{studentData.stats.newDpps}</div>
             <p className="text-xs text-muted-foreground">Ready for practice</p>
           </CardContent>
         </Card>
@@ -220,7 +126,7 @@ export default function StudentDashboardPage() {
             <Pencil className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{studentData.stats.pendingSubmissions}</div>
             <p className="text-xs text-muted-foreground">Due this week</p>
           </CardContent>
         </Card>
@@ -240,7 +146,6 @@ export default function StudentDashboardPage() {
               <CardDescription>Browse and download notes, DPPs, tests, and more.</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingMaterials ? <Skeleton className="h-40 w-full rounded-lg" /> : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -251,12 +156,12 @@ export default function StudentDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {studyMaterials?.map((material) => (
+                    {studentData.studyMaterials.map((material) => (
                       <TableRow key={material.id}>
                         <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
                         <TableCell>
                           <div className="font-medium">{material.title}</div>
-                          <div className="text-sm text-muted-foreground">{material.date?.toDate().toLocaleDateString()}</div>
+                          <div className="text-sm text-muted-foreground">{material.date}</div>
                         </TableCell>
                         <TableCell><Badge variant={material.isNew ? "default" : "secondary"} className={material.isNew ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -268,12 +173,11 @@ export default function StudentDashboardPage() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="performance">
-           {isLoadingPerformance ? <Skeleton className="h-[350px] w-full rounded-xl" /> : <PerformanceChart data={chartData} />}
+           <PerformanceChart data={studentData.performance} />
         </TabsContent>
         <TabsContent value="attendance">
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -282,7 +186,6 @@ export default function StudentDashboardPage() {
               <CardDescription>Your attendance for the last few classes.</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingAttendance ? <Skeleton className="h-40 w-full rounded-lg" /> : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -291,9 +194,9 @@ export default function StudentDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {attendanceRecords?.map((record, idx) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="font-medium">{record.date?.toDate().toLocaleDateString()}</TableCell>
+                    {studentData.attendanceRecords.map((record, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-medium">{record.date}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant={record.status === 'Present' ? 'default' : 'destructive'} className="bg-opacity-80">
                             {record.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
@@ -304,7 +207,6 @@ export default function StudentDashboardPage() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -315,20 +217,13 @@ export default function StudentDashboardPage() {
                     <CardDescription>Here is your schedule for the upcoming days.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     {isLoadingSchedule && (
-                        <div className="space-y-4">
-                           <Skeleton className="h-16 w-full" />
-                           <Skeleton className="h-16 w-full" />
-                           <Skeleton className="h-16 w-full" />
-                        </div>
-                     )}
                      {schedule && schedule.length > 0 ? (
                         schedule.map(item => (
                             <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
-                                        <span>{item.date?.toDate().toLocaleDateString('en-US', { day: '2-digit' })}</span>
-                                        <span>{item.date?.toDate().toLocaleDateString('en-US', { month: 'short' })}</span>
+                                        <span>{item.date.toLocaleDateString('en-US', { day: '2-digit' })}</span>
+                                        <span>{item.date.toLocaleDateString('en-US', { month: 'short' })}</span>
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg">{item.topic}</h3>
@@ -341,7 +236,7 @@ export default function StudentDashboardPage() {
                                 </div>
                             </div>
                         ))
-                     ) : !isLoadingSchedule && (
+                     ) : (
                         <p className="text-sm text-center text-muted-foreground py-8">Your teacher hasn't scheduled any classes yet.</p>
                      )}
                 </CardContent>
@@ -351,5 +246,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    

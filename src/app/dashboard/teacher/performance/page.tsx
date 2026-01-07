@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -28,16 +28,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BarChart3, PlusCircle } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
+import { teacherData } from '@/lib/data';
 
-type Teacher = { id: string; userId: string; subjects: string; };
-type Student = { id: string; name: string; teacherId: string };
+type Student = { id: string; name: string; };
 type TestResult = { 
     id: string; 
     studentId: string; 
@@ -45,12 +41,10 @@ type TestResult = {
     subject: string;
     marks: number;
     maxMarks: number;
-    date: any;
+    date: Date;
 };
 
 export default function PerformancePage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     const searchParams = useSearchParams();
     
@@ -61,53 +55,38 @@ export default function PerformancePage() {
     const [marks, setMarks] = useState<number | ''>('');
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
 
-    const teacherQuery = useMemoFirebase(() => 
-        user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
-    , [firestore, user]);
+    // Data state
+    const [students, setStudents] = useState<Student[]>([]);
+    const [testResults, setTestResults] = useState<TestResult[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<Teacher>(teacherQuery);
-    const teacher = teacherDocs?.[0];
-    const teacherSubjects = teacher?.subjects.split(',').map(s => s.trim()) || [];
-    
-    const studentsQuery = useMemoFirebase(() => {
-        if(!teacher) return null;
-        return query(collection(firestore, 'users'), where('teacherId', '==', teacher.id), where('isApproved', '==', true));
-    }, [firestore, teacher]);
+    const teacherSubjects = teacherData.subjects;
 
-    const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
-
-    const resultsQuery = useMemoFirebase(() => {
-        if(!teacher || !selectedStudentId) return null;
-        return query(
-            collection(firestore, 'test_results'), 
-            where('teacherId', '==', teacher.id),
-            where('studentId', '==', selectedStudentId)
-        );
-    }, [firestore, teacher, selectedStudentId]);
-
-    const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(resultsQuery);
+    useEffect(() => {
+        setIsLoading(true);
+        setTimeout(() => {
+            setStudents(teacherData.enrolledStudents);
+            setIsLoading(false);
+        }, 500);
+    }, []);
 
     const handleAddResult = async () => {
-        if (!firestore || !teacher || !selectedStudentId || !testName || !subject || marks === '' || maxMarks === '') {
+        if (!selectedStudentId || !testName || !subject || marks === '' || maxMarks === '') {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
             return;
         }
 
-        const resultId = uuidv4();
-        const resultRef = doc(firestore, 'test_results', resultId);
-        
-        const resultData = {
-            id: resultId,
-            teacherId: teacher.id,
+        const newResult: TestResult = {
+            id: `res-${Date.now()}`,
             studentId: selectedStudentId,
             testName,
             subject,
             marks: Number(marks),
             maxMarks: Number(maxMarks),
-            date: serverTimestamp()
+            date: new Date(),
         };
 
-        setDocumentNonBlocking(resultRef, resultData, { merge: false });
+        setTestResults(prev => [newResult, ...prev]);
 
         toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
         
@@ -117,6 +96,10 @@ export default function PerformancePage() {
         setMarks('');
         setMaxMarks('');
     }
+    
+    const displayedResults = useMemo(() => {
+        return testResults.filter(r => r.studentId === selectedStudentId);
+    }, [testResults, selectedStudentId]);
 
     return (
         <div className="space-y-6">
@@ -142,7 +125,7 @@ export default function PerformancePage() {
                             <Select onValueChange={setSelectedStudentId} value={selectedStudentId}>
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
-                                    {isLoadingStudents && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                                    {isLoading && <SelectItem value="loading" disabled>Loading...</SelectItem>}
                                     {students?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
@@ -182,8 +165,8 @@ export default function PerformancePage() {
                         <CardDescription>Showing results for {students?.find(s => s.id === selectedStudentId)?.name || 'the selected student'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                    {isLoadingResults && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
-                        {testResults && testResults.length > 0 ? (
+                    {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+                        {displayedResults.length > 0 ? (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -194,20 +177,20 @@ export default function PerformancePage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {testResults.map((result) => (
+                                    {displayedResults.map((result) => (
                                         <TableRow key={result.id}>
                                             <TableCell className="font-medium">{result.testName}</TableCell>
                                             <TableCell>{result.subject}</TableCell>
                                             <TableCell className="font-semibold">{result.marks} / {result.maxMarks}</TableCell>
-                                            <TableCell className="text-right">{result.date?.toDate().toLocaleDateString() || 'Just now'}</TableCell>
+                                            <TableCell className="text-right">{result.date.toLocaleDateString()}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
-                        ) : !isLoadingResults && selectedStudentId && (
+                        ) : !isLoading && selectedStudentId && (
                             <p className="text-sm text-center text-muted-foreground py-8">No test results found for this student.</p>
                         )}
-                         {!selectedStudentId && !isLoadingResults && (
+                         {!selectedStudentId && !isLoading && (
                             <p className="text-sm text-center text-muted-foreground py-8">Please select a student to view their test history.</p>
                         )}
                     </CardContent>

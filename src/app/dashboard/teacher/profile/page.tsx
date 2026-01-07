@@ -26,35 +26,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { User, Book, Briefcase, MapPin, Mail, Phone, Edit, Info } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
+import { teacherData as initialTeacherData } from '@/lib/data';
 
-type UserProfile = {
+type TeacherProfileData = {
     id: string;
     name: string;
-    email: string;
-    mobileNumber: string;
-    avatarUrl?: string;
-};
-
-type TeacherProfile = {
-    id: string;
-    userId: string;
     className: string;
     subjects: string;
     experience: string;
     address: string;
+    email: string;
+    mobileNumber: string;
+    avatarUrl: string;
 };
 
 export default function TeacherProfilePage() {
-    const { user: authUser, isUserLoading } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [isEditOpen, setEditOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const [teacherProfile, setTeacherProfile] = useState<TeacherProfileData | null>(null);
 
     // Form state
     const [name, setName] = useState('');
@@ -63,68 +56,67 @@ export default function TeacherProfilePage() {
     const [experience, setExperience] = useState('');
     const [address, setAddress] = useState('');
 
-    // Fetch user profile
-    const userDocRef = useMemoFirebase(() => 
-        authUser ? doc(firestore, 'users', authUser.uid) : null
-    , [firestore, authUser]);
-    const { data: userProfile, isLoading: isLoadingUser } = useDoc<UserProfile>(userDocRef);
-
-    // Fetch teacher profile
-    const teacherQuery = useMemoFirebase(() => 
-        authUser ? query(collection(firestore, 'teachers'), where('userId', '==', authUser.uid), 1) : null
-    , [firestore, authUser]);
-    const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<TeacherProfile>(teacherQuery);
-    const teacherProfile = teacherDocs?.[0];
-
-    const isProfileIncomplete = teacherProfile?.experience === 'Not set' || teacherProfile?.address === 'Not set';
-
-    // Effect to populate form when data is loaded
     useEffect(() => {
-        if (userProfile) setName(userProfile.name);
-        if (teacherProfile) {
-            setClassName(teacherProfile.className);
-            setSubjects(teacherProfile.subjects);
-            setExperience(teacherProfile.experience);
-            setAddress(teacherProfile.address);
-        }
-    }, [userProfile, teacherProfile]);
+        // Simulate fetching data
+        setTimeout(() => {
+            const profile: TeacherProfileData = {
+                id: initialTeacherData.id,
+                name: initialTeacherData.name,
+                className: "EduConnect Coaching",
+                subjects: initialTeacherData.subjects.join(', '),
+                experience: '5 Years',
+                address: '123 Education Lane, Knowledge City',
+                email: 'e.reed@example.com',
+                mobileNumber: '123-456-7890',
+                avatarUrl: initialTeacherData.avatarUrl
+            };
+            setTeacherProfile(profile);
+
+            // Populate form fields
+            setName(profile.name);
+            setClassName(profile.className);
+            setSubjects(profile.subjects);
+            setExperience(profile.experience);
+            setAddress(profile.address);
+
+            setIsLoading(false);
+        }, 1000);
+    }, []);
 
     const handleProfileUpdate = () => {
-        if (!firestore || !userProfile || !teacherProfile) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update profile.' });
-            return;
-        }
+        if (!teacherProfile) return;
 
-        // Update user document
-        const userRef = doc(firestore, 'users', userProfile.id);
-        updateDocumentNonBlocking(userRef, { name });
-
-        // Update teacher document
-        const teacherRef = doc(firestore, 'teachers', teacherProfile.id);
-        updateDocumentNonBlocking(teacherRef, {
-            className,
-            subjects,
-            experience,
-            address,
-        });
+        const updatedProfile = { ...teacherProfile, name, className, subjects, experience, address };
+        setTeacherProfile(updatedProfile);
 
         toast({ title: 'Profile Updated', description: 'Your information has been successfully saved.' });
         setEditOpen(false);
     };
+    
+    const isProfileIncomplete = !experience || !address;
 
-    if (isUserLoading || isLoadingUser || isLoadingTeacher) {
+    if (isLoading || !teacherProfile) {
         return (
             <div className="space-y-6">
                  <Skeleton className="h-9 w-64" />
                  <Skeleton className="h-5 w-80 mt-2" />
                  <Card>
-                    <CardHeader>
+                    <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
                         <Skeleton className="h-24 w-24 rounded-full" />
+                        <Skeleton className="h-8 w-48 mt-4" />
+                        <Skeleton className="h-5 w-32 mt-2" />
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-6 w-full" />
+                    <CardContent className="p-6 grid gap-4 md:grid-cols-2">
+                        <div className="space-y-4">
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-5/6" />
+                        </div>
+                        <div className="space-y-4">
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-5/6" />
+                        </div>
                     </CardContent>
                  </Card>
             </div>
@@ -194,10 +186,10 @@ export default function TeacherProfilePage() {
         <Card className="shadow-lg">
             <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
                 <Avatar className="h-24 w-24 mb-4 border-4 border-background">
-                    <AvatarImage src={userProfile?.avatarUrl} alt={userProfile?.name} />
-                    <AvatarFallback className="text-3xl">{userProfile?.name?.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={teacherProfile?.avatarUrl} alt={teacherProfile?.name} />
+                    <AvatarFallback className="text-3xl">{teacherProfile?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-3xl font-headline">{userProfile?.name}</CardTitle>
+                <CardTitle className="text-3xl font-headline">{teacherProfile?.name}</CardTitle>
                 <CardDescription className="text-base">{teacherProfile?.className}</CardDescription>
                 <div className="flex gap-2 mt-2">
                     {teacherProfile?.subjects?.split(',').map(sub => <Badge key={sub} variant="secondary">{sub.trim()}</Badge>)}
@@ -223,11 +215,11 @@ export default function TeacherProfilePage() {
                     <h3 className="font-semibold text-lg text-primary">Contact Information</h3>
                      <div className="flex items-center gap-3">
                         <Mail className="h-5 w-5 text-muted-foreground" />
-                        <span>Email: <span className="font-medium">{userProfile?.email}</span></span>
+                        <span>Email: <span className="font-medium">{teacherProfile?.email}</span></span>
                     </div>
                      <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-muted-foreground" />
-                        <span>Mobile: <span className="font-medium">{userProfile?.mobileNumber}</span></span>
+                        <span>Mobile: <span className="font-medium">{teacherProfile?.mobileNumber}</span></span>
                     </div>
                  </div>
             </CardContent>
