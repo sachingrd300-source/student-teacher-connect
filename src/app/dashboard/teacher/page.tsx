@@ -55,7 +55,7 @@ import {
   Users2,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -158,13 +158,16 @@ export default function TeacherDashboardPage() {
 
   const handleCreateBatch = async () => {
     if (!firestore || !teacher || !newBatchName) return;
-    const batchId = `BATCH-${uuidv4().slice(0, 4)}`;
+    const batchId = uuidv4(); // Generate a single unique ID
     const batchRef = doc(firestore, 'batches', batchId);
+    
+    // Use the SAME ID for the document path and the 'id' field inside the document
     setDocumentNonBlocking(batchRef, {
       id: batchId,
       name: newBatchName,
       teacherId: teacher.id,
     }, { merge: false });
+
     toast({ title: "Batch Created!", description: `Batch "${newBatchName}" has been successfully created.` });
     setNewBatchName('');
     setCreateBatchOpen(false);
@@ -176,8 +179,6 @@ export default function TeacherDashboardPage() {
       return;
     }
     
-    // We will use the student's mobile number to create a unique-ish ID for them.
-    // In a real app, this would be a real user authentication flow.
     const studentUserId = `manual-${newStudentMobile}`;
     const email = `${newStudentMobile}@edconnect.pro`;
 
@@ -188,13 +189,12 @@ export default function TeacherDashboardPage() {
       mobileNumber: newStudentMobile,
       email: email,
       role: 'student',
-      isApproved: true, // Manually added students are pre-approved
+      isApproved: true, 
       teacherId: teacher.id,
       batch: selectedBatch || null,
       avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
     };
     
-    // We only need to create one document in the 'users' collection
     setDocumentNonBlocking(userDocRef, userData, { merge: false });
 
     toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.`});
@@ -435,7 +435,7 @@ export default function TeacherDashboardPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                </TableBody>
+                </Body>
               </Table>
             ) : !isLoadingEnrolled && (
               <p className="text-sm text-center text-muted-foreground py-8">No students enrolled yet.</p>
@@ -445,5 +445,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    
