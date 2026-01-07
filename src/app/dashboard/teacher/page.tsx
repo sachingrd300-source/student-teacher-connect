@@ -64,7 +64,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 type StudentProfile = {
   id: string; 
-  userId: string; 
   name: string;
   isApproved: boolean;
   teacherId: string | null;
@@ -136,7 +135,8 @@ export default function TeacherDashboardPage() {
 
 
   const handleApprove = (student: StudentProfile) => {
-    if (!firestore || !student.userId) return;
+    if (!firestore || !student.id) return;
+    // student.id from the 'users' collection is the userId
     const studentUserDocRef = doc(firestore, 'users', student.id);
     updateDocumentNonBlocking(studentUserDocRef, { isApproved: true });
     toast({ title: "Student Approved", description: `${student.name} has been enrolled.` });
@@ -176,8 +176,9 @@ export default function TeacherDashboardPage() {
       return;
     }
     
-    const studentUserId = uuidv4();
-    const studentId = `STU-${uuidv4().slice(0, 4)}`;
+    // We will use the student's mobile number to create a unique-ish ID for them.
+    // In a real app, this would be a real user authentication flow.
+    const studentUserId = `manual-${newStudentMobile}`;
     const email = `${newStudentMobile}@edconnect.pro`;
 
     const userDocRef = doc(firestore, 'users', studentUserId);
@@ -187,22 +188,14 @@ export default function TeacherDashboardPage() {
       mobileNumber: newStudentMobile,
       email: email,
       role: 'student',
-      isApproved: true,
+      isApproved: true, // Manually added students are pre-approved
       teacherId: teacher.id,
       batch: selectedBatch || null,
       avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
     };
+    
+    // We only need to create one document in the 'users' collection
     setDocumentNonBlocking(userDocRef, userData, { merge: false });
-
-    const studentDocRef = doc(firestore, 'students', studentId);
-    const studentData = {
-      id: studentId,
-      userId: studentUserId,
-      teacherId: teacher.id,
-      isApproved: true,
-      batch: selectedBatch || null,
-    };
-    setDocumentNonBlocking(studentDocRef, studentData, { merge: false });
 
     toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.`});
     setNewStudentName('');
