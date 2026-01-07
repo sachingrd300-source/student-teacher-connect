@@ -4,6 +4,11 @@ import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +24,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
 import { useRouter } from 'next/navigation';
+import { useAuth, useFirestore } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 const formSchema = z
@@ -118,13 +126,65 @@ function SignUpForm({ role, onSignUp }: { role: Role; onSignUp: (values: z.infer
 
 export default function SignUpPage() {
     const router = useRouter();
+    const auth = useAuth();
+    const firestore = useFirestore();
+    const { toast } = useToast();
 
-    const handleSignUp = (role: Role) => (values: z.infer<typeof formSchema>) => {
-        console.log(`Signing up as ${role}:`, values);
-        // Here you would typically handle the actual sign-up logic,
-        // e.g., making an API call to your backend.
-        // After successful sign-up, redirect the user.
-        router.push(`/dashboard/${role}`);
+    const handleSignUp = (role: Role) => async (values: z.infer<typeof formSchema>) => {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const user = userCredential.user;
+
+            await updateProfile(user, { displayName: values.name });
+
+            // Create user document in 'users' collection
+            const userDocRef = doc(firestore, "users", user.uid);
+            setDocumentNonBlocking(userDocRef, {
+                id: user.uid,
+                role: role,
+                name: values.name,
+                email: values.email,
+                mobileNumber: ''
+            }, { merge: true });
+
+
+            // Create role-specific document
+            let roleCollection = '';
+            let roleData: any = { userId: user.uid, id: user.uid };
+
+            if (role === 'teacher') {
+                roleCollection = 'teachers';
+                roleData.verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            } else if (role === 'student') {
+                roleCollection = 'students';
+                roleData.isApproved = false;
+            } else if (role === 'parent') {
+                // For parents, we'll need a studentId. For now, we'll leave it blank.
+                // This would typically be handled in a separate step, e.g., linking to a child.
+                roleCollection = 'parents';
+                roleData.studentId = ''; 
+            }
+            
+            if (roleCollection) {
+                const roleDocRef = doc(firestore, roleCollection, user.uid);
+                 setDocumentNonBlocking(roleDocRef, roleData, { merge: true });
+            }
+
+            toast({
+                title: "Account Created!",
+                description: "You've been successfully signed up.",
+            });
+            
+            router.push(`/dashboard/${role}`);
+
+        } catch (error: any) {
+            console.error(`Error signing up as ${role}:`, error);
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: error.message || "There was a problem with your request.",
+            });
+        }
     };
 
     return (
