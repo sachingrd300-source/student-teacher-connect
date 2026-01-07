@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -94,6 +94,11 @@ export default function TeacherDashboardPage() {
   const [selectedBatch, setSelectedBatch] = useState('');
   const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
 
   const teacherIdQuery = useMemoFirebase(() => 
@@ -318,71 +323,78 @@ export default function TeacherDashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="flex gap-4">
-              <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full"><Users2 className="mr-2 h-4 w-4" /> Create Batch</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Create New Batch</DialogTitle>
-                    <DialogDescription>
-                      Create a new batch to organize your students.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="batch-name" className="text-right">
-                        Batch Name
-                      </Label>
-                      <Input id="batch-name" value={newBatchName} onChange={(e) => setNewBatchName(e.target.value)} className="col-span-3" placeholder="e.g. Morning Physics" />
+              {isClient ? (<>
+                <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full"><Users2 className="mr-2 h-4 w-4" /> Create Batch</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Create New Batch</DialogTitle>
+                      <DialogDescription>
+                        Create a new batch to organize your students.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="batch-name" className="text-right">
+                          Batch Name
+                        </Label>
+                        <Input id="batch-name" value={newBatchName} onChange={(e) => setNewBatchName(e.target.value)} className="col-span-3" placeholder="e.g. Morning Physics" />
+                      </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleCreateBatch}>Create Batch</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Dialog open={isAddStudentOpen} onOpenChange={setAddStudentOpen}>
-                <DialogTrigger asChild>
-                    <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Add Student</Button>
-                </DialogTrigger>
-                 <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Student</DialogTitle>
-                    <DialogDescription>
-                      Manually add a new student to your roster and assign them to a batch.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="student-name" className="text-right">Name</Label>
-                      <Input id="student-name" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} className="col-span-3" placeholder="Student's full name" />
+                    <DialogFooter>
+                      <Button onClick={handleCreateBatch}>Create Batch</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={isAddStudentOpen} onOpenChange={setAddStudentOpen}>
+                  <DialogTrigger asChild>
+                      <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Add Student</Button>
+                  </DialogTrigger>
+                   <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Student</DialogTitle>
+                      <DialogDescription>
+                        Manually add a new student to your roster and assign them to a batch.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="student-name" className="text-right">Name</Label>
+                        <Input id="student-name" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} className="col-span-3" placeholder="Student's full name" />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="student-mobile" className="text-right">Mobile</Label>
+                        <Input id="student-mobile" value={newStudentMobile} onChange={(e) => setNewStudentMobile(e.target.value)} className="col-span-3" placeholder="Student's mobile number" />
+                      </div>
+                       <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="batch-select" className="text-right">Batch</Label>
+                          <Select onValueChange={setSelectedBatch} value={selectedBatch}>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Assign to a batch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {isLoadingBatches && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                              {batches?.map(batch => (
+                                <SelectItem key={batch.id} value={batch.name}>{batch.name}</SelectItem>
+                              ))}
+                               {batches?.length === 0 && <p className="p-2 text-xs text-muted-foreground">No batches created yet.</p>}
+                            </SelectContent>
+                          </Select>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="student-mobile" className="text-right">Mobile</Label>
-                      <Input id="student-mobile" value={newStudentMobile} onChange={(e) => setNewStudentMobile(e.target.value)} className="col-span-3" placeholder="Student's mobile number" />
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="batch-select" className="text-right">Batch</Label>
-                        <Select onValueChange={setSelectedBatch} value={selectedBatch}>
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Assign to a batch" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {isLoadingBatches && <SelectItem value="loading" disabled>Loading...</SelectItem>}
-                            {batches?.map(batch => (
-                              <SelectItem key={batch.id} value={batch.name}>{batch.name}</SelectItem>
-                            ))}
-                             {batches?.length === 0 && <p className="p-2 text-xs text-muted-foreground">No batches created yet.</p>}
-                          </SelectContent>
-                        </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleAddStudent}>Add Student</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button onClick={handleAddStudent}>Add Student</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>) : (
+                <>
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </>
+              )}
           </CardContent>
         </Card>
       </div>
@@ -446,4 +458,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-    

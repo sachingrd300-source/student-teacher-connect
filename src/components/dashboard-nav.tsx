@@ -22,6 +22,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { buttonVariants } from './ui/button';
+import { useEffect, useState } from 'react';
 
 type Role = 'teacher' | 'student' | 'parent';
 
@@ -57,36 +58,54 @@ const roleIcons = {
 export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const items = navItems[role];
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   return (
     <nav className="flex flex-col gap-2 p-4">
-      <Collapsible defaultOpen={true} key={role}>
-        <CollapsibleTrigger
-          className={cn(
-            buttonVariants({ variant: 'ghost' }),
-            'flex w-full justify-start items-center gap-2 mb-2 font-semibold text-lg'
-          )}
-        >
-          {roleIcons[role]}
-          <span className="capitalize">{role} Menu</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="flex flex-col gap-1 pl-4">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                'justify-start gap-2',
-                pathname === item.href && 'bg-primary/10 text-primary'
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
+      {isClient ? (
+        <Collapsible defaultOpen={true} key={role}>
+          <CollapsibleTrigger
+            className={cn(
+              buttonVariants({ variant: 'ghost' }),
+              'flex w-full justify-start items-center gap-2 mb-2 font-semibold text-lg'
+            )}
+          >
+            {roleIcons[role]}
+            <span className="capitalize">{role} Menu</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="flex flex-col gap-1 pl-4">
+            {items.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  buttonVariants({ variant: 'ghost' }),
+                  'justify-start gap-2',
+                  pathname === item.href && 'bg-primary/10 text-primary'
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <div className="pl-4 space-y-1">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        </div>
+      )}
+
 
       <div className="mt-auto flex flex-col gap-1 pt-4 border-t">
         <Link
