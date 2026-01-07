@@ -13,7 +13,7 @@ export function PerformanceChart({ data }: { data: { name: string; score: number
     }
   
     return (
-      <Card className="shadow-sm">
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
         <CardHeader>
           <CardTitle>Test Performance</CardTitle>
           <CardDescription>Recent test scores summary.</CardDescription>
@@ -24,13 +24,13 @@ export function PerformanceChart({ data }: { data: { name: string; score: number
                 <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={{stroke: "hsl(var(--border))"}} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={{stroke: "hsl(var(--border))"}} tickFormatter={(value) => `${value}%`} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={{stroke: "hsl(var(--border))"}} tickFormatter={(value) => `${value}`} domain={[0, 100]}/>
                     <ChartTooltip 
                       cursor={false} 
                       content={<ChartTooltipContent 
                         indicator="dot"
                         labelClassName="font-bold font-body"
-                        className="bg-card shadow-lg" 
+                        className="bg-card shadow-lg rounded-lg" 
                       />} 
                     />
                     <Bar dataKey="score" fill="var(--color-score)" radius={[4, 4, 0, 0]} />

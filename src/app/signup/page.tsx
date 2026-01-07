@@ -264,14 +264,15 @@ export default function SignUpPage() {
     };
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-            <div className="absolute top-4 left-4">
+        <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 overflow-hidden">
+             <div className="absolute inset-0 z-0 opacity-50 bg-grid-pattern"></div>
+            <div className="absolute top-4 left-4 z-10">
                 <Link href="/" className="flex items-center gap-2 text-foreground">
                     <Icons.logo className="h-6 w-6 text-primary" />
                     <span className="font-bold font-headline text-lg">EduConnect Pro</span>
                 </Link>
             </div>
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-md z-10 shadow-2xl">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-headline">Create your Account</CardTitle>
                     <CardDescription>First, tell us who you are.</CardDescription>

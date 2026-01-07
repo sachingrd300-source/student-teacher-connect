@@ -75,21 +75,21 @@ export function DashboardNav({ role }: { role: Role }) {
           <CollapsibleTrigger
             className={cn(
               buttonVariants({ variant: 'ghost' }),
-              'flex w-full justify-start items-center gap-2 mb-2 font-semibold text-lg'
+              'flex w-full justify-start items-center gap-3 mb-2 font-semibold text-lg hover:bg-primary/10'
             )}
           >
             {roleIcons[role]}
             <span className="capitalize">{role} Menu</span>
           </CollapsibleTrigger>
-          <CollapsibleContent className="flex flex-col gap-1 pl-4">
+          <CollapsibleContent className="flex flex-col gap-1 pl-4 border-l-2 border-primary/20 ml-4">
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
                   buttonVariants({ variant: 'ghost' }),
-                  'justify-start gap-2',
-                  pathname === item.href && 'bg-primary/10 text-primary'
+                  'justify-start gap-3',
+                  pathname === item.href && 'bg-primary/10 text-primary font-semibold'
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function DashboardNav({ role }: { role: Role }) {
           href="#"
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'justify-start gap-2'
+            'justify-start gap-3'
           )}
         >
           <Settings className="h-4 w-4" />
@@ -127,7 +127,7 @@ export function DashboardNav({ role }: { role: Role }) {
           href="/"
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'justify-start gap-2 text-red-500 hover:text-red-500 hover:bg-red-500/10'
+            'justify-start gap-3 text-red-500 hover:text-red-500 hover:bg-red-500/10'
           )}
         >
           <LogOut className="h-4 w-4" />

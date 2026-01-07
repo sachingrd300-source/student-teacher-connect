@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -51,7 +52,9 @@ const materialIcons: Record<string, JSX.Element> = {
 type ParentProfile = { id: string, studentId: string, userId: string };
 type StudentProfile = { id: string, name: string, attendance: number, avatarUrl: string };
 type StudyMaterial = { id: string, title: string, type: string, subject: string, date: any, isNew?: boolean };
-type PerformanceData = { name: string, score: number };
+type PerformanceData = { name: string; score: number };
+type TestResult = { id: string; studentId: string; testName: string; subject: string; marks: number; maxMarks: number; date: any; };
+
 
 export default function ParentDashboardPage() {
   const { user } = useUser();
@@ -80,10 +83,10 @@ export default function ParentDashboardPage() {
   const studentPerformanceQuery = useMemoFirebase(() => 
     studentId ? query(collection(firestore, 'test_results'), where('studentId', '==', studentId)) : null
   , [firestore, studentId]);
-  const { data: performanceData, isLoading: isLoadingPerformance } = useCollection<PerformanceData>(studentPerformanceQuery);
+  const { data: performanceData, isLoading: isLoadingPerformance } = useCollection<TestResult>(studentPerformanceQuery);
 
   const chartData = useMemo(() => 
-    performanceData?.map(p => ({ name: p.name, score: p.score })) || []
+    performanceData?.map(p => ({ name: p.testName, score: p.marks })) || []
   , [performanceData]);
 
   if (isLoadingParent || isLoadingStudent) {
@@ -97,14 +100,14 @@ export default function ParentDashboardPage() {
                 <Skeleton className="h-16 w-16 rounded-full" />
             </div>
             <Separator />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-32 w-full rounded-xl" />
+                <Skeleton className="h-32 w-full rounded-xl" />
+                <Skeleton className="h-32 w-full rounded-xl" />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
-                <Skeleton className="h-[350px] w-full" />
-                <Skeleton className="h-[350px] w-full" />
+                <Skeleton className="h-[350px] w-full rounded-xl" />
+                <Skeleton className="h-[350px] w-full rounded-xl" />
             </div>
         </div>
     )
@@ -112,7 +115,7 @@ export default function ParentDashboardPage() {
 
   if (!student) {
     return (
-      <Card>
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
         <CardHeader>
           <CardTitle>Student Not Found</CardTitle>
           <CardDescription>We couldn't find the student profile. Please ensure your parent account is correctly linked to your child's student ID.</CardDescription>
@@ -131,7 +134,7 @@ export default function ParentDashboardPage() {
             Viewing progress for <span className="font-semibold text-primary">{student.name}</span>.
             </p>
         </div>
-        <Avatar className="h-16 w-16">
+        <Avatar className="h-16 w-16 border-2 border-primary/50">
             <AvatarImage src={student.avatarUrl} alt={student.name} />
             <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
         </Avatar>
@@ -140,31 +143,31 @@ export default function ParentDashboardPage() {
       <Separator />
 
       {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="shadow-sm">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overall Attendance</CardTitle>
-            <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
+            <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{student.attendance || 'N/A'}%</div>
             <p className="text-xs text-muted-foreground">Excellent attendance record.</p>
           </CardContent>
         </Card>
-        <Card className="shadow-sm">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New DPPs</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            <ClipboardList className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+2</div>
             <p className="text-xs text-muted-foreground">New practice papers available.</p>
           </CardContent>
         </Card>
-        <Card className="shadow-sm">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
-            <Pencil className="h-4 w-4 text-muted-foreground" />
+            <Pencil className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">1</div>
@@ -178,36 +181,37 @@ export default function ParentDashboardPage() {
         <PerformanceChart data={chartData} />
 
         {/* Recent Activity */}
-        <Card className="shadow-sm">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader>
             <CardTitle>Recent Materials</CardTitle>
             <CardDescription>Latest study materials uploaded by the teacher.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead className="text-right">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoadingMaterials && <TableRow><TableCell colSpan={4}>Loading materials...</TableCell></TableRow>}
-                {studyMaterials?.slice(0, 4).map((material) => (
-                  <TableRow key={material.id}>
-                    <TableCell className="font-medium">{materialIcons[material.type] || <BookOpen />}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{material.title}</div>
-                      {material.isNew && <Badge variant="outline" className="text-accent border-accent">New</Badge>}
-                    </TableCell>
-                    <TableCell>{material.subject}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{material.date?.toDate().toLocaleDateString()}</TableCell>
+            {isLoadingMaterials ? <Skeleton className="h-40 w-full" /> :
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {studyMaterials?.slice(0, 4).map((material) => (
+                    <TableRow key={material.id}>
+                      <TableCell className="font-medium">{materialIcons[material.type] || <BookOpen />}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{material.title}</div>
+                        {material.isNew && <Badge variant="outline" className="text-accent border-accent">New</Badge>}
+                      </TableCell>
+                      <TableCell>{material.subject}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{material.date?.toDate().toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            }
           </CardContent>
         </Card>
       </div>
