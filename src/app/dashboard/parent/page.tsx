@@ -1,0 +1,131 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { parentData } from '@/lib/data';
+import { PerformanceChart } from '@/components/performance-chart';
+import {
+  FileText,
+  ClipboardList,
+  Pencil,
+  CheckCircle,
+  XCircle,
+  BookOpen,
+  CalendarCheck2,
+} from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+
+const materialIcons = {
+  Notes: <FileText className="h-5 w-5 text-blue-500" />,
+  DPP: <ClipboardList className="h-5 w-5 text-orange-500" />,
+  Test: <Pencil className="h-5 w-5 text-purple-500" />,
+  Solution: <CheckCircle className="h-5 w-5 text-green-500" />,
+};
+
+export default function ParentDashboardPage() {
+  const { childName, childData } = parentData;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+            <h1 className="text-3xl font-bold font-headline">Parent Dashboard</h1>
+            <p className="text-muted-foreground">
+            Viewing progress for <span className="font-semibold text-primary">{childName}</span>.
+            </p>
+        </div>
+        <Avatar className="h-16 w-16">
+            <AvatarImage src={childData.avatarUrl} alt={childName} />
+            <AvatarFallback>{childName.charAt(0)}</AvatarFallback>
+        </Avatar>
+      </div>
+      
+      <Separator />
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overall Attendance</CardTitle>
+            <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{childData.stats.attendance}%</div>
+            <p className="text-xs text-muted-foreground">Excellent attendance record.</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">New DPPs</CardTitle>
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{childData.stats.newDpps}</div>
+            <p className="text-xs text-muted-foreground">New practice papers available.</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{childData.stats.pendingSubmissions}</div>
+            <p className="text-xs text-muted-foreground">Assignments to be completed.</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Performance Chart */}
+        <PerformanceChart data={childData.performance} />
+
+        {/* Recent Activity */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Recent Materials</CardTitle>
+            <CardDescription>Latest study materials uploaded by the teacher.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead className="text-right">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {childData.studyMaterials.slice(0, 4).map((material) => (
+                  <TableRow key={material.id}>
+                    <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{material.title}</div>
+                      {material.isNew && <Badge variant="outline" className="text-accent border-accent">New</Badge>}
+                    </TableCell>
+                    <TableCell>{material.subject}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{material.date}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
