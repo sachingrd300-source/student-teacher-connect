@@ -28,6 +28,8 @@ import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -141,7 +143,7 @@ function StudentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof stu
     );
 }
 
-function ParentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof parentSchema>) => void; }) {
+function ParentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof parentSchema>) => void; }) => {
     const form = useForm<z.infer<typeof parentSchema>>({
       resolver: zodResolver(parentSchema),
       defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', studentId: '' },
@@ -312,3 +314,5 @@ export default function SignUpPage() {
         </div>
     )
 }
+
+    
