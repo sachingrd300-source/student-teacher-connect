@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -34,10 +36,13 @@ import {
   Video,
   MapPin,
   Link as LinkIcon,
+  ShoppingCart,
+  BookCopy,
 } from 'lucide-react';
-import { studentData, teacherData } from '@/lib/data';
+import { studentData, teacherData, shopItemsData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
+import Image from 'next/image';
 
 const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
@@ -109,6 +114,8 @@ export default function StudentDashboardPage() {
     );
   }
 
+  const dailyPracticePapers = studentData.studyMaterials.filter(m => m.type === 'DPP');
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold font-headline">Welcome back, {studentData.name}!</h1>
@@ -150,14 +157,17 @@ export default function StudentDashboardPage() {
       <Tabs defaultValue="materials" className="space-y-4">
         <TabsList>
           <TabsTrigger value="materials"><BookOpen className="w-4 h-4 mr-2" />Study Materials</TabsTrigger>
+          <TabsTrigger value="practice"><ClipboardList className="w-4 h-4 mr-2" />Daily Practice</TabsTrigger>
+          <TabsTrigger value="shop"><ShoppingCart className="w-4 h-4 mr-2" />Shop</TabsTrigger>
           <TabsTrigger value="performance"><BarChart3 className="w-4 h-4 mr-2" />Performance</TabsTrigger>
           <TabsTrigger value="attendance"><CalendarCheck2 className="w-4 h-4 mr-2" />Attendance</TabsTrigger>
           <TabsTrigger value="schedule"><CalendarDays className="w-4 h-4 mr-2" />Schedule</TabsTrigger>
         </TabsList>
+
         <TabsContent value="materials">
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Study Materials</CardTitle>
+              <CardTitle>All Study Materials</CardTitle>
               <CardDescription>Browse and download notes, DPPs, tests, and more from your teacher.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -191,6 +201,79 @@ export default function StudentDashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="practice">
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Practice Papers (DPPs)</CardTitle>
+              <CardDescription>Stay sharp with these daily exercises from your teacher.</CardDescription>
+            </CardHeader>
+            <CardContent>
+               <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyPracticePapers.map((paper) => (
+                      <TableRow key={paper.id}>
+                        <TableCell>
+                          <div className="font-medium">{paper.title}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{paper.subject}</Badge>
+                        </TableCell>
+                        <TableCell>{paper.date}</TableCell>
+                        <TableCell className="text-right">
+                           <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {dailyPracticePapers.length === 0 && <p className="text-center text-muted-foreground py-8">No practice papers available yet.</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="shop">
+          <Card>
+            <CardHeader>
+              <CardTitle>EduConnect Shop</CardTitle>
+              <CardDescription>Browse recommended books, courses, and other educational materials.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {shopItemsData.map((item) => (
+                <Card key={item.id} className="overflow-hidden flex flex-col">
+                  <div className="relative h-48 w-full">
+                    <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" />
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                    <CardDescription className="flex items-center gap-2 pt-1"><BookCopy className="h-4 w-4" />{item.category}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-lg font-bold">{item.price}</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button className="w-full">
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="performance">
            <PerformanceChart data={studentData.performance} />
         </TabsContent>

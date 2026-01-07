@@ -59,6 +59,7 @@ export const studentData = {
     { id: 'M02', title: 'DPP - Linear Equations', type: 'DPP', subject: 'Math', chapter: '2', date: '2 days ago', isNew: true },
     { id: 'M03', title: 'Physics Chapter 1 Test', type: 'Test', subject: 'Physics', chapter: '1', date: '1 day ago', isNew: true },
     { id: 'M04', title: 'Chemistry Formula Sheet', type: 'Notes', subject: 'Chemistry', chapter: 'Revision', date: '5 days ago' },
+    { id: 'M05', title: 'DPP - Kinematics', type: 'DPP', subject: 'Physics', chapter: '3', date: '4 days ago', isNew: false },
   ],
   attendanceRecords: [
     { date: '2024-07-29', status: 'Present' },
@@ -109,3 +110,27 @@ export const tutorsData = [
         isVerified: false,
     }
 ];
+
+export const shopItemsData = [
+  {
+    id: 'shop01',
+    title: 'Advanced Mathematics Textbook',
+    category: 'Textbook',
+    price: '$75.00',
+    imageUrl: 'https://picsum.photos/seed/book1/300/200'
+  },
+  {
+    id: 'shop02',
+    title: 'Comprehensive Physics Video Course',
+    category: 'Video Course',
+    price: '$120.00',
+    imageUrl: 'https://picsum.photos/seed/course1/300/200'
+  },
+  {
+    id: 'shop03',
+    title: 'Organic Chemistry Practice Problems',
+    category: 'Practice Book',
+    price: '$45.00',
+    imageUrl: 'https://picsum.photos/seed/book2/300/200'
+  }
+]
