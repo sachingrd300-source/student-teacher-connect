@@ -286,6 +286,57 @@
         "teacherId",
         "name"
       ]
+    },
+    "Schedule": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Schedule",
+      "type": "object",
+      "description": "Represents a class schedule item created by a teacher.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Schedule entity."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the teacher who created the schedule."
+        },
+        "topic": {
+          "type": "string",
+          "description": "The topic or name of the class."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject of the class."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the class."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time of the class (e.g., '10:00 AM')."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Online", "Offline"],
+          "description": "The type of the class."
+        },
+        "locationOrLink": {
+          "type": "string",
+          "description": "The physical location or online meeting link."
+        }
+      },
+      "required": [
+        "id",
+        "teacherId",
+        "topic",
+        "subject",
+        "date",
+        "time",
+        "type"
+      ]
     }
   },
   "auth": {
@@ -423,9 +474,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "schedules/{scheduleId}",
+        "definition": {
+          "entityName": "Schedule",
+          "schema": {
+            "$ref": "#/backend/entities/Schedule"
+          },
+          "description": "Stores class schedule items created by teachers.",
+          "params": [
+            {
+              "name": "scheduleId",
+              "description": "The unique identifier for the schedule item."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support EduConnect Pro's requirements for role-based access, real-time updates, and study material management while adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. Authorization Independence is achieved through denormalization of authorization-related data (e.g., teacherId on student and parent documents) to avoid `get()` calls in security rules. Structural Segregation is used to ensure that each collection has a homogeneous security posture.  Path-based ownership and membership maps are leveraged for access modeling. All IDs are auto-generated UUIDs.\n\nSpecifically:\n\n*   **Users**: Stores basic user information.  This collection is primarily used for authentication purposes and contains minimal data. The `users/{userId}` path provides a secure and easily managed structure for user-specific data.\n*   **Teachers**: Contains teacher-specific details. The `teachers/{teacherId}` path ensures that teacher data is isolated and accessible only to authorized users.\n*   **Students**: Stores student data, with a `teacherId` field denormalized for authorization. This allows students to be associated with teachers and enables efficient querying and rule creation based on teacher-student relationships.\n*   **Parents**: Contains parent data, including references to both the student and teacher. The `teacherId` is denormalized to grant read-only access based on the teacher-student relationship, thus enabling authorization independence.\n*   **StudyMaterials**: Contains study materials uploaded by teachers.  The `teacherId` ensures that only the teacher who uploaded the material can modify it. This supports the QAP that study materials are owned by teachers and enables secure listing.\n*   **Attendances**: Stores attendance records for students, associated with a specific teacher.  This structure facilitates efficient querying of attendance records by student and teacher.\n*   **TestResults**: Contains test results for students, also associated with the relevant teacher and test. The `teacherId` and `testId` ensure that only authorized teachers can access and modify test results, and that results can be easily queried by student, teacher, and test.\n*   **Batches**: Stores batch information. This collection is managed by teachers to organize their students.\nThis design prioritizes data isolation and role-based access control, aligning with the application's security and scalability requirements."
+    "reasoning": "The Firestore structure is designed to support EduConnect Pro's requirements for role-based access, real-time updates, and study material management while adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. Authorization Independence is achieved through denormalization of authorization-related data (e.g., teacherId on student and parent documents) to avoid `get()` calls in security rules. Structural Segregation is used to ensure that each collection has a homogeneous security posture.  Path-based ownership and membership maps are leveraged for access modeling. All IDs are auto-generated UUIDs.\n\nSpecifically:\n\n*   **Users**: Stores basic user information.  This collection is primarily used for authentication purposes and contains minimal data. The `users/{userId}` path provides a secure and easily managed structure for user-specific data.\n*   **Teachers**: Contains teacher-specific details. The `teachers/{teacherId}` path ensures that teacher data is isolated and accessible only to authorized users.\n*   **Students**: Stores student data, with a `teacherId` field denormalized for authorization. This allows students to be associated with teachers and enables efficient querying and rule creation based on teacher-student relationships.\n*   **Parents**: Contains parent data, including references to both the student and teacher. The `teacherId` is denormalized to grant read-only access based on the teacher-student relationship, thus enabling authorization independence.\n*   **StudyMaterials**: Contains study materials uploaded by teachers.  The `teacherId` ensures that only the teacher who uploaded the material can modify it. This supports the QAP that study materials are owned by teachers and enables secure listing.\n*   **Attendances**: Stores attendance records for students, associated with a specific teacher.  This structure facilitates efficient querying of attendance records by student and teacher.\n*   **TestResults**: Contains test results for students, also associated with the relevant teacher and test. The `teacherId` and `testId` ensure that only authorized teachers can access and modify test results, and that results can be easily queried by student, teacher, and test.\n*   **Batches**: Stores batch information. This collection is managed by teachers to organize their students.\n*   **Schedules**: Stores class schedule items. Managed by teachers and readable by associated students and parents.\nThis design prioritizes data isolation and role-based access control, aligning with the application's security and scalability requirements."
   }
 }
-    
