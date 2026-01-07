@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -45,7 +46,7 @@ export default function LearningPassportPage() {
       // or an array of student UIDs on the attendance doc. We will check both present and absent arrays.
       orderBy('date', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
   // Memoized query for student's test results
   const testResultsQuery = useMemoFirebase(() => {
