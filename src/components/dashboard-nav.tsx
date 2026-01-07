@@ -68,7 +68,7 @@ export function DashboardNav({ role }: { role: Role }) {
 
   return (
     <nav className="flex flex-col gap-2 p-4">
-      {isClient ? (
+       {isClient ? (
         <Collapsible defaultOpen={true} key={role}>
           <CollapsibleTrigger
             className={cn(
@@ -100,6 +100,8 @@ export function DashboardNav({ role }: { role: Role }) {
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <div className="pl-4 space-y-1">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
             <Skeleton className="h-9 w-full" />
