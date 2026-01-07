@@ -64,20 +64,6 @@ service cloud.firestore {
     function getUserDoc(userId) {
       return get(/databases/$(database)/documents/users/$(userId));
     }
-    
-    /**
-     * Retrieves the teacher document using its ID (which is the user's UID).
-     */
-    function getTeacherDocByUserId(userId) {
-      // This assumes a 'teachers' collection where documents might not have the userId as the ID.
-      // A query would be more robust, but for direct lookups `get` is needed.
-      // This is a placeholder for a more complex lookup if needed.
-      // For now, we will assume a way to get from userId to teacher doc.
-      // A common pattern is to have a /users/{userId}/teacherProfile doc,
-      // or to have the teacher doc ID be the same as the user ID.
-      // Let's rely on the `isTeacher(userId)` which checks the user's role.
-      return get(/databases/$(database)/documents/teachers/$(userId)); // This may need adjustment based on final structure
-    }
 
     /**
      * Checks if the user with `userId` has the role of 'teacher'.
@@ -101,12 +87,27 @@ service cloud.firestore {
      */
     function isTeacherOfStudent(studentUserId) {
         let studentUserDoc = getUserDoc(studentUserId);
-        let teacherId = studentUserDoc.data.teacherId; // This is the ID from the `teachers` collection (verification code)
-        if (teacherId == null) {
+        // The teacherId on the student's user doc is the ID from the `teachers` collection (the verification code)
+        let teacherIdOnStudent = studentUserDoc.data.teacherId; 
+        if (teacherIdOnStudent == null) {
           return false;
         }
-        let teacherDoc = get(/databases/$(database)/documents/teachers/$(teacherId));
-        return teacherDoc.data.userId == request.auth.uid;
+        // We need to find the teacher doc whose ID is `teacherIdOnStudent` and check if its `userId` matches the requester.
+        // This requires a query, which is not possible in rules.
+        // A better way is to check the requester's own teacherId.
+        let teacherDoc = get(/databases/$(database)/documents/teachers/$(teacherIdOnStudent));
+        return teacherDoc.exists && teacherDoc.data.userId == request.auth.uid;
+    }
+
+    function isParentOfStudent(studentUserId) {
+        // Find the parent document for the requesting user
+        let parentDocs = firestore.get(/databases/$(database)/documents/parents?userId=$(request.auth.uid)).docs;
+        if (parentDocs.size() == 0) {
+            return false;
+        }
+        let parentDoc = parentDocs[0];
+        // Check if the parent's studentId matches the student being accessed
+        return parentDoc.data.studentId == studentUserId;
     }
     
     //-------------------------------------------------------------------------
@@ -118,10 +119,11 @@ service cloud.firestore {
      * - Owner can create, update, delete.
      * - A teacher can read their approved students' user docs.
      * - A student can read their own user doc.
+     * - A parent can read their own child's user doc.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isTeacherOfStudent(userId);
+      allow get: if isOwner(userId) || isTeacherOfStudent(userId) || isParentOfStudent(userId);
       allow list: if isTeacher(request.auth.uid); // Teachers can list students under them.
       allow create: if isOwner(userId) || isTeacher(request.auth.uid); // Teachers can create students
       allow update: if isOwner(userId) || (isTeacher(request.auth.uid) && isTeacherOfStudent(userId)); // Teacher can approve student
@@ -148,7 +150,7 @@ service cloud.firestore {
      * @path /students/{studentId}
      */
     match /students/{studentId} {
-      allow get: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
+      allow get: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId) || isParentOfStudent(resource.data.userId);
       allow list: if false;
       allow create: if isOwner(request.resource.data.userId) || isTeacher(request.auth.uid);
       allow update: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
@@ -160,8 +162,10 @@ service cloud.firestore {
      * @path /parents/{parentId}
      */
     match /parents/{parentId} {
-      // Simplified for now - only owner can manage.
+      // Owner can manage their own profile
       allow get, update, delete: if isOwner(resource.data.userId);
+      // Teacher of the linked student can read the parent profile
+      allow get: if isTeacherOfStudent(resource.data.studentId);
       allow list: if false;
       allow create: if isOwner(request.resource.data.userId);
     }
@@ -171,29 +175,31 @@ service cloud.firestore {
      * @path /study_materials/{studyMaterialId}
      */
     match /study_materials/{studyMaterialId} {
+      // Allow read if user is signed in
       allow get, list: if isSignedIn();
-      // Allow create/update/delete if the user's UID matches the `userId` of the teacher doc referenced by `teacherId`.
-      allow write: if isTeacher(request.auth.uid) && get(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.userId == request.auth.uid;
+      // Allow write if user is a teacher and their userId matches the teacherId on the material
+      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
     }
 
+
     /**
-     * @description Attendance records are managed by teachers. They are readable by the teacher and the associated student.
+     * @description Attendance records are managed by teachers. They are readable by the teacher and the associated student/parent.
      * @path /attendances/{attendanceId}
      */
     match /attendances/{attendanceId} {
-      allow get: if isTeacherOfStudent(resource.data.studentId) || isOwner(resource.data.studentId);
+      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId) || isParentOfStudent(resource.data.studentId);
       allow list: if isSignedIn();
-      allow write: if isTeacher(request.auth.uid) && get(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.userId == request.auth.uid;
+      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
     }
 
     /**
-     * @description Test results are managed by teachers. They are readable by the teacher and the associated student.
+     * @description Test results are managed by teachers. They are readable by the teacher and the associated student/parent.
      * @path /test_results/{testResultId}
      */
     match /test_results/{testResultId} {
-      allow get: if isTeacherOfStudent(resource.data.studentId) || isOwner(resource.data.studentId);
+      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId) || isParentOfStudent(resource.data.studentId);
       allow list: if isSignedIn();
-      allow write: if isTeacher(request.auth.uid) && get(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.userId == request.auth.uid;
+      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
     }
     
     /**
@@ -202,17 +208,17 @@ service cloud.firestore {
      */
     match /batches/{batchId} {
       allow read, list: if isSignedIn();
-      // Allow write if user is a teacher and their uid matches the userId in the referenced teacher doc
-      allow write: if isTeacher(request.auth.uid) && get(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.userId == request.auth.uid;
+      // Allow write if user is a teacher and their userId matches the teacherId on the batch
+      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
     }
 
     /**
-     * @description Schedules are managed by teachers.
+     * @description Schedules are managed by teachers and readable by relevant users.
      * @path /schedules/{scheduleId}
      */
      match /schedules/{scheduleId} {
-        allow read, list: if isSignedIn();
-        allow write: if isTeacher(request.auth.uid) && get(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.userId == request.auth.uid;
+        allow read, list: if isSignedIn(); // Simplified for now
+        allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
      }
 
   }

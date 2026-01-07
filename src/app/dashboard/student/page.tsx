@@ -21,7 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { studentData } from '@/lib/data';
 import { PerformanceChart } from '@/components/performance-chart';
 import {
   FileText,
@@ -35,23 +34,53 @@ import {
   CalendarCheck2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useFirestore, useUser, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const materialIcons = {
+const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
   DPP: <ClipboardList className="h-5 w-5 text-orange-500" />,
   Test: <Pencil className="h-5 w-5 text-purple-500" />,
   Solution: <CheckCircle className="h-5 w-5 text-green-500" />,
 };
 
+type UserProfile = {
+  name: string;
+  isApproved: boolean;
+  teacherId: string | null;
+  attendance?: number;
+}
+type StudyMaterial = { id: string; title: string; type: string; subject: string; date: any; isNew?: boolean; };
+type PerformanceData = { name: string; score: number };
+type AttendanceRecord = { date: any; status: 'Present' | 'Absent' };
+
 export default function StudentDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [teacherCode, setTeacherCode] = useState('');
-  const [isConnected, setIsConnected] = useState(studentData.isConnected);
+
+  const studentDocRef = useMemoFirebase(() => 
+    user ? doc(firestore, 'users', user.uid) : null
+  , [firestore, user]);
+  const { data: student, isLoading: isLoadingStudent } = useDoc<UserProfile>(studentDocRef);
+
+  // Fetch materials, performance, and attendance for the student
+  const materialsQuery = useMemoFirebase(() => 
+    student?.teacherId ? query(collection(firestore, 'study_materials'), where('teacherId', '==', student.teacherId)) : null
+  , [firestore, student]);
+  const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
+
+  const performanceQuery = useMemoFirebase(() => 
+    user ? query(collection(firestore, 'test_results'), where('studentId', '==', user.uid)) : null
+  , [firestore, user]);
+  const { data: performanceData, isLoading: isLoadingPerformance } = useCollection<PerformanceData>(performanceQuery);
+
+  const attendanceQuery = useMemoFirebase(() => 
+    user ? query(collection(firestore, 'attendances'), where('studentId', '==', user.uid)) : null
+  , [firestore, user]);
+  const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
 
 
   const handleEnrollmentRequest = async () => {
@@ -62,9 +91,9 @@ export default function StudentDashboardPage() {
     
     // In a real app, you might query the 'teachers' collection by 'id'
     const teacherDocRef = doc(firestore, 'teachers', teacherCode);
-    const teacherDoc = await getDoc(teacherDocRef);
+    const teacherDocSnap = await getDoc(teacherDocRef);
 
-    if (!teacherDoc.exists()) {
+    if (!teacherDocSnap.exists()) {
       toast({ variant: 'destructive', title: 'Invalid Code', description: 'No teacher found with that code.' });
       return;
     }
@@ -76,25 +105,35 @@ export default function StudentDashboardPage() {
     });
 
     toast({ title: 'Request Sent!', description: "Your enrollment request has been sent to the teacher for approval."});
-    // You might want to update local state to show "Pending Approval"
   }
 
+  if (isUserLoading || isLoadingStudent) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Skeleton className="h-64 w-full max-w-md" />
+      </div>
+    );
+  }
 
-  if (!isConnected) {
+  if (!student?.isApproved) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Enroll with a Teacher</CardTitle>
-            <CardDescription>Enter your teacher's verification code to access all features.</CardDescription>
+            <CardDescription>
+              {student?.teacherId ? "Your request is pending approval." : "Enter your teacher's verification code to access all features."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-                <Input placeholder="Teacher Verification Code" value={teacherCode} onChange={(e) => setTeacherCode(e.target.value)} />
-                <Button className="w-full" onClick={handleEnrollmentRequest}>
-                    Send Enrollment Request
-                </Button>
-            </div>
+            {!student?.teacherId && (
+              <div className="space-y-4">
+                  <Input placeholder="Teacher Verification Code" value={teacherCode} onChange={(e) => setTeacherCode(e.target.value)} />
+                  <Button className="w-full" onClick={handleEnrollmentRequest}>
+                      Send Enrollment Request
+                  </Button>
+              </div>
+            )}
           </CardContent>
            <CardFooter>
             <p className="text-xs text-muted-foreground text-center w-full">You can still access free study materials while you wait for approval.</p>
@@ -104,9 +143,11 @@ export default function StudentDashboardPage() {
     );
   }
 
+  const chartData = performanceData?.map(p => ({ name: p.name, score: p.score })) || [];
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-headline">Welcome back, {studentData.name}!</h1>
+      <h1 className="text-3xl font-bold font-headline">Welcome back, {student?.name}!</h1>
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -116,7 +157,7 @@ export default function StudentDashboardPage() {
             <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{studentData.stats.attendance}%</div>
+            <div className="text-2xl font-bold">{student?.attendance || 100}%</div>
             <p className="text-xs text-muted-foreground">Last 30 days</p>
           </CardContent>
         </Card>
@@ -126,7 +167,7 @@ export default function StudentDashboardPage() {
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{studentData.stats.newDpps}</div>
+            <div className="text-2xl font-bold">+{studyMaterials?.filter(m => m.type === 'DPP').length || 0}</div>
             <p className="text-xs text-muted-foreground">Ready for practice</p>
           </CardContent>
         </Card>
@@ -136,7 +177,7 @@ export default function StudentDashboardPage() {
             <Pencil className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{studentData.stats.pendingSubmissions}</div>
+            <div className="text-2xl font-bold">1</div>
             <p className="text-xs text-muted-foreground">Due this week</p>
           </CardContent>
         </Card>
@@ -155,38 +196,40 @@ export default function StudentDashboardPage() {
               <CardDescription>Browse and download notes, DPPs, tests, and more.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {studentData.studyMaterials.map((material) => (
-                    <TableRow key={material.id}>
-                      <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{material.title}</div>
-                        <div className="text-sm text-muted-foreground">{material.date}</div>
-                      </TableCell>
-                      <TableCell><Badge variant={material.isNew ? "default" : "secondary"} className={material.isNew ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {isLoadingMaterials ? <Skeleton className="h-40 w-full" /> : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {studyMaterials?.map((material) => (
+                      <TableRow key={material.id}>
+                        <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{material.title}</div>
+                          <div className="text-sm text-muted-foreground">{material.date?.toDate().toLocaleDateString()}</div>
+                        </TableCell>
+                        <TableCell><Badge variant={material.isNew ? "default" : "secondary"} className={material.isNew ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="performance">
-          <PerformanceChart data={studentData.performance} />
+           {isLoadingPerformance ? <Skeleton className="h-[350px] w-full" /> : <PerformanceChart data={chartData} />}
         </TabsContent>
         <TabsContent value="attendance">
           <Card className="shadow-sm">
@@ -195,27 +238,29 @@ export default function StudentDashboardPage() {
               <CardDescription>Your attendance for the last few classes.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {studentData.attendanceRecords.map((record) => (
-                    <TableRow key={record.date}>
-                      <TableCell className="font-medium">{record.date}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={record.status === 'Present' ? 'default' : 'destructive'}>
-                          {record.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
-                          {record.status}
-                        </Badge>
-                      </TableCell>
+              {isLoadingAttendance ? <Skeleton className="h-40 w-full" /> : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceRecords?.map((record, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-medium">{record.date?.toDate().toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={record.status === 'Present' ? 'default' : 'destructive'}>
+                            {record.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
+                            {record.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -223,5 +268,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    
