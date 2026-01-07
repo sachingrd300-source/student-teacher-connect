@@ -20,7 +20,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { studentData } from '@/lib/data';
-import { CheckCircle, XCircle, BarChart3, CalendarCheck2 } from 'lucide-react';
+import { CheckCircle, XCircle, BarChart3, CalendarCheck2, BookCopy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -93,7 +93,10 @@ export default function LearningPassportPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-headline">My Learning Passport</h1>
+          <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
+            <BookCopy className="w-8 h-8" />
+            My Learning Passport
+          </h1>
           <p className="text-muted-foreground">Your complete academic journey.</p>
         </div>
          <Avatar className="h-16 w-16">

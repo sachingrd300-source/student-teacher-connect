@@ -11,6 +11,9 @@ import {
   FileText,
   Users,
   LogOut,
+  ShoppingCart,
+  ClipboardList,
+  BarChart3,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -34,7 +37,10 @@ const navItems = {
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
+    { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },
+    { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
+    { href: '/dashboard/student/performance', label: 'Performance', icon: BarChart3 },
+    { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
   ],
 };
 
