@@ -22,6 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -53,6 +54,7 @@ import {
   UserCheck,
   PlusCircle,
   Users2,
+  ChevronDown,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
@@ -65,7 +67,6 @@ import Link from 'next/link';
 
 type StudentProfile = {
   id: string; 
-  userId?: string; // This might be the doc id from users collection.
   name: string;
   isApproved: boolean;
   teacherId: string | null;
@@ -94,7 +95,7 @@ export default function TeacherDashboardPage() {
   const [isAddStudentOpen, setAddStudentOpen] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentMobile, setNewStudentMobile] = useState('');
-  const [selectedBatch, setSelectedBatch] = useState('');
+  const [selectedBatchId, setSelectedBatchId] = useState('');
   const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
   const [isClient, setIsClient] = useState(false);
@@ -105,7 +106,7 @@ export default function TeacherDashboardPage() {
 
 
   const teacherIdQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
+    user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid), 1) : null
   , [firestore, user]);
 
   const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<TeacherProfile>(teacherIdQuery);
@@ -184,7 +185,7 @@ export default function TeacherDashboardPage() {
       return;
     }
     
-    const studentUserId = `manual-${newStudentMobile}`;
+    const studentUserId = uuidv4();
     const email = `${newStudentMobile}@edconnect.pro`;
 
     const userDocRef = doc(firestore, 'users', studentUserId);
@@ -196,18 +197,40 @@ export default function TeacherDashboardPage() {
       role: 'student',
       isApproved: true, 
       teacherId: teacher.id,
-      batch: selectedBatch || null,
+      batch: batches?.find(b => b.id === selectedBatchId)?.name || null,
       avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
     };
     
     setDocumentNonBlocking(userDocRef, userData, { merge: false });
 
+    const studentDocRef = doc(firestore, 'students', studentUserId);
+    setDocumentNonBlocking(studentDocRef, {
+        id: studentUserId,
+        userId: studentUserId,
+        teacherId: teacher.id,
+        isApproved: true,
+        batch: batches?.find(b => b.id === selectedBatchId)?.name || null,
+    }, {merge: false})
+
+
     toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.`});
     setNewStudentName('');
     setNewStudentMobile('');
-    setSelectedBatch('');
+    setSelectedBatchId('');
     setAddStudentOpen(false);
   }
+
+  const handleAssignBatch = (studentId: string, batchId: string) => {
+    if (!firestore) return;
+    const studentUserDocRef = doc(firestore, 'users', studentId);
+    const selectedBatch = batches?.find(b => b.id === batchId);
+    updateDocumentNonBlocking(studentUserDocRef, { batch: selectedBatch?.name || null });
+
+    const studentDocRef = doc(firestore, 'students', studentId);
+    updateDocumentNonBlocking(studentDocRef, { batch: selectedBatch?.name || null });
+
+    toast({ title: "Batch Assigned", description: `Student has been assigned to ${selectedBatch?.name}.` });
+  };
 
 
   return (
@@ -362,14 +385,14 @@ export default function TeacherDashboardPage() {
                       </div>
                        <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="batch-select" className="text-right">Batch</Label>
-                          <Select onValueChange={setSelectedBatch} value={selectedBatch}>
+                          <Select onValueChange={setSelectedBatchId} value={selectedBatchId}>
                             <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="Assign to a batch" />
                             </SelectTrigger>
                             <SelectContent>
                               {isLoadingBatches && <SelectItem value="loading" disabled>Loading...</SelectItem>}
                               {batches?.map(batch => (
-                                <SelectItem key={batch.id} value={batch.name}>{batch.name}</SelectItem>
+                                <SelectItem key={batch.id} value={batch.id}>{batch.name}</SelectItem>
                               ))}
                                {batches?.length === 0 && !isLoadingBatches && <p className="p-2 text-xs text-muted-foreground">No batches created yet.</p>}
                             </SelectContent>
@@ -420,7 +443,25 @@ export default function TeacherDashboardPage() {
                         </Avatar>
                         {student.name}
                       </TableCell>
-                       <TableCell><Badge variant="outline">{student.batch || 'N/A'}</Badge></TableCell>
+                       <TableCell>
+                         {student.batch ? 
+                            <Badge variant="outline">{student.batch}</Badge> : 
+                            (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm">Assign <ChevronDown className="h-4 w-4 ml-1" /></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        {batches?.map(b => (
+                                            <DropdownMenuItem key={b.id} onSelect={() => handleAssignBatch(student.id, b.id)}>
+                                                {b.name}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )
+                         }
+                        </TableCell>
                       <TableCell><Badge variant="secondary">{student.grade || 'N/A'}</Badge></TableCell>
                       <TableCell>{student.attendance || 100}%</TableCell>
                       <TableCell className="text-right">
@@ -437,9 +478,10 @@ export default function TeacherDashboardPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/dashboard/teacher/performance?studentId=${student.id}`}>Enter Marks</Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
+                               <DropdownMenuItem asChild>
                                 <Link href={`/dashboard/teacher/attendance`}>Mark Attendance</Link>
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleRemove(student)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
