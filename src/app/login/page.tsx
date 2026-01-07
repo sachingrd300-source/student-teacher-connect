@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Icons } from '@/components/icons';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const loginSchema = z.object({
   mobileNumber: z.string().min(10, { message: 'Please enter a valid 10-digit mobile number.' }),
@@ -54,14 +54,23 @@ export default function LoginPage() {
                         description: "Redirecting to your dashboard...",
                     });
                     router.push(`/dashboard/${userData.role}`);
+                } else {
+                    // This case can happen if profile creation failed before.
+                    // We can try to recover or guide the user. For now, we log them out.
+                    toast({
+                        variant: 'destructive',
+                        title: 'Profile not found.',
+                        description: 'Your user profile is missing. Please sign up again or contact support.',
+                    });
+                    signOut(auth);
                 }
             });
         }
-    }, [user, firestore, router, toast]);
+    }, [user, firestore, router, toast, auth]);
 
     const getEmailFromMobile = (mobile: string) => `${mobile}@edconnect.pro`;
 
-    const handleLogin = (values: z.infer<typeof loginSchema>) => {
+    const handleLogin = async (values: z.infer<typeof loginSchema>) => {
         if (!auth) {
             toast({ variant: 'destructive', title: 'Firebase not initialized' });
             return;
@@ -69,12 +78,23 @@ export default function LoginPage() {
 
         const email = getEmailFromMobile(values.mobileNumber);
         
-        initiateEmailSignIn(auth, email, values.password);
-        
-        toast({
-            title: "Logging In...",
-            description: "Please wait while we check your credentials.",
-        });
+        try {
+            await signInWithEmailAndPassword(auth, email, values.password);
+            toast({
+                title: "Logging In...",
+                description: "Please wait while we check your credentials.",
+            });
+        } catch (error: any) {
+            console.error("Login Error:", error);
+            const errorMessage = error.code === 'auth/invalid-credential'
+                ? 'Invalid mobile number or password.'
+                : 'An unexpected error occurred. Please try again.';
+            toast({
+                variant: 'destructive',
+                title: 'Login Failed',
+                description: errorMessage,
+            });
+        }
     };
     
     if (isUserLoading) {
@@ -128,8 +148,8 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className="w-full">
-                                Login
+                            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? "Logging In..." : "Login"}
                             </Button>
                         </form>
                     </Form>
@@ -147,5 +167,3 @@ export default function LoginPage() {
         </div>
     )
 }
-
-    

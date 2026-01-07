@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,8 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Icons } from '@/components/icons';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -58,10 +57,10 @@ const parentSchema = baseSchema.extend({
     path: ['confirmPassword'],
 });
 
-
 type Role = 'student' | 'teacher' | 'parent';
 
-function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof teacherSchema>) => void; }) {
+// Abstracted Form for Teacher
+function TeacherSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.infer<typeof teacherSchema>) => void; isSubmitting: boolean; }) {
   const form = useForm<z.infer<typeof teacherSchema>>({
     resolver: zodResolver(teacherSchema),
     defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', subjects: '', className: '' },
@@ -76,13 +75,14 @@ function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof tea
         <FormField control={form.control} name="className" render={({ field }) => ( <FormItem> <FormLabel>Class / Coaching Name</FormLabel> <FormControl> <Input placeholder="e.g., Vision Classes" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
         <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
         <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
-        <Button type="submit" className="w-full"> Create Teacher Account </Button>
+        <Button type="submit" className="w-full" disabled={isSubmitting}> {isSubmitting ? "Creating Account..." : "Create Teacher Account"} </Button>
       </form>
     </Form>
   );
 }
 
-function StudentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof studentSchema>) => void; }) {
+// Abstracted Form for Student
+function StudentSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.infer<typeof studentSchema>) => void; isSubmitting: boolean; }) {
     const form = useForm<z.infer<typeof studentSchema>>({
       resolver: zodResolver(studentSchema),
       defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', teacherId: '' },
@@ -96,13 +96,14 @@ function StudentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof stu
             <FormField control={form.control} name="teacherId" render={({ field }) => ( <FormItem> <FormLabel>Teacher Code (Optional)</FormLabel> <FormControl> <Input placeholder="Enter code (e.g., TCH-xxxx)" {...field} /> </FormControl> <FormDescription> If you have a teacher's code, enter it here to send an enrollment request. </FormDescription> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
-            <Button type="submit" className="w-full"> Create Student Account </Button>
+            <Button type="submit" className="w-full" disabled={isSubmitting}> {isSubmitting ? "Creating Account..." : "Create Student Account"} </Button>
         </form>
       </Form>
     );
 }
 
-function ParentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof parentSchema>) => void; }) {
+// Abstracted Form for Parent
+function ParentSignUpForm({ onSignUp, isSubmitting }: { onSignUp: (values: z.infer<typeof parentSchema>) => void; isSubmitting: boolean; }) {
     const form = useForm<z.infer<typeof parentSchema>>({
       resolver: zodResolver(parentSchema),
       defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', studentId: '' },
@@ -116,7 +117,7 @@ function ParentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof pare
             <FormField control={form.control} name="studentId" render={({ field }) => ( <FormItem> <FormLabel>Your Child's Student ID</FormLabel> <FormControl> <Input placeholder="Enter your child's unique ID" {...field} /> </FormControl> <FormDescription>You can get this ID from your child's school or teacher.</FormDescription> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
-            <Button type="submit" className="w-full"> Create Parent Account </Button>
+            <Button type="submit" className="w-full" disabled={isSubmitting}> {isSubmitting ? "Creating Account..." : "Create Parent Account"} </Button>
         </form>
       </Form>
     );
@@ -130,80 +131,13 @@ export default function SignUpPage() {
     const { toast } = useToast();
     const { user, isUserLoading } = useUser();
     
+    // Redirect if user is already logged in
     useEffect(() => {
-        // This effect runs after a user is authenticated by Firebase
-        if (user && firestore) {
-            const signupDataRaw = localStorage.getItem('signup_data');
-            if (signupDataRaw) {
-                const { role, values } = JSON.parse(signupDataRaw);
-                
-                // Create user profile document in 'users' collection
-                const userDocRef = doc(firestore, 'users', user.uid);
-                const userData = {
-                    id: user.uid,
-                    name: values.name,
-                    mobileNumber: values.mobileNumber,
-                    email: user.email,
-                    role: role,
-                    avatarUrl: `https://picsum.photos/seed/${user.uid}/100/100`,
-                };
-                
-                // Use a non-blocking Firestore write and continue logic
-                setDocumentNonBlocking(userDocRef, userData, { merge: true });
-
-                // Create role-specific document in its own collection
-                if (role === 'teacher') {
-                    const teacherId = `TCH-${uuidv4().slice(0,4).toUpperCase()}`;
-                    const teacherDocRef = doc(firestore, 'teachers', teacherId);
-                    const teacherData = {
-                        id: teacherId, // This is the verification code
-                        userId: user.uid,
-                        verificationCode: teacherId,
-                        subjects: values.subjects,
-                        className: values.className,
-                        experience: 'Not specified',
-                        address: 'Not specified',
-                    };
-                    setDocumentNonBlocking(teacherDocRef, teacherData, { merge: false });
-
-                } else if (role === 'student') {
-                    const studentDocRef = doc(firestore, 'students', user.uid);
-                    const studentData = {
-                        id: user.uid,
-                        userId: user.uid,
-                        isApproved: !values.teacherId, 
-                        teacherId: values.teacherId || null,
-                    };
-                    setDocumentNonBlocking(studentDocRef, studentData, { merge: false });
-                    
-                    // Also update the main user doc with student-specific flags
-                    const userUpdateData = { 
-                        isApproved: !values.teacherId, 
-                        teacherId: values.teacherId || null 
-                    };
-                    setDocumentNonBlocking(userDocRef, userUpdateData, { merge: true });
-
-                } else if (role === 'parent') {
-                    const parentDocRef = doc(firestore, 'parents', user.uid);
-                    const parentData = {
-                        id: user.uid,
-                        userId: user.uid,
-                        studentId: values.studentId,
-                    };
-                    setDocumentNonBlocking(parentDocRef, parentData, { merge: false });
-                }
-
-                // Cleanup and redirect
-                localStorage.removeItem('signup_data');
-                toast({
-                    title: "Account Created!",
-                    description: "Your profile has been saved. Redirecting to your dashboard...",
-                });
-                router.push(`/dashboard/${role}`);
-            }
+        if (user) {
+            router.push('/dashboard');
         }
-    }, [user, firestore, router, toast]);
-
+    }, [user, router]);
+    
     const getEmailFromMobile = (mobile: string) => `${mobile}@edconnect.pro`;
 
     const handleSignUp = (role: Role) => async (values: any) => {
@@ -214,18 +148,89 @@ export default function SignUpPage() {
 
         const email = getEmailFromMobile(values.mobileNumber);
         
-        // Store form data in local storage to be retrieved after Firebase auth redirect completes
-        localStorage.setItem('signup_data', JSON.stringify({ role, values }));
+        try {
+            // Step 1: Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
+            const newUser = userCredential.user;
 
-        // Initiate the Firebase Auth sign-up process (non-blocking)
-        initiateEmailSignUp(auth, email, values.password);
-        
-        toast({
-            title: "Creating Account...",
-            description: "Please wait a moment.",
-        });
+            // Step 2: Create user profile documents in Firestore
+            const userDocRef = doc(firestore, 'users', newUser.uid);
+            const userData = {
+                id: newUser.uid,
+                name: values.name,
+                mobileNumber: values.mobileNumber,
+                email: newUser.email,
+                role: role,
+                avatarUrl: `https://picsum.photos/seed/${newUser.uid}/100/100`,
+            };
+            
+            await setDoc(userDocRef, userData, { merge: true });
+            
+            // Step 3: Create role-specific document
+            if (role === 'teacher') {
+                const teacherId = `TCH-${uuidv4().slice(0,4).toUpperCase()}`;
+                const teacherDocRef = doc(firestore, 'teachers', teacherId);
+                await setDoc(teacherDocRef, {
+                    id: teacherId,
+                    userId: newUser.uid,
+                    verificationCode: teacherId,
+                    subjects: values.subjects,
+                    className: values.className,
+                    experience: 'Not specified',
+                    address: 'Not specified',
+                });
+            } else if (role === 'student') {
+                const studentDocRef = doc(firestore, 'students', newUser.uid);
+                await setDoc(studentDocRef, {
+                    id: newUser.uid,
+                    userId: newUser.uid,
+                    isApproved: !values.teacherId, 
+                    teacherId: values.teacherId || null,
+                });
+                await setDoc(userDocRef, { 
+                    isApproved: !values.teacherId, 
+                    teacherId: values.teacherId || null 
+                }, { merge: true });
+            } else if (role === 'parent') {
+                // Ensure the student ID exists before creating the parent profile
+                const studentUserDoc = await getDoc(doc(firestore, 'users', values.studentId));
+                if (!studentUserDoc.exists() || studentUserDoc.data().role !== 'student') {
+                    throw new Error("Invalid Student ID provided. Please check and try again.");
+                }
+                const parentDocRef = doc(firestore, 'parents', newUser.uid);
+                await setDoc(parentDocRef, {
+                    id: newUser.uid,
+                    userId: newUser.uid,
+                    studentId: values.studentId,
+                    // Denormalize teacherId for easy access if available on student
+                    teacherId: studentUserDoc.data().teacherId || null,
+                });
+            }
+
+            toast({
+                title: "Account Created!",
+                description: "Your profile has been saved. You are now being logged in.",
+            });
+            // The onAuthStateChanged listener in the provider will handle redirection
+            router.push(`/dashboard/${role}`);
+
+        } catch (error: any) {
+            console.error("SignUp Error:", error);
+            let errorMessage = "An unexpected error occurred. Please try again.";
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = "An account with this mobile number already exists.";
+            } else if (error.message.includes("Invalid Student ID")) {
+                errorMessage = error.message;
+            }
+            
+            toast({
+                variant: 'destructive',
+                title: 'Sign Up Failed',
+                description: errorMessage,
+            });
+        }
     };
-
+    
     if (isUserLoading) {
       return (
         <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -233,6 +238,17 @@ export default function SignUpPage() {
         </div>
       )
     }
+
+    // Since we redirect on user, this form is only shown when no user is logged in.
+    // The useForm hook's isSubmitting state can be used for each form.
+    const teacherForm = useForm<z.infer<typeof teacherSchema>>({ resolver: zodResolver(teacherSchema) });
+    const studentForm = useForm<z.infer<typeof studentSchema>>({ resolver: zodResolver(studentSchema) });
+    const parentForm = useForm<z.infer<typeof parentSchema>>({ resolver: zodResolver(parentSchema) });
+    
+    // We can't easily share a single isSubmitting state without a more complex state management.
+    // For this case, we check one of the forms. A more advanced solution might use a shared state.
+    const isAnyFormSubmitting = teacherForm.formState.isSubmitting || studentForm.formState.isSubmitting || parentForm.formState.isSubmitting;
+
 
     return (
         <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 overflow-hidden">
@@ -256,13 +272,13 @@ export default function SignUpPage() {
                             <TabsTrigger value="parent">Parent</TabsTrigger>
                         </TabsList>
                         <TabsContent value="student" className="pt-4">
-                            <StudentSignUpForm onSignUp={handleSignUp('student')} />
+                            <StudentSignUpForm onSignUp={handleSignUp('student')} isSubmitting={isAnyFormSubmitting} />
                         </TabsContent>
                         <TabsContent value="teacher" className="pt-4">
-                             <TeacherSignUpForm onSignUp={handleSignUp('teacher')} />
+                             <TeacherSignUpForm onSignUp={handleSignUp('teacher')} isSubmitting={isAnyFormSubmitting} />
                         </TabsContent>
                         <TabsContent value="parent" className="pt-4">
-                             <ParentSignUpForm onSignUp={handleSignUp('parent')} />
+                             <ParentSignUpForm onSignUp={handleSignUp('parent')} isSubmitting={isAnyFormSubmitting} />
                         </TabsContent>
                     </Tabs>
                      <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
@@ -279,5 +295,3 @@ export default function SignUpPage() {
         </div>
     )
 }
-
-    
