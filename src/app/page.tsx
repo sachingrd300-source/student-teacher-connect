@@ -55,7 +55,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/signup">Get Started</Link>
+                <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
               <Button size="lg" variant="outline">
                 Learn More
@@ -97,10 +97,10 @@ export default function Home() {
           <div className="container mx-auto px-4 md:px-6 text-center">
             <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Transform Education?</h2>
             <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">
-              Join EduConnect Pro today and unlock a world of collaborative learning.
+              Explore the dashboard to see what EduConnect Pro has to offer.
             </p>
             <Button size="lg" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90" asChild>
-              <Link href="/signup">Sign Up for Free</Link>
+              <Link href="/dashboard">View Dashboard</Link>
             </Button>
           </div>
         </section>
