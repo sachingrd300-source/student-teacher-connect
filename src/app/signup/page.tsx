@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -35,14 +35,14 @@ import { v4 as uuidv4 } from 'uuid';
 // Schemas
 const studentSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email(),
+  mobileNumber: z.string().min(10, { message: 'Please enter a valid mobile number.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   teacherCode: z.string().optional(),
 });
 
 const teacherSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email(),
+  mobileNumber: z.string().min(10, { message: 'Please enter a valid mobile number.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   subjects: z.string().min(1, { message: 'Please enter at least one subject.' }),
   className: z.string().min(1, { message: 'Please enter your class/coaching name.' }),
@@ -50,7 +50,7 @@ const teacherSchema = z.object({
 
 const parentSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email(),
+  mobileNumber: z.string().min(10, { message: 'Please enter a valid mobile number.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   studentId: z.string().min(1, { message: 'Student ID is required.' }),
 });
@@ -65,9 +65,9 @@ export default function SignUpPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const studentForm = useForm<z.infer<typeof studentSchema>>({ resolver: zodResolver(studentSchema), defaultValues: { name: '', email: '', password: '', teacherCode: '' } });
-  const teacherForm = useForm<z.infer<typeof teacherSchema>>({ resolver: zodResolver(teacherSchema), defaultValues: { name: '', email: '', password: '', subjects: '', className: '' } });
-  const parentForm = useForm<z.infer<typeof parentSchema>>({ resolver: zodResolver(parentSchema), defaultValues: { name: '', email: '', password: '', studentId: '' } });
+  const studentForm = useForm<z.infer<typeof studentSchema>>({ resolver: zodResolver(studentSchema), defaultValues: { name: '', mobileNumber: '', password: '', teacherCode: '' } });
+  const teacherForm = useForm<z.infer<typeof teacherSchema>>({ resolver: zodResolver(teacherSchema), defaultValues: { name: '', mobileNumber: '', password: '', subjects: '', className: '' } });
+  const parentForm = useForm<z.infer<typeof parentSchema>>({ resolver: zodResolver(parentSchema), defaultValues: { name: '', mobileNumber: '', password: '', studentId: '' } });
 
   const getForm = (role: Role) => {
     if (role === 'student') return studentForm;
@@ -77,8 +77,10 @@ export default function SignUpPage() {
 
   async function onSubmit(values: any, role: Role) {
     setIsLoading(true);
+    const { mobileNumber, password, name, ...rest } = values;
+    const email = `${mobileNumber}@edconnect.pro`;
+
     try {
-      const { email, password, name, ...rest } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -88,7 +90,7 @@ export default function SignUpPage() {
         id: user.uid,
         name,
         email,
-        mobileNumber: '',
+        mobileNumber: mobileNumber,
         role,
         avatarUrl: `https://picsum.photos/seed/${user.uid}/100/100`,
         isApproved: role === 'student' ? !rest.teacherCode : true,
@@ -132,7 +134,12 @@ export default function SignUpPage() {
         description: 'Redirecting you to your new dashboard.',
       });
 
-      router.push(`/dashboard/${role}`);
+      // Redirect to profile for teacher, dashboard for others
+      if (role === 'teacher') {
+        router.push(`/dashboard/teacher/profile`);
+      } else {
+        router.push(`/dashboard/${role}`);
+      }
 
     } catch (error: any) {
       console.error('Signup failed:', error);
@@ -140,7 +147,7 @@ export default function SignUpPage() {
         variant: 'destructive',
         title: 'Sign Up Failed',
         description: error.code === 'auth/email-already-in-use' 
-          ? 'This email is already in use.' 
+          ? 'This mobile number is already linked to an account.' 
           : error.message || 'An unexpected error occurred.',
       });
     } finally {
@@ -156,7 +163,7 @@ export default function SignUpPage() {
         schema = studentSchema;
         fields = [
             { name: 'name', label: 'Full Name', placeholder: 'John Doe' },
-            { name: 'email', label: 'Email Address', placeholder: 'name@example.com' },
+            { name: 'mobileNumber', label: 'Mobile Number', placeholder: '9876543210' },
             { name: 'password', label: 'Password', type: 'password', placeholder: '••••••••' },
             { name: 'teacherCode', label: 'Teacher Code (Optional)', placeholder: 'TCH-XXXX' },
         ];
@@ -164,7 +171,7 @@ export default function SignUpPage() {
         schema = teacherSchema;
         fields = [
             { name: 'name', label: 'Full Name', placeholder: 'Dr. Jane Smith' },
-            { name: 'email', label: 'Email Address', placeholder: 'name@example.com' },
+            { name: 'mobileNumber', label: 'Mobile Number', placeholder: '9876543210' },
             { name: 'password', label: 'Password', type: 'password', placeholder: '••••••••' },
             { name: 'subjects', label: 'Subjects Taught', placeholder: 'Physics, Chemistry' },
             { name: 'className', label: 'Coaching/Class Name', placeholder: 'Prestige Academy' },
@@ -173,7 +180,7 @@ export default function SignUpPage() {
         schema = parentSchema;
         fields = [
             { name: 'name', label: 'Full Name', placeholder: 'David Johnson' },
-            { name: 'email', label: 'Email Address', placeholder: 'name@example.com' },
+            { name: 'mobileNumber', label: 'Mobile Number', placeholder: '9876543210' },
             { name: 'password', label: 'Password', type: 'password', placeholder: '••••••••' },
             { name: 'studentId', label: "Your Child's Student ID", placeholder: 'Enter the ID provided by the school' },
         ];

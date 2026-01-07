@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Book, Briefcase, MapPin, Mail, Phone, Edit } from 'lucide-react';
+import { User, Book, Briefcase, MapPin, Mail, Phone, Edit, Info } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -75,6 +75,8 @@ export default function TeacherProfilePage() {
     , [firestore, authUser]);
     const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<TeacherProfile>(teacherQuery);
     const teacherProfile = teacherDocs?.[0];
+
+    const isProfileIncomplete = teacherProfile?.experience === 'Not set' || teacherProfile?.address === 'Not set';
 
     // Effect to populate form when data is loaded
     useEffect(() => {
@@ -174,6 +176,21 @@ export default function TeacherProfilePage() {
             </Dialog>
         </div>
       
+        {isProfileIncomplete && (
+            <Card className="bg-primary/10 border-primary/20">
+                <CardHeader className="flex-row items-center gap-4">
+                    <Info className="h-6 w-6 text-primary"/>
+                    <div>
+                        <CardTitle className="text-lg">Welcome to EduConnect Pro!</CardTitle>
+                        <CardDescription className="text-primary/80">Complete your profile to help students and parents learn more about you.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardFooter>
+                     <Button onClick={() => setEditOpen(true)}>Complete Profile Now</Button>
+                </CardFooter>
+            </Card>
+        )}
+
         <Card className="shadow-lg">
             <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
                 <Avatar className="h-24 w-24 mb-4 border-4 border-background">
