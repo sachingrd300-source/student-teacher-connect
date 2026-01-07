@@ -15,6 +15,7 @@ import {
   Shield,
   FileText,
   ClipboardCheck,
+  Users,
 } from 'lucide-react';
 import {
   Collapsible,
