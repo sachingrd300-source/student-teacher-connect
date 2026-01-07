@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -132,7 +133,7 @@ function StudentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof stu
                     <Input placeholder="Enter code if you have one" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Not studying with a teacher? Skip this field.
+                    If you are not studying with a specific teacher, you can leave this field blank.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -305,3 +306,5 @@ export default function SignUpPage() {
         </div>
     )
 }
+
+    
