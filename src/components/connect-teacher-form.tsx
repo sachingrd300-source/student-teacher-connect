@@ -51,34 +51,26 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
     };
 
     return (
-        <Card className="w-full max-w-md shadow-2xl">
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-headline">Connect with Your Teacher</CardTitle>
-                <CardDescription>Enter the verification code provided by your teacher to get started.</CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="teacher-code">Teacher's Verification Code</Label>
-                        <div className="relative">
-                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                id="teacher-code"
-                                placeholder="e.g. TID-84321"
-                                value={teacherCode}
-                                onChange={(e) => setTeacherCode(e.target.value)}
-                                className="pl-10 text-lg font-mono tracking-wider"
-                                required
-                            />
-                        </div>
+        <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="teacher-code">Teacher's Verification Code</Label>
+                    <div className="relative">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                            id="teacher-code"
+                            placeholder="e.g. TID-84321"
+                            value={teacherCode}
+                            onChange={(e) => setTeacherCode(e.target.value)}
+                            className="pl-10 text-lg font-mono tracking-wider"
+                            required
+                        />
                     </div>
-                </CardContent>
-                <CardFooter>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? 'Connecting...' : 'Connect and View Dashboard'}
-                    </Button>
-                </CardFooter>
-            </form>
-        </Card>
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Connecting...' : 'Connect and View Dashboard'}
+                </Button>
+            </div>
+        </form>
     );
 }
