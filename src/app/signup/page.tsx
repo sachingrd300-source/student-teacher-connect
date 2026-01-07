@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,10 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
 import { useRouter } from 'next/navigation';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useEffect } from 'react';
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -69,8 +71,8 @@ function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof tea
       <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
         <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
-        <FormField control={form.control} name="subjects" render={({ field }) => ( <FormItem> <FormLabel>Subject(s)</FormLabel> <FormControl> <Input placeholder="e.g., Physics, Mathematics" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
-        <FormField control={form.control} name="className" render={({ field }) => ( <FormItem> <FormLabel>Class / Coaching Name</FormLabel> <FormControl> <Input placeholder="e.g., Vision Classes" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="subjects" render={({ field }) => ( <FormItem> <FormLabel>Subject(s)</FormLabel> <FormControl> <Input placeholder="e.g., Physics, Mathematics" {...field} /> </FormControl> <FormDescription>Enter the subjects you teach, separated by commas.</FormDescription> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="className" render={({ field }) => ( <FormItem> <FormLabel>Class / Coaching Name</FormLabel> <FormControl> <Input placeholder="e.g., Vision Classes" {...field} /> </FormControl> <FormDescription>Enter the name of your institution.</FormDescription> <FormMessage /> </FormItem> )} />
         <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
         <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
         <Button type="submit" className="w-full"> Create Teacher Account </Button>
@@ -125,47 +127,93 @@ export default function SignUpPage() {
     const auth = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { user, isUserLoading } = useUser();
+    
+    // Store role and form values temporarily
+    useEffect(() => {
+        if (user && firestore) {
+            const signupData = localStorage.getItem('signup_data');
+            if (signupData) {
+                const { role, values } = JSON.parse(signupData);
+                
+                const commonData = {
+                    id: user.uid,
+                    name: values.name,
+                    mobileNumber: values.mobileNumber,
+                    email: user.email,
+                    role: role,
+                };
+                
+                // Create user profile document
+                const userDocRef = doc(firestore, 'users', user.uid);
+                setDocumentNonBlocking(userDocRef, commonData, { merge: true });
 
-    // A mock email is created from the mobile number for Firebase Auth compatibility.
-    // In a real app, you'd use phone number authentication.
+                // Create role-specific document
+                let roleDocRef;
+                let roleData;
+
+                if (role === 'teacher') {
+                    const teacherId = `TCH-${uuidv4().slice(0,4)}`;
+                    roleDocRef = doc(firestore, 'teachers', teacherId);
+                    roleData = {
+                        id: teacherId,
+                        userId: user.uid,
+                        verificationCode: teacherId,
+                        subjects: values.subjects,
+                        className: values.className,
+                    };
+                } else if (role === 'student') {
+                    const studentId = `STU-${uuidv4().slice(0,4)}`;
+                    roleDocRef = doc(firestore, 'students', studentId);
+                    roleData = {
+                        id: studentId,
+                        userId: user.uid,
+                        isApproved: !values.teacherCode,
+                        teacherId: values.teacherCode || null,
+                    };
+                } else if (role === 'parent') {
+                    const parentId = `PAR-${uuidv4().slice(0,4)}`;
+                    roleDocRef = doc(firestore, 'parents', parentId);
+                    roleData = {
+                        id: parentId,
+                        userId: user.uid,
+                        studentId: values.studentId,
+                    };
+                }
+                
+                if(roleDocRef && roleData){
+                    setDocumentNonBlocking(roleDocRef, roleData, { merge: true });
+                }
+
+                localStorage.removeItem('signup_data');
+                toast({
+                    title: "Account Created!",
+                    description: "Your profile has been saved.",
+                });
+                router.push(`/dashboard/${role}`);
+            }
+        }
+    }, [user, firestore, router, toast]);
+
     const getEmailFromMobile = (mobile: string) => `${mobile}@edconnect.pro`;
 
     const handleSignUp = (role: Role) => async (values: any) => {
-        if (!auth || !firestore) {
-            toast({
-                variant: 'destructive',
-                title: 'Firebase not initialized',
-                description: 'Please try again later.',
-            });
+        if (!auth) {
+            toast({ variant: 'destructive', title: 'Firebase not initialized' });
             return;
         }
 
         const email = getEmailFromMobile(values.mobileNumber);
         
-        initiateEmailSignUp(auth, email, values.password);
+        // Store form data in local storage to be retrieved after auth redirect
+        localStorage.setItem('signup_data', JSON.stringify({ role, values }));
 
-        // The user creation and profile update will be handled by the onAuthStateChanged listener
-        // which should be set up in your Firebase provider. For now, we'll navigate optimistically.
-        // A more robust solution would wait for the user object to be available.
-        
-        // This is a simplified version. A robust implementation would listen for auth state changes
-        // to get the user UID before writing to Firestore.
-        
-        // Optimistically navigate. The actual user data saving should be triggered
-        // by an auth state listener that receives the new user object.
+        initiateEmailSignUp(auth, email, values.password);
         
         toast({
             title: "Creating Account...",
-            description: "Your account is being set up.",
+            description: "Please wait while we set up your account.",
         });
-
-        // We can't write to firestore here directly without the UID.
-        // This logic needs to be moved to an onAuthStateChanged listener effect
-        // or handled after the user is confirmed to be created.
-        
-        // For now, we will just navigate.
-        router.push(`/dashboard/${role}`);
-
     };
 
     return (
