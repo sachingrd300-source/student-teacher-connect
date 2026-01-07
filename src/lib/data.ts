@@ -41,7 +41,7 @@ export const studentData = {
   name: "Alice Johnson",
   id: "SID-12345",
   avatarUrl: 'https://picsum.photos/seed/student-avatar/100/100',
-  isConnected: true,
+  isConnected: false,
   stats: {
     newDpps: 2,
     pendingSubmissions: 1,
@@ -76,6 +76,11 @@ export const tutorsData = [
         subjects: ['Mathematics', 'Physics'],
         experience: '5 Years',
         location: 'New York, NY',
+        qualification: 'Ph.D. in Physics',
+        gender: 'Female',
+        availableTime: 'Weekdays 4pm-8pm',
+        fees: '$50/hr',
+        isVerified: true,
     },
     {
         id: 'TUT02',
@@ -84,6 +89,11 @@ export const tutorsData = [
         subjects: ['Chemistry', 'Biology'],
         experience: '8 Years',
         location: 'Boston, MA',
+        qualification: 'M.Sc. in Chemistry',
+        gender: 'Male',
+        availableTime: 'Weekends 10am-6pm',
+        fees: '$60/hr',
+        isVerified: true,
     },
     {
         id: 'TUT03',
@@ -92,5 +102,10 @@ export const tutorsData = [
         subjects: ['English', 'History'],
         experience: '10 Years',
         location: 'San Francisco, CA',
+        qualification: 'M.A. in English Literature',
+        gender: 'Female',
+        availableTime: 'Tue/Thu 5pm-9pm',
+        fees: '$45/hr',
+        isVerified: false,
     }
 ];

@@ -7,7 +7,7 @@ import { LandingHeader } from '@/components/landing-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Book, Briefcase, MapPin, MessageSquare } from 'lucide-react';
+import { Star, Book, Briefcase, MapPin, MessageSquare, Award, Clock, DollarSign, BadgeCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -29,7 +29,10 @@ export default function TutorProfilePage({ params }: { params: { tutorId: string
                     <AvatarFallback className="text-4xl">{tutor.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-grow">
-                    <CardTitle className="text-4xl font-headline">{tutor.name}</CardTitle>
+                    <div className="flex items-center justify-center md:justify-start gap-2">
+                        <CardTitle className="text-4xl font-headline">{tutor.name}</CardTitle>
+                        {tutor.isVerified && <BadgeCheck className="h-7 w-7 text-primary" />}
+                    </div>
                     <div className="flex items-center justify-center md:justify-start gap-1 text-yellow-500 mt-2">
                         <Star className="h-5 w-5 fill-current"/>
                         <Star className="h-5 w-5 fill-current"/>
@@ -46,6 +49,13 @@ export default function TutorProfilePage({ params }: { params: { tutorId: string
             <CardContent className="p-6 md:p-8 grid md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                     <h3 className="font-bold text-xl text-primary font-headline">Details</h3>
+                    <div className="flex items-start gap-4">
+                        <Award className="h-6 w-6 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-semibold text-lg">Qualification</h4>
+                            <p className="text-muted-foreground text-base">{tutor.qualification}</p>
+                        </div>
+                    </div>
                      <div className="flex items-start gap-4">
                         <Book className="h-6 w-6 text-muted-foreground mt-1 flex-shrink-0" />
                         <div>
@@ -67,6 +77,27 @@ export default function TutorProfilePage({ params }: { params: { tutorId: string
                         <div>
                             <h4 className="font-semibold text-lg">Location</h4>
                             <p className="text-muted-foreground text-base">{tutor.location}</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-4">
+                        <Users className="h-6 w-6 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-semibold text-lg">Gender</h4>
+                            <p className="text-muted-foreground text-base">{tutor.gender}</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-4">
+                        <Clock className="h-6 w-6 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-semibold text-lg">Availability</h4>
+                            <p className="text-muted-foreground text-base">{tutor.availableTime}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                        <DollarSign className="h-6 w-6 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-semibold text-lg">Fees</h4>
+                            <p className="text-muted-foreground text-base">{tutor.fees}</p>
                         </div>
                     </div>
                 </div>

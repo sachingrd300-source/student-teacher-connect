@@ -70,6 +70,31 @@
         "address": {
           "type": "string",
           "description": "The teacher's physical address."
+        },
+        "qualification": {
+          "type": "string",
+          "description": "The teacher's highest qualification."
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female",
+            "Other"
+          ],
+          "description": "The gender of the teacher."
+        },
+        "availableTime": {
+          "type": "string",
+          "description": "General availability of the tutor, e.g., 'Weekdays 4pm-8pm'."
+        },
+        "fees": {
+          "type": "string",
+          "description": "The tutor's hourly rate or fee structure."
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Indicates if the tutor's profile has been verified by an admin."
         }
       },
       "required": [
