@@ -55,7 +55,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/dashboard/student">Get Started</Link>
+                <Link href="/signup">Get Started</Link>
               </Button>
               <Button size="lg" variant="outline">
                 Learn More
@@ -65,7 +65,7 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 md:py-28 bg-background">
+        <section id="features" className="py-20 md:py-28 bg-background">
           <div className="container mx-auto px-4 md:px-6">
             <div className="text-center">
               <h2 className="text-3xl md:text-4xl font-bold font-headline">A Platform for Everyone</h2>
@@ -99,8 +99,8 @@ export default function Home() {
             <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">
               Join EduConnect Pro today and unlock a world of collaborative learning.
             </p>
-            <Button size="lg" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90">
-              Sign Up for Free
+            <Button size="lg" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+              <Link href="/signup">Sign Up for Free</Link>
             </Button>
           </div>
         </section>

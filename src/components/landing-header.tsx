@@ -15,7 +15,7 @@ export function LandingHeader() {
           </Link>
         </div>
         <nav className="hidden md:flex flex-1 items-center space-x-6 text-sm font-medium">
-          <Link href="#features" className="text-foreground/60 transition-colors hover:text-foreground/80">Features</Link>
+          <Link href="/#features" className="text-foreground/60 transition-colors hover:text-foreground/80">Features</Link>
           <Link href="#pricing" className="text-foreground/60 transition-colors hover:text-foreground/80">Pricing</Link>
           <Link href="#contact" className="text-foreground/60 transition-colors hover:text-foreground/80">Contact</Link>
         </nav>
@@ -24,7 +24,7 @@ export function LandingHeader() {
             <Link href="/dashboard/student">Login</Link>
           </Button>
           <Button asChild className="hidden sm:inline-flex bg-accent text-accent-foreground hover:bg-accent/90">
-            <Link href="/dashboard/student">Get Started</Link>
+            <Link href="/signup">Get Started</Link>
           </Button>
           <Sheet>
             <SheetTrigger asChild>
@@ -40,7 +40,7 @@ export function LandingHeader() {
                     <span className="ml-2 font-bold font-headline text-lg">EduConnect Pro</span>
                 </div>
                 <nav className="flex flex-col gap-4 text-lg font-medium">
-                    <Link href="#features" className="text-foreground/60 hover:text-foreground">Features</Link>
+                    <Link href="/#features" className="text-foreground/60 hover:text-foreground">Features</Link>
                     <Link href="#pricing" className="text-foreground/60 hover:text-foreground">Pricing</Link>
                     <Link href="#contact" className="text-foreground/60 hover:text-foreground">Contact</Link>
                 </nav>
@@ -49,7 +49,7 @@ export function LandingHeader() {
                         <Link href="/dashboard/student">Login</Link>
                     </Button>
                      <Button asChild variant="secondary">
-                        <Link href="/dashboard/student">Sign Up</Link>
+                        <Link href="/signup">Sign Up</Link>
                     </Button>
                 </div>
               </div>
