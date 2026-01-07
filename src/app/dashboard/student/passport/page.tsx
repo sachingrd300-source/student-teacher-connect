@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useCollection, useMemoFirebase } from '@/firebase';
@@ -23,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { studentData } from '@/lib/data'; // Placeholder for name/avatar
 import { CheckCircle, XCircle, BookOpen, BarChart3, CalendarCheck2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 // Mock types for now, will be replaced with real types from backend.json
 type Attendance = { id: string; date: string; isPresent: boolean, studentId: string };
