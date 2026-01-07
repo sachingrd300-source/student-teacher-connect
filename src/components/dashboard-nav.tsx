@@ -58,7 +58,7 @@ export function DashboardNav({ role }: { role: Role }) {
 
   return (
     <nav className="flex flex-col gap-2 p-4">
-      <Collapsible defaultOpen={true}>
+      <Collapsible defaultOpen={true} key={role}>
         <CollapsibleTrigger
           className={cn(
             buttonVariants({ variant: 'ghost' }),
