@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
@@ -21,7 +22,7 @@ export function LandingHeader() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Button asChild variant="ghost">
-            <Link href="/dashboard/student">Login</Link>
+            <Link href="/login">Login</Link>
           </Button>
           <Button asChild className="hidden sm:inline-flex bg-accent text-accent-foreground hover:bg-accent/90">
             <Link href="/signup">Get Started</Link>
@@ -47,7 +48,7 @@ export function LandingHeader() {
                 </nav>
                 <div className="mt-auto flex flex-col gap-2">
                     <Button asChild>
-                        <Link href="/dashboard/student">Login</Link>
+                        <Link href="/login">Login</Link>
                     </Button>
                      <Button asChild variant="secondary">
                         <Link href="/signup">Sign Up</Link>
@@ -61,3 +62,5 @@ export function LandingHeader() {
     </header>
   );
 }
+
+    

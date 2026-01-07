@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -22,12 +24,12 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
-import { useRouter } from 'next/navigation';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -81,9 +83,6 @@ function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof tea
               <FormControl>
                 <Input placeholder="e.g., Physics, Mathematics" {...field} />
               </FormControl>
-              <FormDescription>
-                Enter the subjects you teach, separated by commas.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -97,9 +96,6 @@ function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof tea
               <FormControl>
                 <Input placeholder="e.g., Vision Classes" {...field} />
               </FormControl>
-              <FormDescription>
-                Enter the name of your institution.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -173,7 +169,7 @@ export default function SignUpPage() {
     const auth = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { user, isUserLoading } = useUser();
+    const { user } = useUser();
     
     // Store role and form values temporarily
     useEffect(() => {
@@ -190,7 +186,7 @@ export default function SignUpPage() {
                     mobileNumber: values.mobileNumber,
                     email: user.email,
                     role: role,
-                    // Role specific fields are added here for querying
+                    avatarUrl: `https://picsum.photos/seed/${user.uid}/100/100`,
                     ...(role === 'student' && { isApproved: !values.teacherId, teacherId: values.teacherId || null })
                 };
                 setDocumentNonBlocking(userDocRef, userData, { merge: true });
@@ -200,31 +196,34 @@ export default function SignUpPage() {
                 let roleData;
 
                 if (role === 'teacher') {
-                    const teacherId = `TCH-${uuidv4().slice(0,4)}`;
+                    const teacherId = `TCH-${uuidv4().slice(0,4).toUpperCase()}`;
                     roleDocRef = doc(firestore, 'teachers', teacherId);
                     roleData = {
                         id: teacherId, // This is the verification code
                         userId: user.uid,
+                        verificationCode: teacherId,
                         subjects: values.subjects,
                         className: values.className,
+                        experience: 'Not specified',
+                        address: 'Not specified',
                     };
                 } else if (role === 'student') {
                     // Student-specific data stored in the 'students' collection
-                    const studentId = `STU-${uuidv4().slice(0,4)}`;
+                    const studentId = `STU-${uuidv4().slice(0,4).toUpperCase()}`;
                     roleDocRef = doc(firestore, 'students', studentId);
                     roleData = {
                         id: studentId,
                         userId: user.uid,
-                        // This data is now on the user object, but can be duplicated here if needed
+                        isApproved: !values.teacherId, 
+                        teacherId: values.teacherId || null,
                     };
                 } else if (role === 'parent') {
-                    const parentId = `PAR-${uuidv4().slice(0,4)}`;
+                    const parentId = `PAR-${uuidv4().slice(0,4).toUpperCase()}`;
                     roleDocRef = doc(firestore, 'parents', parentId);
                     roleData = {
                         id: parentId,
                         userId: user.uid,
                         studentId: values.studentId,
-                        // teacherId will be populated upon approval
                     };
                 }
                 
@@ -235,7 +234,7 @@ export default function SignUpPage() {
                 localStorage.removeItem('signup_data');
                 toast({
                     title: "Account Created!",
-                    description: "Your profile has been saved.",
+                    description: "Your profile has been saved. Redirecting to dashboard...",
                 });
                 router.push(`/dashboard/${role}`);
             }
@@ -284,20 +283,20 @@ export default function SignUpPage() {
                             <TabsTrigger value="teacher">Teacher</TabsTrigger>
                             <TabsTrigger value="parent">Parent</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="student">
+                        <TabsContent value="student" className="pt-4">
                             <StudentSignUpForm onSignUp={handleSignUp('student')} />
                         </TabsContent>
-                        <TabsContent value="teacher">
+                        <TabsContent value="teacher" className="pt-4">
                              <TeacherSignUpForm onSignUp={handleSignUp('teacher')} />
                         </TabsContent>
-                        <TabsContent value="parent">
+                        <TabsContent value="parent" className="pt-4">
                              <ParentSignUpForm onSignUp={handleSignUp('parent')} />
                         </TabsContent>
                     </Tabs>
                      <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
                         Already have an account?{' '}
                         <Link
-                            href="/dashboard/student"
+                            href="/login"
                             className="underline underline-offset-4 hover:text-primary"
                         >
                             Login
@@ -308,3 +307,5 @@ export default function SignUpPage() {
         </div>
     )
 }
+
+    
