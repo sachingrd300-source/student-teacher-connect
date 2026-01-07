@@ -4,11 +4,8 @@ import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -28,99 +25,97 @@ import { useAuth, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
+const baseSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  mobileNumber: z.string().min(10, { message: 'Please enter a valid mobile number.' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
+  confirmPassword: z.string(),
+});
 
-const formSchema = z
-  .object({
-    name: z.string().min(2, {
-      message: 'Name must be at least 2 characters.',
-    }),
-    email: z.string().email({
-      message: 'Please enter a valid email address.',
-    }),
-    password: z.string().min(8, {
-      message: 'Password must be at least 8 characters.',
-    }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
+const teacherSchema = baseSchema.extend({
+  subjects: z.string().min(2, { message: 'Please enter at least one subject.'}),
+  className: z.string().min(2, { message: 'Please enter your class or coaching name.' }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
+
+const studentSchema = baseSchema.extend({
+  teacherCode: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ['confirmPassword'],
-  });
+});
+
+const parentSchema = baseSchema.extend({
+    studentId: z.string().min(1, { message: 'Student ID is required.' }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+});
+
 
 type Role = 'student' | 'teacher' | 'parent';
 
-function SignUpForm({ role, onSignUp }: { role: Role; onSignUp: (values: z.infer<typeof formSchema>) => void; }) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
+function TeacherSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof teacherSchema>) => void; }) {
+  const form = useForm<z.infer<typeof teacherSchema>>({
+    resolver: zodResolver(teacherSchema),
+    defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', subjects: '', className: '' },
   });
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input placeholder="John Doe" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email Address</FormLabel>
-              <FormControl>
-                <Input placeholder="name@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="********" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="********" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full">
-          Create {role.charAt(0).toUpperCase() + role.slice(1)} Account
-        </Button>
+        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="subjects" render={({ field }) => ( <FormItem> <FormLabel>Subject(s)</FormLabel> <FormControl> <Input placeholder="e.g., Physics, Mathematics" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="className" render={({ field }) => ( <FormItem> <FormLabel>Class / Coaching Name</FormLabel> <FormControl> <Input placeholder="e.g., Vision Classes" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+        <Button type="submit" className="w-full"> Create Teacher Account </Button>
       </form>
     </Form>
   );
+}
+
+function StudentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof studentSchema>) => void; }) {
+    const form = useForm<z.infer<typeof studentSchema>>({
+      resolver: zodResolver(studentSchema),
+      defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', teacherCode: '' },
+    });
+  
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="teacherCode" render={({ field }) => ( <FormItem> <FormLabel>Teacher Code (Optional)</FormLabel> <FormControl> <Input placeholder="Enter code if you have one" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <Button type="submit" className="w-full"> Create Student Account </Button>
+        </form>
+      </Form>
+    );
+}
+
+function ParentSignUpForm({ onSignUp }: { onSignUp: (values: z.infer<typeof parentSchema>) => void; }) {
+    const form = useForm<z.infer<typeof parentSchema>>({
+      resolver: zodResolver(parentSchema),
+      defaultValues: { name: '', mobileNumber: '', password: '', confirmPassword: '', studentId: '' },
+    });
+  
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="Jane Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="mobileNumber" render={({ field }) => ( <FormItem> <FormLabel>Mobile Number</FormLabel> <FormControl> <Input placeholder="9876543210" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="studentId" render={({ field }) => ( <FormItem> <FormLabel>Your Child's Student ID</FormLabel> <FormControl> <Input placeholder="Enter your child's unique ID" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem> <FormLabel>Confirm Password</FormLabel> <FormControl> <Input type="password" placeholder="********" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <Button type="submit" className="w-full"> Create Parent Account </Button>
+        </form>
+      </Form>
+    );
 }
 
 
@@ -130,9 +125,14 @@ export default function SignUpPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const handleSignUp = (role: Role) => async (values: z.infer<typeof formSchema>) => {
+    // A mock email is created from the mobile number for Firebase Auth compatibility.
+    // In a real app, you'd use phone number authentication.
+    const getEmailFromMobile = (mobile: string) => `${mobile}@edconnect.pro`;
+
+    const handleSignUp = (role: Role) => async (values: any) => {
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const email = getEmailFromMobile(values.mobileNumber);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
             const user = userCredential.user;
 
             await updateProfile(user, { displayName: values.name });
@@ -143,8 +143,8 @@ export default function SignUpPage() {
                 id: user.uid,
                 role: role,
                 name: values.name,
-                email: values.email,
-                mobileNumber: ''
+                email: email, // Storing the mock email
+                mobileNumber: values.mobileNumber
             }, { merge: true });
 
 
@@ -154,15 +154,16 @@ export default function SignUpPage() {
 
             if (role === 'teacher') {
                 roleCollection = 'teachers';
-                roleData.verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                roleData.verificationCode = `TCH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                roleData.subjects = values.subjects;
+                roleData.className = values.className;
             } else if (role === 'student') {
                 roleCollection = 'students';
-                roleData.isApproved = false;
+                roleData.isApproved = !values.teacherCode; // Auto-approved if no teacher code
+                roleData.teacherId = values.teacherCode || null;
             } else if (role === 'parent') {
-                // For parents, we'll need a studentId. For now, we'll leave it blank.
-                // This would typically be handled in a separate step, e.g., linking to a child.
                 roleCollection = 'parents';
-                roleData.studentId = ''; 
+                roleData.studentId = values.studentId; 
             }
             
             if (roleCollection) {
@@ -198,7 +199,7 @@ export default function SignUpPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-headline">Create your Account</CardTitle>
-                    <CardDescription>Choose your role to get started.</CardDescription>
+                    <CardDescription>First, tell us who you are.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="student" className="w-full">
@@ -208,13 +209,13 @@ export default function SignUpPage() {
                             <TabsTrigger value="parent">Parent</TabsTrigger>
                         </TabsList>
                         <TabsContent value="student">
-                            <SignUpForm role="student" onSignUp={handleSignUp('student')} />
+                            <StudentSignUpForm onSignUp={handleSignUp('student')} />
                         </TabsContent>
                         <TabsContent value="teacher">
-                             <SignUpForm role="teacher" onSignUp={handleSignUp('teacher')} />
+                             <TeacherSignUpForm onSignUp={handleSignUp('teacher')} />
                         </TabsContent>
                         <TabsContent value="parent">
-                             <SignUpForm role="parent" onSignUp={handleSignUp('parent')} />
+                             <ParentSignUpForm onSignUp={handleSignUp('parent')} />
                         </TabsContent>
                     </Tabs>
                      <p className="mt-4 px-8 text-center text-sm text-muted-foreground">
