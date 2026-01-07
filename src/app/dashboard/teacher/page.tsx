@@ -142,18 +142,21 @@ export default function TeacherDashboardPage() {
     if (!firestore || !student.id) return;
     const studentDocRef = doc(firestore, 'users', student.id);
     updateDocumentNonBlocking(studentDocRef, { isApproved: true });
+    toast({ title: "Student Approved", description: `${student.name} has been enrolled.` });
   };
   
   const handleDeny = async (student: StudentProfile) => {
     if (!firestore || !student.id) return;
     const studentDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentDocRef, { teacherId: null });
+    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false });
+    toast({ variant: "destructive", title: "Student Denied", description: `${student.name}'s request has been denied.` });
   };
   
   const handleRemove = (student: StudentProfile) => {
     if (!firestore || !student.id) return;
     const studentDocRef = doc(firestore, 'users', student.id);
-    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false });
+    updateDocumentNonBlocking(studentDocRef, { teacherId: null, isApproved: false, batch: null });
+    toast({ variant: "destructive", title: "Student Removed", description: `${student.name} has been removed from your roster.` });
   };
 
   const handleCreateBatch = async () => {
@@ -164,7 +167,7 @@ export default function TeacherDashboardPage() {
       id: batchId,
       name: newBatchName,
       teacherId: teacher.id,
-    });
+    }, {});
     toast({ title: "Batch Created!", description: `Batch "${newBatchName}" has been successfully created.` });
     setNewBatchName('');
     setCreateBatchOpen(false);
@@ -180,15 +183,13 @@ export default function TeacherDashboardPage() {
     // and the student would complete the signup. Here we create the user directly.
     const studentUserId = uuidv4();
     const studentId = `STU-${uuidv4().slice(0, 4)}`;
-
-    const userDocRef = doc(firestore, 'users', studentUserId);
-    const studentDocRef = doc(firestore, 'students', studentId);
     const email = `${newStudentMobile}@edconnect.pro`;
 
-    // Create user and student docs in a batch
-    const batch = writeBatch(firestore);
+    // Create user and student docs
+    const userDocRef = doc(firestore, 'users', studentUserId);
+    const studentDocRef = doc(firestore, 'students', studentId);
 
-    batch.set(userDocRef, {
+    const userData = {
       id: studentUserId,
       name: newStudentName,
       mobileNumber: newStudentMobile,
@@ -198,17 +199,19 @@ export default function TeacherDashboardPage() {
       teacherId: teacher.id,
       batch: selectedBatch || null,
       avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
-    });
+    };
 
-    batch.set(studentDocRef, {
+    const studentData = {
       id: studentId,
       userId: studentUserId,
       teacherId: teacher.id,
       isApproved: true,
       batch: selectedBatch || null,
-    });
-
-    await batch.commit();
+    };
+    
+    // Use non-blocking writes
+    setDocumentNonBlocking(userDocRef, userData, {});
+    setDocumentNonBlocking(studentDocRef, studentData, {});
 
     toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.`});
     setNewStudentName('');
@@ -379,7 +382,7 @@ export default function TeacherDashboardPage() {
                               {batches?.map(batch => (
                                 <SelectItem key={batch.id} value={batch.name}>{batch.name}</SelectItem>
                               ))}
-                               {batches?.length === 0 && <p className="p-2 text-xs text-muted-foreground">No batches created yet.</p>}
+                               {batches?.length === 0 && !isLoadingBatches && <p className="p-2 text-xs text-muted-foreground">No batches created yet.</p>}
                             </SelectContent>
                           </Select>
                       </div>
@@ -458,3 +461,5 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
+
+    
