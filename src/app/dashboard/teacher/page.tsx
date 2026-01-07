@@ -106,7 +106,7 @@ export default function TeacherDashboardPage() {
 
 
   const teacherIdQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid), 1) : null
+    user ? query(collection(firestore, 'teachers'), where('userId', '==', user.uid)) : null
   , [firestore, user]);
 
   const { data: teacherDocs, isLoading: isLoadingTeacher } = useCollection<TeacherProfile>(teacherIdQuery);
@@ -164,7 +164,10 @@ export default function TeacherDashboardPage() {
   };
 
   const handleCreateBatch = async () => {
-    if (!firestore || !teacher || !newBatchName) return;
+    if (!firestore || !teacher || !newBatchName) {
+        toast({ variant: 'destructive', title: 'Missing Batch Name', description: 'Please enter a name for the batch.' });
+        return;
+    }
     const batchId = uuidv4();
     const batchRef = doc(firestore, 'batches', batchId);
     
@@ -187,6 +190,7 @@ export default function TeacherDashboardPage() {
     
     const studentUserId = uuidv4();
     const email = `${newStudentMobile}@edconnect.pro`;
+    const selectedBatch = batches?.find(b => b.id === selectedBatchId);
 
     const userDocRef = doc(firestore, 'users', studentUserId);
     const userData = {
@@ -197,7 +201,7 @@ export default function TeacherDashboardPage() {
       role: 'student',
       isApproved: true, 
       teacherId: teacher.id,
-      batch: batches?.find(b => b.id === selectedBatchId)?.name || null,
+      batch: selectedBatch?.name || null,
       avatarUrl: `https://picsum.photos/seed/${studentUserId}/40/40`,
     };
     
@@ -209,7 +213,7 @@ export default function TeacherDashboardPage() {
         userId: studentUserId,
         teacherId: teacher.id,
         isApproved: true,
-        batch: batches?.find(b => b.id === selectedBatchId)?.name || null,
+        batch: selectedBatch?.name || null,
     }, {merge: false})
 
 
