@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Home,
@@ -25,6 +25,9 @@ import {
 import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 type Role = 'teacher' | 'student' | 'parent';
 
@@ -40,15 +43,17 @@ const navItems = {
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
-    { href: '/dashboard/student/materials', label: 'Study Material', icon: BookOpenCheck },
-    { href: '/dashboard/student/performance', label: 'My Performance', icon: BarChart3 },
-    { href: '/dashboard/student/attendance', label: 'My Attendance', icon: CalendarDays },
+    // These pages don't exist, so commenting out for now
+    // { href: '/dashboard/student/materials', label: 'Study Material', icon: BookOpenCheck },
+    // { href: '/dashboard/student/performance', label: 'My Performance', icon: BarChart3 },
+    // { href: '/dashboard/student/attendance', label: 'My Attendance', icon: CalendarDays },
   ],
   parent: [
     { href: '/dashboard/parent', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/parent/performance', label: 'Performance', icon: BarChart3 },
-    { href: '/dashboard/parent/attendance', label: 'Attendance', icon: CalendarDays },
-    { href: '/dashboard/parent/schedule', label: 'Class Schedule', icon: CalendarDays },
+    // These pages don't exist, so commenting out for now
+    // { href: '/dashboard/parent/performance', label: 'Performance', icon: BarChart3 },
+    // { href: '/dashboard/parent/attendance', label: 'Attendance', icon: CalendarDays },
+    // { href: '/dashboard/parent/schedule', label: 'Class Schedule', icon: CalendarDays },
   ],
 };
 
@@ -62,10 +67,31 @@ export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const items = navItems[role];
   const [isClient, setIsClient] = useState(false);
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+      router.push('/');
+    } catch (error) {
+      console.error('Logout Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'An error occurred while logging out.',
+      });
+    }
+  };
 
 
   return (
@@ -123,8 +149,8 @@ export function DashboardNav({ role }: { role: Role }) {
           <Settings className="h-4 w-4" />
           Settings
         </Link>
-        <Link
-          href="/"
+        <button
+          onClick={handleLogout}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
             'justify-start gap-3 text-red-500 hover:text-red-500 hover:bg-red-500/10'
@@ -132,7 +158,7 @@ export function DashboardNav({ role }: { role: Role }) {
         >
           <LogOut className="h-4 w-4" />
           Logout
-        </Link>
+        </button>
       </div>
     </nav>
   );
