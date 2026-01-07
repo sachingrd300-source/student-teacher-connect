@@ -116,7 +116,9 @@ export default function Home() {
                                 </div>
                             </CardContent>
                             <CardFooter className="p-4 bg-muted/50">
-                                <Button className="w-full">View Profile</Button>
+                                <Button asChild className="w-full">
+                                  <Link href={`/tutor/${tutor.id}`}>View Profile</Link>
+                                </Button>
                             </CardFooter>
                         </Card>
                     ))}
