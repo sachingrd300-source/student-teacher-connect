@@ -192,11 +192,9 @@ service cloud.firestore {
     match /batches/{batchId} {
       allow read: if isSpecificTeacher(resource.data.teacherId) || isTeacherOfStudent(request.auth.uid);
       allow list: if isTeacher();
-      allow create: if isSpecificTeacher(request.resource.data.teacherId);
+      allow create: if isTeacher() && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.id;
       allow update, delete: if isSpecificTeacher(resource.data.teacherId) && isExistingDoc();
     }
 
   }
 }
-
-    
