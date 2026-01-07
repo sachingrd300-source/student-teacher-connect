@@ -27,8 +27,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 // Mock types for now, will be replaced with real types from backend.json
-type Attendance = { id: string; date: string; isPresent: boolean, studentId: string };
-type TestResult = { id: string; testId: string; marks: number; studentId: string, subject: string, testName: string };
+type AttendanceRecord = { id: string; date: any; presentStudentIds: string[], absentStudentIds: string[] };
+type TestResult = { id: string; date: any; marks: number; maxMarks: number; studentId: string, subject: string, testName: string };
 
 
 export default function LearningPassportPage() {
@@ -40,28 +40,58 @@ export default function LearningPassportPage() {
     if (!user) return null;
     return query(
       collection(firestore, 'attendances'),
-      where('studentId', '==', user.uid), // Assuming student doc id is user.uid for simplicity
+      // This is not efficient, but works for a demo.
+      // A better solution would be to have a subcollection for each student's attendance.
+      // or an array of student UIDs on the attendance doc. We will check both present and absent arrays.
       orderBy('date', 'desc')
     );
-  }, [firestore, user]);
+  }, [firestore]);
 
   // Memoized query for student's test results
   const testResultsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
       collection(firestore, 'test_results'),
-      where('studentId', '==', user.uid)
+      where('studentId', '==', user.uid),
+      orderBy('date', 'desc')
     );
   }, [firestore, user]);
 
-  const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<Attendance>(attendanceQuery);
+  const { data: rawAttendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
   const { data: testResults, isLoading: isLoadingTests } = useCollection<TestResult>(testResultsQuery);
   
+  const studentAttendance = useMemo(() => {
+    if (!user || !rawAttendanceRecords) return [];
+    return rawAttendanceRecords
+      .map(rec => {
+        const isPresent = rec.presentStudentIds?.includes(user.uid);
+        const isAbsent = rec.absentStudentIds?.includes(user.uid);
+        if (isPresent) return { id: rec.id, date: rec.date, status: 'Present' };
+        if (isAbsent) return { id: rec.id, date: rec.date, status: 'Absent' };
+        return null;
+      })
+      .filter(Boolean) as { id: string; date: any; status: 'Present' | 'Absent' }[];
+  }, [user, rawAttendanceRecords]);
+  
+  
   // Combine and sort all activities for a timeline view
-  const timeline = [
-    ...(attendanceRecords || []).map(a => ({ ...a, type: 'attendance', timestamp: new Date(a.date) })),
-    ...(testResults || []).map(t => ({ ...t, type: 'test', timestamp: new Date() })), // Note: Test results need a date field
-  ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  const timeline = useMemo(() => {
+    if (!studentAttendance || !testResults) return [];
+    
+    const attendanceEvents = studentAttendance.map(a => ({ 
+        type: 'attendance' as const, 
+        timestamp: a.date?.toDate() || new Date(), 
+        data: a 
+    }));
+    
+    const testEvents = (testResults || []).map(t => ({ 
+        type: 'test' as const, 
+        timestamp: t.date?.toDate() || new Date(), 
+        data: t
+    }));
+
+    return [...attendanceEvents, ...testEvents].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [studentAttendance, testResults]);
 
 
   return (
@@ -94,20 +124,20 @@ export default function LearningPassportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {attendanceRecords?.map((record) => (
+                {studentAttendance?.map((record) => (
                   <TableRow key={record.id}>
-                    <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{record.date?.toDate().toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant={record.isPresent ? 'default' : 'destructive'}>
-                        {record.isPresent ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
-                        {record.isPresent ? 'Present' : 'Absent'}
+                      <Badge variant={record.status === 'Present' ? 'default' : 'destructive'}>
+                        {record.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
+                        {record.status}
                       </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-             {attendanceRecords?.length === 0 && !isLoadingAttendance && <p className="text-center text-muted-foreground py-4">No attendance records found.</p>}
+             {studentAttendance?.length === 0 && !isLoadingAttendance && <p className="text-center text-muted-foreground py-4">No attendance records found.</p>}
           </CardContent>
         </Card>
 
@@ -129,9 +159,9 @@ export default function LearningPassportPage() {
                 <TableBody>
                     {testResults?.map((result) => (
                         <TableRow key={result.id}>
-                            <TableCell className="font-medium">{result.testName || result.testId}</TableCell>
+                            <TableCell className="font-medium">{result.testName}</TableCell>
                             <TableCell>{result.subject}</TableCell>
-                            <TableCell className="text-right font-semibold">{result.marks}%</TableCell>
+                            <TableCell className="text-right font-semibold">{result.marks} / {result.maxMarks}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -160,12 +190,12 @@ export default function LearningPassportPage() {
                         <div className="flex-grow">
                             {item.type === 'attendance' && (
                                 <p>
-                                    Attendance marked as <span className={cn('font-semibold', item.isPresent ? 'text-primary' : 'text-destructive')}>{item.isPresent ? 'Present' : 'Absent'}</span>.
+                                    Attendance marked as <span className={cn('font-semibold', item.data.status === 'Present' ? 'text-primary' : 'text-destructive')}>{item.data.status}</span>.
                                 </p>
                             )}
                             {item.type === 'test' && (
                                 <p>
-                                    Scored <span className="font-semibold text-primary">{item.marks}%</span> in the <span className="font-semibold">{item.testName || 'test'}</span> for <span className="font-semibold">{item.subject}</span>.
+                                    Scored <span className="font-semibold text-primary">{item.data.marks}/{item.data.maxMarks}</span> in the <span className="font-semibold">{item.data.testName}</span> for <span className="font-semibold">{item.data.subject}</span>.
                                 </p>
                             )}
                         </div>
