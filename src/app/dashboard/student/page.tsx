@@ -32,7 +32,10 @@ import {
   Download,
   BookOpen,
   BarChart3,
-  CalendarCheck2
+  CalendarCheck2,
+  CalendarDays,
+  Video,
+  MapPin,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -57,6 +60,16 @@ type UserProfile = {
 type StudyMaterial = { id: string; title: string; type: string; subject: string; date: any; isNew?: boolean; };
 type TestResult = { id: string; testName: string; marks: number };
 type AttendanceRecord = { date: any; status: 'Present' | 'Absent' };
+type Schedule = {
+    id: string;
+    topic: string;
+    subject: string;
+    date: any;
+    time: string;
+    type: 'Online' | 'Offline';
+    locationOrLink: string;
+};
+
 
 export default function StudentDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -86,9 +99,18 @@ export default function StudentDashboardPage() {
         collection(firestore, 'attendances'), 
         // This is inefficient, but we'll filter on the client. 
         // For production, a dedicated student attendance sub-collection is better.
+        // This is inefficient, but we'll filter on the client. 
+        // For production, a dedicated student attendance sub-collection is better.
     );
   }, [firestore, user]);
   const { data: rawAttendanceRecords, isLoading: isLoadingAttendance } = useCollection<{id: string, date: any, presentStudentIds: string[], absentStudentIds: string[] }>(attendanceQuery);
+
+  const scheduleQuery = useMemoFirebase(() => {
+    if(!student?.teacherId) return null;
+    return query(collection(firestore, 'schedules'), where('teacherId', '==', student.teacherId), where('archived', '!=', true));
+  }, [firestore, student]);
+  const { data: schedule, isLoading: isLoadingSchedule } = useCollection<Schedule>(scheduleQuery);
+
 
   const attendanceRecords = useMemo(() => {
     if (!user || !rawAttendanceRecords) return [];
@@ -209,6 +231,7 @@ export default function StudentDashboardPage() {
           <TabsTrigger value="materials"><BookOpen className="w-4 h-4 mr-2" />Study Materials</TabsTrigger>
           <TabsTrigger value="performance"><BarChart3 className="w-4 h-4 mr-2" />Performance</TabsTrigger>
           <TabsTrigger value="attendance"><CalendarCheck2 className="w-4 h-4 mr-2" />Attendance</TabsTrigger>
+          <TabsTrigger value="schedule"><CalendarDays className="w-4 h-4 mr-2" />Schedule</TabsTrigger>
         </TabsList>
         <TabsContent value="materials">
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -285,7 +308,48 @@ export default function StudentDashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="schedule">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Upcoming Classes</CardTitle>
+                    <CardDescription>Here is your schedule for the upcoming days.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     {isLoadingSchedule && (
+                        <div className="space-y-4">
+                           <Skeleton className="h-16 w-full" />
+                           <Skeleton className="h-16 w-full" />
+                           <Skeleton className="h-16 w-full" />
+                        </div>
+                     )}
+                     {schedule && schedule.length > 0 ? (
+                        schedule.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
+                                        <span>{item.date?.toDate().toLocaleDateString('en-US', { day: '2-digit' })}</span>
+                                        <span>{item.date?.toDate().toLocaleDateString('en-US', { month: 'short' })}</span>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg">{item.topic}</h3>
+                                        <p className="text-sm text-muted-foreground">{item.subject} • {item.time}</p>
+                                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                            {item.type === 'Online' ? <Video className="h-4 w-4"/> : <MapPin className="h-4 w-4"/>}
+                                            {item.locationOrLink || 'Not specified'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                     ) : !isLoadingSchedule && (
+                        <p className="text-sm text-center text-muted-foreground py-8">Your teacher hasn't scheduled any classes yet.</p>
+                     )}
+                </CardContent>
+            </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    
