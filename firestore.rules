@@ -1,40 +1,23 @@
-
 /**
- * Core Philosophy: This ruleset enforces a role-based access model for an
- * educational application (EduConnect Pro) with two primary roles: Teacher and
- * Student. Authorization is primarily determined by denormalized
- * relationships stored directly within documents (e.g., a `teacherId` field
- * on a student's record) rather than by custom claims or global roles. This
- * allows for efficient and secure access control.
+ * Core Philosophy: This ruleset enforces a role-based security model for an educational application. Access is primarily determined by a user's role (teacher, student, parent) and their relationships to specific data entities. The guiding principle is "Authorization Independence," where authorization context (like a teacher's or student's user ID) is denormalized onto documents to create fast, secure, and understandable rules that avoid complex joins.
  *
- * Data Structure: The data is organized into a flat structure with top-level
- * collections for each primary entity (`users`, `teachers`, `students`,
- * `study_materials`, etc.). This structural segregation ensures that
- * each collection has a clear and homogeneous security posture.
+ * Data Structure: The database uses a flat structure with top-level collections for each major entity (users, teachers, students, studyMaterials, etc.). Relationships are established through denormalized ID fields within documents (e.g., a `StudyMaterial` document contains the `teacherId` of its author). This structure is optimized for security rule performance.
  *
  * Key Security Decisions:
- * - User documents (`/users/{userId}`) are the source of truth for role and
- *   basic info. They can be read by related users (e.g., a teacher can read a
- *   student's user doc) but only written by the owner.
- * - Role-specific profiles (`/teachers/{id}`, etc.) contain data unique to
- *   that role and are managed by the user they belong to.
- * - Shared data like `study_materials` is publicly readable by any signed-in
- *   user but writable only by the creating teacher.
- * - Listing documents is controlled to prevent data enumeration.
- *
- * Denormalization for Authorization: To create simpler, more performant rules,
- * authorization-critical data is denormalized. For example, `teacherId` is
- * copied onto user documents for students. This allows rules to authorize users
- * based on fields in the document they are accessing, avoiding costly `get()`
- * calls where possible.
+ * - User Isolation: A user can only access their own user profile document. Listing or browsing other users is disabled.
+ * - Role-Based Ownership: Teachers are the owners of educational content like Study Materials, Tests, and Class Schedules. They have exclusive write access to this content.
+ * - Shared Access for Student Data: Data specific to a student, such as Attendance and Performance records, is accessible only by the student themselves and the associated teacher. Access for parents is not implemented due to schema limitations and is denied by default for security.
+ * - Student Submissions: Students have the authority to create and delete their own submissions (e.g., DPPSubmissions), while teachers can view and manage them.
+ * - Public vs. Private Content: The `studyMaterials` collection contains a mix of public and private content, controlled by an `isFree` boolean flag. Reads are allowed for free content, but writes are always restricted to the owner teacher.
+ * - Restricted Listing: To prevent data leakage and ensure performance, broad `list` operations are disabled on most collections. Clients are expected to fetch data via known document IDs or through specific, secure queries.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    //-------------------------------------------------------------------------
+    // --------------------------------
     // Helper Functions
-    //-------------------------------------------------------------------------
+    // --------------------------------
 
     /**
      * Checks if a user is authenticated.
@@ -44,157 +27,208 @@ service cloud.firestore {
     }
 
     /**
-     * Checks if the requesting user's UID matches the wildcard document ID.
-     * Used for collections where the document ID is the user's UID.
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the fundamental check for document ownership.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
+    
     /**
-     * Checks if a document exists.
+     * Checks if the document being accessed already exists.
+     * CRITICAL for all update and delete operations to prevent acting on non-existent data.
      */
     function isExistingDoc() {
       return resource != null;
     }
+
+    /**
+     * Checks if the user associated with a role-specific document (e.g., a Teacher or Student doc)
+     * is the currently authenticated user. This requires a `get` call to resolve the relationship.
+     */
+    function userOwnsRoleDoc(collectionName, docId) {
+      return isSignedIn() && get(/databases/$(database)/documents/$(collectionName)/$(docId)).data.userId == request.auth.uid;
+    }
     
     /**
-     * Retrieves the user document for a given userId.
+     * A specific helper to check if the current user is the teacher associated with a given document.
+     * The document must have a `teacherId` field.
      */
-    function getUserDoc(userId) {
-      return get(/databases/$(database)/documents/users/$(userId));
+    function isTeacherOwner(docData) {
+      return userOwnsRoleDoc('teachers', docData.teacherId);
+    }
+    
+    /**
+     * A specific helper to check if the current user is the student associated with a given document.
+     * The document must have a `studentId` field.
+     */
+    function isStudentOwner(docData) {
+      return userOwnsRoleDoc('students', docData.studentId);
     }
 
     /**
-     * Checks if the user with `userId` has the role of 'teacher'.
+     * Checks if the current user is the teacher associated with a DPP submission.
+     * This requires a multi-step lookup: Submission -> StudyMaterial -> Teacher.
      */
-    function isTeacher(userId) {
-      return isSignedIn() && getUserDoc(userId).data.role == 'teacher';
-    }
-    
-     /**
-     * Checks if the requesting user is the owner of the teacher document.
-     * It compares the `userId` field in the teacher document with the request's auth uid.
-     */
-    function isTeacherOwner(teacherDoc) {
-      return isSignedIn() && request.auth.uid == teacherDoc.data.userId;
+    function isTeacherOfDppSubmission(submissionData) {
+      let studyMaterial = get(/databases/$(database)/documents/studyMaterials/$(submissionData.studyMaterialId)).data;
+      return userOwnsRoleDoc('teachers', studyMaterial.teacherId);
     }
 
-
-    /**
-     * Checks if the requesting user is the teacher of a specific student.
-     * It reads the student's user document to get the teacherId and checks against the teacher's own ID.
-     */
-    function isTeacherOfStudent(studentUserId) {
-        let studentUserDoc = getUserDoc(studentUserId);
-        // The teacherId on the student's user doc is the ID from the `teachers` collection (the verification code)
-        let teacherIdOnStudent = studentUserDoc.data.teacherId; 
-        if (teacherIdOnStudent == null) {
-          return false;
-        }
-        // We need to find the teacher doc whose ID is `teacherIdOnStudent` and check if its `userId` matches the requester.
-        // This requires a query, which is not possible in rules.
-        // A better way is to check the requester's own teacherId.
-        let teacherDoc = get(/databases/$(database)/documents/teachers/$(teacherIdOnStudent));
-        return teacherDoc.exists && teacherDoc.data.userId == request.auth.uid;
-    }
-    
-    //-------------------------------------------------------------------------
+    // --------------------------------
     // Collection Rules
-    //-------------------------------------------------------------------------
+    // --------------------------------
 
     /**
-     * @description User documents store primary role and identity info.
-     * - Owner can create, update, delete.
-     * - A teacher can read their approved students' user docs.
-     * - A student can read their own user doc.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
+     * @allow A signed-in user (create)s, (get)s, or (update)s their own user document. `request.auth.uid == userId`.
+     * @deny An anonymous user tries to read a user document.
+     * @deny A signed-in user tries to (list) or (delete) any user document, including their own.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isTeacherOfStudent(userId);
-      allow list: if isTeacher(request.auth.uid); // Teachers can list students under them.
-      allow create: if isOwner(userId) || isTeacher(request.auth.uid); // Teachers can create students
-      allow update: if isOwner(userId) || (isTeacher(request.auth.uid) && isTeacherOfStudent(userId)); // Teacher can approve student
-      allow delete: if isOwner(userId);
+      allow get, update: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow list: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Teacher profiles contain info specific to the teacher role.
-     * - Only the owning user can manage their teacher profile.
+     * @description Controls access to teacher-specific profile data.
      * @path /teachers/{teacherId}
+     * @allow A user (create)s a teacher profile for themselves (`request.resource.data.userId == request.auth.uid`).
+     * @deny A user tries to (update) or (delete) another user's teacher profile.
+     * @deny Any user tries to (list) all teachers.
+     * @principle Validates relational integrity between the user and their role-specific document.
      */
     match /teachers/{teacherId} {
-      allow get: if isSignedIn(); // Any signed-in user can read teacher profiles
-      allow list: if isSignedIn(); // Allow listing tutors
-      allow create: if isOwner(getAfter(/databases/$(database)/documents/teachers/$(teacherId)).data.userId);
-      allow update, delete: if isOwner(resource.data.userId) && isExistingDoc();
+      allow get, update: if isExistingDoc() && userOwnsRoleDoc('teachers', teacherId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isExistingDoc() && userOwnsRoleDoc('teachers', teacherId);
+      allow list: if false;
     }
 
     /**
-     * @description Student-specific data.
-     * - A user creates their own student profile.
-     * - The student and their assigned teacher can read it.
-     * - Only the student can delete it.
+     * @description Controls access to student-specific profile data.
      * @path /students/{studentId}
+     * @allow A user (create)s a student profile for themselves (`request.resource.data.userId == request.auth.uid`).
+     * @deny A user tries to (get) or (update) another user's student profile.
+     * @deny Any user tries to (list) all students.
+     * @principle Validates relational integrity between the user and their role-specific document.
      */
     match /students/{studentId} {
-      allow get: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
+      allow get, update: if isExistingDoc() && userOwnsRoleDoc('students', studentId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isExistingDoc() && userOwnsRoleDoc('students', studentId);
       allow list: if false;
-      allow create: if isOwner(request.resource.data.userId) || isTeacher(request.auth.uid);
-      allow update: if isOwner(resource.data.userId) || isTeacherOfStudent(resource.data.userId);
-      allow delete: if isOwner(resource.data.userId) && isExistingDoc();
     }
 
     /**
-     * @description Study materials are readable by any signed-in user but can only be managed by the teacher who created them.
-     * @path /study_materials/{studyMaterialId}
+     * @description Controls access to parent-specific profile data.
+     * @path /parents/{parentId}
+     * @allow A user (create)s a parent profile for themselves (`request.resource.data.userId == request.auth.uid`).
+     * @deny A user tries to (get) or (update) another user's parent profile.
+     * @deny Any user tries to (list) all parents.
+     * @principle Validates relational integrity between the user and their role-specific document.
      */
-    match /study_materials/{studyMaterialId} {
-      // Allow read if user is signed in
-      allow get, list: if isSignedIn();
-      // Allow write if user is a teacher and their userId matches the teacherId on the material
-      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
+    match /parents/{parentId} {
+      allow get, update: if isExistingDoc() && userOwnsRoleDoc('parents', parentId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isExistingDoc() && userOwnsRoleDoc('parents', parentId);
+      allow list: if false;
     }
 
+    /**
+     * @description Controls access to study materials.
+     * @path /studyMaterials/{studyMaterialId}
+     * @allow Any signed-in user can (list) all study materials.
+     * @allow A user can (get) a study material if it is marked as free (`isFree == true`) OR if they are the owner teacher.
+     * @deny A user who is not the owner teacher tries to (create), (update), or (delete) a study material.
+     * @principle Implements public read for some documents and enforces document ownership for writes.
+     */
+    match /studyMaterials/{studyMaterialId} {
+      allow get: if (isExistingDoc() && resource.data.isFree == true) || isTeacherOwner(resource.data);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isTeacherOwner(request.resource.data);
+      allow update: if isExistingDoc() && isTeacherOwner(resource.data);
+      allow delete: if isExistingDoc() && isTeacherOwner(resource.data);
+    }
 
     /**
-     * @description Attendance records are managed by teachers. They are readable by the teacher and the associated student.
+     * @description Controls access to student attendance records. Access for parents is denied by default.
      * @path /attendances/{attendanceId}
+     * @allow A teacher can (create), (get), (update), or (delete) an attendance record they are associated with.
+     * @allow A student can (get) their own attendance record.
+     * @deny A student tries to (update) their own attendance.
+     * @deny A parent tries to access the record. // TODO: Denormalize parent UIDs onto this record for parent access.
+     * @principle Enforces shared access for reads between related roles (teacher, student) and owner-only access for writes.
      */
     match /attendances/{attendanceId} {
-      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId);
-      allow list: if isSignedIn();
-      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
+      allow get: if isTeacherOwner(resource.data) || isStudentOwner(resource.data);
+      allow list: if false;
+      allow create: if isSignedIn() && isTeacherOwner(request.resource.data);
+      allow update, delete: if isExistingDoc() && isTeacherOwner(resource.data);
     }
 
     /**
-     * @description Test results are managed by teachers. They are readable by the teacher and the associated student.
-     * @path /test_results/{testResultId}
+     * @description Controls access to tests created by teachers.
+     * @path /tests/{testId}
+     * @allow The owner teacher can perform any action (create, read, update, delete) on their own test.
+     * @deny Any user who is not the owner teacher tries to access or modify a test.
+     * @deny Any user can (list) all tests.
+     * @principle Enforces strict document ownership for all operations.
      */
-    match /test_results/{testResultId} {
-      allow get: if isTeacher(request.auth.uid) || isOwner(resource.data.studentId);
-      allow list: if isSignedIn();
-      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
-    }
-    
-    /**
-     * @description Batches are managed by teachers.
-     * @path /batches/{batchId}
-     */
-    match /batches/{batchId} {
-      allow read, list: if isSignedIn();
-      // Allow write if user is a teacher and their userId matches the teacherId on the batch
-      allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
+    match /tests/{testId} {
+      allow get: if isTeacherOwner(resource.data);
+      allow list: if false;
+      allow create: if isSignedIn() && isTeacherOwner(request.resource.data);
+      allow update, delete: if isExistingDoc() && isTeacherOwner(resource.data);
     }
 
     /**
-     * @description Schedules are managed by teachers and readable by relevant users.
-     * @path /schedules
+     * @description Controls access to student performance records on tests.
+     * @path /performances/{performanceId}
+     * @allow A teacher can (create) and (read) a performance record.
+     * @allow A student can (read) their own performance record.
+     * @deny A user who is not the student or teacher tries to read the record.
+     * @deny Any writes are currently denied. // CRITICAL: The 'Performance' entity is missing a 'teacherId' field for secure write validation.
+     * @principle Enforces shared access for reads. Writes are disabled pending schema correction.
      */
-     match /schedules/{scheduleId} {
-        allow read, list: if isSignedIn(); 
-        allow write: if isTeacher(request.auth.uid) && request.resource.data.teacherId == get(/databases/$(database)/documents/teachers?userId=$(request.auth.uid)).docs[0].id;
-     }
+    match /performances/{performanceId} {
+      allow get: if isStudentOwner(resource.data); // NOTE: Teacher access requires `teacherId` on the document.
+      allow list: if false;
+      allow create, update, delete: if false; // TODO: Add teacher validation once the schema is updated with a `teacherId` field.
+    }
 
+    /**
+     * @description Controls access to Daily Practice Problem (DPP) submissions.
+     * @path /dPPSubmissions/{dPPSubmissionId}
+     * @allow A student can (create) and (delete) their own submission.
+     * @allow The student and the relevant teacher can (get) and (update) the submission.
+     * @deny A user who is not the submitting student or the material's teacher tries to access the record.
+     * @principle Enforces a collaborative model where students create/delete and teachers manage/review.
+     */
+    match /dPPSubmissions/{dPPSubmissionId} {
+      allow get, update: if (isExistingDoc() && isStudentOwner(resource.data)) || isTeacherOfDppSubmission(resource.data);
+      allow list: if false;
+      allow create: if isSignedIn() && isStudentOwner(request.resource.data);
+      allow delete: if isExistingDoc() && isStudentOwner(resource.data);
+    }
+
+    /**
+     * @description Controls access to class schedules created by teachers.
+     * @path /classSchedules/{classScheduleId}
+     * @allow The owner teacher can perform any action (create, read, update, delete) on their own schedule.
+     * @deny Any user who is not the owner teacher tries to access or modify a schedule.
+     * @deny Any user can (list) all class schedules.
+     * @principle Enforces strict document ownership for all operations.
+     */
+    match /classSchedules/{classScheduleId} {
+      allow get: if isTeacherOwner(resource.data);
+      allow list: if false;
+      allow create: if isSignedIn() && isTeacherOwner(request.resource.data);
+      allow update, delete: if isExistingDoc() && isTeacherOwner(resource.data);
+    }
   }
 }

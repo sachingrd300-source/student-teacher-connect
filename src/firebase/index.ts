@@ -33,15 +33,12 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  const firestore = getFirestore(firebaseApp);
-  // Add any other SDK initializations here
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: firestore,
+    firestore: getFirestore(firebaseApp)
   };
 }
-
 
 export * from './provider';
 export * from './client-provider';
