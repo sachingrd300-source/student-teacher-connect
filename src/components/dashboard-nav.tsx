@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Home,
@@ -59,6 +59,7 @@ const roleIcons = {
 
 export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
+  const router = useRouter();
   const items = navItems[role] || [];
   const [isClient, setIsClient] = useState(false);
 
@@ -67,8 +68,8 @@ export function DashboardNav({ role }: { role: Role }) {
   }, []);
 
   const handleLogout = () => {
-    // This is a mock function now. In a real app, this would sign the user out.
-    alert("Logout functionality is disabled in this demo.");
+    // In a real app, this would also call a Firebase sign-out method.
+    router.push('/');
   };
 
   if (role === 'parent') {
