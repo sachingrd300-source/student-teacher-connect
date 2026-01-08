@@ -48,14 +48,14 @@ export default function Home() {
            )}
           <div className="container mx-auto px-4 md:px-6 text-center relative z-10">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-foreground">
-              Find the Best Tutors, Seamlessly
+              Connecting Teachers and Students
             </h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
-              EduConnect Pro is the all-in-one platform connecting teachers and students for a seamless learning experience.
+              EduConnect Pro is the all-in-one platform for a seamless learning experience.
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/tutors">Find a Tutor</Link>
+                <Link href="/dashboard">Get Started</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                  <Link href="/dashboard/teacher">I'm a Tutor</Link>
