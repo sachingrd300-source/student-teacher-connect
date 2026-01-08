@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { UserCheck, BookOpen, Star } from 'lucide-react';
+import { UserCheck, BookOpen, Star, BadgeCheck } from 'lucide-react';
 import { LandingHeader } from '@/components/landing-header';
 import { tutorsData } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
