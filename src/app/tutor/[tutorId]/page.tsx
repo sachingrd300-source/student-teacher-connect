@@ -1,6 +1,7 @@
 
 'use client';
 
+import { use } from 'react';
 import { notFound } from 'next/navigation';
 import { tutorsData } from '@/lib/data';
 import { LandingHeader } from '@/components/landing-header';
@@ -12,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function TutorProfilePage({ params }: { params: { tutorId: string } }) {
-  const tutor = tutorsData.find(t => t.id === params.tutorId);
+  const { tutorId } = use(params);
+  const tutor = tutorsData.find(t => t.id === tutorId);
 
   if (!tutor) {
     notFound();
