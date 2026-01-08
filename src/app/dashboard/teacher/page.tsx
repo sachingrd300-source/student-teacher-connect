@@ -108,14 +108,20 @@ export default function TeacherDashboardPage() {
     const student = studentRequests.find(s => s.id === studentId);
     if (student) {
         const approvedStudent = {...student, grade: 'N/A', attendance: 100, createdAt: new Date() };
+        // Update local state for immediate UI feedback
         setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-        setEnrolledStudents(prev => [...prev, approvedStudent]);
-        teacherData.enrolledStudents.push(approvedStudent); // Update mock data source
+        setEnrolledStudents(prev => [approvedStudent, ...prev]);
+
+        // Update the mock data source to reflect the change permanently for this session
+        teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
+        teacherData.enrolledStudents.unshift(approvedStudent);
     }
   };
   
   const handleDeny = (studentId: string) => {
+    // Update local state
     setStudentRequests(prev => prev.filter(s => s.id !== studentId));
+    // Update mock data source
     teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
   };
   
@@ -156,7 +162,7 @@ export default function TeacherDashboardPage() {
 
     setEnrolledStudents(prev => [newStudent, ...prev]);
     // Also update the central mock data source
-    teacherData.enrolledStudents.push(newStudent);
+    teacherData.enrolledStudents.unshift(newStudent);
 
     toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
     
