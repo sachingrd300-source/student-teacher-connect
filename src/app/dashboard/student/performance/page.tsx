@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { studentData } from '@/lib/data';
+import { teacherData } from '@/lib/data'; // Using teacher data now
 import { BarChart3 } from 'lucide-react';
 import { PerformanceChart } from '@/components/performance-chart';
 
@@ -25,7 +25,8 @@ type TestResult = { id: string; date: Date; marks: number; maxMarks: number; sub
 
 export default function PerformancePage() {
 
-    const testResults: TestResult[] = studentData.performance.map((p, i) => ({
+    // Data is now sourced from the teacher's data, simulating a connected state
+    const testResults: TestResult[] = teacherData.performance.map((p, i) => ({
         id: `test-${i}`,
         date: new Date(new Date().setDate(new Date().getDate() - (i*7))),
         marks: p.score,
@@ -55,7 +56,7 @@ export default function PerformancePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">Test Result History</CardTitle>
-            <CardDescription>A log of all your test scores.</CardDescription>
+            <CardDescription>A log of all your test scores from your teacher.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -76,7 +77,7 @@ export default function PerformancePage() {
                     ))}
                 </TableBody>
             </Table>
-            {testResults?.length === 0 && <p className="text-center text-muted-foreground py-4">No test results found.</p>}
+            {testResults.length === 0 && <p className="text-center text-muted-foreground py-4">No test results found.</p>}
           </CardContent>
         </Card>
     </div>

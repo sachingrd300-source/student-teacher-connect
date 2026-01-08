@@ -26,7 +26,7 @@ import {
   Download,
   BookOpenCheck,
 } from 'lucide-react';
-import { studentData } from '@/lib/data';
+import { teacherData } from '@/lib/data';
 
 const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
@@ -37,6 +37,9 @@ const materialIcons: Record<string, JSX.Element> = {
 
 
 export default function StudyMaterialPage() {
+  // Data is now sourced from the teacher's data, simulating a connected state
+  const studyMaterials = teacherData.studyMaterials;
+
   return (
     <div className="space-y-6">
         <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
@@ -46,7 +49,7 @@ export default function StudyMaterialPage() {
         <Card className="shadow-lg">
         <CardHeader>
             <CardTitle>All Study Materials</CardTitle>
-            <CardDescription>Browse and download notes, DPPs, tests, and more.</CardDescription>
+            <CardDescription>Browse and download notes, DPPs, tests, and more from your teacher.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -59,7 +62,7 @@ export default function StudyMaterialPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {studentData.studyMaterials.map((material) => (
+                {studyMaterials.map((material) => (
                     <TableRow key={material.id}>
                     <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
                     <TableCell>

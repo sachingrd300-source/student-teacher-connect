@@ -25,8 +25,8 @@ export const teacherData = {
     { id: 'S004', name: 'Diana Prince', avatarUrl: 'https://picsum.photos/seed/S004/40/40' },
   ],
   enrolledStudents: [
-    { id: 'S001', name: 'Alice Johnson', grade: 'A', attendance: 95, avatarUrl: 'https://picsum.photos/seed/S001/40/40', batch: 'Morning Physics (2024)' },
-    { id: 'S002', name: 'Bob Williams', grade: 'B', attendance: 88, avatarUrl: 'https://picsum.photos/seed/S002/40/40', batch: 'Evening Chemistry (2024)' },
+    { id: 'S001', name: 'Alice Johnson', grade: 'A', attendance: 95, avatarUrl: 'https://picsum.photos/seed/S001/40/40', batch: 'Morning Physics' },
+    { id: 'S002', name: 'Bob Williams', grade: 'B', attendance: 88, avatarUrl: 'https://picsum.photos/seed/S002/40/40', batch: 'Evening Chemistry' },
   ],
   schedule: {
     '2024-07-29': { status: 'Open', topic: 'Algebra Basics' },
@@ -36,8 +36,28 @@ export const teacherData = {
   classStatus: 'Open',
   subjects: ['Mathematics', 'Physics', 'Chemistry'],
   batches: [
-    { id: 'batch1', name: 'Morning Physics (2024)', createdAt: new Date() },
-    { id: 'batch2', name: 'Evening Chemistry (2024)', createdAt: new Date() },
+    { id: 'batch1', name: 'Morning Physics', createdAt: new Date() },
+    { id: 'batch2', name: 'Evening Chemistry', createdAt: new Date() },
+  ],
+  studyMaterials: [
+    { id: 'M01', title: 'Algebra Chapter 1 Notes', type: 'Notes', subject: 'Math', chapter: '1', date: '3 days ago', isNew: true },
+    { id: 'M02', title: 'DPP - Linear Equations', type: 'DPP', subject: 'Math', chapter: '2', date: '2 days ago', isNew: true },
+    { id: 'M03', title: 'Physics Chapter 1 Test', type: 'Test', subject: 'Physics', chapter: '1', date: '1 day ago', isNew: true },
+    { id: 'M04', title: 'Chemistry Formula Sheet', type: 'Notes', subject: 'Chemistry', chapter: 'Revision', date: '5 days ago' },
+    { id: 'M05', title: 'DPP - Kinematics', type: 'DPP', subject: 'Physics', chapter: '3', date: '4 days ago', isNew: false },
+  ],
+  performance: [
+    { name: 'Unit 1', score: 85 },
+    { name: 'Unit 2', score: 92 },
+    { name: 'Midterm', score: 88 },
+    { name: 'Unit 3', score: 95 },
+    { name: 'Final', score: 91 },
+  ],
+  attendanceRecords: [
+    { date: '2024-07-29', status: 'Present' },
+    { date: '2024-07-28', status: 'Present' },
+    { date: '2024-07-27', status: 'Absent' },
+    { date: '2024-07-26', status: 'Present' },
   ]
 };
 
@@ -51,26 +71,15 @@ export const studentData = {
     pendingSubmissions: 1,
     attendance: 95,
   },
-  performance: [
-    { name: 'Unit 1', score: 85 },
-    { name: 'Unit 2', score: 92 },
-    { name: 'Midterm', score: 88 },
-    { name: 'Unit 3', score: 95 },
-    { name: 'Final', score: 91 },
-  ],
-  studyMaterials: [
-    { id: 'M01', title: 'Algebra Chapter 1 Notes', type: 'Notes', subject: 'Math', chapter: '1', date: '3 days ago', isNew: true },
-    { id: 'M02', title: 'DPP - Linear Equations', type: 'DPP', subject: 'Math', chapter: '2', date: '2 days ago', isNew: true },
-    { id: 'M03', title: 'Physics Chapter 1 Test', type: 'Test', subject: 'Physics', chapter: '1', date: '1 day ago', isNew: true },
-    { id: 'M04', title: 'Chemistry Formula Sheet', type: 'Notes', subject: 'Chemistry', chapter: 'Revision', date: '5 days ago' },
-    { id: 'M05', title: 'DPP - Kinematics', type: 'DPP', subject: 'Physics', chapter: '3', date: '4 days ago', isNew: false },
-  ],
-  attendanceRecords: [
-    { date: '2024-07-29', status: 'Present' },
-    { date: '2024-07-28', status: 'Present' },
-    { date: '2024-07-27', status: 'Absent' },
-    { date: '2024-07-26', status: 'Present' },
-  ]
+  // Data below will be replaced by teacher data upon connection
+  performance: teacherData.performance,
+  studyMaterials: teacherData.studyMaterials,
+  attendanceRecords: teacherData.attendanceRecords,
+};
+
+export const parentData = {
+    name: 'Mr. Johnson',
+    avatarUrl: 'https://picsum.photos/seed/parent-avatar/100/100',
 };
 
 export const tutorsData = [

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { studentData } from '@/lib/data';
+import { studentData, teacherData } from '@/lib/data'; // Import both
 import { CheckCircle, XCircle, BarChart3, CalendarCheck2, BookCopy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -35,14 +35,14 @@ export default function LearningPassportPage() {
 
   useEffect(() => {
     setIsLoading(true);
-    // Simulate fetching data for the logged-in student
+    // Simulate fetching data for the logged-in student from the teacher's records
     setTimeout(() => {
-        setStudentAttendance(studentData.attendanceRecords.map((att, i) => ({
+        setStudentAttendance(teacherData.attendanceRecords.map((att, i) => ({
             id: `att-${i}`,
             date: new Date(att.date),
             status: att.status as 'Present' | 'Absent',
         })));
-        setTestResults(studentData.performance.map((p, i) => ({
+        setTestResults(teacherData.performance.map((p, i) => ({
             id: `test-${i}`,
             date: new Date(new Date().setDate(new Date().getDate() - (i*7))),
             marks: p.score,

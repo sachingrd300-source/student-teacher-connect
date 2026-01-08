@@ -30,7 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { parentData, studentData as childData } from '@/lib/data';
+import { parentData, studentData as childData, teacherData } from '@/lib/data';
 
 const PerformanceChart = dynamic(
   () => import('@/components/performance-chart').then((mod) => mod.PerformanceChart),
@@ -58,6 +58,11 @@ export default function ParentDashboardPage() {
         }, 1000);
         return () => clearTimeout(timer);
     }, []);
+
+    // We use the teacher's data as the source of truth for the child's progress
+    const performanceData = teacherData.performance;
+    const studyMaterials = teacherData.studyMaterials;
+    const attendancePercentage = childData.stats.attendance; // Assuming this is calculated elsewhere
 
   if (isLoading) {
     return (
@@ -109,7 +114,7 @@ export default function ParentDashboardPage() {
             <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{childData.stats.attendance}%</div>
+            <div className="text-2xl font-bold">{attendancePercentage}%</div>
             <p className="text-xs text-muted-foreground">Excellent attendance record.</p>
           </CardContent>
         </Card>
@@ -119,7 +124,7 @@ export default function ParentDashboardPage() {
             <ClipboardList className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{childData.stats.newDpps}</div>
+            <div className="text-2xl font-bold">+{studyMaterials.filter(m => m.type === 'DPP' && m.isNew).length}</div>
             <p className="text-xs text-muted-foreground">New practice papers available.</p>
           </CardContent>
         </Card>
@@ -137,7 +142,7 @@ export default function ParentDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Performance Chart */}
-        <PerformanceChart data={childData.performance} />
+        <PerformanceChart data={performanceData} />
 
         {/* Recent Activity */}
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -156,7 +161,7 @@ export default function ParentDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {childData.studyMaterials.slice(0, 4).map((material) => (
+                  {studyMaterials.slice(0, 4).map((material) => (
                     <TableRow key={material.id}>
                       <TableCell className="font-medium">{materialIcons[material.type] || <BookOpen />}</TableCell>
                       <TableCell>

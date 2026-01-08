@@ -15,6 +15,8 @@ import {
   ClipboardList,
   BarChart3,
   Users2,
+  CalendarDays,
+  Shield,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -25,7 +27,7 @@ import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
 
-type Role = 'teacher' | 'student';
+type Role = 'teacher' | 'student' | 'parent';
 
 const navItems = {
   teacher: [
@@ -33,9 +35,9 @@ const navItems = {
     { href: '/dashboard/teacher/profile', label: 'My Profile', icon: User },
     { href: '/dashboard/teacher/batches', label: 'Batches', icon: Users2 },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
-    { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: FileText },
+    { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
     { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: FileText },
-    { href: '/dashboard/teacher/performance', label: 'Performance', icon: FileText },
+    { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
@@ -45,11 +47,13 @@ const navItems = {
     { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
   ],
+  parent: [], // Parent dashboard has no sidebar navigation
 };
 
 const roleIcons = {
   teacher: <User className="h-5 w-5" />,
   student: <BookOpenCheck className="h-5 w-5" />,
+  parent: <Shield className="h-5 w-5" />,
 };
 
 export function DashboardNav({ role }: { role: Role }) {
@@ -65,6 +69,10 @@ export function DashboardNav({ role }: { role: Role }) {
     // This is a mock function now. In a real app, this would sign the user out.
     alert("Logout functionality is disabled in this demo.");
   };
+
+  if (role === 'parent') {
+    return null; // No navigation for parents in the sidebar
+  }
 
 
   return (

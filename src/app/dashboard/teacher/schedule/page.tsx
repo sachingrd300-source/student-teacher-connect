@@ -76,7 +76,7 @@ export default function SchedulePage() {
                 time: '10:00 AM', // Assuming a default for demo
                 type: (item.topic === 'Holiday' ? 'Offline' : 'Online') as 'Online' | 'Offline',
                 locationOrLink: item.topic === 'Holiday' ? 'N/A' : 'https://meet.google.com/xyz-abc-pqr'
-            }));
+            })).sort((a,b) => a.date.getTime() - b.date.getTime());
             setSchedule(scheduleData);
             setIsLoading(false);
         }, 500);

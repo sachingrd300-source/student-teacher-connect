@@ -19,10 +19,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, ClipboardList } from 'lucide-react';
-import { studentData } from '@/lib/data';
+import { teacherData } from '@/lib/data';
 
 export default function DailyPracticePage() {
-  const dailyPracticePapers = studentData.studyMaterials.filter(m => m.type === 'DPP');
+  // Now using teacherData to simulate a connected state
+  const dailyPracticePapers = teacherData.studyMaterials.filter(m => m.type === 'DPP');
 
   return (
     <div className="space-y-6">

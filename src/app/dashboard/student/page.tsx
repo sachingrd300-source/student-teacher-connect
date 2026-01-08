@@ -9,24 +9,26 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { studentData } from '@/lib/data';
+import { studentData, teacherData } from '@/lib/data';
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BookOpenCheck, ClipboardList, ShoppingCart } from 'lucide-react';
 
 export default function StudentDashboardPage() {
-  const [isConnected, setIsConnected] = useState(false);
+  const [teacherConnected, setTeacherConnected] = useState(false);
 
   const handleConnectionSuccess = () => {
-    setIsConnected(true);
+    setTeacherConnected(true);
   };
+  
+  const currentData = teacherConnected ? teacherData : studentData;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold font-headline">Welcome back, {studentData.name}!</h1>
-        {!isConnected && (
+        {!teacherConnected && (
             <Card className="w-full max-w-md">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg">Connect with a Teacher</CardTitle>
@@ -81,11 +83,11 @@ export default function StudentDashboardPage() {
         </CardContent>
        </Card>
 
-      {isConnected && (
+      {teacherConnected && (
         <Card>
           <CardHeader>
-            <CardTitle>Teacher Connected</CardTitle>
-            <CardDescription>You can now access materials and updates from {teacherData.name}.</CardDescription>
+            <CardTitle>Teacher Connected!</CardTitle>
+            <CardDescription>You are now viewing materials and updates from {teacherData.name}. Explore your dashboard to see what's new.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href={`/tutor/${teacherData.id}`}>
