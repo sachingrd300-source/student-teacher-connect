@@ -178,7 +178,7 @@ export default function BatchesPage() {
                                                         <DropdownMenuItem>Assign Students</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
+                                                            <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 !cursor-pointer">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                                 Delete Batch
                                                             </DropdownMenuItem>
