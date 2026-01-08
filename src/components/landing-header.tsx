@@ -19,9 +19,9 @@ export function LandingHeader() {
           <Link href="/students" className="text-foreground/60 transition-colors hover:text-foreground/80">For Students</Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <Button variant="outline" asChild>
-              <Link href="/dashboard">View Demo</Link>
-            </Button>
+          <Button variant="ghost" asChild>
+            <Link href="/signup">Become a Tutor</Link>
+          </Button>
           <Button asChild>
             <Link href="/dashboard">Go to Dashboard</Link>
           </Button>
@@ -41,6 +41,7 @@ export function LandingHeader() {
                 </div>
                 <nav className="flex flex-col gap-4 text-lg font-medium">
                     <Link href="/students" className="text-foreground/60 hover:text-foreground">For Students</Link>
+                    <Link href="/signup" className="text-foreground/60 hover:text-foreground">Become a Tutor</Link>
                 </nav>
                 <div className="mt-auto flex flex-col gap-2">
                     <Button asChild>
