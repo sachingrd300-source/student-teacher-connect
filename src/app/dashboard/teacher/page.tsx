@@ -18,6 +18,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -27,6 +36,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Users,
   Check,
@@ -36,10 +47,12 @@ import {
   UserCheck,
   Users2,
   ChevronDown,
+  PlusCircle,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { teacherData } from '@/lib/data';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 type StudentProfile = {
   id: string; 
@@ -48,13 +61,20 @@ type StudentProfile = {
   grade?: string; 
   attendance?: number; 
   batch?: string;
+  email?: string;
 };
 
 
 export default function TeacherDashboardPage() {
+  const { toast } = useToast();
   const [studentRequests, setStudentRequests] = useState<StudentProfile[]>([]);
   const [enrolledStudents, setEnrolledStudents] = useState<StudentProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddStudentOpen, setAddStudentOpen] = useState(false);
+  
+  // Add student form state
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentEmail, setNewStudentEmail] = useState('');
 
   useEffect(() => {
     // Simulate fetching data
@@ -79,6 +99,31 @@ export default function TeacherDashboardPage() {
   
   const handleRemove = (studentId: string) => {
     setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
+  };
+
+  const handleAddStudent = () => {
+    if (!newStudentName || !newStudentEmail) {
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a name and email for the student.' });
+        return;
+    }
+
+    const newStudent: StudentProfile = {
+        id: `S${Date.now()}`,
+        name: newStudentName,
+        email: newStudentEmail,
+        avatarUrl: `https://picsum.photos/seed/${newStudentName}/40/40`,
+        grade: 'N/A',
+        attendance: 100,
+        batch: 'Morning'
+    };
+
+    setEnrolledStudents(prev => [newStudent, ...prev]);
+    toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.` });
+    
+    // Reset form
+    setNewStudentName('');
+    setNewStudentEmail('');
+    setAddStudentOpen(false);
   };
 
 
@@ -195,9 +240,35 @@ export default function TeacherDashboardPage() {
 
        {/* Enrolled Students Table */}
        <Card>
-          <CardHeader>
-            <CardTitle>My Students</CardTitle>
-            <CardDescription>Manage grades and attendance for enrolled students.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>My Students</CardTitle>
+              <CardDescription>Manage grades and attendance for enrolled students.</CardDescription>
+            </div>
+             <Dialog open={isAddStudentOpen} onOpenChange={setAddStudentOpen}>
+                <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Student</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Student</DialogTitle>
+                        <DialogDescription>Enter the student's details to add them to your roster.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="new-student-name">Student Name</Label>
+                            <Input id="new-student-name" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} placeholder="e.g., John Smith" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="new-student-email">Student Email</Label>
+                            <Input id="new-student-email" type="email" value={newStudentEmail} onChange={(e) => setNewStudentEmail(e.target.value)} placeholder="e.g., john.smith@example.com" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleAddStudent}>Add Student</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent>
            {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
@@ -261,3 +332,5 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
+
+    
