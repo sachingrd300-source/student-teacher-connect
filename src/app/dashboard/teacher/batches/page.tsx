@@ -94,8 +94,8 @@ export default function BatchesPage() {
         };
 
         // Update both local state and central mock data
-        setBatches(prev => [newBatch, ...prev]);
         teacherData.batches.unshift(newBatch);
+        setBatches([...teacherData.batches]);
 
 
         toast({ title: 'Batch Created', description: `The batch "${newBatchName}" has been successfully created.`});
@@ -106,9 +106,10 @@ export default function BatchesPage() {
     }
 
     const handleDeleteBatch = (batchId: string) => {
-        setBatches(prev => prev.filter(b => b.id !== batchId));
         // Update central mock data
         teacherData.batches = teacherData.batches.filter(b => b.id !== batchId);
+        // Update local state from the source of truth
+        setBatches([...teacherData.batches]);
         toast({ title: 'Batch Deleted', description: 'The selected batch has been removed.' });
     };
 
@@ -177,7 +178,7 @@ export default function BatchesPage() {
                                                         <DropdownMenuItem>Assign Students</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                                                            <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                                 Delete Batch
                                                             </DropdownMenuItem>
