@@ -53,6 +53,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { teacherData } from '@/lib/data';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 type StudentProfile = {
   id: string; 
@@ -62,6 +63,10 @@ type StudentProfile = {
   attendance?: number; 
   batch?: string;
   email?: string;
+  subject?: string;
+  address?: string;
+  mobileNumber?: string;
+  createdAt?: Date;
 };
 
 
@@ -73,8 +78,15 @@ export default function TeacherDashboardPage() {
   const [isAddStudentOpen, setAddStudentOpen] = useState(false);
   
   // Add student form state
-  const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentEmail, setNewStudentEmail] = useState('');
+  const [newStudentData, setNewStudentData] = useState({
+    name: '',
+    email: '',
+    grade: '',
+    subject: '',
+    address: '',
+    mobileNumber: '',
+    batch: '',
+  });
 
   useEffect(() => {
     // Simulate fetching data
@@ -89,7 +101,7 @@ export default function TeacherDashboardPage() {
     const student = studentRequests.find(s => s.id === studentId);
     if (student) {
         setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-        setEnrolledStudents(prev => [...prev, {...student, grade: 'N/A', attendance: 100}]);
+        setEnrolledStudents(prev => [...prev, {...student, grade: 'N/A', attendance: 100, createdAt: new Date() }]);
     }
   };
   
@@ -101,28 +113,38 @@ export default function TeacherDashboardPage() {
     setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setNewStudentData(prev => ({ ...prev, [id]: value }));
+  };
+
   const handleAddStudent = () => {
-    if (!newStudentName || !newStudentEmail) {
-        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a name and email for the student.' });
+    if (!newStudentData.name || !newStudentData.email) {
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter at least a name and email for the student.' });
         return;
     }
 
     const newStudent: StudentProfile = {
         id: `S${Date.now()}`,
-        name: newStudentName,
-        email: newStudentEmail,
-        avatarUrl: `https://picsum.photos/seed/${newStudentName}/40/40`,
-        grade: 'N/A',
-        attendance: 100,
-        batch: 'Morning'
+        name: newStudentData.name,
+        email: newStudentData.email,
+        avatarUrl: `https://picsum.photos/seed/${newStudentData.name}/40/40`,
+        grade: newStudentData.grade,
+        subject: newStudentData.subject,
+        address: newStudentData.address,
+        mobileNumber: newStudentData.mobileNumber,
+        batch: newStudentData.batch,
+        attendance: 100, // Default value
+        createdAt: new Date(),
     };
 
     setEnrolledStudents(prev => [newStudent, ...prev]);
-    toast({ title: 'Student Added', description: `${newStudentName} has been added to your roster.` });
+    toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
     
     // Reset form
-    setNewStudentName('');
-    setNewStudentEmail('');
+    setNewStudentData({
+        name: '', email: '', grade: '', subject: '', address: '', mobileNumber: '', batch: '',
+    });
     setAddStudentOpen(false);
   };
 
@@ -249,19 +271,39 @@ export default function TeacherDashboardPage() {
                 <DialogTrigger asChild>
                     <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Student</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
                         <DialogTitle>Add New Student</DialogTitle>
                         <DialogDescription>Enter the student's details to add them to your roster.</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
                         <div className="space-y-2">
-                            <Label htmlFor="new-student-name">Student Name</Label>
-                            <Input id="new-student-name" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} placeholder="e.g., John Smith" />
+                            <Label htmlFor="name">Student Name*</Label>
+                            <Input id="name" value={newStudentData.name} onChange={handleInputChange} placeholder="e.g., John Smith" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="new-student-email">Student Email</Label>
-                            <Input id="new-student-email" type="email" value={newStudentEmail} onChange={(e) => setNewStudentEmail(e.target.value)} placeholder="e.g., john.smith@example.com" />
+                            <Label htmlFor="email">Student Email*</Label>
+                            <Input id="email" type="email" value={newStudentData.email} onChange={handleInputChange} placeholder="e.g., john.smith@example.com" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="grade">Class/Grade</Label>
+                            <Input id="grade" value={newStudentData.grade} onChange={handleInputChange} placeholder="e.g., 10th Grade" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="subject">Subject</Label>
+                            <Input id="subject" value={newStudentData.subject} onChange={handleInputChange} placeholder="e.g., Physics" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="batch">Batch</Label>
+                            <Input id="batch" value={newStudentData.batch} onChange={handleInputChange} placeholder="e.g., Morning Physics" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="mobileNumber">Mobile Number</Label>
+                            <Input id="mobileNumber" type="tel" value={newStudentData.mobileNumber} onChange={handleInputChange} placeholder="e.g., 123-456-7890" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Textarea id="address" value={newStudentData.address} onChange={handleInputChange} placeholder="Student's address" />
                         </div>
                     </div>
                     <DialogFooter>
@@ -294,7 +336,7 @@ export default function TeacherDashboardPage() {
                         {student.name}
                       </TableCell>
                        <TableCell>
-                        <Badge variant="outline">{student.batch || 'Morning'}</Badge>
+                        <Badge variant="outline">{student.batch || 'Not Assigned'}</Badge>
                        </TableCell>
                       <TableCell><Badge variant="secondary">{student.grade || 'N/A'}</Badge></TableCell>
                       <TableCell>{student.attendance || 100}%</TableCell>
