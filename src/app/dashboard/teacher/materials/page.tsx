@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -53,28 +53,30 @@ type StudyMaterial = {
     title: string;
     description?: string;
     subject: string;
-    chapter: string;
+    chapter?: string;
     type: string;
-    uploadDate: Date;
+    date: string;
+    isNew?: boolean;
 };
 
 const materialTypes = ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"];
-const allBatches = [{ id: 'batch1', name: 'Morning Physics' }, { id: 'batch2', name: 'Evening Chemistry' }];
 
 export default function MaterialsPage() {
     const { toast } = useToast();
     const [isAddMaterialOpen, setAddMaterialOpen] = useState(false);
-    const [materials, setMaterials] = useState<StudyMaterial[]>([]);
+    
+    // Data state now comes from the central teacherData object
+    const [materials, setMaterials] = useState<StudyMaterial[]>(teacherData.studyMaterials as any);
     
     // Form state
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [subject, setSubject] = useState('');
-    const [batch, setBatch] = useState('');
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
 
     const teacherSubjects = teacherData.subjects;
+    const allBatches = teacherData.batches;
 
     const handleAddMaterial = async () => {
         if (!title || !subject || !materialType) {
@@ -89,10 +91,14 @@ export default function MaterialsPage() {
             subject,
             chapter,
             type: materialType,
-            uploadDate: new Date(),
+            date: 'Just now',
+            isNew: true
         };
 
-        setMaterials(prev => [newMaterial, ...prev]);
+        // Update central data source
+        teacherData.studyMaterials.unshift(newMaterial as any);
+        // Update local state from the central source
+        setMaterials([...teacherData.studyMaterials] as any);
 
         toast({ title: 'Material Added', description: `${title} has been successfully uploaded.`});
         
@@ -100,7 +106,6 @@ export default function MaterialsPage() {
         setTitle('');
         setDescription('');
         setSubject('');
-        setBatch('');
         setChapter('');
         setMaterialType('');
         setAddMaterialOpen(false);
@@ -142,18 +147,6 @@ export default function MaterialsPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="batch" className="text-right">Batch</Label>
-                                <Select onValueChange={setBatch} value={batch}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="All Students" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Students</SelectItem>
-                                        {allBatches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -209,7 +202,7 @@ export default function MaterialsPage() {
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
                                         <TableCell>{material.subject}</TableCell>
                                         <TableCell>{material.chapter || 'N/A'}</TableCell>
-                                        <TableCell>{material.uploadDate.toLocaleDateString() || 'Just now'}</TableCell>
+                                        <TableCell>{material.date}</TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>

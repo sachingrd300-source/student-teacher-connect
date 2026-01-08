@@ -76,15 +76,48 @@ export default function LearningPassportPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <Skeleton className="h-9 w-64" />
+                <div>
+                    <Skeleton className="h-9 w-64" />
+                    <Skeleton className="h-5 w-80 mt-2" />
+                </div>
                 <Skeleton className="h-16 w-16 rounded-full" />
             </div>
             <Separator />
              <div className="grid gap-6 lg:grid-cols-2">
-                <Skeleton className="h-64 w-full rounded-xl" />
-                <Skeleton className="h-64 w-full rounded-xl" />
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-4 w-64 mt-2" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-4 w-64 mt-2" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                </Card>
             </div>
-            <Skeleton className="h-80 w-full rounded-xl" />
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-72 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </CardContent>
+            </Card>
         </div>
     )
   }

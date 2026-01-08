@@ -99,7 +99,9 @@ export default function SchedulePage() {
         };
 
         setSchedule(prev => [...prev, newClass].sort((a,b) => a.date.getTime() - b.date.getTime()));
-
+        // In a real app, you would also update the central data source here
+        // For this demo, we are only updating local state.
+        
         toast({ title: 'Class Scheduled', description: `${topic} on ${format(date, "PPP")} has been added to your schedule.`});
         
         // Reset form and close dialog
