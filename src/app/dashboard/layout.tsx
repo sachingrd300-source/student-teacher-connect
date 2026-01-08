@@ -16,8 +16,10 @@ import { Icons } from '@/components/icons';
 import { DashboardNav } from '@/components/dashboard-nav';
 import { teacherData, studentData, parentData } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell } from 'lucide-react';
+import { Bell, User } from 'lucide-react';
 import Link from 'next/link';
+import { useUser } from '@/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Role = 'teacher' | 'student' | 'parent';
 
@@ -27,6 +29,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
 
   const getRole = (): Role => {
     if (pathname.startsWith('/dashboard/teacher')) return 'teacher';
@@ -37,11 +40,8 @@ export default function DashboardLayout({
 
   const role = getRole();
 
-  const userData = {
-    teacher: teacherData,
-    student: studentData,
-    parent: parentData,
-  }[role];
+  const getDisplayName = () => user?.displayName || user?.email?.split('@')[0] || 'User';
+  const getAvatarFallback = () => (user?.displayName || user?.email || 'U').charAt(0).toUpperCase();
 
   // The parent dashboard is a special case that doesn't need a sidebar nav
   const showSidebar = role !== 'parent';
@@ -63,16 +63,35 @@ export default function DashboardLayout({
                 <DashboardNav role={role} />
                 </SidebarContent>
                 <div className="p-4 border-t">
-                <div className="flex items-center gap-3">
-                    <Avatar>
-                    <AvatarImage src={userData.avatarUrl} alt={userData.name} />
-                    <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                    <span className="font-semibold text-sm">{userData.name}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{role}</span>
+                {isUserLoading ? (
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-16" />
                     </div>
-                </div>
+                  </div>
+                ) : user ? (
+                  <div className="flex items-center gap-3">
+                      <Avatar>
+                      <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
+                      <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                      <span className="font-semibold text-sm">{getDisplayName()}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{role}</span>
+                      </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback><User /></AvatarFallback>
+                    </Avatar>
+                     <div className="flex flex-col">
+                      <span className="font-semibold text-sm">Not logged in</span>
+                    </div>
+                  </div>
+                )}
                 </div>
             </div>
             </Sidebar>
@@ -91,10 +110,18 @@ export default function DashboardLayout({
                   <Bell className="h-5 w-5" />
                   <span className="sr-only">Notifications</span>
                 </Button>
-                <Avatar>
-                  <AvatarImage src={userData.avatarUrl} alt={userData.name} />
-                  <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                {isUserLoading ? (
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                ) : user ? (
+                  <Avatar>
+                    <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
+                    <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                   <Avatar>
+                      <AvatarFallback><User /></AvatarFallback>
+                    </Avatar>
+                )}
               </div>
             </div>
           </header>

@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 export function LandingHeader() {
+  const { user, isUserLoading } = useUser();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
       <div className="container flex h-16 max-w-screen-2xl items-center">
@@ -19,12 +22,25 @@ export function LandingHeader() {
           <Link href="/students" className="text-foreground/60 transition-colors hover:text-foreground/80">For Students</Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <Button variant="ghost" asChild>
-            <Link href="/signup">Become a Tutor</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
+          {!isUserLoading && (
+            <>
+              {user ? (
+                <Button asChild>
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/signup">Become a Tutor</Link>
+                  </Button>
+                </>
+              )}
+            </>
+          )}
+
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="md:hidden">
@@ -41,12 +57,24 @@ export function LandingHeader() {
                 </div>
                 <nav className="flex flex-col gap-4 text-lg font-medium">
                     <Link href="/students" className="text-foreground/60 hover:text-foreground">For Students</Link>
-                    <Link href="/signup" className="text-foreground/60 hover:text-foreground">Become a Tutor</Link>
+                    {!isUserLoading && !user && (
+                      <Link href="/signup" className="text-foreground/60 hover:text-foreground">Become a Tutor</Link>
+                    )}
                 </nav>
                 <div className="mt-auto flex flex-col gap-2">
-                    <Button asChild>
-                        <Link href="/dashboard">Go to Dashboard</Link>
-                    </Button>
+                    {!isUserLoading && (
+                      <>
+                        {user ? (
+                           <Button asChild>
+                              <Link href="/dashboard">Go to Dashboard</Link>
+                           </Button>
+                        ) : (
+                           <Button asChild>
+                              <Link href="/login">Login</Link>
+                           </Button>
+                        )}
+                      </>
+                    )}
                 </div>
               </div>
             </SheetContent>

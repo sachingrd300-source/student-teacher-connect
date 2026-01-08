@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,8 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, User, Briefcase, MapPin, Mail } from 'lucide-react';
+import { Check, User, Briefcase, MapPin, Mail, Key } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { useAuth, initiateEmailSignUp } from '@/firebase'; // Using the non-blocking sign-up
 
 const steps = [
     { id: 1, name: 'Account Details', fields: ['name', 'email', 'password'], icon: User },
@@ -30,6 +32,11 @@ export default function SignUpPage() {
     address: '',
     mobileNumber: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+  const auth = useAuth();
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -43,6 +50,25 @@ export default function SignUpPage() {
   const handleBack = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
+  
+  const handleRegistration = async () => {
+    setIsLoading(true);
+    try {
+        // This is non-blocking, it starts the sign-up and the onAuthStateChanged listener will catch the result
+        initiateEmailSignUp(auth, formData.email, formData.password);
+        
+        toast({ title: 'Registration Successful!', description: 'Your account is being created. Redirecting to your profile...' });
+        
+        // TODO: In a real app, we would also save the additional profile data (steps 2 & 3) to Firestore here.
+        // For now, we'll just redirect.
+
+        router.push('/dashboard/teacher/profile');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Registration Failed', description: error.message });
+        setIsLoading(false);
+    }
+  };
+
 
   const progressValue = ((currentStep - 1) / (steps.length - 1)) * 100;
 
@@ -116,23 +142,23 @@ export default function SignUpPage() {
                     <Check className="h-12 w-12 text-green-500 bg-green-100 rounded-full p-2" />
                     <h3 className="font-semibold text-xl">You're All Set!</h3>
                     <p className="text-muted-foreground max-w-md">
-                        Thank you for filling out your details. Click the button below to verify your account with Google and complete your registration.
+                        Thank you for filling out your details. Click the button below to create your account and complete your registration.
                     </p>
-                    <Button size="lg" className="w-full max-w-xs bg-red-600 hover:bg-red-700 text-white">
-                         <Mail className="mr-2 h-5 w-5" /> Complete Registration with Google
+                    <Button size="lg" className="w-full max-w-xs" onClick={handleRegistration} disabled={isLoading}>
+                         <Mail className="mr-2 h-5 w-5" /> {isLoading ? 'Registering...' : 'Complete Registration'}
                     </Button>
                 </div>
             )}
         </CardContent>
         <CardFooter className="flex justify-between">
-            {currentStep > 1 ? (
+            {currentStep > 1 && currentStep < 4 ? (
                 <Button variant="outline" onClick={handleBack}>Back</Button>
             ) : <div />}
-            {currentStep < steps.length ? (
+            {currentStep < steps.length - 1 ? (
                 <Button onClick={handleNext}>Next</Button>
-            ) : (
+            ) : currentStep === steps.length ? (
                  <Button asChild><Link href="/dashboard/teacher">Go to Dashboard</Link></Button>
-            )}
+            ): <div></div>}
         </CardFooter>
       </Card>
       <p className="text-center text-sm text-muted-foreground mt-4">
