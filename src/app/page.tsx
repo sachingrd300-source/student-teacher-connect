@@ -57,9 +57,6 @@ export default function Home() {
               <Button size="lg" asChild>
                 <Link href="/dashboard">Get Started</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                 <Link href="/dashboard/teacher">I'm a Tutor</Link>
-              </Button>
             </div>
           </div>
         </section>
