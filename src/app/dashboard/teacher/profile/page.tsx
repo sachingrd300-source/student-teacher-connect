@@ -40,6 +40,7 @@ type TeacherProfileData = {
     email: string;
     mobileNumber: string;
     avatarUrl: string;
+    qualification: string;
 };
 
 export default function TeacherProfilePage() {
@@ -55,29 +56,32 @@ export default function TeacherProfilePage() {
     const [subjects, setSubjects] = useState('');
     const [experience, setExperience] = useState('');
     const [address, setAddress] = useState('');
+    const [qualification, setQualification] = useState('');
 
     useEffect(() => {
-        // Simulate fetching data
+        // Simulate fetching data for a newly registered user
         setTimeout(() => {
             const profile: TeacherProfileData = {
                 id: initialTeacherData.id,
-                name: initialTeacherData.name,
-                className: "EduConnect Coaching",
-                subjects: initialTeacherData.subjects.join(', '),
-                experience: '5 Years',
-                address: '123 Education Lane, Knowledge City',
-                email: 'e.reed@example.com',
+                name: 'New Tutor', // Default name
+                className: "Your Coaching Center", // Default
+                subjects: 'Your Subjects', // Default
+                experience: '', // Empty initially
+                address: '', // Empty initially
+                email: 'new.tutor@example.com',
                 mobileNumber: '123-456-7890',
-                avatarUrl: initialTeacherData.avatarUrl
+                avatarUrl: initialTeacherData.avatarUrl,
+                qualification: '' // Empty initially
             };
             setTeacherProfile(profile);
 
-            // Populate form fields
+            // Populate form fields for the edit dialog
             setName(profile.name);
             setClassName(profile.className);
             setSubjects(profile.subjects);
             setExperience(profile.experience);
             setAddress(profile.address);
+            setQualification(profile.qualification);
 
             setIsLoading(false);
         }, 1000);
@@ -86,14 +90,14 @@ export default function TeacherProfilePage() {
     const handleProfileUpdate = () => {
         if (!teacherProfile) return;
 
-        const updatedProfile = { ...teacherProfile, name, className, subjects, experience, address };
+        const updatedProfile = { ...teacherProfile, name, className, subjects, experience, address, qualification };
         setTeacherProfile(updatedProfile);
 
         toast({ title: 'Profile Updated', description: 'Your information has been successfully saved.' });
         setEditOpen(false);
     };
     
-    const isProfileIncomplete = !experience || !address;
+    const isProfileIncomplete = !experience || !address || !qualification;
 
     if (isLoading || !teacherProfile) {
         return (
@@ -153,6 +157,10 @@ export default function TeacherProfilePage() {
                             <Input id="subjects" value={subjects} onChange={(e) => setSubjects(e.target.value)} placeholder="e.g. Physics, Chemistry" />
                         </div>
                          <div className="space-y-2">
+                            <Label htmlFor="qualification">Qualification</Label>
+                            <Input id="qualification" value={qualification} onChange={(e) => setQualification(e.target.value)} placeholder="e.g. B.Sc. Physics" />
+                        </div>
+                         <div className="space-y-2">
                             <Label htmlFor="experience">Experience</Label>
                             <Input id="experience" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 5 Years" />
                         </div>
@@ -198,6 +206,10 @@ export default function TeacherProfilePage() {
             <CardContent className="p-6 grid gap-4 md:grid-cols-2">
                 <div className="space-y-4">
                     <h3 className="font-semibold text-lg text-primary">Professional Details</h3>
+                     <div className="flex items-start gap-3">
+                        <User className="h-5 w-5 text-muted-foreground mt-1" />
+                        <span>Qualification: <span className="font-medium">{teacherProfile?.qualification || 'N/A'}</span></span>
+                    </div>
                     <div className="flex items-center gap-3">
                         <Briefcase className="h-5 w-5 text-muted-foreground" />
                         <span>Experience: <span className="font-medium">{teacherProfile?.experience || 'N/A'}</span></span>
