@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -49,26 +49,37 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { teacherData } from '@/lib/data';
 
 type Batch = {
     id: string;
     name: string;
-    studentCount: number;
     createdAt: Date;
 };
-
-const initialBatches: Batch[] = [
-    { id: 'batch1', name: 'Morning Physics (2024)', studentCount: 15, createdAt: new Date() },
-    { id: 'batch2', name: 'Evening Chemistry (2024)', studentCount: 12, createdAt: new Date() },
-];
 
 export default function BatchesPage() {
     const { toast } = useToast();
     const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
-    const [batches, setBatches] = useState<Batch[]>(initialBatches);
+    // State is now derived from the central mock data
+    const [batches, setBatches] = useState<Batch[]>(teacherData.batches);
     
     // Form state
     const [newBatchName, setNewBatchName] = useState('');
+
+    // Memoize the student counts for performance
+    const batchStudentCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const batch of batches) {
+            counts[batch.name] = 0;
+        }
+        for (const student of teacherData.enrolledStudents) {
+            if (student.batch && counts[student.batch] !== undefined) {
+                counts[student.batch]++;
+            }
+        }
+        return counts;
+    }, [batches, teacherData.enrolledStudents]);
+
 
     const handleCreateBatch = async () => {
         if (!newBatchName) {
@@ -79,11 +90,13 @@ export default function BatchesPage() {
         const newBatch: Batch = {
             id: `batch-${Date.now()}`,
             name: newBatchName,
-            studentCount: 0,
             createdAt: new Date(),
         };
 
+        // Update both local state and central mock data
         setBatches(prev => [newBatch, ...prev]);
+        teacherData.batches.unshift(newBatch);
+
 
         toast({ title: 'Batch Created', description: `The batch "${newBatchName}" has been successfully created.`});
         
@@ -94,6 +107,8 @@ export default function BatchesPage() {
 
     const handleDeleteBatch = (batchId: string) => {
         setBatches(prev => prev.filter(b => b.id !== batchId));
+        // Update central mock data
+        teacherData.batches = teacherData.batches.filter(b => b.id !== batchId);
         toast({ title: 'Batch Deleted', description: 'The selected batch has been removed.' });
     };
 
@@ -149,7 +164,7 @@ export default function BatchesPage() {
                                 {batches.map((batch) => (
                                     <TableRow key={batch.id}>
                                         <TableCell className="font-medium">{batch.name}</TableCell>
-                                        <TableCell>{batch.studentCount}</TableCell>
+                                        <TableCell>{batchStudentCounts[batch.name] || 0}</TableCell>
                                         <TableCell>{batch.createdAt.toLocaleDateString()}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>

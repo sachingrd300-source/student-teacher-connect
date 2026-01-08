@@ -33,6 +33,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -100,21 +107,30 @@ export default function TeacherDashboardPage() {
   const handleApprove = (studentId: string) => {
     const student = studentRequests.find(s => s.id === studentId);
     if (student) {
+        const approvedStudent = {...student, grade: 'N/A', attendance: 100, createdAt: new Date() };
         setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-        setEnrolledStudents(prev => [...prev, {...student, grade: 'N/A', attendance: 100, createdAt: new Date() }]);
+        setEnrolledStudents(prev => [...prev, approvedStudent]);
+        teacherData.enrolledStudents.push(approvedStudent); // Update mock data source
     }
   };
   
   const handleDeny = (studentId: string) => {
     setStudentRequests(prev => prev.filter(s => s.id !== studentId));
+    teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
   };
   
   const handleRemove = (studentId: string) => {
+    const studentToRemove = enrolledStudents.find(s => s.id === studentId);
     setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
+    teacherData.enrolledStudents = teacherData.enrolledStudents.filter(s => s.id !== studentId);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
+    setNewStudentData(prev => ({ ...prev, [id]: value }));
+  };
+
+   const handleSelectChange = (id: string, value: string) => {
     setNewStudentData(prev => ({ ...prev, [id]: value }));
   };
 
@@ -128,7 +144,7 @@ export default function TeacherDashboardPage() {
         id: `S${Date.now()}`,
         name: newStudentData.name,
         email: newStudentData.email,
-        avatarUrl: `https://picsum.photos/seed/${newStudentData.name}/40/40`,
+        avatarUrl: `https://picsum.photos/seed/${newStudentData.name.replace(/\s/g, '')}/40/40`,
         grade: newStudentData.grade,
         subject: newStudentData.subject,
         address: newStudentData.address,
@@ -139,6 +155,9 @@ export default function TeacherDashboardPage() {
     };
 
     setEnrolledStudents(prev => [newStudent, ...prev]);
+    // Also update the central mock data source
+    teacherData.enrolledStudents.push(newStudent);
+
     toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
     
     // Reset form
@@ -181,7 +200,7 @@ export default function TeacherDashboardPage() {
             <Users2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">2</div>}
+             {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{teacherData.batches.length}</div>}
             <p className="text-xs text-muted-foreground">Total student groups</p>
           </CardContent>
         </Card>
@@ -291,11 +310,21 @@ export default function TeacherDashboardPage() {
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="subject">Subject</Label>
-                            <Input id="subject" value={newStudentData.subject} onChange={handleInputChange} placeholder="e.g., Physics" />
+                             <Select onValueChange={(value) => handleSelectChange('subject', value)} value={newStudentData.subject}>
+                                <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                                <SelectContent>
+                                    {teacherData.subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="batch">Batch</Label>
-                            <Input id="batch" value={newStudentData.batch} onChange={handleInputChange} placeholder="e.g., Morning Physics" />
+                             <Select onValueChange={(value) => handleSelectChange('batch', value)} value={newStudentData.batch}>
+                                <SelectTrigger><SelectValue placeholder="Select a batch" /></SelectTrigger>
+                                <SelectContent>
+                                    {teacherData.batches.map(b => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="mobileNumber">Mobile Number</Label>
@@ -374,5 +403,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    

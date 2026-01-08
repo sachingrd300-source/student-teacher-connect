@@ -25,8 +25,8 @@ export const teacherData = {
     { id: 'S004', name: 'Diana Prince', avatarUrl: 'https://picsum.photos/seed/S004/40/40' },
   ],
   enrolledStudents: [
-    { id: 'S001', name: 'Alice Johnson', grade: 'A', attendance: 95, avatarUrl: 'https://picsum.photos/seed/S001/40/40' },
-    { id: 'S002', name: 'Bob Williams', grade: 'B', attendance: 88, avatarUrl: 'https://picsum.photos/seed/S002/40/40' },
+    { id: 'S001', name: 'Alice Johnson', grade: 'A', attendance: 95, avatarUrl: 'https://picsum.photos/seed/S001/40/40', batch: 'Morning Physics (2024)' },
+    { id: 'S002', name: 'Bob Williams', grade: 'B', attendance: 88, avatarUrl: 'https://picsum.photos/seed/S002/40/40', batch: 'Evening Chemistry (2024)' },
   ],
   schedule: {
     '2024-07-29': { status: 'Open', topic: 'Algebra Basics' },
@@ -35,6 +35,10 @@ export const teacherData = {
   },
   classStatus: 'Open',
   subjects: ['Mathematics', 'Physics', 'Chemistry'],
+  batches: [
+    { id: 'batch1', name: 'Morning Physics (2024)', createdAt: new Date() },
+    { id: 'batch2', name: 'Evening Chemistry (2024)', createdAt: new Date() },
+  ]
 };
 
 export const studentData = {
@@ -134,5 +138,3 @@ export const shopItemsData = [
     imageUrl: 'https://picsum.photos/seed/book2/300/200'
   }
 ];
-
-    
