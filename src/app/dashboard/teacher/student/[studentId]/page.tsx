@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, use } from 'react';
 import {
   Card,
   CardContent,
@@ -38,7 +38,7 @@ type AttendanceRecord = { id: string; date: Date; status: 'Present' | 'Absent' }
 type TestResult = { id: string; date: Date; marks: number; maxMarks: number; subject: string, testName: string };
 
 export default function StudentProfilePage({ params }: { params: { studentId: string } }) {
-  const { studentId } = params;
+  const { studentId } = use(params);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -109,7 +109,7 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
                     <AvatarImage src={student?.avatarUrl} alt={student?.name} />
                     <AvatarFallback className="text-3xl">{student?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-3xl font-headline">{student?.name}</CardTitle>
+                <CardTitle className="text-4xl font-headline">{student?.name}</CardTitle>
                 <CardDescription className="text-base">{student?.batch ? <Badge variant="secondary">{student.batch}</Badge> : 'No Batch Assigned'}</CardDescription>
             </CardHeader>
             <CardContent className="p-6 grid gap-4 md:grid-cols-2">
