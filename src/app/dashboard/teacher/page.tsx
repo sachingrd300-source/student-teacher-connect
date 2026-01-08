@@ -105,30 +105,32 @@ export default function TeacherDashboardPage() {
   }, []);
 
   const handleApprove = (studentId: string) => {
-    const student = studentRequests.find(s => s.id === studentId);
-    if (student) {
-        const approvedStudent = {...student, grade: 'N/A', attendance: 100, createdAt: new Date() };
-        // Update local state for immediate UI feedback
-        setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-        setEnrolledStudents(prev => [approvedStudent, ...prev]);
+    const studentToApprove = teacherData.studentRequests.find(s => s.id === studentId);
+    if (studentToApprove) {
+        const approvedStudent = { ...studentToApprove, grade: 'N/A', attendance: 100, createdAt: new Date() };
 
-        // Update the mock data source to reflect the change permanently for this session
+        // Update the mock data source first
         teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
         teacherData.enrolledStudents.unshift(approvedStudent);
+
+        // Then update the local state from the single source of truth
+        setStudentRequests([...teacherData.studentRequests]);
+        setEnrolledStudents([...teacherData.enrolledStudents]);
     }
   };
   
   const handleDeny = (studentId: string) => {
-    // Update local state
-    setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-    // Update mock data source
+    // Update the mock data source
     teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
+    // Update local state from the source
+    setStudentRequests([...teacherData.studentRequests]);
   };
   
   const handleRemove = (studentId: string) => {
-    const studentToRemove = enrolledStudents.find(s => s.id === studentId);
-    setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
+    // Update the mock data source
     teacherData.enrolledStudents = teacherData.enrolledStudents.filter(s => s.id !== studentId);
+    // Update local state from the source
+    setEnrolledStudents([...teacherData.enrolledStudents]);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -159,10 +161,12 @@ export default function TeacherDashboardPage() {
         attendance: 100, // Default value
         createdAt: new Date(),
     };
-
-    setEnrolledStudents(prev => [newStudent, ...prev]);
-    // Also update the central mock data source
+    
+    // Update the central mock data source first
     teacherData.enrolledStudents.unshift(newStudent);
+    // Then update local state from the source
+    setEnrolledStudents([...teacherData.enrolledStudents]);
+
 
     toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
     
@@ -409,3 +413,5 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
+
+    
