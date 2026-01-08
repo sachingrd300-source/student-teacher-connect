@@ -20,19 +20,18 @@ export const teacherData = {
   name: "Dr. Evelyn Reed",
   id: "TID-84321",
   avatarUrl: 'https://picsum.photos/seed/teacher-avatar/100/100',
-  studentRequests: [
-    { id: 'S003', name: 'Charlie Davis', avatarUrl: 'https://picsum.photos/seed/S003/40/40' },
-    { id: 'S004', name: 'Diana Prince', avatarUrl: 'https://picsum.photos/seed/S004/40/40' },
-  ],
+  studentRequests: [],
   enrolledStudents: [
     { id: 'S001', name: 'Alice Johnson', grade: 'A', attendance: 95, avatarUrl: 'https://picsum.photos/seed/S001/40/40', batch: 'Morning Physics' },
     { id: 'S002', name: 'Bob Williams', grade: 'B', attendance: 88, avatarUrl: 'https://picsum.photos/seed/S002/40/40', batch: 'Evening Chemistry' },
+    { id: 'S003', name: 'Charlie Davis', avatarUrl: 'https://picsum.photos/seed/S003/40/40', grade: 'N/A', attendance: 100, createdAt: new Date('2023-10-27T10:00:00Z') },
+    { id: 'S004', name: 'Diana Prince', avatarUrl: 'https://picsum.photos/seed/S004/40/40', grade: 'N/A', attendance: 100, createdAt: new Date('2023-10-27T10:00:00Z') }
   ],
-  schedule: {
-    '2024-07-29': { status: 'Open', topic: 'Algebra Basics' },
-    '2024-07-30': { status: 'Open', topic: 'Linear Equations' },
-    '2024-07-31': { status: 'Holiday', topic: 'Summer Break' },
-  },
+  schedule: [
+    { id: 'sch-1', topic: 'Algebra Basics', subject: 'Mathematics', date: new Date(new Date().setDate(new Date().getDate() + 1)), time: '10:00 AM', type: 'Online', locationOrLink: 'https://meet.google.com/xyz-abc-pqr', status: 'Scheduled' },
+    { id: 'sch-2', topic: 'Linear Equations', subject: 'Mathematics', date: new Date(new Date().setDate(new Date().getDate() + 2)), time: '11:00 AM', type: 'Offline', locationOrLink: 'Classroom 5', status: 'Scheduled' },
+    { id: 'sch-3', topic: 'Thermodynamics', subject: 'Physics', date: new Date(new Date().setDate(new Date().getDate() + 3)), time: '02:00 PM', type: 'Online', locationOrLink: 'https://meet.google.com/def-ghi-jkl', status: 'Scheduled' }
+  ],
   classStatus: 'Open',
   subjects: ['Mathematics', 'Physics', 'Chemistry'],
   batches: [
@@ -75,6 +74,7 @@ export const studentData = {
   performance: teacherData.performance,
   studyMaterials: teacherData.studyMaterials,
   attendanceRecords: teacherData.attendanceRecords,
+  schedule: teacherData.schedule,
 };
 
 export const parentData = {

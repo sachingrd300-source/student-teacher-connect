@@ -13,7 +13,7 @@ import { studentData, teacherData } from '@/lib/data';
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpenCheck, ClipboardList, ShoppingCart } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, ClipboardList, ShoppingCart, CalendarDays } from 'lucide-react';
 
 export default function StudentDashboardPage() {
   const [teacherConnected, setTeacherConnected] = useState(false);
@@ -46,7 +46,18 @@ export default function StudentDashboardPage() {
           <CardTitle>Quick Access</CardTitle>
           <CardDescription>Jump to your resources.</CardDescription>
         </CardHeader>
-        <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/dashboard/student/schedule">
+            <Card className="hover:bg-muted/50 transition-colors h-full">
+              <CardHeader className="flex-row items-center gap-4">
+                <CalendarDays className="w-8 h-8 text-primary" />
+                <div>
+                  <CardTitle>Schedule</CardTitle>
+                  <CardDescription>View upcoming classes.</CardDescription>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href="/dashboard/student/study-material">
             <Card className="hover:bg-muted/50 transition-colors h-full">
               <CardHeader className="flex-row items-center gap-4">

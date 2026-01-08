@@ -30,12 +30,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { PlusCircle, CalendarDays, Video, MapPin, MoreVertical } from 'lucide-react';
+import { PlusCircle, CalendarDays, Video, MapPin, MoreVertical, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { teacherData } from '@/lib/data';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 type ScheduleItem = {
     id: string;
@@ -45,6 +47,7 @@ type ScheduleItem = {
     time: string;
     type: 'Online' | 'Offline';
     locationOrLink: string;
+    status: 'Scheduled' | 'Canceled';
 };
 
 export default function SchedulePage() {
@@ -68,15 +71,8 @@ export default function SchedulePage() {
     useEffect(() => {
         setIsLoading(true);
         setTimeout(() => {
-            const scheduleData = Object.entries(teacherData.schedule).map(([date, item], index) => ({
-                id: `sch-${index}`,
-                topic: item.topic,
-                subject: 'Mathematics', // Assuming a default for demo
-                date: new Date(date),
-                time: '10:00 AM', // Assuming a default for demo
-                type: (item.topic === 'Holiday' ? 'Offline' : 'Online') as 'Online' | 'Offline',
-                locationOrLink: item.topic === 'Holiday' ? 'N/A' : 'https://meet.google.com/xyz-abc-pqr'
-            })).sort((a,b) => a.date.getTime() - b.date.getTime());
+            // Use the new array format from teacherData
+            const scheduleData = [...teacherData.schedule].sort((a,b) => a.date.getTime() - b.date.getTime());
             setSchedule(scheduleData);
             setIsLoading(false);
         }, 500);
@@ -96,11 +92,13 @@ export default function SchedulePage() {
             time,
             type: classType,
             locationOrLink,
+            status: 'Scheduled',
         };
 
-        setSchedule(prev => [...prev, newClass].sort((a,b) => a.date.getTime() - b.date.getTime()));
-        // In a real app, you would also update the central data source here
-        // For this demo, we are only updating local state.
+        // Update the central mock data
+        teacherData.schedule.push(newClass);
+        // Update local state from the central source
+        setSchedule([...teacherData.schedule].sort((a,b) => a.date.getTime() - b.date.getTime()));
         
         toast({ title: 'Class Scheduled', description: `${topic} on ${format(date, "PPP")} has been added to your schedule.`});
         
@@ -113,6 +111,18 @@ export default function SchedulePage() {
         setLocationOrLink('');
         setAddClassOpen(false);
     }
+
+    const handleCancelClass = (itemId: string) => {
+        // Update the central mock data
+        const itemIndex = teacherData.schedule.findIndex(item => item.id === itemId);
+        if (itemIndex > -1) {
+            teacherData.schedule[itemIndex].status = 'Canceled';
+        }
+
+        // Update local state from the central source
+        setSchedule([...teacherData.schedule]);
+        toast({ title: 'Class Canceled', description: 'The class has been marked as canceled.'});
+    };
 
     return (
         <div className="space-y-6">
@@ -209,14 +219,17 @@ export default function SchedulePage() {
                      )}
                      {schedule && schedule.length > 0 ? (
                         schedule.map(item => (
-                            <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                            <div key={item.id} className={cn("flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50", item.status === 'Canceled' && 'bg-muted/50 opacity-60')}>
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
                                         <span>{item.date.toLocaleDateString('en-US', { day: '2-digit' })}</span>
                                         <span>{item.date.toLocaleDateString('en-US', { month: 'short' })}</span>
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-lg">{item.topic}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-semibold text-lg">{item.topic}</h3>
+                                            {item.status === 'Canceled' && <Badge variant="destructive">Canceled</Badge>}
+                                        </div>
                                         <p className="text-sm text-muted-foreground">{item.subject} • {item.time}</p>
                                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                                             {item.type === 'Online' ? <Video className="h-4 w-4"/> : <MapPin className="h-4 w-4"/>}
@@ -224,7 +237,19 @@ export default function SchedulePage() {
                                         </p>
                                     </div>
                                 </div>
-                                <Button variant="ghost" size="icon"><MoreVertical className="h-5 w-5"/></Button>
+                                {item.status === 'Scheduled' && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon"><MoreVertical className="h-5 w-5"/></Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            <DropdownMenuItem onClick={() => handleCancelClass(item.id)} className="text-red-600 focus:text-red-600 focus:bg-red-100">
+                                                <XCircle className="mr-2 h-4 w-4"/>
+                                                Cancel Class
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
                             </div>
                         ))
                      ) : !isLoading && (
