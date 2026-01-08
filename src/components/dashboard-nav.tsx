@@ -110,16 +110,6 @@ export function DashboardNav({ role }: { role: Role }) {
 
 
       <div className="mt-auto flex flex-col gap-1 pt-4 border-t">
-        <Link
-          href="/dashboard"
-          className={cn(
-            buttonVariants({ variant: 'ghost' }),
-            'justify-start gap-3'
-          )}
-        >
-          <Users className="h-4 w-4" />
-          Switch Role
-        </Link>
         <button
           onClick={handleLogout}
           className={cn(
