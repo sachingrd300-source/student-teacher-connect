@@ -2,7 +2,6 @@
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
       "description": "Represents a user in the EduConnect Pro application. Could be a teacher or student.",
@@ -61,6 +60,18 @@
         "experienceType": {
           "type": "string",
           "description": "For tutors, the type of their teaching experience (e.g., School, Online)."
+        },
+        "address": {
+          "type": "string",
+          "description": "For tutors, their address or city for location-based search."
+        },
+        "coachingName": {
+            "type": "string",
+            "description": "The name of the tutor's coaching center or institute."
+        },
+        "whatsappNumber": {
+            "type": "string",
+            "description": "The tutor's WhatsApp number for student communication."
         }
       },
       "required": [
@@ -98,40 +109,6 @@
         "classLevel",
         "classCode"
       ]
-    },
-    "Enrollment": {
-      "title": "Enrollment",
-      "type": "object",
-      "description": "Represents a student's request to enroll in a specific class.",
-      "properties": {
-        "studentId": {
-          "type": "string",
-          "description": "The ID of the student requesting to enroll."
-        },
-        "classId": {
-          "type": "string",
-          "description": "The ID of the class the student wants to join."
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "The ID of the teacher who owns the class. Denormalized for security rules."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "pending",
-            "approved",
-            "denied"
-          ],
-          "description": "The status of the enrollment request."
-        }
-      },
-      "required": [
-        "studentId",
-        "classId",
-        "teacherId",
-        "status"
-      ]
     }
   },
   "auth": {
@@ -153,12 +130,6 @@
         "$ref": "#/entities/Class"
       },
       "description": "Stores classes created by teachers."
-    },
-    "/enrollments/{enrollmentId}": {
-      "schema": {
-        "$ref": "#/entities/Enrollment"
-      },
-      "description": "Stores student enrollment requests for specific classes."
     }
   }
 }
