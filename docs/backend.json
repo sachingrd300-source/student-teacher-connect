@@ -112,6 +112,10 @@
           "type": "string",
           "description": "The ID of the class the student wants to join."
         },
+        "teacherId": {
+          "type": "string",
+          "description": "The ID of the teacher who owns the class. Denormalized for security rules."
+        },
         "status": {
           "type": "string",
           "enum": [
@@ -125,6 +129,7 @@
       "required": [
         "studentId",
         "classId",
+        "teacherId",
         "status"
       ]
     }
@@ -137,37 +142,23 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/entities/User"
-          },
-          "description": "Stores public user profiles (tutors, students, parents)."
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
       },
-       {
-        "path": "/classes/{classId}",
-        "definition": {
-          "entityName": "Class",
-          "schema": {
-            "$ref": "#/entities/Class"
-          },
-          "description": "Stores classes created by teachers."
-        }
+      "description": "Stores public user profiles (tutors, students, parents)."
+    },
+    "/classes/{classId}": {
+      "schema": {
+        "$ref": "#/entities/Class"
       },
-      {
-        "path": "/enrollments/{enrollmentId}",
-        "definition": {
-          "entityName": "Enrollment",
-          "schema": {
-            "$ref": "#/entities/Enrollment"
-          },
-          "description": "Stores student enrollment requests for specific classes."
-        }
-      }
-    ]
+      "description": "Stores classes created by teachers."
+    },
+    "/enrollments/{enrollmentId}": {
+      "schema": {
+        "$ref": "#/entities/Enrollment"
+      },
+      "description": "Stores student enrollment requests for specific classes."
+    }
   }
 }

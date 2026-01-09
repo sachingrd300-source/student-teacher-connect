@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -45,9 +46,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, MoreVertical, BookOpenCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { teacherData } from '@/lib/data';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -62,6 +62,10 @@ type StudyMaterial = {
     createdAt: { toDate: () => Date };
     isFree: boolean;
 };
+
+type UserProfile = {
+  subjects?: string[];
+}
 
 const materialTypes = ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"];
 
@@ -80,7 +84,12 @@ export default function MaterialsPage() {
     const [materialType, setMaterialType] = useState('');
     const [isFree, setIsFree] = useState(false);
 
-    const teacherSubjects = teacherData.subjects;
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+    const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;

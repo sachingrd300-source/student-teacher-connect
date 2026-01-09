@@ -1,3 +1,4 @@
+
 /**
  * Core Philosophy: This ruleset enforces a role-based security model for an educational application. Access is primarily determined by a user's role (teacher, student, parent) and their relationships to specific data entities. The guiding principle is "Authorization Independence," where authorization context (like a teacher's or student's user ID) is denormalized onto documents to create fast, secure, and understandable rules that avoid complex joins.
  *
@@ -55,7 +56,7 @@ service cloud.firestore {
      * The document must have a `teacherId` field.
      */
     function isTeacherOwner(docData) {
-      return userOwnsRoleDoc('teachers', docData.teacherId);
+      return isSignedIn() && docData.teacherId == request.auth.uid;
     }
     
     /**
@@ -63,7 +64,7 @@ service cloud.firestore {
      * The document must have a `studentId` field.
      */
     function isStudentOwner(docData) {
-      return userOwnsRoleDoc('students', docData.studentId);
+      return isSignedIn() && docData.studentId == request.auth.uid;
     }
 
     /**
@@ -72,7 +73,7 @@ service cloud.firestore {
      */
     function isTeacherOfDppSubmission(submissionData) {
       let studyMaterial = get(/databases/$(database)/documents/studyMaterials/$(submissionData.studyMaterialId)).data;
-      return userOwnsRoleDoc('teachers', studyMaterial.teacherId);
+      return isTeacherOwner(studyMaterial);
     }
 
     // --------------------------------
@@ -90,53 +91,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow get, update: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow list: if false;
-      allow delete: if false;
+      allow list, delete: if false;
     }
 
-    /**
-     * @description Controls access to teacher-specific profile data.
-     * @path /teachers/{teacherId}
-     * @allow A user (create)s a teacher profile for themselves (`request.resource.data.userId == request.auth.uid`).
-     * @deny A user tries to (update) or (delete) another user's teacher profile.
-     * @deny Any user tries to (list) all teachers.
-     * @principle Validates relational integrity between the user and their role-specific document.
-     */
-    match /teachers/{teacherId} {
-      allow get, update: if isExistingDoc() && userOwnsRoleDoc('teachers', teacherId);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isExistingDoc() && userOwnsRoleDoc('teachers', teacherId);
-      allow list: if false;
-    }
-
-    /**
-     * @description Controls access to student-specific profile data.
-     * @path /students/{studentId}
-     * @allow A user (create)s a student profile for themselves (`request.resource.data.userId == request.auth.uid`).
-     * @deny A user tries to (get) or (update) another user's student profile.
-     * @deny Any user tries to (list) all students.
-     * @principle Validates relational integrity between the user and their role-specific document.
-     */
-    match /students/{studentId} {
-      allow get, update: if isExistingDoc() && userOwnsRoleDoc('students', studentId);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isExistingDoc() && userOwnsRoleDoc('students', studentId);
-      allow list: if false;
-    }
-
-    /**
-     * @description Controls access to parent-specific profile data.
-     * @path /parents/{parentId}
-     * @allow A user (create)s a parent profile for themselves (`request.resource.data.userId == request.auth.uid`).
-     * @deny A user tries to (get) or (update) another user's parent profile.
-     * @deny Any user tries to (list) all parents.
-     * @principle Validates relational integrity between the user and their role-specific document.
-     */
-    match /parents/{parentId} {
-      allow get, update: if isExistingDoc() && userOwnsRoleDoc('parents', parentId);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isExistingDoc() && userOwnsRoleDoc('parents', parentId);
-      allow list: if false;
+    match /classes/{classId} {
+        allow get: if isSignedIn();
+        allow list: if false; // Teachers list their own classes via query
+        allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
+        allow update, delete: if isTeacherOwner(resource.data);
     }
 
     /**
@@ -148,12 +110,13 @@ service cloud.firestore {
      * @principle Enforces that users can only manage their own connection records.
      */
     match /enrollments/{enrollmentId} {
-      allow get, update: if isExistingDoc() && (isOwner(resource.data.studentId) || isOwner(resource.data.teacherId));
-      allow list: if isSignedIn()
-                  && (('studentId' in request.query.where) && (request.query.where.studentId == request.auth.uid)
-                  || (('teacherId' in request.query.where) && (request.query.where.teacherId == request.auth.uid)));
-      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
-      allow delete: if isExistingDoc() && isOwner(resource.data.studentId);
+      allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
+      allow update: if isExistingDoc() && isTeacherOwner(resource.data); // Only teacher can approve/deny
+      allow list: if isSignedIn() && 
+                    ((request.query.where.studentId is string && request.query.where.studentId == request.auth.uid) || 
+                     (request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid));
+      allow create: if isStudentOwner(request.resource.data);
+      allow delete: if isExistingDoc() && isStudentOwner(resource.data);
     }
     
     /**

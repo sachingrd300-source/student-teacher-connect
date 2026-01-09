@@ -8,12 +8,20 @@ import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Link as LinkIcon } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type ConnectTeacherFormProps = {
     onConnectionSuccess: () => void;
 };
+
+type ClassData = {
+    id: string;
+    teacherId: string;
+    subject: string;
+    classLevel: string;
+    classCode: string;
+}
 
 export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormProps) {
     const [classCode, setClassCode] = useState('');
@@ -60,6 +68,7 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
             }
             
             const classDoc = querySnapshot.docs[0];
+            const classData = classDoc.data() as ClassData;
             const classId = classDoc.id;
             
             const enrollmentsRef = collection(firestore, 'enrollments');
@@ -79,9 +88,8 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
             const enrollmentData = {
                 studentId: user.uid,
                 classId: classId,
+                teacherId: classData.teacherId, // Denormalize teacherId for security rules
                 status: 'pending',
-                studentName: user.displayName || 'New Student',
-                studentAvatar: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
             };
             
             addDocumentNonBlocking(enrollmentsRef, enrollmentData);

@@ -68,14 +68,13 @@ type UserProfile = {
   status: 'pending_verification' | 'approved';
   subjects?: string[];
   classLevels?: string[];
+  avatarUrl?: string;
 };
 
 type Enrollment = {
     id: string;
     studentId: string;
     classId: string;
-    studentName?: string;
-    studentAvatar?: string;
     status: 'pending' | 'approved' | 'denied';
 };
 
@@ -91,11 +90,14 @@ function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, o
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    const studentQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', enrollment.studentId) : null, [firestore, enrollment.studentId]);
+    const { data: student, isLoading } = useDoc<UserProfile>(studentQuery);
+
     const handleApprove = async () => {
         if (!firestore) return;
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         await updateDoc(enrollmentRef, { status: 'approved' });
-        toast({ title: 'Student Approved', description: `${enrollment.studentName} is now enrolled in the class.`});
+        toast({ title: 'Student Approved', description: `${student?.name} is now enrolled in the class.`});
         onUpdate();
     };
 
@@ -106,15 +108,23 @@ function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, o
         toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'});
         onUpdate();
     };
+    
+    if(isLoading) {
+        return (
+            <TableRow>
+                <TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell>
+            </TableRow>
+        );
+    }
 
     return (
         <TableRow>
             <TableCell className="font-medium flex items-center gap-3">
             <Avatar>
-                <AvatarImage src={enrollment.studentAvatar} />
-                <AvatarFallback>{enrollment.studentName?.charAt(0) || 'S'}</AvatarFallback>
+                <AvatarImage src={student?.avatarUrl} />
+                <AvatarFallback>{student?.name?.charAt(0) || 'S'}</AvatarFallback>
             </Avatar>
-            {enrollment.studentName}
+            {student?.name || 'Loading...'}
             </TableCell>
              <TableCell>
                 <Badge variant="outline">ClassId: ...{enrollment.classId.slice(-6)}</Badge>
