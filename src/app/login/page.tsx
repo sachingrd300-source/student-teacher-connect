@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -101,6 +102,11 @@ export default function LoginPage() {
             router.push('/dashboard/teacher');
         }
     } catch (error: any) {
+        // Don't show an error toast if the user closes the popup
+        if (error.code === 'auth/popup-closed-by-user') {
+            console.log("Google Sign-In popup closed by user.");
+            return;
+        }
         console.error("Google Sign In Error:", error);
         toast({ variant: 'destructive', title: 'Google Sign-In Failed', description: error.message || 'An unexpected error occurred.' });
     } finally {
@@ -151,7 +157,7 @@ export default function LoginPage() {
                 <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
               </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+            <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
               {isGoogleLoading ? 'Signing in...' : <><GoogleIcon className="mr-2"/> Sign in with Google</>}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
