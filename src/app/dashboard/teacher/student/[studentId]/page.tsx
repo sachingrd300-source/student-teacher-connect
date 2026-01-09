@@ -25,6 +25,7 @@ import { notFound, useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 type StudentProfile = {
   id: string;
@@ -44,13 +45,22 @@ export default function StudentProfilePage() {
   
   const firestore = useFirestore();
 
-  const studentQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', studentId) : null, [firestore, studentId]);
+  const studentQuery = useMemoFirebase(() => {
+    if (!firestore || !studentId) return null;
+    return doc(firestore, 'users', studentId)
+  }, [firestore, studentId]);
   const { data: student, isLoading: isLoadingStudent } = useDoc<StudentProfile>(studentQuery);
 
-  const attendanceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'attendances'), where('studentId', '==', studentId), orderBy('date', 'desc')) : null, [firestore, studentId]);
+  const attendanceQuery = useMemoFirebase(() => {
+    if (!firestore || !studentId) return null;
+    return query(collection(firestore, 'attendances'), where('studentId', '==', studentId), orderBy('date', 'desc'))
+  }, [firestore, studentId]);
   const { data: attendanceHistory, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
 
-  const performanceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'performances'), where('studentId', '==', studentId), orderBy('date', 'desc')) : null, [firestore, studentId]);
+  const performanceQuery = useMemoFirebase(() => {
+    if (!firestore || !studentId) return null;
+    return query(collection(firestore, 'performances'), where('studentId', '==', studentId), orderBy('date', 'desc'))
+  }, [firestore, studentId]);
   const { data: testResults, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
 
 
