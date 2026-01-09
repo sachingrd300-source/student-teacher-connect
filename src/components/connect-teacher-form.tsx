@@ -48,10 +48,8 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
 
         try {
             // Find the teacher by their verification code (which is their user ID in this design)
-            const teachersRef = collection(firestore, 'users');
-            // In our schema, the teacher's public-facing ID is their user document ID.
-            // We assume the teacher gives the student their user.id
-            const q = query(teachersRef, where('id', '==', teacherCode), where('role', '==', 'teacher'));
+            const teachersRef = collection(firestore, 'teachers');
+            const q = query(teachersRef, where('userId', '==', teacherCode));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
@@ -65,9 +63,12 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
             }
             
             const teacherDoc = querySnapshot.docs[0];
-            const teacherId = teacherDoc.id;
-            const teacherData = teacherDoc.data();
+            const teacherId = teacherDoc.data().userId;
 
+            // Fetch teacher user profile to get their name
+            const teacherUserDoc = (await getDocs(query(collection(firestore, 'users'), where('id', '==', teacherId)))).docs[0];
+            const teacherData = teacherUserDoc.data();
+            
             // Check if an enrollment already exists
             const enrollmentsRef = collection(firestore, 'enrollments');
             const existingEnrollmentQuery = query(enrollmentsRef, where('studentId', '==', user.uid), where('teacherId', '==', teacherId));
@@ -98,7 +99,7 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
 
             toast({
                 title: 'Request Sent!',
-                description: `Your connection request has been sent to the teacher.`,
+                description: `Your connection request has been sent to ${teacherData.name}.`,
             });
             onConnectionSuccess();
             setTeacherCode('');

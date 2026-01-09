@@ -11,7 +11,8 @@ import { Check, User, Briefcase, MapPin, Mail, Key } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useAuth, initiateEmailSignUp } from '@/firebase'; // Using the non-blocking sign-up
+import { useAuth, initiateEmailSignUp, useFirestore } from '@/firebase'; // Using the non-blocking sign-up
+import { setDoc, doc } from 'firebase/firestore';
 
 const steps = [
     { id: 1, name: 'Account Details', fields: ['name', 'email', 'password'], icon: User },
@@ -36,6 +37,7 @@ export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -52,14 +54,33 @@ export default function SignUpPage() {
   };
   
   const handleRegistration = async () => {
+    if (!firestore) return;
     setIsLoading(true);
     try {
-        await initiateEmailSignUp(auth, formData.email, formData.password);
+        const userCredential = await initiateEmailSignUp(auth, formData.email, formData.password);
+        const user = userCredential.user;
+
+        // Create user profile document in Firestore
+        const userRef = doc(firestore, 'users', user.uid);
+        await setDoc(userRef, {
+            id: user.uid,
+            name: formData.name,
+            email: formData.email,
+            role: 'teacher',
+            subjects: formData.subjects.split(',').map(s => s.trim()),
+            qualification: formData.qualification,
+            experience: formData.experience,
+            address: formData.address,
+            mobileNumber: formData.mobileNumber,
+        });
+
+        const teacherRef = doc(firestore, 'teachers', user.uid);
+        await setDoc(teacherRef, {
+          userId: user.uid,
+          verificationCode: user.uid, // Using UID as verification for simplicity
+        });
         
         toast({ title: 'Registration Successful!', description: 'Your account is being created. Redirecting to your profile...' });
-        
-        // TODO: In a real app, we would also save the additional profile data (steps 2 & 3) to Firestore here.
-        // For now, we'll just redirect.
 
         router.push('/dashboard/teacher/profile');
     } catch (error: any) {
@@ -114,7 +135,7 @@ export default function SignUpPage() {
                 <div className="space-y-4">
                     <h3 className="font-semibold text-lg flex items-center gap-2"><Briefcase className="h-5 w-5 text-primary" /> Professional Information</h3>
                     <div className="space-y-2">
-                        <Label htmlFor="subjects">Subjects Taught</Label>
+                        <Label htmlFor="subjects">Subjects Taught (comma-separated)</Label>
                         <Input id="subjects" value={formData.subjects} onChange={handleChange} placeholder="e.g., Mathematics, Physics" />
                     </div>
                     <div className="space-y-2">

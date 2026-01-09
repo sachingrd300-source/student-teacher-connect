@@ -10,7 +10,8 @@ import { Check, User, Mail, Key } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useAuth, initiateEmailSignUp } from '@/firebase';
+import { useAuth, initiateEmailSignUp, useFirestore } from '@/firebase';
+import { setDoc, doc } from 'firebase/firestore';
 
 const steps = [
     { id: 1, name: 'Account Details', fields: ['name', 'email', 'password'], icon: User },
@@ -28,6 +29,7 @@ export default function SignUpStudentPage() {
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,13 +57,22 @@ export default function SignUpStudentPage() {
   };
   
   const handleRegistration = async () => {
+    if (!firestore) return;
     setIsLoading(true);
     try {
-        await initiateEmailSignUp(auth, formData.email, formData.password);
+        const userCredential = await initiateEmailSignUp(auth, formData.email, formData.password);
+        const user = userCredential.user;
+
+        // Create user profile document in Firestore
+        const userRef = doc(firestore, 'users', user.uid);
+        await setDoc(userRef, {
+            id: user.uid,
+            name: formData.name,
+            email: formData.email,
+            role: 'student',
+        });
         
         toast({ title: 'Registration Successful!', description: 'Your account is being created. Redirecting to your dashboard...' });
-
-        // In a real app, you would also save the student's name to their Firestore profile.
         
         router.push('/dashboard/student');
     } catch (error: any) {
