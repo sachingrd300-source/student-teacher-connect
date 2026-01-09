@@ -32,8 +32,8 @@ service cloud.firestore {
     =============================== */
 
     match /users/{userId} {
-      // A user can get and update their own profile.
       // Any signed-in user can view an approved tutor's profile.
+      // A user can get and update their own profile.
       allow get: if isOwner(userId) || (isSignedIn() && isExistingDoc() && resource.data.role == 'tutor' && resource.data.status == 'approved');
       allow update: if isOwner(userId);
       // A user can create their own profile document.
