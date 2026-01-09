@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -49,7 +50,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, orderBy } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -200,3 +201,4 @@ export default function BatchesPage() {
         </div>
     );
 }
+

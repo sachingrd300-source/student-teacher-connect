@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -33,11 +34,12 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, writeBatch, Timestamp, doc } from 'firebase/firestore';
+import { collection, query, where, writeBatch, Timestamp, doc, getDocs } from 'firebase/firestore';
 
 
-type StudentEnrollment = { id: string; studentName: string, studentId: string, batch?: string; };
+type StudentEnrollment = { id: string; studentName: string, studentId: string; };
 type Batch = { id: string; name: string; };
+type UserProfile = { name: string; };
 
 export default function AttendancePage() {
     const { toast } = useToast();
@@ -51,33 +53,63 @@ export default function AttendancePage() {
     // State
     const [attendance, setAttendance] = useState<Record<string, boolean>>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [students, setStudents] = useState<StudentEnrollment[]>([]);
+    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
     const batchesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
-
-    const studentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user || !selectedBatchId) return null;
-        return query(
-            collection(firestore, 'enrollments'), 
-            where('teacherId', '==', user.uid), 
-            where('batchId', '==', selectedBatchId), 
-            where('status', '==', 'approved')
-        );
-    }, [firestore, user, selectedBatchId]);
-    const { data: students, isLoading: isLoadingStudents } = useCollection<StudentEnrollment>(studentsQuery);
     
     useEffect(() => {
-        if (students) {
-            const initialAttendance = students.reduce((acc, student) => {
-                acc[student.studentId] = true;
-                return acc;
-            }, {} as Record<string, boolean>);
-            setAttendance(initialAttendance);
-        }
-    }, [students]);
+        const fetchStudentsForBatch = async () => {
+            if (!firestore || !user || !selectedBatchId) {
+                setStudents([]);
+                return;
+            }
+            setIsLoadingStudents(true);
+            try {
+                const enrollmentsQuery = query(
+                    collection(firestore, 'enrollments'), 
+                    where('teacherId', '==', user.uid), 
+                    where('batchId', '==', selectedBatchId), 
+                    where('status', '==', 'approved')
+                );
+
+                const querySnapshot = await getDocs(enrollmentsQuery);
+                const studentEnrollments = querySnapshot.docs.map(d => ({...d.data(), id: d.id}));
+
+                const studentPromises = studentEnrollments.map(async (enrollment) => {
+                    const studentDocRef = doc(firestore, 'users', enrollment.studentId);
+                    const studentDoc = await getDocs(query(collection(firestore, 'users'), where('id', '==', enrollment.studentId)));
+
+                    if (!studentDoc.empty) {
+                        const studentData = studentDoc.docs[0].data() as UserProfile;
+                        return { id: enrollment.id, studentId: enrollment.studentId, studentName: studentData.name };
+                    }
+                    return null;
+                });
+
+                const resolvedStudents = (await Promise.all(studentPromises)).filter(Boolean) as StudentEnrollment[];
+                setStudents(resolvedStudents);
+
+                 const initialAttendance = resolvedStudents.reduce((acc, student) => {
+                    acc[student.studentId] = true;
+                    return acc;
+                }, {} as Record<string, boolean>);
+                setAttendance(initialAttendance);
+
+            } catch (error) {
+                console.error("Error fetching students for batch:", error);
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch students for this batch.' });
+            } finally {
+                setIsLoadingStudents(false);
+            }
+        };
+
+        fetchStudentsForBatch();
+    }, [firestore, user, selectedBatchId, toast]);
 
 
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
@@ -201,4 +233,3 @@ export default function AttendancePage() {
     );
 }
 
-    
