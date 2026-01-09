@@ -17,13 +17,13 @@ const features = [
     icon: <UserCheck className="h-8 w-8 text-primary" />,
     title: 'For Tutors',
     description: 'Showcase your expertise, manage your schedule, and connect with potential students in your area.',
-    link: '/dashboard/teacher'
+    isStudent: false,
   },
   {
     icon: <BookOpen className="h-8 w-8 text-primary" />,
     title: 'For Students',
     description: 'Access notes, practice with DPPs, track your performance, and stay updated with your class schedule in real-time.',
-    link: '/students'
+    isStudent: true,
   }
 ];
 
@@ -80,9 +80,22 @@ export default function Home() {
                   <CardContent className="flex-grow">
                     <CardDescription>{feature.description}</CardDescription>
                   </CardContent>
-                  <Button variant="link" asChild className="mt-4 text-primary">
-                    <Link href={feature.link}>Explore {feature.title} &rarr;</Link>
-                  </Button>
+                  <CardFooter className="flex-col sm:flex-row gap-2 mt-4">
+                    {feature.isStudent ? (
+                        <>
+                          <Button variant="outline" asChild>
+                            <Link href="/dashboard/student/study-material">Free Content</Link>
+                          </Button>
+                          <Button asChild>
+                            <Link href="/dashboard/student">My Dashboard</Link>
+                          </Button>
+                        </>
+                    ) : (
+                      <Button variant="link" asChild className="text-primary">
+                        <Link href="/dashboard/teacher">Explore {feature.title} &rarr;</Link>
+                      </Button>
+                    )}
+                  </CardFooter>
                 </Card>
               ))}
             </div>
