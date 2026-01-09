@@ -27,30 +27,16 @@ service cloud.firestore {
       return isSignedIn() && docData.studentId == request.auth.uid;
     }
 
-    function isTeacherOfDppSubmission(submissionData) {
-      let material =
-        get(/databases/$(database)/documents/studyMaterials/$(submissionData.studyMaterialId)).data;
-      return isTeacherOwner(material);
-    }
-    
-    function isStudentEnrolled(teacherId) {
-       // This checks if an enrollment document exists where the requesting user is the student,
-       // for the specific teacher, and the status is 'approved'.
-       return exists(/databases/$(database)/documents/enrollments/{enrollmentId}
-         where studentId == request.auth.uid
-         where teacherId == teacherId
-         where status == 'approved'
-       );
-    }
-
     /* ===============================
        USERS
     =============================== */
 
     match /users/{userId} {
-      // Anyone can see a tutor's profile if it's approved
-      allow get: if isOwner(userId) || (isExistingDoc() && resource.data.role == 'tutor' && resource.data.status == 'approved');
+      // A user can get and update their own profile.
+      // Any signed-in user can view an approved tutor's profile.
+      allow get: if isOwner(userId) || (isSignedIn() && isExistingDoc() && resource.data.role == 'tutor' && resource.data.status == 'approved');
       allow update: if isOwner(userId);
+      // A user can create their own profile document.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
       // Allow any signed in user to list approved tutors
@@ -63,43 +49,21 @@ service cloud.firestore {
     =============================== */
 
     match /classes/{classId} {
-      // A student can get class info if they are enrolled with the teacher of that class.
-      allow get: if isSignedIn();
+      // Only the teacher owner can get a specific class document.
+      allow get: if isExistingDoc() && isTeacherOwner(resource.data);
 
+      // A teacher can list their own classes.
       allow list: if isSignedIn()
                   && request.query.where.teacherId is string
                   && request.query.where.teacherId == request.auth.uid;
 
+      // A teacher can create a class for themselves.
       allow create: if isSignedIn()
                     && request.resource.data.teacherId == request.auth.uid;
 
+      // A teacher can update or delete their own class.
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
-    }
-
-    /* ===============================
-       ENROLLMENTS
-    =============================== */
-
-    match /enrollments/{enrollmentId} {
-      allow get: if isExistingDoc()
-                 && (isStudentOwner(resource.data)
-                     || isTeacherOwner(resource.data));
-
-      allow list: if isSignedIn()
-                  && (
-                       (request.query.where.studentId is string && request.query.where.studentId == request.auth.uid)
-                    || (request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid)
-                  );
-
-      allow create: if isSignedIn()
-                    && isStudentOwner(request.resource.data);
-
-      allow update: if isExistingDoc()
-                    && isTeacherOwner(resource.data);
-
-      allow delete: if isExistingDoc()
-                    && isStudentOwner(resource.data);
     }
 
     /* ===============================
@@ -108,23 +72,20 @@ service cloud.firestore {
 
     match /studyMaterials/{studyMaterialId} {
       // Anyone can get a free document.
-      // An enrolled student can get a private document.
-      // The teacher owner can get the document.
+      // The teacher owner can get their own document.
       allow get: if (isExistingDoc() && resource.data.isFree == true)
-                  || (isExistingDoc() && isSignedIn() && isStudentEnrolled(resource.data.teacherId))
                   || isTeacherOwner(resource.data);
       
       // Teachers can list their own materials.
       // Any signed in user can list all free materials.
-      // A student can list all materials (private and free) for a teacher they are enrolled with.
       allow list: if (isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid)
-                  || (isSignedIn() && request.query.where.isFree == true)
-                  || (isSignedIn() && request.query.where.teacherId is string && isStudentEnrolled(request.query.where.teacherId));
+                  || (isSignedIn() && request.query.where.isFree == true);
 
-
+      // A teacher can create material for themselves.
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
 
+      // A teacher can update or delete their own material.
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
     }
@@ -134,35 +95,23 @@ service cloud.firestore {
     =============================== */
 
     match /attendances/{attendanceId} {
+      // Teacher owner or student owner can get the document.
       allow get: if isExistingDoc()
                  && (isTeacherOwner(resource.data)
                      || isStudentOwner(resource.data));
 
-      allow list: if false;
+      // A teacher can list attendance for their own class.
+      allow list: if isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid;
 
+      // Teacher can create attendance records.
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
-
+      
+      // Teacher can update or delete their own records.
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
     }
 
-    /* ===============================
-       TESTS
-    =============================== */
-
-    match /tests/{testId} {
-      allow get: if isExistingDoc()
-                 && isTeacherOwner(resource.data);
-
-      allow list: if false;
-
-      allow create: if isSignedIn()
-                    && isTeacherOwner(request.resource.data);
-
-      allow update, delete: if isExistingDoc()
-                            && isTeacherOwner(resource.data);
-    }
 
     /* ===============================
        PERFORMANCES
@@ -170,64 +119,45 @@ service cloud.firestore {
     =============================== */
 
     match /performances/{performanceId} {
+      // Teacher or student can get their own performance records.
       allow get: if isExistingDoc()
                  && (isStudentOwner(resource.data)
                      || isTeacherOwner(resource.data));
 
+      // A teacher can list performances they have created.
       allow list: if isSignedIn() 
-                  && (
-                        (request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid && request.query.where.studentId is string)
-                     || (request.query.where.studentId is string && request.query.where.studentId == request.auth.uid && request.query.where.teacherId is string)
-                  );
+                  && request.query.where.teacherId is string 
+                  && request.query.where.teacherId == request.auth.uid;
 
+      // A teacher can create performance records.
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
 
       allow update, delete: if false;
     }
 
-    /* ===============================
-       DPP SUBMISSIONS
-    =============================== */
-
-    match /dPPSubmissions/{dPPSubmissionId} {
-      allow get, update: if isExistingDoc()
-                         && (
-                              isStudentOwner(resource.data)
-                           || isTeacherOfDppSubmission(resource.data)
-                         );
-
-      allow list: if false;
-
-      allow create: if isSignedIn()
-                    && isStudentOwner(request.resource.data);
-
-      allow delete: if isExistingDoc()
-                    && isStudentOwner(resource.data);
-    }
 
     /* ===============================
        CLASS SCHEDULES
     =============================== */
 
     match /classSchedules/{classScheduleId} {
+       // A teacher can get their own schedule.
       allow get: if isExistingDoc()
-                 && (isTeacherOwner(resource.data) || isStudentEnrolled(resource.data.teacherId));
+                 && isTeacherOwner(resource.data);
 
+      // A teacher can list their own schedules.
       allow list: if isSignedIn() && request.query.where.teacherId is string 
-                  && (
-                       request.query.where.teacherId == request.auth.uid
-                    || isStudentEnrolled(request.query.where.teacherId)
-                  );
+                  && request.query.where.teacherId == request.auth.uid;
 
+      // A teacher can create a schedule for themselves.
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
 
+      // A teacher can update or delete their own schedule.
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
     }
 
   }
 }
-
-    
