@@ -140,6 +140,23 @@ service cloud.firestore {
     }
 
     /**
+     * @description Controls the student-teacher connection records.
+     * @path /enrollments/{enrollmentId}
+     * @allow A student (create)s their own enrollment request.
+     * @allow A student can (list) their own enrollments. A teacher can (list) their own enrollments.
+     * @allow The student or the teacher can (get) or (update) an enrollment record.
+     * @principle Enforces that users can only manage their own connection records.
+     */
+    match /enrollments/{enrollmentId} {
+      allow get, update: if isExistingDoc() && (isOwner(resource.data.studentId) || isOwner(resource.data.teacherId));
+      allow list: if isSignedIn() && (request.query.limit <= 10)
+                  && (('studentId' in request.query.where) && (request.query.where.studentId == request.auth.uid)
+                  || (('teacherId' in request.query.where) && (request.query.where.teacherId == request.auth.uid)));
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow delete: if isExistingDoc() && isOwner(resource.data.studentId);
+    }
+    
+    /**
      * @description Controls access to study materials.
      * @path /studyMaterials/{studyMaterialId}
      * @allow Any signed-in user can (list) all study materials.
@@ -232,3 +249,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
