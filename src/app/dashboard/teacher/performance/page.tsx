@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -32,22 +31,30 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import { teacherData } from '@/lib/data';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-type Student = { id: string; name: string; };
+
+type Student = { id: string; studentName: string; studentId: string; };
 type TestResult = { 
     id: string; 
-    studentId: string; 
+    studentId: string;
+    studentName: string;
     testName: string;
     subject: string;
     marks: number;
     maxMarks: number;
-    date: Date;
+    date: { toDate: () => Date };
 };
 
 export default function PerformancePage() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
     
+    const { user } = useUser();
+    const firestore = useFirestore();
+
     // Form state
     const [selectedStudentId, setSelectedStudentId] = useState(searchParams.get('studentId') || '');
     const [testName, setTestName] = useState('');
@@ -55,38 +62,42 @@ export default function PerformancePage() {
     const [marks, setMarks] = useState<number | ''>('');
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
 
-    // Data state
-    const [students, setStudents] = useState<Student[]>([]);
-    const [testResults, setTestResults] = useState<TestResult[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
     const teacherSubjects = teacherData.subjects;
 
-    useEffect(() => {
-        setIsLoading(true);
-        setTimeout(() => {
-            setStudents(teacherData.enrolledStudents);
-            setIsLoading(false);
-        }, 500);
-    }, []);
+    const studentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'approved'));
+    }, [firestore, user]);
+    const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
+
+    const performanceQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
+    }, [firestore, user]);
+    const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
+
 
     const handleAddResult = async () => {
-        if (!selectedStudentId || !testName || !subject || marks === '' || maxMarks === '') {
+        if (!selectedStudentId || !testName || !subject || marks === '' || maxMarks === '' || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
             return;
         }
+        
+        const student = students?.find(s => s.studentId === selectedStudentId);
 
-        const newResult: TestResult = {
-            id: `res-${Date.now()}`,
+        const newResult = {
             studentId: selectedStudentId,
+            studentName: student?.studentName,
+            teacherId: user.uid,
             testName,
             subject,
             marks: Number(marks),
             maxMarks: Number(maxMarks),
-            date: new Date(),
+            date: serverTimestamp(),
         };
-
-        setTestResults(prev => [newResult, ...prev]);
+        
+        const performanceCollection = collection(firestore, 'performances');
+        addDocumentNonBlocking(performanceCollection, newResult);
 
         toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
         
@@ -98,8 +109,11 @@ export default function PerformancePage() {
     }
     
     const displayedResults = useMemo(() => {
-        return testResults.filter(r => r.studentId === selectedStudentId);
+        if (!selectedStudentId) return testResults;
+        return testResults?.filter(r => r.studentId === selectedStudentId);
     }, [testResults, selectedStudentId]);
+
+    const isLoading = isLoadingStudents || isLoadingResults;
 
     return (
         <div className="space-y-6">
@@ -125,8 +139,8 @@ export default function PerformancePage() {
                             <Select onValueChange={setSelectedStudentId} value={selectedStudentId}>
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
-                                    {isLoading && <SelectItem value="loading" disabled>Loading...</SelectItem>}
-                                    {students?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                    {isLoadingStudents && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                                    {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -153,7 +167,7 @@ export default function PerformancePage() {
                                 <Input id="maxMarks" type="number" value={maxMarks} onChange={e => setMaxMarks(Number(e.target.value))} placeholder="e.g. 100" />
                             </div>
                         </div>
-                        <Button onClick={handleAddResult} className="w-full" disabled={!selectedStudentId}>
+                        <Button onClick={handleAddResult} className="w-full" disabled={!selectedStudentId || isLoading}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Result
                         </Button>
@@ -162,16 +176,16 @@ export default function PerformancePage() {
                  <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Test History</CardTitle>
-                        <CardDescription>Showing results for {students?.find(s => s.id === selectedStudentId)?.name || 'the selected student'}.</CardDescription>
+                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || 'all students'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
-                        {displayedResults.length > 0 ? (
+                        {displayedResults && displayedResults.length > 0 ? (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>Student</TableHead>
                                         <TableHead>Test Name</TableHead>
-                                        <TableHead>Subject</TableHead>
                                         <TableHead>Score</TableHead>
                                         <TableHead className="text-right">Date</TableHead>
                                     </TableRow>
@@ -179,19 +193,16 @@ export default function PerformancePage() {
                                 <TableBody>
                                     {displayedResults.map((result) => (
                                         <TableRow key={result.id}>
+                                            <TableCell className="font-medium">{result.studentName}</TableCell>
                                             <TableCell className="font-medium">{result.testName}</TableCell>
-                                            <TableCell>{result.subject}</TableCell>
                                             <TableCell className="font-semibold">{result.marks} / {result.maxMarks}</TableCell>
-                                            <TableCell className="text-right">{result.date.toLocaleDateString()}</TableCell>
+                                            <TableCell className="text-right">{result.date.toDate().toLocaleDateString()}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
-                        ) : !isLoading && selectedStudentId && (
-                            <p className="text-sm text-center text-muted-foreground py-8">No test results found for this student.</p>
-                        )}
-                         {!selectedStudentId && !isLoading && (
-                            <p className="text-sm text-center text-muted-foreground py-8">Please select a student to view their test history.</p>
+                        ) : !isLoading && (
+                            <p className="text-sm text-center text-muted-foreground py-8">No test results found.</p>
                         )}
                     </CardContent>
                 </Card>

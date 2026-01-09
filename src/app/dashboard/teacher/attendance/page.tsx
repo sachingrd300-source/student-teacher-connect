@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -34,52 +33,47 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { teacherData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, writeBatch, Timestamp } from 'firebase/firestore';
 
-type Student = { id: string; name: string; batch?: string; };
+
+type Student = { id: string; studentName: string, studentId: string, batch?: string; };
 type Batch = { id: string; name: string; };
-
-const allBatches: Batch[] = [
-    { id: 'batch1', name: 'Morning Physics' },
-    { id: 'batch2', name: 'Evening Chemistry' },
-];
 
 export default function AttendancePage() {
     const { toast } = useToast();
-    
+    const { user } = useUser();
+    const firestore = useFirestore();
+
     // Filters
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-    const [selectedBatchId, setSelectedBatchId] = useState('batch1');
+    const [selectedBatchId, setSelectedBatchId] = useState('');
 
     // State
-    const [students, setStudents] = useState<Student[]>([]);
     const [attendance, setAttendance] = useState<Record<string, boolean>>({});
-    const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
-    // Memoize batches to avoid re-renders
-    const batches = useMemo(() => allBatches, []);
+    const batchesQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
+
+    const studentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user || !selectedBatchId) return null;
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('batchId', '==', selectedBatchId), where('status', '==', 'approved'));
+    }, [firestore, user, selectedBatchId]);
+    const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
     
-    // Fetch Students for the selected Batch
     useEffect(() => {
-        setIsLoadingStudents(true);
-        const selectedBatch = batches.find(b => b.id === selectedBatchId);
-        if (selectedBatch) {
-            // Simulate fetching students for the batch
-            setTimeout(() => {
-                const batchStudents = teacherData.enrolledStudents.map(s => ({...s, batch: 'Morning Physics'}));
-                setStudents(batchStudents);
-                // Initialize attendance state, defaulting all to present
-                const initialAttendance = batchStudents.reduce((acc, student) => {
-                    acc[student.id] = true;
-                    return acc;
-                }, {} as Record<string, boolean>);
-                setAttendance(initialAttendance);
-                setIsLoadingStudents(false);
-            }, 500);
-        } else {
-            setStudents([]);
-            setIsLoadingStudents(false);
+        if (students) {
+            const initialAttendance = students.reduce((acc, student) => {
+                acc[student.studentId] = true;
+                return acc;
+            }, {} as Record<string, boolean>);
+            setAttendance(initialAttendance);
         }
-    }, [selectedBatchId, batches]);
+    }, [students]);
 
 
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
@@ -87,14 +81,36 @@ export default function AttendancePage() {
     };
 
     const handleSaveAttendance = async () => {
-        if (!selectedBatchId || !selectedDate) {
+        if (!selectedBatchId || !selectedDate || !firestore || !user || !students) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and batch.' });
             return;
         }
+        setIsSaving(true);
 
-        const presentStudentIds = Object.keys(attendance).filter(id => attendance[id]);
+        const batch = writeBatch(firestore);
+        const presentCount = students.length;
+
+        students.forEach(student => {
+            const isPresent = attendance[student.studentId] ?? false;
+            const attendanceRef = doc(collection(firestore, 'attendances'));
+            batch.set(attendanceRef, {
+                studentId: student.studentId,
+                teacherId: user.uid,
+                batchId: selectedBatchId,
+                date: Timestamp.fromDate(selectedDate),
+                isPresent: isPresent,
+            });
+        });
         
-        toast({ title: 'Attendance Saved', description: `Attendance for ${format(selectedDate, 'PPP')} has been recorded (${presentStudentIds.length}/${students.length} present).` });
+        try {
+            await batch.commit();
+            toast({ title: 'Attendance Saved', description: `Attendance for ${format(selectedDate, 'PPP')} has been recorded (${Object.values(attendance).filter(Boolean).length}/${students.length} present).` });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error Saving Attendance', description: 'There was a problem saving the attendance records.' });
+            console.error(error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -130,6 +146,7 @@ export default function AttendancePage() {
                                 <SelectValue placeholder="Select a batch" />
                             </SelectTrigger>
                             <SelectContent>
+                                {isLoadingBatches && <SelectItem value="" disabled>Loading...</SelectItem>}
                                 {batches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -148,13 +165,13 @@ export default function AttendancePage() {
                                 <TableBody>
                                     {isLoadingStudents && <TableRow><TableCell colSpan={2}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
                                     {students?.map((student) => (
-                                        <TableRow key={student.id}>
-                                            <TableCell className="font-medium">{student.name}</TableCell>
+                                        <TableRow key={student.studentId}>
+                                            <TableCell className="font-medium">{student.studentName}</TableCell>
                                             <TableCell className="text-right">
                                                 <Switch
-                                                    checked={attendance[student.id] ?? true}
-                                                    onCheckedChange={(checked) => handleAttendanceChange(student.id, checked)}
-                                                    aria-label={`Mark ${student.name} attendance`}
+                                                    checked={attendance[student.studentId] ?? true}
+                                                    onCheckedChange={(checked) => handleAttendanceChange(student.studentId, checked)}
+                                                    aria-label={`Mark ${student.studentName} attendance`}
                                                 />
                                             </TableCell>
                                         </TableRow>
@@ -163,7 +180,9 @@ export default function AttendancePage() {
                             </Table>
                              {students && students.length > 0 && (
                                 <div className="flex justify-end mt-6">
-                                    <Button onClick={handleSaveAttendance}>Save Attendance</Button>
+                                    <Button onClick={handleSaveAttendance} disabled={isSaving}>
+                                        {isSaving ? 'Saving...' : 'Save Attendance'}
+                                    </Button>
                                 </div>
                             )}
                              {students?.length === 0 && !isLoadingStudents && <p className="text-center text-muted-foreground py-4">No students found in this batch.</p>}

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -47,6 +46,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, MoreVertical, BookOpenCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { teacherData } from '@/lib/data';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 type StudyMaterial = {
     id: string;
@@ -55,8 +59,8 @@ type StudyMaterial = {
     subject: string;
     chapter?: string;
     type: string;
-    date: string;
-    isNew?: boolean;
+    createdAt: { toDate: () => Date };
+    isFree: boolean;
 };
 
 const materialTypes = ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"];
@@ -65,49 +69,56 @@ export default function MaterialsPage() {
     const { toast } = useToast();
     const [isAddMaterialOpen, setAddMaterialOpen] = useState(false);
     
-    // Data state now comes from the central teacherData object
-    const [materials, setMaterials] = useState<StudyMaterial[]>(teacherData.studyMaterials as any);
-    
+    const { user } = useUser();
+    const firestore = useFirestore();
+
     // Form state
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [subject, setSubject] = useState('');
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
+    const [isFree, setIsFree] = useState(false);
 
     const teacherSubjects = teacherData.subjects;
-    const allBatches = teacherData.batches;
+
+    const materialsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+    }, [firestore, user]);
+
+    const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
 
     const handleAddMaterial = async () => {
-        if (!title || !subject || !materialType) {
+        if (!title || !subject || !materialType || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
             return;
         }
 
-        const newMaterial: StudyMaterial = {
-            id: `mat-${Date.now()}`,
+        const newMaterial = {
             title,
             description,
             subject,
             chapter,
             type: materialType,
-            date: 'Just now',
-            isNew: true
+            teacherId: user.uid,
+            isFree: isFree,
+            createdAt: serverTimestamp(),
+            // In a real app, you would handle file uploads and store a URL
+            fileUrl: 'https://example.com/placeholder.pdf'
         };
-
-        // Update central data source
-        teacherData.studyMaterials.unshift(newMaterial as any);
-        // Update local state from the central source
-        setMaterials([...teacherData.studyMaterials] as any);
+        
+        const materialsCollection = collection(firestore, 'studyMaterials');
+        addDocumentNonBlocking(materialsCollection, newMaterial);
 
         toast({ title: 'Material Added', description: `${title} has been successfully uploaded.`});
         
-        // Reset form and close dialog
         setTitle('');
         setDescription('');
         setSubject('');
         setChapter('');
         setMaterialType('');
+        setIsFree(false);
         setAddMaterialOpen(false);
     }
 
@@ -169,6 +180,18 @@ export default function MaterialsPage() {
                                 <Label htmlFor="file" className="text-right">File*</Label>
                                 <Input id="file" type="file" className="col-span-3" />
                             </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="isFree" className="text-right">Free?</Label>
+                                <Select onValueChange={(v) => setIsFree(v === 'true')} value={String(isFree)}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="false">No (Requires Enrollment)</SelectItem>
+                                        <SelectItem value="true">Yes (Public)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <DialogFooter>
                             <Button onClick={handleAddMaterial}>Upload Material</Button>
@@ -183,6 +206,7 @@ export default function MaterialsPage() {
                     <CardDescription>A list of all the resources you have uploaded.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {isLoading && Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-12 w-full mb-2" />)}
                     {materials && materials.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -190,8 +214,8 @@ export default function MaterialsPage() {
                                     <TableHead>Title</TableHead>
                                     <TableHead>Type</TableHead>
                                     <TableHead>Subject</TableHead>
-                                    <TableHead>Chapter</TableHead>
                                     <TableHead>Date</TableHead>
+                                    <TableHead>Access</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -201,8 +225,8 @@ export default function MaterialsPage() {
                                         <TableCell className="font-medium">{material.title}</TableCell>
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
                                         <TableCell>{material.subject}</TableCell>
-                                        <TableCell>{material.chapter || 'N/A'}</TableCell>
-                                        <TableCell>{material.date}</TableCell>
+                                        <TableCell>{material.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                                        <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -219,7 +243,7 @@ export default function MaterialsPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                    ) : (
+                    ) : !isLoading && (
                         <p className="text-sm text-center text-muted-foreground py-8">You haven't uploaded any materials yet.</p>
                     )}
                 </CardContent>

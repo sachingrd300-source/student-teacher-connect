@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -53,7 +52,6 @@ import {
   Calendar,
   UserCheck,
   Users2,
-  ChevronDown,
   PlusCircle,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -61,12 +59,19 @@ import { teacherData } from '@/lib/data';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import {
+  useUser,
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+} from '@/firebase';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type StudentProfile = {
   id: string; 
   name: string;
-  avatarUrl: string; 
+  avatarUrl?: string; 
   grade?: string; 
   attendance?: number; 
   batch?: string;
@@ -77,16 +82,63 @@ type StudentProfile = {
   createdAt?: Date;
 };
 
+type Enrollment = {
+    id: string;
+    studentId: string;
+    studentName?: string;
+    studentAvatar?: string;
+    teacherId: string;
+    status: 'pending' | 'approved' | 'denied';
+}
+
+function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, onUpdate: () => void }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const handleApprove = async () => {
+        if (!firestore) return;
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        await updateDoc(enrollmentRef, { status: 'approved' });
+        toast({ title: 'Student Approved', description: `${enrollment.studentName} is now enrolled.`});
+        onUpdate();
+    };
+
+    const handleDeny = async () => {
+        if (!firestore) return;
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        await updateDoc(enrollmentRef, { status: 'denied' });
+        toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'});
+        onUpdate();
+    };
+
+    return (
+        <TableRow>
+            <TableCell className="font-medium flex items-center gap-3">
+            <Avatar>
+                <AvatarImage src={enrollment.studentAvatar} />
+                <AvatarFallback>{enrollment.studentName?.charAt(0) || 'S'}</AvatarFallback>
+            </Avatar>
+            {enrollment.studentName}
+            </TableCell>
+            <TableCell className="text-right space-x-2">
+            <Button onClick={handleApprove} variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
+                <Check className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleDeny} variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700">
+                <X className="h-4 w-4" />
+            </Button>
+            </TableCell>
+        </TableRow>
+    )
+}
 
 export default function TeacherDashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const [studentRequests, setStudentRequests] = useState<StudentProfile[]>(teacherData.studentRequests);
-  const [enrolledStudents, setEnrolledStudents] = useState<StudentProfile[]>(teacherData.enrolledStudents);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
+
   const [isAddStudentOpen, setAddStudentOpen] = useState(false);
   
-  // Add student form state
   const [newStudentData, setNewStudentData] = useState({
     name: '',
     email: '',
@@ -97,34 +149,15 @@ export default function TeacherDashboardPage() {
     batch: '',
   });
 
-  useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const enrollmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
+  }, [firestore, user]);
 
-  const handleApprove = (studentId: string) => {
-    const studentToApprove = studentRequests.find(s => s.id === studentId);
-    if (studentToApprove) {
-        const approvedStudent = { ...studentToApprove, grade: 'N/A', attendance: 100, createdAt: new Date() };
+  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
 
-        setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-        setEnrolledStudents(prev => [approvedStudent, ...prev]);
-        
-        toast({ title: 'Student Approved', description: `${approvedStudent.name} is now enrolled.`})
-    }
-  };
-  
-  const handleDeny = (studentId: string) => {
-    setStudentRequests(prev => prev.filter(s => s.id !== studentId));
-    toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'})
-  };
-  
-  const handleRemove = (studentId: string) => {
-    setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
-    toast({ title: 'Student Removed', description: 'The student has been unenrolled.'})
-  };
+  const studentRequests = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
+  const enrolledStudents = useMemo(() => enrollments?.filter(e => e.status === 'approved') || [], [enrollments]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -136,37 +169,52 @@ export default function TeacherDashboardPage() {
   };
 
   const handleAddStudent = () => {
-    if (!newStudentData.name || !newStudentData.email) {
+    if (!newStudentData.name || !newStudentData.email || !firestore || !user) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter at least a name and email for the student.' });
         return;
     }
-
-    const newStudent: StudentProfile = {
-        id: `S${Date.now()}`,
+    
+    // In a real app you might create a proper user for the student first
+    // For now, we just create the enrollment and user profile doc
+    const studentId = `manual-${Date.now()}`;
+    const studentProfileRef = doc(firestore, 'users', studentId);
+    const enrollmentRef = collection(firestore, 'enrollments');
+    
+    const studentProfileData = {
         name: newStudentData.name,
         email: newStudentData.email,
+        role: 'student',
+        id: studentId,
         avatarUrl: `https://picsum.photos/seed/${newStudentData.name.replace(/\s/g, '')}/40/40`,
-        grade: newStudentData.grade,
-        subject: newStudentData.subject,
-        address: newStudentData.address,
-        mobileNumber: newStudentData.mobileNumber,
-        batch: newStudentData.batch,
-        attendance: 100, // Default value
-        createdAt: new Date(),
+        // other fields...
     };
-    
-    setEnrolledStudents(prev => [newStudent, ...prev]);
 
+    const enrollmentData = {
+        studentId: studentId,
+        studentName: newStudentData.name,
+        studentAvatar: studentProfileData.avatarUrl,
+        teacherId: user.uid,
+        status: 'approved'
+    };
+
+    // We don't use the non-blocking here as we want to give feedback
+    addDocumentNonBlocking(enrollmentRef, enrollmentData);
+    // You would also set the studentProfileData in a 'users' collection
 
     toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
     
-    // Reset form
     setNewStudentData({
         name: '', email: '', grade: '', subject: '', address: '', mobileNumber: '', batch: '',
     });
     setAddStudentOpen(false);
   };
-
+  
+  const handleRemove = async (enrollmentId: string) => {
+    if (!firestore) return;
+    const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
+    await updateDoc(enrollmentRef, { status: 'denied' }); // or delete
+    toast({ title: 'Student Removed', description: 'The student has been unenrolled.'})
+  };
 
   return (
     <div className="space-y-6">
@@ -180,7 +228,7 @@ export default function TeacherDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudents?.length || 0}</div>}
+            {isLoadingEnrollments ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudents?.length || 0}</div>}
             <p className="text-xs text-muted-foreground">Total active students</p>
           </CardContent>
         </Card>
@@ -190,7 +238,7 @@ export default function TeacherDashboardPage() {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold text-accent">{studentRequests?.length || 0}</div>}
+            {isLoadingEnrollments ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold text-accent">{studentRequests?.length || 0}</div>}
             <p className="text-xs text-muted-foreground">Awaiting approval</p>
           </CardContent>
         </Card>
@@ -200,7 +248,7 @@ export default function TeacherDashboardPage() {
             <Users2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{teacherData.batches.length}</div>}
+             {isLoadingEnrollments ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{teacherData.batches.length}</div>}
             <p className="text-xs text-muted-foreground">Total student groups</p>
           </CardContent>
         </Card>
@@ -210,7 +258,7 @@ export default function TeacherDashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold"><Badge variant="secondary">{teacherData.id}</Badge></div>}
+             {user ? <div className="text-xl font-bold"><Badge variant="secondary">{user.uid}</Badge></div> : <Skeleton className="h-8 w-24" />}
             <p className="text-xs text-muted-foreground">Share this with your students</p>
           </CardContent>
         </Card>
@@ -227,7 +275,7 @@ export default function TeacherDashboardPage() {
             <Button size="sm" variant="outline">View All</Button>
           </CardHeader>
           <CardContent>
-            {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+            {isLoadingEnrollments && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
             {studentRequests && studentRequests.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -237,28 +285,12 @@ export default function TeacherDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {studentRequests.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={student.avatarUrl} />
-                          <AvatarFallback>{student.name?.charAt(0) || 'S'}</AvatarFallback>
-                        </Avatar>
-                        {student.name}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button onClick={() => handleApprove(student.id)} variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button onClick={() => handleDeny(student.id)} variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700">
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                  {studentRequests.map((enrollment) => (
+                    <StudentRequestRow key={enrollment.id} enrollment={enrollment} onUpdate={() => {}} />
                   ))}
                 </TableBody>
               </Table>
-            ) : !isLoading && (
+            ) : !isLoadingEnrollments && (
               <p className="text-sm text-center text-muted-foreground py-4">No pending requests.</p>
             )}
           </CardContent>
@@ -342,33 +374,29 @@ export default function TeacherDashboardPage() {
             </Dialog>
           </CardHeader>
           <CardContent>
-           {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+           {isLoadingEnrollments && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
            {enrolledStudents && enrolledStudents.length > 0 ? (
             <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student Name</TableHead>
-                    <TableHead>Batch</TableHead>
-                    <TableHead>Overall Grade</TableHead>
-                    <TableHead>Attendance</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {enrolledStudents.map((student) => (
-                    <TableRow key={student.id}>
+                  {enrolledStudents.map((enrollment) => (
+                    <TableRow key={enrollment.id}>
                       <TableCell className="font-medium flex items-center gap-3">
                          <Avatar>
-                          <AvatarImage src={student.avatarUrl} />
-                          <AvatarFallback>{student.name?.charAt(0) || 'S'}</AvatarFallback>
+                          <AvatarImage src={enrollment.studentAvatar} />
+                          <AvatarFallback>{enrollment.studentName?.charAt(0) || 'S'}</AvatarFallback>
                         </Avatar>
-                        {student.name}
+                        {enrollment.studentName}
                       </TableCell>
                        <TableCell>
-                        <Badge variant="outline">{student.batch || 'Not Assigned'}</Badge>
+                        <Badge variant="default">{enrollment.status}</Badge>
                        </TableCell>
-                      <TableCell><Badge variant="secondary">{student.grade || 'N/A'}</Badge></TableCell>
-                      <TableCell>{student.attendance || 100}%</TableCell>
                       <TableCell className="text-right">
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -378,16 +406,16 @@ export default function TeacherDashboardPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/teacher/student/${student.id}`}>View Profile</Link>
+                                <Link href={`/dashboard/teacher/student/${enrollment.studentId}`}>View Profile</Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/teacher/performance?studentId=${student.id}`}>Enter Marks</Link>
+                                <Link href={`/dashboard/teacher/performance?studentId=${enrollment.studentId}`}>Enter Marks</Link>
                               </DropdownMenuItem>
                                <DropdownMenuItem asChild>
                                 <Link href={`/dashboard/teacher/attendance`}>Mark Attendance</Link>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleRemove(student.id)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleRemove(enrollment.id)} className="text-red-600 focus:bg-red-50 focus:text-red-700">Remove Student</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                       </TableCell>
@@ -395,7 +423,7 @@ export default function TeacherDashboardPage() {
                   ))}
                 </TableBody>
               </Table>
-            ) : !isLoading && (
+            ) : !isLoadingEnrollments && (
               <p className="text-sm text-center text-muted-foreground py-8">No students enrolled yet.</p>
             )}
           </CardContent>

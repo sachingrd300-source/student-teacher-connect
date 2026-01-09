@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -17,23 +16,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { teacherData } from '@/lib/data'; // Using teacher data now
 import { BarChart3 } from 'lucide-react';
 import { PerformanceChart } from '@/components/performance-chart';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
-type TestResult = { id: string; date: Date; marks: number; maxMarks: number; subject: string, testName: string };
+type TestResult = { id: string; date: { toDate: () => Date }; marks: number; maxMarks: number; subject: string, testName: string };
 
 export default function PerformancePage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
 
-    // Data is now sourced from the teacher's data, simulating a connected state
-    const testResults: TestResult[] = teacherData.performance.map((p, i) => ({
-        id: `test-${i}`,
-        date: new Date(new Date().setDate(new Date().getDate() - (i*7))),
-        marks: p.score,
-        maxMarks: 100,
-        subject: 'Mathematics',
-        testName: p.name,
-    }));
+    const performanceQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'performances'), where('studentId', '==', user.uid), orderBy('date', 'desc'));
+    }, [firestore, user]);
+
+    const { data: testResults, isLoading } = useCollection<TestResult>(performanceQuery);
     
     const performanceChartData = useMemo(() => 
         testResults?.map(p => ({ name: p.testName, score: p.marks })) || []
@@ -51,7 +51,7 @@ export default function PerformancePage() {
             </div>
         </div>
 
-        <PerformanceChart data={performanceChartData} />
+        {isLoading ? <Skeleton className="h-[350px] w-full" /> : <PerformanceChart data={performanceChartData} />}
 
         <Card>
           <CardHeader>
@@ -68,6 +68,11 @@ export default function PerformancePage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
+                    {isLoading && Array.from({length: 4}).map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell colSpan={3}><Skeleton className="h-10 w-full"/></TableCell>
+                        </TableRow>
+                    ))}
                     {testResults?.map((result) => (
                         <TableRow key={result.id}>
                             <TableCell className="font-medium">{result.testName}</TableCell>
@@ -77,7 +82,7 @@ export default function PerformancePage() {
                     ))}
                 </TableBody>
             </Table>
-            {testResults.length === 0 && <p className="text-center text-muted-foreground py-4">No test results found.</p>}
+            {!isLoading && testResults?.length === 0 && <p className="text-center text-muted-foreground py-4">No test results found.</p>}
           </CardContent>
         </Card>
     </div>

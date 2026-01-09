@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -19,52 +18,41 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { studentData, teacherData } from '@/lib/data'; // Import both
 import { CheckCircle, XCircle, BarChart3, CalendarCheck2, BookCopy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
-type AttendanceRecord = { id: string; date: Date; status: 'Present' | 'Absent' };
-type TestResult = { id: string; date: Date; marks: number; maxMarks: number; subject: string, testName: string };
+type AttendanceRecord = { id: string; date: { toDate: () => Date }; isPresent: boolean };
+type TestResult = { id: string; date: { toDate: () => Date }; marks: number; maxMarks: number; subject: string, testName: string };
 
 export default function LearningPassportPage() {
-  const [studentAttendance, setStudentAttendance] = useState<AttendanceRecord[]>([]);
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    setIsLoading(true);
-    // Simulate fetching data for the logged-in student from the teacher's records
-    setTimeout(() => {
-        setStudentAttendance(teacherData.attendanceRecords.map((att, i) => ({
-            id: `att-${i}`,
-            date: new Date(att.date),
-            status: att.status as 'Present' | 'Absent',
-        })));
-        setTestResults(teacherData.performance.map((p, i) => ({
-            id: `test-${i}`,
-            date: new Date(new Date().setDate(new Date().getDate() - (i*7))),
-            marks: p.score,
-            maxMarks: 100,
-            subject: 'Mathematics',
-            testName: p.name,
-        })));
-        setIsLoading(false);
-    }, 1000);
-  }, []);
+  const attendanceQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'attendances'), where('studentId', '==', user.uid), orderBy('date', 'desc')) : null, [firestore, user]);
+  const { data: studentAttendance, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
+
+  const performanceQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'performances'), where('studentId', '==', user.uid), orderBy('date', 'desc')) : null, [firestore, user]);
+  const { data: testResults, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
+  
+  const isLoading = isLoadingAttendance || isLoadingPerformance;
 
   // Combine and sort all activities for a timeline view
   const timeline = useMemo(() => {
+    if (!studentAttendance || !testResults) return [];
+    
     const attendanceEvents = studentAttendance.map(a => ({ 
         type: 'attendance' as const, 
-        timestamp: a.date, 
+        timestamp: a.date.toDate(), 
         data: a 
     }));
     
     const testEvents = testResults.map(t => ({ 
         type: 'test' as const, 
-        timestamp: t.date,
+        timestamp: t.date.toDate(),
         data: t
     }));
 
@@ -133,8 +121,8 @@ export default function LearningPassportPage() {
           <p className="text-muted-foreground">Your complete academic journey.</p>
         </div>
          <Avatar className="h-16 w-16">
-            <AvatarImage src={studentData.avatarUrl} alt={studentData.name} />
-            <AvatarFallback>{studentData.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || 'Student'} />
+            <AvatarFallback>{user?.displayName?.charAt(0) || 'S'}</AvatarFallback>
         </Avatar>
       </div>
       <Separator />
@@ -156,11 +144,11 @@ export default function LearningPassportPage() {
               <TableBody>
                 {studentAttendance?.map((record) => (
                   <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.date.toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{record.date.toDate().toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant={record.status === 'Present' ? 'default' : 'destructive'}>
-                        {record.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
-                        {record.status}
+                      <Badge variant={record.isPresent ? 'default' : 'destructive'}>
+                        {record.isPresent ? <CheckCircle className="h-4 w-4 mr-2"/> : <XCircle className="h-4 w-4 mr-2"/>}
+                        {record.isPresent ? 'Present' : 'Absent'}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -218,7 +206,7 @@ export default function LearningPassportPage() {
                         <div className="flex-grow">
                             {item.type === 'attendance' && (
                                 <p>
-                                    Attendance marked as <span className={cn('font-semibold', item.data.status === 'Present' ? 'text-primary' : 'text-destructive')}>{item.data.status}</span>.
+                                    Attendance marked as <span className={cn('font-semibold', item.data.isPresent ? 'text-primary' : 'text-destructive')}>{item.data.isPresent ? 'Present' : 'Absent'}</span>.
                                 </p>
                             )}
                             {item.type === 'test' && (

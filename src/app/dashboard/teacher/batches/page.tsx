@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -49,67 +48,58 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { teacherData } from '@/lib/data';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Batch = {
     id: string;
     name: string;
-    createdAt: Date;
+    teacherId: string;
+    createdAt: { toDate: () => Date };
 };
 
 export default function BatchesPage() {
     const { toast } = useToast();
     const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
-    // State is now derived from the central mock data
-    const [batches, setBatches] = useState<Batch[]>(teacherData.batches);
     
-    // Form state
+    const { user } = useUser();
+    const firestore = useFirestore();
+    
     const [newBatchName, setNewBatchName] = useState('');
 
-    // Memoize the student counts for performance
-    const batchStudentCounts = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const batch of batches) {
-            counts[batch.name] = 0;
-        }
-        for (const student of teacherData.enrolledStudents) {
-            if (student.batch && counts[student.batch] !== undefined) {
-                counts[student.batch]++;
-            }
-        }
-        return counts;
-    }, [batches, teacherData.enrolledStudents]);
-
+    const batchesQuery = useMemoFirebase(() => {
+        if(!firestore || !user) return null;
+        return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+    }, [firestore, user]);
+    const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 
     const handleCreateBatch = async () => {
-        if (!newBatchName) {
+        if (!newBatchName || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a name for the batch.' });
             return;
         }
 
-        const newBatch: Batch = {
-            id: `batch-${Date.now()}`,
+        const newBatch = {
             name: newBatchName,
-            createdAt: new Date(),
+            teacherId: user.uid,
+            createdAt: serverTimestamp(),
         };
 
-        // Update both local state and central mock data
-        teacherData.batches.unshift(newBatch);
-        setBatches([...teacherData.batches]);
-
+        const batchesCollection = collection(firestore, 'batches');
+        addDocumentNonBlocking(batchesCollection, newBatch);
 
         toast({ title: 'Batch Created', description: `The batch "${newBatchName}" has been successfully created.`});
         
-        // Reset form and close dialog
         setNewBatchName('');
         setCreateBatchOpen(false);
     }
 
     const handleDeleteBatch = (batchId: string) => {
-        // Update central mock data
-        teacherData.batches = teacherData.batches.filter(b => b.id !== batchId);
-        // Update local state from the source of truth
-        setBatches([...teacherData.batches]);
+        if(!firestore) return;
+        const batchRef = doc(firestore, 'batches', batchId);
+        deleteDocumentNonBlocking(batchRef);
         toast({ title: 'Batch Deleted', description: 'The selected batch has been removed.' });
     };
 
@@ -151,12 +141,12 @@ export default function BatchesPage() {
                     <CardDescription>A list of all the student batches you have created.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {isLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-12 mb-2 w-full" />)}
                     {batches && batches.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Batch Name</TableHead>
-                                    <TableHead>Student Count</TableHead>
                                     <TableHead>Created On</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -165,8 +155,7 @@ export default function BatchesPage() {
                                 {batches.map((batch) => (
                                     <TableRow key={batch.id}>
                                         <TableCell className="font-medium">{batch.name}</TableCell>
-                                        <TableCell>{batchStudentCounts[batch.name] || 0}</TableCell>
-                                        <TableCell>{batch.createdAt.toLocaleDateString()}</TableCell>
+                                        <TableCell>{batch.createdAt?.toDate().toLocaleDateString()}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <DropdownMenu>
@@ -189,8 +178,7 @@ export default function BatchesPage() {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the batch
-                                                            and remove all associated students from it.
+                                                            This action cannot be undone. This will permanently delete the batch.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
@@ -204,7 +192,7 @@ export default function BatchesPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                    ) : (
+                    ) : !isLoading && (
                         <p className="text-sm text-center text-muted-foreground py-8">You haven't created any batches yet.</p>
                     )}
                 </CardContent>

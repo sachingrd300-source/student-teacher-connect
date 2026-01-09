@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useMemo, useState, useEffect, use } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -20,74 +19,50 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, XCircle, Mail, Phone } from 'lucide-react';
+import { CheckCircle, XCircle, Mail, Phone, ArrowLeft } from 'lucide-react';
 import { PerformanceChart } from '@/components/performance-chart';
-import { teacherData, studentData } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
+import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where, orderBy } from 'firebase/firestore';
+import Link from 'next/link';
 
 type StudentProfile = {
   id: string;
   name: string;
   email: string;
-  mobileNumber: string;
-  avatarUrl: string;
-  batch: string;
+  mobileNumber?: string;
+  avatarUrl?: string;
+  batch?: string;
 };
 
-type AttendanceRecord = { id: string; date: Date; status: 'Present' | 'Absent' };
-type TestResult = { id: string; date: Date; marks: number; maxMarks: number; subject: string, testName: string };
+type AttendanceRecord = { id: string; date: { toDate: () => Date }; isPresent: boolean };
+type TestResult = { id: string; date: { toDate: () => Date }; marks: number; maxMarks: number; subject: string, testName: string };
 
-export default function StudentProfilePage({ params }: { params: { studentId: string } }) {
-  const { studentId } = use(params);
-  const [student, setStudent] = useState<StudentProfile | null>(null);
-  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function StudentProfilePage() {
+  const params = useParams();
+  const studentId = params.studentId as string;
+  
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-        // Find the student from the teacher's list of enrolled students.
-        const foundStudent = teacherData.enrolledStudents.find(s => s.id === studentId);
-        
-        if (foundStudent) {
-            setStudent({
-                ...foundStudent,
-                email: `${foundStudent.name.split(' ')[0].toLowerCase()}@example.com`,
-                mobileNumber: '123-456-7890',
-                batch: 'Morning Physics', // Assuming static batch for demo
-            });
+  const studentQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', studentId) : null, [firestore, studentId]);
+  const { data: student, isLoading: isLoadingStudent } = useDoc<StudentProfile>(studentQuery);
 
-            // Use generic student data for their records as a mock
-            setAttendanceHistory(studentData.attendanceRecords.map((att, i) => ({
-                id: `att-${i}`,
-                date: new Date(new Date().setDate(new Date().getDate() - i)),
-                status: att.status as 'Present' | 'Absent',
-            })));
+  const attendanceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'attendances'), where('studentId', '==', studentId), orderBy('date', 'desc')) : null, [firestore, studentId]);
+  const { data: attendanceHistory, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
 
-            setTestResults(studentData.performance.map((p, i) => ({
-                id: `test-${i}`,
-                date: new Date(new Date().setDate(new Date().getDate() - (i * 7))),
-                marks: p.score,
-                maxMarks: 100,
-                subject: 'Mathematics',
-                testName: p.name,
-            })));
-        } else {
-            // If the student isn't found in the teacher's list, it's a 404.
-            // In a real app, this check would happen before rendering.
-        }
-        setIsLoading(false);
-    }, 1000);
-  }, [studentId]);
+  const performanceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'performances'), where('studentId', '==', studentId), orderBy('date', 'desc')) : null, [firestore, studentId]);
+  const { data: testResults, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
 
 
   const performanceChartData = useMemo(() => 
     testResults?.map(p => ({ name: p.testName, score: p.marks })) || []
   , [testResults]);
+  
+  const isLoading = isLoadingStudent || isLoadingAttendance || isLoadingPerformance;
 
   if (isLoading) {
     return <div className="space-y-6">
+        <Skeleton className="h-10 w-40" />
         <Skeleton className="h-[300px] w-full" />
         <div className="grid gap-6 lg:grid-cols-2">
             <Skeleton className="h-96 w-full" />
@@ -103,6 +78,12 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
 
   return (
     <div className="space-y-6">
+        <Button variant="ghost" asChild className="mb-4">
+            <Link href="/dashboard/teacher">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to My Students
+            </Link>
+        </Button>
        <Card className="shadow-lg">
             <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
                 <Avatar className="h-24 w-24 mb-4 border-4 border-background">
@@ -121,7 +102,7 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
                     </div>
                      <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-muted-foreground" />
-                        <span>Mobile: <span className="font-medium">{student?.mobileNumber}</span></span>
+                        <span>Mobile: <span className="font-medium">{student?.mobileNumber || 'Not provided'}</span></span>
                     </div>
                  </div>
             </CardContent>
@@ -143,13 +124,13 @@ export default function StudentProfilePage({ params }: { params: { studentId: st
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {attendanceHistory.slice(0, 5).map((att) => (
+                        {attendanceHistory?.slice(0, 5).map((att) => (
                             <TableRow key={att!.id}>
-                                <TableCell>{att!.date.toLocaleDateString()}</TableCell>
+                                <TableCell>{att!.date.toDate().toLocaleDateString()}</TableCell>
                                 <TableCell className="text-right">
-                                    <Badge variant={att!.status === 'Present' ? 'default' : 'destructive'}>
-                                        {att!.status === 'Present' ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-                                        {att!.status}
+                                    <Badge variant={att.isPresent ? 'default' : 'destructive'}>
+                                        {att.isPresent ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+                                        {att.isPresent ? 'Present' : 'Absent'}
                                     </Badge>
                                 </TableCell>
                             </TableRow>

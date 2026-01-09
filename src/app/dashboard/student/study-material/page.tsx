@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -26,7 +25,9 @@ import {
   Download,
   BookOpenCheck,
 } from 'lucide-react';
-import { teacherData } from '@/lib/data';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
@@ -35,10 +36,24 @@ const materialIcons: Record<string, JSX.Element> = {
   Solution: <CheckCircle className="h-5 w-5 text-green-500" />,
 };
 
+type StudyMaterial = {
+    id: string;
+    title: string;
+    subject: string;
+    type: string;
+    createdAt: { toDate: () => Date };
+    isFree: boolean;
+}
 
 export default function StudyMaterialPage() {
-  // Data is now sourced from the teacher's data, simulating a connected state
-  const studyMaterials = teacherData.studyMaterials;
+  const firestore = useFirestore();
+
+  const materialsQuery = useMemoFirebase(() => {
+    if(!firestore) return null;
+    return query(collection(firestore, 'studyMaterials'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
 
   return (
     <div className="space-y-6">
@@ -62,14 +77,19 @@ export default function StudyMaterialPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {studyMaterials.map((material) => (
+                {isLoading && Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell>
+                    </TableRow>
+                ))}
+                {studyMaterials?.map((material) => (
                     <TableRow key={material.id}>
                     <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
                     <TableCell>
                         <div className="font-medium">{material.title}</div>
-                        <div className="text-sm text-muted-foreground">{material.date}</div>
+                        <div className="text-sm text-muted-foreground">{material.createdAt.toDate().toLocaleDateString()}</div>
                     </TableCell>
-                    <TableCell><Badge variant={material.isNew ? "default" : "secondary"} className={material.isNew ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
+                    <TableCell><Badge variant={material.isFree ? "default" : "secondary"} className={material.isFree ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
                     <TableCell className="text-right">
                         <Button variant="ghost" size="icon">
                         <Download className="h-4 w-4" />
@@ -79,6 +99,9 @@ export default function StudyMaterialPage() {
                 ))}
                 </TableBody>
             </Table>
+            {!isLoading && studyMaterials?.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No study materials found.</p>
+            )}
         </CardContent>
         </Card>
     </div>

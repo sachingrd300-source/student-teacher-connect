@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -38,21 +37,30 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { teacherData } from '@/lib/data';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, doc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 type ScheduleItem = {
     id: string;
     topic: string;
     subject: string;
-    date: Date;
+    date: Timestamp;
     time: string;
     type: 'Online' | 'Offline';
     locationOrLink: string;
     status: 'Scheduled' | 'Canceled';
+    teacherId: string;
+    createdAt: Timestamp;
 };
 
 export default function SchedulePage() {
     const { toast } = useToast();
     const [isAddClassOpen, setAddClassOpen] = useState(false);
+    
+    const { user } = useUser();
+    const firestore = useFirestore();
     
     // Form state
     const [topic, setTopic] = useState('');
@@ -62,47 +70,43 @@ export default function SchedulePage() {
     const [classType, setClassType] = useState<'Online' | 'Offline' | ''>('');
     const [locationOrLink, setLocationOrLink] = useState('');
 
-    // Data state
-    const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
     const teacherSubjects = teacherData.subjects;
 
-    useEffect(() => {
-        setIsLoading(true);
-        setTimeout(() => {
-            // Use the new array format from teacherData
-            const scheduleData = [...teacherData.schedule].sort((a,b) => a.date.getTime() - b.date.getTime());
-            setSchedule(scheduleData);
-            setIsLoading(false);
-        }, 500);
-    }, []);
+    const scheduleQuery = useMemoFirebase(() => {
+      if (!firestore || !user) return null;
+      return query(collection(firestore, 'classSchedules'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
+    }, [firestore, user]);
+
+    const { data: schedule, isLoading } = useCollection<ScheduleItem>(scheduleQuery);
+    
+    const sortedSchedule = useMemo(() => {
+        return schedule?.sort((a,b) => a.date.toMillis() - b.date.toMillis());
+    }, [schedule]);
+
 
     const handleAddClass = async () => {
-        if (!topic || !subject || !date || !time || !classType) {
+        if (!topic || !subject || !date || !time || !classType || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all class details.' });
             return;
         }
 
-        const newClass: ScheduleItem = {
-            id: `sch-${Date.now()}`,
+        const newClass = {
             topic,
             subject,
-            date,
+            date: Timestamp.fromDate(date),
             time,
             type: classType,
             locationOrLink,
             status: 'Scheduled',
+            teacherId: user.uid,
+            createdAt: serverTimestamp(),
         };
 
-        // Update the central mock data
-        teacherData.schedule.push(newClass);
-        // Update local state from the central source
-        setSchedule([...teacherData.schedule].sort((a,b) => a.date.getTime() - b.date.getTime()));
+        const scheduleCollection = collection(firestore, 'classSchedules');
+        addDocumentNonBlocking(scheduleCollection, newClass);
         
         toast({ title: 'Class Scheduled', description: `${topic} on ${format(date, "PPP")} has been added to your schedule.`});
         
-        // Reset form and close dialog
         setTopic('');
         setSubject('');
         setDate(new Date());
@@ -112,15 +116,10 @@ export default function SchedulePage() {
         setAddClassOpen(false);
     }
 
-    const handleCancelClass = (itemId: string) => {
-        // Update the central mock data
-        const itemIndex = teacherData.schedule.findIndex(item => item.id === itemId);
-        if (itemIndex > -1) {
-            teacherData.schedule[itemIndex].status = 'Canceled';
-        }
-
-        // Update local state from the central source
-        setSchedule([...teacherData.schedule]);
+    const handleCancelClass = async (itemId: string) => {
+        if (!firestore) return;
+        const classRef = doc(firestore, 'classSchedules', itemId);
+        await updateDoc(classRef, { status: 'Canceled' });
         toast({ title: 'Class Canceled', description: 'The class has been marked as canceled.'});
     };
 
@@ -217,13 +216,13 @@ export default function SchedulePage() {
                            <Skeleton className="h-16 w-full" />
                         </div>
                      )}
-                     {schedule && schedule.length > 0 ? (
-                        schedule.map(item => (
+                     {sortedSchedule && sortedSchedule.length > 0 ? (
+                        sortedSchedule.map(item => (
                             <div key={item.id} className={cn("flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50", item.status === 'Canceled' && 'bg-muted/50 opacity-60')}>
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
-                                        <span>{item.date.toLocaleDateString('en-US', { day: '2-digit' })}</span>
-                                        <span>{item.date.toLocaleDateString('en-US', { month: 'short' })}</span>
+                                        <span>{item.date.toDate().toLocaleDateString('en-US', { day: '2-digit' })}</span>
+                                        <span>{item.date.toDate().toLocaleDateString('en-US', { month: 'short' })}</span>
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">

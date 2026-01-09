@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,37 +9,41 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { teacherData } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { CalendarDays, Video, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 type ScheduleItem = {
     id: string;
     topic: string;
     subject: string;
-    date: Date;
+    date: { toDate: () => Date };
     time: string;
     type: 'Online' | 'Offline';
     locationOrLink: string;
     status: 'Scheduled' | 'Canceled';
+    teacherId: string;
 };
 
 export default function StudentSchedulePage() {
-    // Data state
-    const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { user } = useUser();
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        setIsLoading(true);
-        // In a real app, you would fetch this data after connecting to a teacher.
-        // Here, we simulate it using the teacherData object.
-        setTimeout(() => {
-            const scheduleData = [...teacherData.schedule].sort((a,b) => a.date.getTime() - b.date.getTime());
-            setSchedule(scheduleData);
-            setIsLoading(false);
-        }, 500);
-    }, []);
+    // In a multi-teacher setup, we would need to know which teacher's schedule to fetch,
+    // or fetch from all connected teachers. For now, we'll fetch all.
+    const scheduleQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        // This is a simplified query. A real app would query based on student's enrollments.
+        return query(collection(firestore, 'classSchedules'), orderBy('date', 'asc'));
+    }, [firestore]);
+
+    const { data: schedule, isLoading } = useCollection<ScheduleItem>(scheduleQuery);
+    
+    const sortedSchedule = useMemo(() => {
+        return schedule?.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
+    }, [schedule]);
 
     return (
         <div className="space-y-6">
@@ -67,13 +70,13 @@ export default function StudentSchedulePage() {
                            <Skeleton className="h-16 w-full" />
                         </div>
                      )}
-                     {schedule && schedule.length > 0 ? (
-                        schedule.map(item => (
+                     {sortedSchedule && sortedSchedule.length > 0 ? (
+                        sortedSchedule.map(item => (
                             <div key={item.id} className={cn("flex items-center justify-between p-4 border rounded-lg", item.status === 'Canceled' && 'bg-muted/50 opacity-70')}>
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
-                                        <span>{item.date.toLocaleDateString('en-US', { day: '2-digit' })}</span>
-                                        <span>{item.date.toLocaleDateString('en-US', { month: 'short' })}</span>
+                                        <span>{item.date.toDate().toLocaleDateString('en-US', { day: '2-digit' })}</span>
+                                        <span>{item.date.toDate().toLocaleDateString('en-US', { month: 'short' })}</span>
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg">{item.topic}</h3>

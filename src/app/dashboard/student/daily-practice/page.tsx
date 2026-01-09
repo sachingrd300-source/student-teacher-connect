@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -19,11 +18,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, ClipboardList } from 'lucide-react';
-import { teacherData } from '@/lib/data';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type StudyMaterial = {
+    id: string;
+    title: string;
+    subject: string;
+    type: string;
+    createdAt: { toDate: () => Date };
+}
 
 export default function DailyPracticePage() {
-  // Now using teacherData to simulate a connected state
-  const dailyPracticePapers = teacherData.studyMaterials.filter(m => m.type === 'DPP');
+  const firestore = useFirestore();
+
+  const dppQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'studyMaterials'), where('type', '==', 'DPP'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+  
+  const { data: dailyPracticePapers, isLoading } = useCollection<StudyMaterial>(dppQuery);
 
   return (
     <div className="space-y-6">
@@ -48,7 +63,12 @@ export default function DailyPracticePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dailyPracticePapers.map((paper) => (
+                {isLoading && Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell colSpan={4}><Skeleton className="h-10 w-full"/></TableCell>
+                    </TableRow>
+                ))}
+                {dailyPracticePapers?.map((paper) => (
                   <TableRow key={paper.id}>
                     <TableCell>
                       <div className="font-medium">{paper.title}</div>
@@ -56,7 +76,7 @@ export default function DailyPracticePage() {
                     <TableCell>
                       <Badge variant="outline">{paper.subject}</Badge>
                     </TableCell>
-                    <TableCell>{paper.date}</TableCell>
+                    <TableCell>{paper.createdAt.toDate().toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                         <Button variant="outline" size="sm">
                         <Download className="h-4 w-4 mr-2" />
@@ -67,7 +87,7 @@ export default function DailyPracticePage() {
                 ))}
               </TableBody>
             </Table>
-            {dailyPracticePapers.length === 0 && <p className="text-center text-muted-foreground py-8">No practice papers available yet.</p>}
+            {!isLoading && dailyPracticePapers?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice papers available yet.</p>}
         </CardContent>
       </Card>
     </div>
