@@ -149,7 +149,7 @@ service cloud.firestore {
      */
     match /enrollments/{enrollmentId} {
       allow get, update: if isExistingDoc() && (isOwner(resource.data.studentId) || isOwner(resource.data.teacherId));
-      allow list: if isSignedIn() && (request.query.limit <= 10)
+      allow list: if isSignedIn()
                   && (('studentId' in request.query.where) && (request.query.where.studentId == request.auth.uid)
                   || (('teacherId' in request.query.where) && (request.query.where.teacherId == request.auth.uid)));
       allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
@@ -249,5 +249,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
