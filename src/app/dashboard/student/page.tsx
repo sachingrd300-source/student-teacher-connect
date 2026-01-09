@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -94,6 +94,7 @@ function ApprovedClassCard({ enrollment }: { enrollment: Enrollment }) {
 export default function StudentDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [_, setRefresh] = useState(0);
 
   const enrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -101,7 +102,7 @@ export default function StudentDashboardPage() {
       collection(firestore, 'enrollments'),
       where('studentId', '==', user.uid)
     );
-  }, [firestore, user]);
+  }, [firestore, user, _]);
 
   const { data: enrollments, isLoading: isLoadingEnrollments } =
     useCollection<Enrollment>(enrollmentsQuery);
@@ -137,6 +138,16 @@ export default function StudentDashboardPage() {
             : 'Join a class to get started.'}
         </p>
       </div>
+
+       {approvedEnrollments.length > 0 && (
+        <div className='space-y-4'>
+            <h2 className="text-2xl font-semibold font-headline">My Classes</h2>
+            {approvedEnrollments.map((enrollment) => (
+                <ApprovedClassCard key={enrollment.id} enrollment={enrollment} />
+            ))}
+        </div>
+      )}
+
 
       {user && (
         <div className="space-y-6">
@@ -177,7 +188,7 @@ export default function StudentDashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ConnectTeacherForm onConnectionSuccess={() => {}} />
+              <ConnectTeacherForm onConnectionSuccess={() => setRefresh(c => c + 1)} />
             </CardContent>
           </Card>
         </div>
@@ -203,3 +214,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    

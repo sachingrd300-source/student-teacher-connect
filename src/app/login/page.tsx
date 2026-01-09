@@ -63,12 +63,8 @@ export default function LoginPage() {
     try {
         if (!auth) throw new Error("Auth service not available.");
 
-        const userCredential = await initiateGoogleSignIn(auth);
-        const additionalInfo = getAdditionalUserInfo(userCredential);
-
-        // For simplicity, we just log in existing users and redirect.
-        // New user creation logic via Google Sign-In can be complex and is removed for now
-        // to focus on fixing permission errors.
+        await initiateGoogleSignIn(auth);
+        
         toast({ title: 'Login Successful', description: "Welcome back!" });
         router.push('/dashboard/teacher');
 
@@ -140,3 +136,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

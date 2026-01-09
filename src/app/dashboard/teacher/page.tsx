@@ -86,7 +86,7 @@ type Class = {
     teacherId: string;
 }
 
-function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, onUpdate: () => void }) {
+function StudentRequestRow({ enrollment }: { enrollment: Enrollment }) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -98,7 +98,6 @@ function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, o
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         await updateDoc(enrollmentRef, { status: 'approved' });
         toast({ title: 'Student Approved', description: `${student?.name} is now enrolled in the class.`});
-        onUpdate();
     };
 
     const handleDeny = async () => {
@@ -106,7 +105,6 @@ function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, o
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         await updateDoc(enrollmentRef, { status: 'denied' });
         toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'});
-        onUpdate();
     };
     
     if(isLoading) {
@@ -178,7 +176,7 @@ export default function TeacherDashboardPage() {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
-  const { data: enrollments, isLoading: isLoadingEnrollments, error } = useCollection<Enrollment>(enrollmentsQuery);
+  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
 
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
@@ -305,7 +303,7 @@ export default function TeacherDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {studentRequests.map((enrollment) => (
-                    <StudentRequestRow key={enrollment.id} enrollment={enrollment} onUpdate={() => {}} />
+                    <StudentRequestRow key={enrollment.id} enrollment={enrollment} />
                   ))}
                 </TableBody>
               </Table>
@@ -410,3 +408,5 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
+
+    
