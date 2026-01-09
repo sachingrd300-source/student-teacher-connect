@@ -96,9 +96,9 @@ service cloud.firestore {
 
     match /classes/{classId} {
         allow get: if isSignedIn();
-        allow list: if false; // Teachers list their own classes via query
+        allow list: if isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid;
         allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-        allow update, delete: if isTeacherOwner(resource.data);
+        allow update, delete: if isExistingDoc() && isTeacherOwner(resource.data);
     }
 
     /**
