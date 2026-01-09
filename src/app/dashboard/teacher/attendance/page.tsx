@@ -34,7 +34,7 @@ import { format } from 'date-fns';
 import { teacherData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, writeBatch, Timestamp } from 'firebase/firestore';
+import { collection, query, where, writeBatch, Timestamp, doc } from 'firebase/firestore';
 
 
 type Student = { id: string; studentName: string, studentId: string, batch?: string; };
@@ -61,7 +61,13 @@ export default function AttendancePage() {
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore || !user || !selectedBatchId) return null;
-        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('batchId', '==', selectedBatchId), where('status', '==', 'approved'));
+        // This query needs to filter by teacherId as per security rules
+        return query(
+            collection(firestore, 'enrollments'), 
+            where('teacherId', '==', user.uid), 
+            where('batchId', '==', selectedBatchId), 
+            where('status', '==', 'approved')
+        );
     }, [firestore, user, selectedBatchId]);
     const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
     
