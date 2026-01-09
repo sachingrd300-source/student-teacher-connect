@@ -118,11 +118,11 @@ export default function SignUpPage() {
             qualification: formData.qualification,
             experience: formData.experience,
             experienceType: formData.experienceType,
-            status: 'approved' // Changed for testing
+            status: 'pending_verification'
         });
         
-        toast({ title: 'Registration Submitted!', description: 'Your profile has been approved for testing.' });
-        router.push('/dashboard/teacher');
+        toast({ title: 'Registration Submitted!', description: 'Your profile is under review. You will be notified upon approval.' });
+        router.push('/login');
     } catch (error: any) {
         let description = 'An unexpected error occurred. Please try again.';
         if (error.code === 'auth/email-already-in-use') {
