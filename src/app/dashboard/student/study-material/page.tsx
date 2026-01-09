@@ -65,14 +65,16 @@ export default function StudyMaterialPage() {
 
   const { data: enrollments } = useCollection<Enrollment>(enrollmentsQuery);
 
-  const teacherIds = useMemo(() => enrollments?.map(e => e.teacherId) || [], [enrollments]);
+  // IMPORTANT: We can only query for one teacher at a time to satisfy security rules.
+  // We'll pick the first enrolled teacher for this page.
+  const firstTeacherId = useMemo(() => enrollments?.[0]?.teacherId, [enrollments]);
 
   const materialsQuery = useMemoFirebase(() => {
-    if(!firestore || teacherIds.length === 0) return null;
-    return query(collection(firestore, 'studyMaterials'), where('teacherId', 'in', teacherIds), orderBy('createdAt', 'desc'));
-  }, [firestore, teacherIds]);
+    if(!firestore || !firstTeacherId) return null;
+    return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', firstTeacherId), orderBy('createdAt', 'desc'));
+  }, [firestore, firstTeacherId]);
 
-  const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
+  const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
   
   const freeMaterialsQuery = useMemoFirebase(() => {
     if(!firestore) return null;
@@ -86,6 +88,8 @@ export default function StudyMaterialPage() {
     const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
     return unique.sort((a,b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
   }, [studyMaterials, freeStudyMaterials])
+
+  const isLoading = isLoadingMaterials || isLoadingFree;
 
   return (
     <div className="space-y-6">
@@ -110,7 +114,7 @@ export default function StudyMaterialPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {(isLoading || isLoadingFree) && Array.from({ length: 5 }).map((_, i) => (
+                {isLoading && Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                         <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                     </TableRow>
@@ -133,7 +137,7 @@ export default function StudyMaterialPage() {
                 ))}
                 </TableBody>
             </Table>
-            {!(isLoading || isLoadingFree) && allMaterials.length === 0 && (
+            {!isLoading && allMaterials.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">No study materials found.</p>
             )}
         </CardContent>

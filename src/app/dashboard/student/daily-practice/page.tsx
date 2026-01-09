@@ -45,21 +45,25 @@ export default function DailyPracticePage() {
     return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid), where('status', '==', 'approved'));
   }, [firestore, user]);
 
-  const { data: enrollments } = useCollection<Enrollment>(enrollmentsQuery);
+  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
 
-  const teacherIds = useMemo(() => enrollments?.map(e => e.teacherId) || [], [enrollments]);
+  // IMPORTANT: We can only query for one teacher at a time to satisfy security rules.
+  // We'll pick the first enrolled teacher for this page.
+  const firstTeacherId = useMemo(() => enrollments?.[0]?.teacherId, [enrollments]);
 
   const dppQuery = useMemoFirebase(() => {
-    if (!firestore || teacherIds.length === 0) return null;
+    if (!firestore || !firstTeacherId) return null;
     return query(
       collection(firestore, 'studyMaterials'), 
       where('type', '==', 'DPP'), 
-      where('teacherId', 'in', teacherIds),
+      where('teacherId', '==', firstTeacherId),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, teacherIds]);
+  }, [firestore, firstTeacherId]);
   
-  const { data: dailyPracticePapers, isLoading } = useCollection<StudyMaterial>(dppQuery);
+  const { data: dailyPracticePapers, isLoading: isLoadingDpps } = useCollection<StudyMaterial>(dppQuery);
+
+  const isLoading = isLoadingEnrollments || isLoadingDpps;
 
   return (
     <div className="space-y-6">
