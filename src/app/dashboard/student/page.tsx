@@ -33,6 +33,7 @@ export default function StudentDashboardPage() {
     { href: '/dashboard/student/shop', icon: ShoppingCart, title: 'Shop', description: 'Books and courses.', requireAuth: false },
   ];
 
+  // If a user is logged in, show all items. Otherwise, only show items that don't require authentication.
   const displayedItems = user ? quickAccessItems : quickAccessItems.filter(item => !item.requireAuth);
 
   return (
@@ -41,11 +42,12 @@ export default function StudentDashboardPage() {
         <h1 className="text-3xl font-bold font-headline">
           {user ? `Welcome back, ${user.displayName || studentData.name}!` : 'Welcome!'}
         </h1>
-        {user && !teacherConnected && (
+        {/* Only show the connection form if the user is NOT logged in and we are NOT loading user data */}
+        {!isUserLoading && !user && (
             <Card className="w-full max-w-md">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg">Connect with a Teacher</CardTitle>
-                    <CardDescription className="text-sm">Enter your teacher's code to view their profile and materials.</CardDescription>
+                    <CardDescription className="text-sm">Enter a teacher's code to view their materials.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ConnectTeacherForm onConnectionSuccess={handleConnectionSuccess} />
