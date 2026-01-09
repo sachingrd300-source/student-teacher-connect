@@ -5,6 +5,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   UserCredential,
+  GoogleAuthProvider,
+  signInWithPopup,
   // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
 
@@ -29,4 +31,11 @@ export async function initiateEmailSignUp(authInstance: Auth, email: string, pas
 export async function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
   // We await here to be able to catch the error in the calling component.
   return await signInWithEmailAndPassword(authInstance, email, password);
+}
+
+/** Initiate Google sign-in (popup). */
+export async function initiateGoogleSignIn(authInstance: Auth): Promise<UserCredential> {
+  const provider = new GoogleAuthProvider();
+  // We await here to be able to catch the error in the calling component.
+  return await signInWithPopup(authInstance, provider);
 }
