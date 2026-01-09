@@ -48,10 +48,14 @@ service cloud.firestore {
     =============================== */
 
     match /users/{userId} {
-      allow get, update: if isOwner(userId);
+      // Anyone can see a tutor's profile if it's approved
+      allow get: if isOwner(userId) || (isExistingDoc() && resource.data.role == 'tutor' && resource.data.status == 'approved');
+      allow update: if isOwner(userId);
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
-      allow list, delete: if false;
+      // Allow any signed in user to list approved tutors
+      allow list: if isSignedIn() && request.query.where.role == 'tutor' && request.query.where.status == 'approved';
+      allow delete: if false;
     }
 
     /* ===============================
@@ -225,3 +229,5 @@ service cloud.firestore {
 
   }
 }
+
+    
