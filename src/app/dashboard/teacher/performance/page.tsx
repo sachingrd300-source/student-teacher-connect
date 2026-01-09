@@ -31,7 +31,7 @@ import { BarChart3, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc, getDocs, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, serverTimestamp, doc, getDocs, getDoc, Timestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -44,7 +44,7 @@ type TestResult = {
     subject: string;
     marks: number;
     maxMarks: number;
-    date: { toDate: () => Date };
+    date: Timestamp;
 };
 type UserProfile = {
   name: string;
@@ -148,7 +148,9 @@ export default function PerformancePage() {
             studentName: student?.studentName,
             teacherId: user.uid,
             testName,
+            name: testName, // for chart
             subject,
+            score: Number(marks), // for chart
             marks: Number(marks),
             maxMarks: Number(maxMarks),
             date: serverTimestamp(),
@@ -264,7 +266,7 @@ export default function PerformancePage() {
                                             <TableCell className="font-medium">{result.studentName}</TableCell>
                                             <TableCell className="font-medium">{result.testName}</TableCell>
                                             <TableCell className="font-semibold">{result.marks} / {result.maxMarks}</TableCell>
-                                            <TableCell className="text-right">{result.date.toDate().toLocaleDateString()}</TableCell>
+                                            <TableCell className="text-right">{result.date?.toDate().toLocaleDateString()}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
