@@ -9,21 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, XCircle, Mail, Phone, ArrowLeft } from 'lucide-react';
+import { Mail, Phone, ArrowLeft } from 'lucide-react';
 import { notFound, useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, where, orderBy } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -39,7 +29,6 @@ export default function StudentProfilePage() {
   const params = useParams();
   const studentId = params.studentId as string;
   const firestore = useFirestore();
-  const { user: teacherUser } = useUser();
 
   const studentQuery = useMemoFirebase(() => {
     if (!firestore || !studentId) return null;
@@ -53,10 +42,6 @@ export default function StudentProfilePage() {
     return <div className="space-y-6">
         <Skeleton className="h-10 w-40" />
         <Skeleton className="h-[300px] w-full" />
-        <div className="grid gap-6 lg:grid-cols-2">
-            <Skeleton className="h-96 w-full" />
-            <Skeleton className="h-96 w-full" />
-        </div>
     </div>;
   }
 
@@ -69,7 +54,7 @@ export default function StudentProfilePage() {
         <Button variant="ghost" asChild className="mb-4">
             <Link href="/dashboard/teacher">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to My Students
+                Back to Dashboard
             </Link>
         </Button>
        <Card className="shadow-lg">
