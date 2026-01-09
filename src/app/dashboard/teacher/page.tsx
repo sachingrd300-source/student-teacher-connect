@@ -61,6 +61,7 @@ import { teacherData } from '@/lib/data';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { useUser } from '@/firebase';
 
 type StudentProfile = {
   id: string; 
@@ -79,8 +80,9 @@ type StudentProfile = {
 
 export default function TeacherDashboardPage() {
   const { toast } = useToast();
-  const [studentRequests, setStudentRequests] = useState<StudentProfile[]>([]);
-  const [enrolledStudents, setEnrolledStudents] = useState<StudentProfile[]>([]);
+  const { user } = useUser();
+  const [studentRequests, setStudentRequests] = useState<StudentProfile[]>(teacherData.studentRequests);
+  const [enrolledStudents, setEnrolledStudents] = useState<StudentProfile[]>(teacherData.enrolledStudents);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddStudentOpen, setAddStudentOpen] = useState(false);
   
@@ -98,39 +100,30 @@ export default function TeacherDashboardPage() {
   useEffect(() => {
     // Simulate fetching data
     setTimeout(() => {
-      setStudentRequests(teacherData.studentRequests);
-      setEnrolledStudents(teacherData.enrolledStudents);
       setIsLoading(false);
     }, 1000);
   }, []);
 
   const handleApprove = (studentId: string) => {
-    const studentToApprove = teacherData.studentRequests.find(s => s.id === studentId);
+    const studentToApprove = studentRequests.find(s => s.id === studentId);
     if (studentToApprove) {
         const approvedStudent = { ...studentToApprove, grade: 'N/A', attendance: 100, createdAt: new Date() };
 
-        // Update the mock data source first
-        teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
-        teacherData.enrolledStudents.unshift(approvedStudent);
-
-        // Then update the local state from the single source of truth
-        setStudentRequests([...teacherData.studentRequests]);
-        setEnrolledStudents([...teacherData.enrolledStudents]);
+        setStudentRequests(prev => prev.filter(s => s.id !== studentId));
+        setEnrolledStudents(prev => [approvedStudent, ...prev]);
+        
+        toast({ title: 'Student Approved', description: `${approvedStudent.name} is now enrolled.`})
     }
   };
   
   const handleDeny = (studentId: string) => {
-    // Update the mock data source
-    teacherData.studentRequests = teacherData.studentRequests.filter(s => s.id !== studentId);
-    // Update local state from the source
-    setStudentRequests([...teacherData.studentRequests]);
+    setStudentRequests(prev => prev.filter(s => s.id !== studentId));
+    toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'})
   };
   
   const handleRemove = (studentId: string) => {
-    // Update the mock data source
-    teacherData.enrolledStudents = teacherData.enrolledStudents.filter(s => s.id !== studentId);
-    // Update local state from the source
-    setEnrolledStudents([...teacherData.enrolledStudents]);
+    setEnrolledStudents(prev => prev.filter(s => s.id !== studentId));
+    toast({ title: 'Student Removed', description: 'The student has been unenrolled.'})
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -162,10 +155,7 @@ export default function TeacherDashboardPage() {
         createdAt: new Date(),
     };
     
-    // Update the central mock data source first
-    teacherData.enrolledStudents.unshift(newStudent);
-    // Then update local state from the source
-    setEnrolledStudents([...teacherData.enrolledStudents]);
+    setEnrolledStudents(prev => [newStudent, ...prev]);
 
 
     toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
@@ -413,5 +403,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    

@@ -1,98 +1,140 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
-import { studentData, teacherData } from '@/lib/data';
+import { studentData, teacherData, tutorsData } from '@/lib/data';
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpenCheck, ClipboardList, ShoppingCart, CalendarDays } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, ClipboardList, ShoppingCart, CalendarDays, User } from 'lucide-react';
 import { useUser } from '@/firebase';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Mocking connected teachers for a logged-in user
+const connectedTeachers = [
+    {
+        ...tutorsData[0],
+        updates: 3,
+    },
+    {
+        ...tutorsData[1],
+        updates: 1,
+    }
+];
 
 export default function StudentDashboardPage() {
-  const [teacherConnected, setTeacherConnected] = useState(false);
+  const [teacherConnected, setTeacherConnected] = useState(false); // This can be deprecated or reworked
   const { user, isUserLoading } = useUser();
+  const [hasConnections, setHasConnections] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+        // In a real app, you'd fetch the student's connections here.
+        // We'll simulate this with a timeout.
+        const timer = setTimeout(() => setHasConnections(true), 1000);
+        return () => clearTimeout(timer);
+    }
+  }, [user]);
+
 
   const handleConnectionSuccess = () => {
-    setTeacherConnected(true);
+    setHasConnections(true);
   };
   
-  const currentData = teacherConnected ? teacherData : studentData;
-
-  const quickAccessItems = [
-    { href: '/dashboard/student/schedule', icon: CalendarDays, title: 'Schedule', description: 'View upcoming classes.', requireAuth: true },
-    { href: '/dashboard/student/study-material', icon: BookOpenCheck, title: 'Study Material', description: 'Notes, videos, and more.', requireAuth: false },
-    { href: '/dashboard/student/daily-practice', icon: ClipboardList, title: 'Daily Practice', description: 'DPPs and assignments.', requireAuth: false },
-    { href: '/dashboard/student/shop', icon: ShoppingCart, title: 'Shop', description: 'Books and courses.', requireAuth: false },
-  ];
-
-  // If a user is logged in, show all items. Otherwise, only show items that don't require authentication.
-  const displayedItems = user ? quickAccessItems : quickAccessItems.filter(item => !item.requireAuth);
+  if (isUserLoading) {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+        </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div>
         <h1 className="text-3xl font-bold font-headline">
-          {user ? `Welcome back, ${user.displayName || studentData.name}!` : 'Welcome!'}
+          {user ? `Welcome back, ${user.displayName || studentData.name}!` : 'Student Dashboard'}
         </h1>
-        {/* Show the connection form only if the user is logged in and not yet connected. */}
-        {!isUserLoading && user && !teacherConnected && (
-            <Card className="w-full max-w-md">
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Connect with a Teacher</CardTitle>
-                    <CardDescription className="text-sm">Enter a teacher's code to view their materials.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ConnectTeacherForm onConnectionSuccess={handleConnectionSuccess} />
-                </CardContent>
-            </Card>
-        )}
+        <p className="text-muted-foreground">
+            {user && hasConnections 
+                ? "View updates from your connected teachers or connect with a new one."
+                : "Connect with a teacher to get started."}
+        </p>
       </div>
 
-       <Card>
-        <CardHeader>
-          <CardTitle>Quick Access</CardTitle>
-          <CardDescription>Jump to your resources.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {displayedItems.map((item) => (
-            <Link href={item.href} key={item.href}>
-              <Card className="hover:bg-muted/50 transition-colors h-full">
-                <CardHeader className="flex-row items-center gap-4">
-                  <item.icon className="w-8 h-8 text-primary" />
-                  <div>
-                    <CardTitle>{item.title}</CardTitle>
-
-                    <CardDescription>{item.description}</CardDescription>
-                  </div>
-                </CardHeader>
-              </Card>
-            </Link>
-          ))}
-        </CardContent>
-       </Card>
-
-      {user && teacherConnected && (
+      {user && hasConnections && (
         <Card>
-          <CardHeader>
-            <CardTitle>Teacher Connected!</CardTitle>
-            <CardDescription>You are now viewing materials and updates from {teacherData.name}. Explore your dashboard to see what's new.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href={`/tutor/${teacherData.id}`}>
-              <Button>View Teacher's Profile <ArrowRight className="ml-2 h-4 w-4" /></Button>
-            </Link>
-          </CardContent>
+            <CardHeader>
+                <CardTitle>My Teachers</CardTitle>
+                <CardDescription>Select a teacher to view their materials and schedule.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+                {connectedTeachers.map(teacher => (
+                    <Card key={teacher.id} className="hover:shadow-md transition-shadow">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                                <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <CardTitle className="text-xl">{teacher.name}</CardTitle>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="secondary">{teacher.subjects.join(', ')}</Badge>
+                                    {teacher.updates > 0 && <Badge variant="default">{teacher.updates} New Update{teacher.updates > 1 ? 's' : ''}</Badge>}
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardFooter>
+                            <Button asChild className="w-full">
+                                <Link href={`/dashboard/student/teacher/${teacher.id}`}>View Updates <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </CardContent>
         </Card>
       )}
 
+      {user && (
+         <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Connect with a New Teacher</CardTitle>
+                <CardDescription className="text-sm">Enter a teacher's unique code to send a connection request.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ConnectTeacherForm onConnectionSuccess={handleConnectionSuccess} />
+            </CardContent>
+        </Card>
+      )}
+
+      {!user && (
+         <Card className="text-center">
+            <CardHeader>
+                <User className="mx-auto h-12 w-12 text-muted-foreground" />
+                <CardTitle>Log In to View Your Dashboard</CardTitle>
+                <CardDescription>
+                    To connect with teachers and see your personalized content, please log in or create an account.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Button asChild>
+                    <Link href="/login">Log In / Sign Up</Link>
+                </Button>
+            </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

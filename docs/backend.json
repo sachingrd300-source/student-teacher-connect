@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -76,14 +77,6 @@
         "userId": {
           "type": "string",
           "description": "Reference to the User entity. (Relationship: User 1:1 Student)"
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "Reference to the Teacher entity. (Relationship: Teacher 1:N Student). Nullable if the student is independent"
-        },
-        "isApproved": {
-          "type": "boolean",
-          "description": "Indicates whether the student is approved by the teacher."
         }
       },
       "required": [
@@ -124,6 +117,40 @@
         "userId",
         "studentId",
         "teacherId"
+      ]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "type": "object",
+      "description": "Represents the connection between a student and a teacher, including its status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique ID for the enrollment."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the Student entity's user ID."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the Teacher entity's user ID."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "denied"
+          ],
+          "description": "The status of the enrollment request."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "teacherId",
+        "status"
       ]
     },
     "StudyMaterial": {
@@ -410,11 +437,27 @@
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores student data, including the teacherId for teacher-connected students.",
+          "description": "Stores student data.",
           "params": [
             {
               "name": "studentId",
               "description": "The unique identifier of the student."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/enrollments/{enrollmentId}",
+        "definition": {
+          "entityName": "Enrollment",
+          "schema": {
+            "$ref": "#/backend/entities/Enrollment"
+          },
+          "description": "Stores the many-to-many relationship between students and teachers, with a status.",
+          "params": [
+            {
+              "name": "enrollmentId",
+              "description": "The unique identifier of the enrollment record."
             }
           ]
         }
@@ -532,6 +575,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support EduConnect Pro's role-based access, real-time updates, and study material features while prioritizing security and scalability.  The core principle applied is Authorization Independence, achieved through denormalization of authorization context. This eliminates the need for `get()` calls in security rules, enabling atomic operations and improving debuggability.\n\n**Users Collection:** Stores user profiles.  Access is controlled through authentication and role-based checks.\n\n**Teachers Collection:** Stores teacher-specific data.\n\n**Students Collection:** Stores student data. The `teacherId` field establishes the relationship with teachers.\n\n**Parents Collection:** Stores parent data, linking them to students and teachers.\n\n**StudyMaterials Collection:** Stores study materials. The `teacherId` field indicates the teacher who uploaded the material.  The `isFree` flag allows for open access to some materials.\n\n**Attendances Collection:** Stores attendance records, linked to students and teachers.\n\n**Tests Collection:** Stores test information, associated with a teacher and study material.\n\n**Performances Collection:** Stores student performance data on tests.\n\n**DPPSubmissions Collection:** Stores student submissions for Daily Practice Problems.\n\n**ClassSchedules Collection:** Stores class schedules, managed by teachers.\n\n**Authorization Independence & QAPs:**\n\n*   **Denormalization:** The structure uses path-based ownership and denormalization. For example, study materials are stored in a top-level `studyMaterials` collection but contain the `teacherId`. This allows rules to securely query all study materials for a specific teacher without requiring a `get()` call to the teacher document.\n\n*   **Structural Segregation:** The design segregates data based on access needs.  Teacher-specific data and student-specific data are kept in separate collections (`teachers`, `students`), which have different security rules. The `isFree` field in `studyMaterials` enables open access to some content while securing the rest.\n\n*   **QAPs Support:** The segregation of data into collections with homogeneous security postures supports secure `list` operations. Rules can allow listing of documents in `studyMaterials` where `isFree` is true, without complex filtering within the rule itself.\n\n**Overall, the structure provides a secure and scalable foundation for EduConnect Pro by enforcing role-based access, enabling real-time updates, and facilitating efficient management of study materials and student performance.**"
+    "reasoning": "The Firestore structure is designed to support EduConnect Pro's role-based access, real-time updates, and study material features while prioritizing security and scalability.  The core principle applied is Authorization Independence, achieved through denormalization of authorization context. This eliminates the need for `get()` calls in security rules, enabling atomic operations and improving debuggability.\n\n**Users Collection:** Stores user profiles.  Access is controlled through authentication and role-based checks.\n\n**Teachers Collection:** Stores teacher-specific data.\n\n**Students Collection:** Stores student data.\n\n**Enrollments Collection:** Manages the many-to-many relationship between students and teachers, including the status of each connection (`pending`, `approved`). This is a scalable and secure way to handle connection requests.\n\n**Parents Collection:** Stores parent data, linking them to students and teachers.\n\n**StudyMaterials Collection:** Stores study materials. The `teacherId` field indicates the teacher who uploaded the material.  The `isFree` flag allows for open access to some materials.\n\n**Attendances Collection:** Stores attendance records, linked to students and teachers.\n\n**Tests Collection:** Stores test information, associated with a teacher and study material.\n\n**Performances Collection:** Stores student performance data on tests.\n\n**DPPSubmissions Collection:** Stores student submissions for Daily Practice Problems.\n\n**ClassSchedules Collection:** Stores class schedules, managed by teachers.\n\n**Authorization Independence & QAPs:**\n\n*   **Denormalization:** The structure uses path-based ownership and denormalization. For example, study materials are stored in a top-level `studyMaterials` collection but contain the `teacherId`. This allows rules to securely query all study materials for a specific teacher without requiring a `get()` call to the teacher document.\n\n*   **Structural Segregation:** The design segregates data based on access needs.  Teacher-specific data and student-specific data are kept in separate collections (`teachers`, `students`), which have different security rules. The `isFree` field in `studyMaterials` enables open access to some content while securing the rest.\n\n*   **QAPs Support:** The segregation of data into collections with homogeneous security postures supports secure `list` operations. Rules can allow listing of documents in `studyMaterials` where `isFree` is true, without complex filtering within the rule itself.\n\n**Overall, the structure provides a secure and scalable foundation for EduConnect Pro by enforcing role-based access, enabling real-time updates, and facilitating efficient management of study materials and student performance.**"
   }
 }
