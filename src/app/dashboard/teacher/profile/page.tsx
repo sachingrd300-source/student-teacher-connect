@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Book, Briefcase, Mail, Phone, Edit, Info } from 'lucide-react';
+import { User, Book, Briefcase, Mail, Phone, Edit, Info, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -44,6 +44,7 @@ type TeacherProfileData = {
     subjects?: string[];
     classLevels?: string[];
     coachingName?: string;
+    whatsappNumber?: string;
 };
 
 export default function TeacherProfilePage() {
@@ -67,11 +68,12 @@ export default function TeacherProfilePage() {
         if (teacherProfile) {
             setFormData({
                 name: teacherProfile.name || '',
-                coachingName: teacherProfile.coachingName || 'Your Coaching Center',
+                coachingName: teacherProfile.coachingName || '',
                 subjects: teacherProfile.subjects || [],
                 qualification: teacherProfile.qualification || '',
                 experience: teacherProfile.experience || '',
                 address: teacherProfile.address || '',
+                whatsappNumber: teacherProfile.whatsappNumber || '',
             });
         }
     }, [teacherProfile]);
@@ -89,10 +91,10 @@ export default function TeacherProfilePage() {
             await updateDoc(userRef, {
                 name: formData.name,
                 coachingName: formData.coachingName,
-                // For simplicity, we are not updating array fields like subjects in this form
                 qualification: formData.qualification,
                 experience: formData.experience,
                 address: formData.address,
+                whatsappNumber: formData.whatsappNumber,
             });
             toast({ title: 'Profile Updated', description: 'Your information has been successfully saved.' });
             setEditOpen(false);
@@ -104,7 +106,7 @@ export default function TeacherProfilePage() {
         }
     };
     
-    const isProfileIncomplete = !teacherProfile?.experience || !teacherProfile?.address || !teacherProfile?.qualification;
+    const isProfileIncomplete = !teacherProfile?.experience || !teacherProfile?.address || !teacherProfile?.qualification || !teacherProfile.whatsappNumber;
     const isLoading = isUserLoading || isLoadingProfile;
 
     if (isLoading || !teacherProfile) {
@@ -157,13 +159,13 @@ export default function TeacherProfilePage() {
                             <Input id="name" value={formData.name} onChange={handleInputChange} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="coachingName">Coaching Name</Label>
-                            <Input id="coachingName" value={formData.coachingName} onChange={handleInputChange} />
+                            <Label htmlFor="coachingName">Coaching/Institute Name</Label>
+                            <Input id="coachingName" value={formData.coachingName} onChange={handleInputChange} placeholder="Your Coaching Center"/>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="subjects">Subjects</Label>
                             <Input id="subjects" value={formData.subjects?.join(', ')} disabled placeholder="e.g. Physics, Chemistry" />
-                             <p className="text-xs text-muted-foreground">Subjects can be changed during sign up.</p>
+                             <p className="text-xs text-muted-foreground">Subjects can only be changed during sign up.</p>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="qualification">Qualification</Label>
@@ -174,8 +176,13 @@ export default function TeacherProfilePage() {
                             <Input id="experience" value={formData.experience} onChange={handleInputChange} placeholder="e.g. 5 Years" />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="address">Address</Label>
-                            <Textarea id="address" value={formData.address} onChange={handleInputChange} placeholder="Your coaching or home address" />
+                            <Label htmlFor="address">Address / City</Label>
+                            <Textarea id="address" value={formData.address} onChange={handleInputChange} placeholder="Your coaching or city" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+                            <Input id="whatsappNumber" value={formData.whatsappNumber} onChange={handleInputChange} placeholder="e.g. 919876543210" />
+                            <p className="text-xs text-muted-foreground">Include country code (e.g. 91 for India).</p>
                         </div>
                     </div>
                     <DialogFooter>
@@ -192,8 +199,8 @@ export default function TeacherProfilePage() {
                 <CardHeader className="flex-row items-center gap-4">
                     <Info className="h-6 w-6 text-primary"/>
                     <div>
-                        <CardTitle className="text-lg">Welcome to EduConnect Pro!</CardTitle>
-                        <CardDescription className="text-primary/80">Complete your profile to help students and parents learn more about you.</CardDescription>
+                        <CardTitle className="text-lg">Complete Your Profile</CardTitle>
+                        <CardDescription className="text-primary/80">Add your address and WhatsApp number to be visible to students.</CardDescription>
                     </div>
                 </CardHeader>
                 <CardFooter>
@@ -214,7 +221,7 @@ export default function TeacherProfilePage() {
                     {teacherProfile?.subjects?.map(sub => <Badge key={sub} variant="secondary">{sub.trim()}</Badge>)}
                 </div>
             </CardHeader>
-            <CardContent className="p-6 grid gap-4 md:grid-cols-2">
+            <CardContent className="p-6 grid gap-6 md:grid-cols-2">
                 <div className="space-y-4">
                     <h3 className="font-semibold text-lg text-primary">Professional Details</h3>
                      <div className="flex items-start gap-3">
@@ -239,6 +246,10 @@ export default function TeacherProfilePage() {
                      <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-muted-foreground" />
                         <span>Mobile: <span className="font-medium">{teacherProfile?.mobileNumber}</span></span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                        <span>WhatsApp: <span className="font-medium">{teacherProfile?.whatsappNumber || 'N/A'}</span></span>
                     </div>
                  </div>
             </CardContent>

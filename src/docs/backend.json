@@ -61,6 +61,18 @@
         "experienceType": {
           "type": "string",
           "description": "For tutors, the type of their teaching experience (e.g., School, Online)."
+        },
+        "coachingName": {
+          "type": "string",
+          "description": "The name of the tutor's coaching center or institute."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address or city of the tutor for location-based searching."
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "description": "The tutor's WhatsApp number for students to connect."
         }
       },
       "required": [
@@ -98,6 +110,40 @@
         "classLevel",
         "classCode"
       ]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "type": "object",
+      "description": "Represents a student's request to enroll in a specific class.",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "The ID of the student requesting to enroll."
+        },
+        "classId": {
+          "type": "string",
+          "description": "The ID of the class the student wants to join."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "The ID of the teacher who owns the class. Denormalized for security rules."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "denied"
+          ],
+          "description": "The status of the enrollment request."
+        }
+      },
+      "required": [
+        "studentId",
+        "classId",
+        "teacherId",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -119,6 +165,12 @@
         "$ref": "#/entities/Class"
       },
       "description": "Stores classes created by teachers."
+    },
+    "/enrollments/{enrollmentId}": {
+      "schema": {
+        "$ref": "#/entities/Enrollment"
+      },
+      "description": "Stores student enrollment requests for specific classes."
     }
   }
 }
