@@ -54,8 +54,7 @@ export default function SignUpPage() {
   const handleRegistration = async () => {
     setIsLoading(true);
     try {
-        // This is non-blocking, it starts the sign-up and the onAuthStateChanged listener will catch the result
-        initiateEmailSignUp(auth, formData.email, formData.password);
+        await initiateEmailSignUp(auth, formData.email, formData.password);
         
         toast({ title: 'Registration Successful!', description: 'Your account is being created. Redirecting to your profile...' });
         
@@ -64,7 +63,11 @@ export default function SignUpPage() {
 
         router.push('/dashboard/teacher/profile');
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Registration Failed', description: error.message });
+        let description = 'An unexpected error occurred. Please try again.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'This email address is already registered. Please log in or use a different email.';
+        }
+        toast({ variant: 'destructive', title: 'Registration Failed', description });
         setIsLoading(false);
     }
   };

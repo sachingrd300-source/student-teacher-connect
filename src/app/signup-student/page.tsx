@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -58,7 +57,7 @@ export default function SignUpStudentPage() {
   const handleRegistration = async () => {
     setIsLoading(true);
     try {
-        initiateEmailSignUp(auth, formData.email, formData.password);
+        await initiateEmailSignUp(auth, formData.email, formData.password);
         
         toast({ title: 'Registration Successful!', description: 'Your account is being created. Redirecting to your dashboard...' });
 
@@ -66,7 +65,11 @@ export default function SignUpStudentPage() {
         
         router.push('/dashboard/student');
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Registration Failed', description: error.message });
+        let description = 'An unexpected error occurred. Please try again.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'This email address is already registered. Please log in or use a different email.';
+        }
+        toast({ variant: 'destructive', title: 'Registration Failed', description });
         setIsLoading(false);
     }
   };
