@@ -165,12 +165,6 @@
         "$ref": "#/entities/Class"
       },
       "description": "Stores classes created by teachers."
-    },
-    "/enrollments/{enrollmentId}": {
-      "schema": {
-        "$ref": "#/entities/Enrollment"
-      },
-      "description": "Stores student enrollment requests for specific classes."
     }
   }
 }
