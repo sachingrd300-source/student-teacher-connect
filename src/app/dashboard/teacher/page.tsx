@@ -50,11 +50,11 @@ import {
   Check,
   X,
   MoreVertical,
-  Calendar,
   UserCheck,
   Users2,
   PlusCircle,
   DoorOpen,
+  Info
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { teacherData } from '@/lib/data';
@@ -65,24 +65,18 @@ import {
   useUser,
   useFirestore,
   useCollection,
+  useDoc,
   useMemoFirebase,
 } from '@/firebase';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-type StudentProfile = {
-  id: string; 
+type UserProfile = {
+  id: string;
   name: string;
-  avatarUrl?: string; 
-  grade?: string; 
-  attendance?: number; 
-  batch?: string;
-  email?: string;
-  subject?: string;
-  address?: string;
-  mobileNumber?: string;
-  createdAt?: Date;
-};
+  role: string;
+  status: 'pending_verification' | 'approved';
+}
 
 type Enrollment = {
     id: string;
@@ -134,6 +128,24 @@ function StudentRequestRow({ enrollment, onUpdate }: { enrollment: Enrollment, o
     )
 }
 
+function PendingVerificationCard() {
+    return (
+        <Card className="bg-amber-50 border-amber-200 shadow-lg">
+            <CardHeader className="flex-row items-center gap-4">
+                <Info className="h-8 w-8 text-amber-600"/>
+                <div>
+                    <CardTitle className="text-xl text-amber-800">Profile Under Verification</CardTitle>
+                    <CardDescription className="text-amber-700">
+                        Your profile has been submitted and is currently being reviewed by the admin. 
+                        You will be notified once it is approved.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    )
+}
+
+
 export default function TeacherDashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -150,6 +162,13 @@ export default function TeacherDashboardPage() {
     mobileNumber: '',
     batch: '',
   });
+
+  const userProfileQuery = useMemoFirebase(() => {
+    if(!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
+
 
   const enrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -176,8 +195,6 @@ export default function TeacherDashboardPage() {
         return;
     }
     
-    // In a real app you might create a proper user for the student first
-    // For now, we just create the enrollment and user profile doc
     const studentId = `manual-${Date.now()}`;
     const studentProfileRef = doc(firestore, 'users', studentId);
     const enrollmentRef = collection(firestore, 'enrollments');
@@ -188,7 +205,6 @@ export default function TeacherDashboardPage() {
         role: 'student',
         id: studentId,
         avatarUrl: `https://picsum.photos/seed/${newStudentData.name.replace(/\s/g, '')}/40/40`,
-        // other fields...
     };
 
     const enrollmentData = {
@@ -199,9 +215,7 @@ export default function TeacherDashboardPage() {
         status: 'approved'
     };
 
-    // We don't use the non-blocking here as we want to give feedback
     addDocumentNonBlocking(enrollmentRef, enrollmentData);
-    // You would also set the studentProfileData in a 'users' collection
 
     toast({ title: 'Student Added', description: `${newStudentData.name} has been added to your roster.` });
     
@@ -217,6 +231,24 @@ export default function TeacherDashboardPage() {
     await updateDoc(enrollmentRef, { status: 'denied' }); // or delete
     toast({ title: 'Student Removed', description: 'The student has been unenrolled.'})
   };
+  
+  if (isLoadingProfile) {
+    return <div className="space-y-4">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-64 w-full" />
+    </div>
+  }
+
+  if (userProfile?.status === 'pending_verification') {
+    return (
+        <div className="space-y-6">
+             <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
+             <PendingVerificationCard />
+        </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6">

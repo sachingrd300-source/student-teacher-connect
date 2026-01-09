@@ -24,15 +24,23 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Use the non-blocking sign-in function
-      initiateEmailSignIn(auth, email, password);
+      if (!auth) {
+        throw new Error("Auth service is not available.");
+      }
+      await initiateEmailSignIn(auth, email, password);
       toast({ title: 'Login Successful', description: "You're being redirected to your dashboard." });
       
-      // Redirect immediately. The onAuthStateChanged listener will handle the user state.
-      router.push('/dashboard');
+      // Redirect to the teacher dashboard after successful login.
+      // The dashboard itself will handle the verification check.
+      router.push('/dashboard/teacher');
     } catch (error: any) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Login Failed', description: error.message });
+      let description = "An unexpected error occurred. Please try again."
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "Invalid email or password. Please check your credentials and try again.";
+      }
+      toast({ variant: 'destructive', title: 'Login Failed', description: description });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -42,7 +50,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <form onSubmit={handleLogin}>
           <CardHeader>
-            <CardTitle className="text-center text-2xl font-headline">Log In to EduConnect Pro</CardTitle>
+            <CardTitle className="text-center text-2xl font-headline">Tutor Login</CardTitle>
             <CardDescription className="text-center">Enter your credentials to access your dashboard.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -59,14 +67,20 @@ export default function LoginPage() {
                 <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="pl-10"/>
               </div>
+               <div className="text-right">
+                <Link href="#" className="text-sm text-primary hover:underline">
+                    Forgot Password?
+                </Link>
+            </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Logging In...' : 'Log In'}
+              <LogIn className="mr-2 h-4 w-4"/>
+              {isLoading ? 'Logging In...' : 'Login'}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign up</Link>
+              Don't have an account? <Link href="/signup" className="text-primary hover:underline">Become a Tutor</Link>
             </p>
           </CardFooter>
         </form>
