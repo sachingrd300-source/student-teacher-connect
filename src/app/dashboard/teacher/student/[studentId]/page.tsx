@@ -38,13 +38,10 @@ type StudentProfile = {
 
 type AttendanceRecord = { id: string; date: { toDate: () => Date }; isPresent: boolean };
 type TestResult = { id: string; date: { toDate: () => Date }; marks: number; maxMarks: number; subject: string, testName: string };
-type Enrollment = { id: string; batch?: string };
-
 
 export default function StudentProfilePage() {
   const params = useParams();
   const studentId = params.studentId as string;
-  const { user: teacherUser } = useUser();
   const firestore = useFirestore();
 
   const studentQuery = useMemoFirebase(() => {
@@ -64,25 +61,13 @@ export default function StudentProfilePage() {
     return query(collection(firestore, 'performances'), where('studentId', '==', studentId), orderBy('date', 'desc'))
   }, [firestore, studentId]);
   const { data: testResults, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
-  
-  const enrollmentQuery = useMemoFirebase(() => {
-    if(!firestore || !studentId || !teacherUser) return null;
-    return query(
-        collection(firestore, 'enrollments'), 
-        where('studentId', '==', studentId), 
-        where('teacherId', '==', teacherUser.uid),
-        where('status', '==', 'approved')
-    );
-  }, [firestore, studentId, teacherUser]);
-  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentQuery);
-  const studentBatch = enrollments?.[0]?.batch;
 
 
   const performanceChartData = useMemo(() => 
     testResults?.map(p => ({ name: p.testName, score: p.marks })) || []
   , [testResults]);
   
-  const isLoading = isLoadingStudent || isLoadingAttendance || isLoadingPerformance || isLoadingEnrollments;
+  const isLoading = isLoadingStudent || isLoadingAttendance || isLoadingPerformance;
 
   if (isLoading) {
     return <div className="space-y-6">
@@ -114,7 +99,6 @@ export default function StudentProfilePage() {
                     <AvatarFallback className="text-3xl">{student?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <CardTitle className="text-4xl font-headline">{student?.name}</CardTitle>
-                {studentBatch && <CardDescription className="text-base"><Badge variant="secondary">{studentBatch}</Badge></CardDescription>}
             </CardHeader>
             <CardContent className="p-6 grid gap-4 md:grid-cols-2">
                 <div className="space-y-4">
