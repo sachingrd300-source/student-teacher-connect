@@ -7,8 +7,9 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Link as LinkIcon } from 'lucide-react';
-import { teacherData } from '@/lib/data';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type ConnectTeacherFormProps = {
     onConnectionSuccess: () => void;
@@ -19,8 +20,9 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const { user } = useUser();
+    const firestore = useFirestore();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!teacherCode) {
             toast({
@@ -40,31 +42,77 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
             return;
         }
 
+        if (!firestore) return;
+
         setIsLoading(true);
 
-        // Simulate API call to create an enrollment request
-        setTimeout(() => {
-            // In a real app, you would check if the teacher code exists
-            // and then create a new document in the 'enrollments' collection
-            // with studentId, teacherId (from code), and status: 'pending'.
-            
-            // For now, we'll just check against the mock teacher's ID
-            if (teacherCode === teacherData.id) {
-                toast({
-                    title: 'Request Sent!',
-                    description: `Your connection request has been sent to the teacher.`,
-                });
-                onConnectionSuccess();
-                setTeacherCode('');
-            } else {
+        try {
+            // Find the teacher by their verification code (which is their user ID in this design)
+            const teachersRef = collection(firestore, 'users');
+            // In our schema, the teacher's public-facing ID is their user document ID.
+            // We assume the teacher gives the student their user.id
+            const q = query(teachersRef, where('id', '==', teacherCode), where('role', '==', 'teacher'));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
                 toast({
                     variant: 'destructive',
                     title: 'Invalid Code',
-                    description: 'The teacher code is incorrect. Please try again.',
+                    description: 'No teacher found with that verification code. Please try again.',
                 });
+                setIsLoading(false);
+                return;
             }
+            
+            const teacherDoc = querySnapshot.docs[0];
+            const teacherId = teacherDoc.id;
+            const teacherData = teacherDoc.data();
+
+            // Check if an enrollment already exists
+            const enrollmentsRef = collection(firestore, 'enrollments');
+            const existingEnrollmentQuery = query(enrollmentsRef, where('studentId', '==', user.uid), where('teacherId', '==', teacherId));
+            const existingEnrollmentSnapshot = await getDocs(existingEnrollmentQuery);
+
+            if (!existingEnrollmentSnapshot.empty) {
+                toast({
+                    variant: 'default',
+                    title: 'Already Connected',
+                    description: 'You already have a pending or approved connection with this teacher.',
+                });
+                setIsLoading(false);
+                return;
+            }
+
+
+            // Create a new enrollment request document
+            const enrollmentData = {
+                studentId: user.uid,
+                studentName: user.displayName || 'New Student',
+                studentAvatar: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
+                teacherId: teacherId,
+                teacherName: teacherData.name || 'Teacher',
+                status: 'pending'
+            };
+            
+            addDocumentNonBlocking(collection(firestore, "enrollments"), enrollmentData);
+
+            toast({
+                title: 'Request Sent!',
+                description: `Your connection request has been sent to the teacher.`,
+            });
+            onConnectionSuccess();
+            setTeacherCode('');
+
+        } catch (error) {
+            console.error("Error connecting with teacher:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not send connection request. Please try again later.',
+            });
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     return (
