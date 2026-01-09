@@ -160,31 +160,12 @@ export default function TeacherDashboardPage() {
   }, [firestore, user]);
   const { data: studentRequests, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
 
-  const approvedEnrollmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-        collection(firestore, 'enrollments'), 
-        where('teacherId', '==', user.uid),
-        where('status', '==', 'approved')
-    );
-  }, [firestore, user]);
-  const { data: approvedEnrollments, isLoading: isLoadingApproved } = useCollection<Enrollment>(approvedEnrollmentsQuery);
-
-
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
     return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
-
-  const enrolledStudentsCount = useMemo(() => {
-    if (!approvedEnrollments) return 0;
-    const uniqueStudents = new Set(approvedEnrollments.map(e => e.studentId));
-    return uniqueStudents.size;
-  }, [approvedEnrollments]);
-
-  
   if (isLoadingProfile) {
     return <div className="space-y-4">
         <Skeleton className="h-10 w-1/3" />
@@ -214,7 +195,7 @@ export default function TeacherDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoadingApproved ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudentsCount}</div>}
+            <div className="text-2xl font-bold">-</div>
             <p className="text-xs text-muted-foreground">Total unique students</p>
           </CardContent>
         </Card>
@@ -329,7 +310,7 @@ export default function TeacherDashboardPage() {
                         </div>
                        </TableCell>
                       <TableCell className="text-right">
-                         {approvedEnrollments?.filter(e => e.classId === cls.id).length}
+                         -
                       </TableCell>
                     </TableRow>
                   ))}
