@@ -156,7 +156,7 @@ export default function TeacherDashboardPage() {
     return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
 
-  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+  const { data: enrollments, isLoading: isLoadingEnrollments, error } = useCollection<Enrollment>(enrollmentsQuery);
 
   const studentRequests = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
   const enrolledStudents = useMemo(() => enrollments?.filter(e => e.status === 'approved') || [], [enrollments]);
