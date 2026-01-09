@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -15,9 +14,14 @@ export default function RoleSelectionPage() {
 
   const handleContinue = () => {
     if (selectedRole === 'tutor') {
-      router.push('/signup');
-    } else {
-      // For now, other roles can go to a generic dashboard or their own signup
+      router.push('/login');
+    } else if (selectedRole === 'student') {
+        router.push('/dashboard/student');
+    }
+     else if (selectedRole === 'parent') {
+        router.push('/dashboard/parent');
+    }
+     else {
       router.push('/dashboard');
     }
   };
@@ -52,7 +56,7 @@ export default function RoleSelectionPage() {
               <GraduationCap className="h-8 w-8 text-primary" />
               <div>
                 <h3 className="font-semibold">Tutor</h3>
-                <p className="text-sm text-muted-foreground">Share your knowledge and grow.</p>
+                <p className="text-sm text-muted-foreground">Login to your dashboard.</p>
               </div>
             </Label>
           </RadioGroup>
