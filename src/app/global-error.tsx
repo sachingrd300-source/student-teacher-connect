@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export default function GlobalError({
                             </pre>
                         </div>
                     )}
-                    <Button onClick={() => reset()}>
+                    <Button onClick={reset}>
                         Try again
                     </Button>
                 </CardContent>
