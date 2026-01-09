@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, XCircle, Mail, Phone, ArrowLeft } from 'lucide-react';
 import { PerformanceChart } from '@/components/performance-chart';
 import { notFound, useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ type Enrollment = { id: string; batch?: string };
 export default function StudentProfilePage() {
   const params = useParams();
   const studentId = params.studentId as string;
-  
+  const { user: teacherUser } = useUser();
   const firestore = useFirestore();
 
   const studentQuery = useMemoFirebase(() => {
@@ -66,11 +66,15 @@ export default function StudentProfilePage() {
   }, [firestore, studentId]);
   const { data: testResults, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
   
-  // This query is just to get the batch name, it assumes a student is only in one enrollment with the current teacher
   const enrollmentQuery = useMemoFirebase(() => {
-    if(!firestore || !studentId) return null;
-    return query(collection(firestore, 'enrollments'), where('studentId', '==', studentId), where('status', '==', 'approved'))
-  }, [firestore, studentId]);
+    if(!firestore || !studentId || !teacherUser) return null;
+    return query(
+        collection(firestore, 'enrollments'), 
+        where('studentId', '==', studentId), 
+        where('teacherId', '==', teacherUser.uid),
+        where('status', '==', 'approved')
+    );
+  }, [firestore, studentId, teacherUser]);
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentQuery);
   const studentBatch = enrollments?.[0]?.batch;
 
