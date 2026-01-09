@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -33,7 +32,9 @@ export default function DashboardLayout({
   const getRole = (): Role => {
     if (pathname.startsWith('/dashboard/teacher')) return 'teacher';
     if (pathname.startsWith('/dashboard/student')) return 'student';
-    return 'student'; // default
+    // Default to student if no specific role path is matched.
+    // This handles the case of /dashboard redirecting page.
+    return 'student'; 
   };
 
   const role = getRole();
@@ -72,7 +73,7 @@ export default function DashboardLayout({
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="font-semibold text-sm">{getDisplayName()}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{role}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{role === 'teacher' ? 'Tutor' : 'Student'}</span>
                   </div>
                 </div>
               ) : (
