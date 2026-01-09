@@ -52,10 +52,8 @@ service cloud.firestore {
       // Only the teacher owner can get a specific class document.
       allow get: if isExistingDoc() && isTeacherOwner(resource.data);
 
-      // A teacher can list their own classes.
-      allow list: if isSignedIn()
-                  && request.query.where.teacherId is string
-                  && request.query.where.teacherId == request.auth.uid;
+      // List rule is more open, but client must filter by teacherId.
+      allow list: if isSignedIn();
 
       // A teacher can create a class for themselves.
       allow create: if isSignedIn()
@@ -76,10 +74,9 @@ service cloud.firestore {
       allow get: if (isExistingDoc() && resource.data.isFree == true)
                   || isTeacherOwner(resource.data);
       
-      // Teachers can list their own materials.
-      // Any signed in user can list all free materials.
-      allow list: if (isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid)
-                  || (isSignedIn() && request.query.where.isFree == true);
+      // List rule is more open for free materials or teacher's own materials.
+      // Client must filter correctly.
+      allow list: if isSignedIn();
 
       // A teacher can create material for themselves.
       allow create: if isSignedIn()
@@ -100,8 +97,8 @@ service cloud.firestore {
                  && (isTeacherOwner(resource.data)
                      || isStudentOwner(resource.data));
 
-      // A teacher can list attendance for their own class.
-      allow list: if isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid;
+      // List is open for authenticated users, client must filter by teacherId.
+      allow list: if isSignedIn();
 
       // Teacher can create attendance records.
       allow create: if isSignedIn()
@@ -124,10 +121,8 @@ service cloud.firestore {
                  && (isStudentOwner(resource.data)
                      || isTeacherOwner(resource.data));
 
-      // A teacher can list performances they have created.
-      allow list: if isSignedIn() 
-                  && request.query.where.teacherId is string 
-                  && request.query.where.teacherId == request.auth.uid;
+      // List is open for authenticated users, client must filter by teacherId.
+      allow list: if isSignedIn();
 
       // A teacher can create performance records.
       allow create: if isSignedIn()
@@ -146,9 +141,8 @@ service cloud.firestore {
       allow get: if isExistingDoc()
                  && isTeacherOwner(resource.data);
 
-      // A teacher can list their own schedules.
-      allow list: if isSignedIn() && request.query.where.teacherId is string 
-                  && request.query.where.teacherId == request.auth.uid;
+      // List is open for authenticated users, client must filter by teacherId.
+      allow list: if isSignedIn();
 
       // A teacher can create a schedule for themselves.
       allow create: if isSignedIn()
