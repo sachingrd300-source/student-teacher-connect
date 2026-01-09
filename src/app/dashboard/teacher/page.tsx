@@ -174,9 +174,24 @@ export default function TeacherDashboardPage() {
 
   const enrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
+    return query(
+        collection(firestore, 'enrollments'), 
+        where('teacherId', '==', user.uid),
+        where('status', '==', 'pending')
+    );
   }, [firestore, user]);
-  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+  const { data: studentRequests, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
+  const approvedEnrollmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+        collection(firestore, 'enrollments'), 
+        where('teacherId', '==', user.uid),
+        where('status', '==', 'approved')
+    );
+  }, [firestore, user]);
+  const { data: approvedEnrollments, isLoading: isLoadingApproved } = useCollection<Enrollment>(approvedEnrollmentsQuery);
+
 
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
@@ -185,12 +200,11 @@ export default function TeacherDashboardPage() {
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
 
-  const studentRequests = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
   const enrolledStudentsCount = useMemo(() => {
-    if (!enrollments) return 0;
-    const uniqueStudents = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.studentId));
+    if (!approvedEnrollments) return 0;
+    const uniqueStudents = new Set(approvedEnrollments.map(e => e.studentId));
     return uniqueStudents.size;
-  }, [enrollments]);
+  }, [approvedEnrollments]);
 
   const handleCreateClass = () => {
     if(!newClassData.subject || !newClassData.classLevel || !firestore || !user) {
@@ -246,7 +260,7 @@ export default function TeacherDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoadingEnrollments ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudentsCount}</div>}
+            {isLoadingApproved ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrolledStudentsCount}</div>}
             <p className="text-xs text-muted-foreground">Total unique students</p>
           </CardContent>
         </Card>
@@ -394,7 +408,7 @@ export default function TeacherDashboardPage() {
                         </div>
                        </TableCell>
                       <TableCell className="text-right">
-                         {enrollments?.filter(e => e.classId === cls.id && e.status === 'approved').length}
+                         {approvedEnrollments?.filter(e => e.classId === cls.id).length}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -409,4 +423,3 @@ export default function TeacherDashboardPage() {
   );
 }
 
-    
