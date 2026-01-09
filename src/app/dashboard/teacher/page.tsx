@@ -178,7 +178,7 @@ export default function TeacherDashboardPage() {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
-  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+  const { data: enrollments, isLoading: isLoadingEnrollments, error } = useCollection<Enrollment>(enrollmentsQuery);
 
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
@@ -189,7 +189,8 @@ export default function TeacherDashboardPage() {
 
   const studentRequests = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
   const enrolledStudentsCount = useMemo(() => {
-    const uniqueStudents = new Set(enrollments?.filter(e => e.status === 'approved').map(e => e.studentId));
+    if (!enrollments) return 0;
+    const uniqueStudents = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.studentId));
     return uniqueStudents.size;
   }, [enrollments]);
 

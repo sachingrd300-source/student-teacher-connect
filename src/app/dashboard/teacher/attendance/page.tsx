@@ -113,10 +113,6 @@ export default function AttendancePage() {
     }, [firestore, user, selectedClassId, toast]);
 
 
-    const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
-        setAttendance(prev => ({ ...prev, [studentId]: isPresent }));
-    };
-
     const handleSaveAttendance = async () => {
         if (!selectedClassId || !selectedDate || !firestore || !user || !students) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and class.' });
