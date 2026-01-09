@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -12,7 +13,7 @@ import {
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpenCheck, CalendarDays, BarChart3, User, Clock } from 'lucide-react';
+import { ArrowRight, User, Clock, CheckCircle } from 'lucide-react';
 import {
   useUser,
   useFirestore,
@@ -21,107 +22,59 @@ import {
   useDoc,
 } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, orderBy, limit, doc } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 
 type Enrollment = {
   id: string;
   teacherId: string;
   studentId: string;
   status: 'pending' | 'approved' | 'denied';
+  teacherName?: string;
+  teacherAvatar?: string;
 };
 
 type TeacherProfile = {
     id: string;
     name: string;
     avatarUrl?: string;
-    subjects?: string[];
 };
 
-type StudyMaterial = { id: string; title: string; subject: string; type: string; };
-type ClassSchedule = { id: string; topic: string; date: { toDate: () => Date }; time: string; };
-type Performance = { id: string; testName: string; marks: number; maxMarks: number; };
 
-function TeacherUpdateCard({ teacherId }: { teacherId: string }) {
+function ApprovedTeacherCard({ enrollment }: { enrollment: Enrollment }) {
     const firestore = useFirestore();
-    
-    const teacherQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', teacherId) : null, [firestore, teacherId]);
+    const teacherQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', enrollment.teacherId) : null, [firestore, enrollment.teacherId]);
     const { data: teacher, isLoading: isLoadingTeacher } = useDoc<TeacherProfile>(teacherQuery);
-    
-    const materialQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'studyMaterials'), where('teacherId', '==', teacherId), orderBy('createdAt', 'desc'), limit(1)) : null, [firestore, teacherId]);
-    const { data: materials } = useCollection<StudyMaterial>(materialQuery);
-    const latestMaterial = materials?.[0];
 
-    const scheduleQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'classSchedules'), where('teacherId', '==', teacherId), where('date', '>=', new Date()), orderBy('date', 'asc'), limit(1)) : null, [firestore, teacherId]);
-    const { data: schedules } = useCollection<ClassSchedule>(scheduleQuery);
-    const upcomingClass = schedules?.[0];
-    
-    const performanceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'performances'), where('teacherId', '==', teacherId), orderBy('date', 'desc'), limit(1)) : null, [firestore, teacherId]);
-    const { data: performances } = useCollection<Performance>(performanceQuery);
-    const recentScore = performances?.[0];
-
-    if(isLoadingTeacher) {
-        return <Skeleton className="h-64 w-full" />
+    if (isLoadingTeacher) {
+        return <Skeleton className="h-24 w-full" />;
     }
-    
-    if(!teacher) {
-        return null; // Or some error state
+
+    if (!teacher) {
+        return null;
     }
 
     return (
         <Card className="hover:shadow-lg transition-shadow duration-300">
-            <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar className="h-16 w-16">
-                    <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                    <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <CardTitle className="text-2xl font-headline">{teacher.name}</CardTitle>
-                    {teacher.subjects && (
-                      <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary">{teacher.subjects?.join(', ')}</Badge>
-                      </div>
-                    )}
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <CardTitle className="text-xl font-headline">{teacher.name}</CardTitle>
+                        <CardDescription>Status: <span className="text-primary font-semibold">Connected</span></CardDescription>
+                    </div>
                 </div>
-            </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-3">
-               <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center gap-2 text-muted-foreground"><BookOpenCheck className="h-5 w-5" />Latest Material</h4>
-                    {latestMaterial ? (
-                        <div className="p-3 rounded-md bg-muted/50">
-                          <p className="font-medium truncate">{latestMaterial.title}</p>
-                          <p className="text-sm text-muted-foreground">{latestMaterial.subject} - {latestMaterial.type}</p>
-                        </div>
-                    ) : <p className="text-sm text-muted-foreground">No new materials.</p>}
-               </div>
-               <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center gap-2 text-muted-foreground"><CalendarDays className="h-5 w-5" />Upcoming Class</h4>
-                     {upcomingClass ? (
-                        <div className="p-3 rounded-md bg-muted/50">
-                          <p className="font-medium truncate">{upcomingClass.topic}</p>
-                          <p className="text-sm text-muted-foreground">{upcomingClass.date.toDate().toLocaleDateString()} at {upcomingClass.time}</p>
-                        </div>
-                    ) : <p className="text-sm text-muted-foreground">No classes scheduled.</p>}
-               </div>
-               <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center gap-2 text-muted-foreground"><BarChart3 className="h-5 w-5" />Recent Score</h4>
-                     {recentScore ? (
-                        <div className="p-3 rounded-md bg-muted/50">
-                          <p className="font-medium truncate">{recentScore.testName}</p>
-                          <p className="text-sm text-muted-foreground">Score: <span className="font-bold">{recentScore.marks}/{recentScore.maxMarks}</span></p>
-                        </div>
-                    ) : <p className="text-sm text-muted-foreground">No recent scores.</p>}
-               </div>
-            </CardContent>
-            <CardFooter>
-                <Button asChild className="w-full sm:w-auto ml-auto">
-                    <Link href={`/dashboard/student/teacher/${teacherId}`}>View All Updates <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                 <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/student/teacher/${enrollment.teacherId}`}>View Updates <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-            </CardFooter>
+            </CardHeader>
         </Card>
     );
 }
+
 
 export default function StudentDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -145,8 +98,8 @@ export default function StudentDashboardPage() {
     return (
         <div className="space-y-6">
             <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
         </div>
     )
   }
@@ -167,16 +120,13 @@ export default function StudentDashboardPage() {
       {user && (
         <div className="space-y-6">
             {approvedEnrollments.length > 0 && (
-                 <div className="flex items-center justify-between">
+                 <div className="space-y-4">
                     <h2 className="text-2xl font-semibold">My Teachers</h2>
+                    {approvedEnrollments.map(enrollment => (
+                        <ApprovedTeacherCard key={enrollment.id} enrollment={enrollment} />
+                    ))}
                 </div>
             )}
-           
-            <div className="grid gap-6 lg:grid-cols-1">
-                {approvedEnrollments.map(enrollment => (
-                    <TeacherUpdateCard key={enrollment.id} teacherId={enrollment.teacherId} />
-                ))}
-            </div>
 
             {pendingEnrollments.length > 0 && (
                 <Card>
@@ -228,5 +178,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    
