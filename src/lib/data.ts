@@ -76,8 +76,3 @@ export const studentData = {
   attendanceRecords: teacherData.attendanceRecords,
   schedule: teacherData.schedule,
 };
-
-export const parentData = {
-    name: 'Mr. Johnson',
-    avatarUrl: 'https://picsum.photos/seed/parent-avatar/100/100',
-};

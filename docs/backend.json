@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user in the EduConnect Pro application. Could be a teacher, student, or parent.",
+      "description": "Represents a user in the EduConnect Pro application. Could be a teacher or student.",
       "properties": {
         "id": {
           "type": "string",
@@ -13,7 +13,7 @@
         },
         "role": {
           "type": "string",
-          "description": "The role of the user (tutor, student, parent)."
+          "description": "The role of the user (tutor, student)."
         },
         "name": {
           "type": "string",
@@ -146,7 +146,7 @@
       "schema": {
         "$ref": "#/entities/User"
       },
-      "description": "Stores public user profiles (tutors, students, parents)."
+      "description": "Stores public user profiles (tutors, students)."
     },
     "/classes/{classId}": {
       "schema": {

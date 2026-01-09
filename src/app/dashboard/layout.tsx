@@ -14,14 +14,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { DashboardNav } from '@/components/dashboard-nav';
-import { teacherData, studentData, parentData } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, User } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Role = 'teacher' | 'student' | 'parent';
+type Role = 'teacher' | 'student';
 
 export default function DashboardLayout({
   children,
@@ -34,7 +33,6 @@ export default function DashboardLayout({
   const getRole = (): Role => {
     if (pathname.startsWith('/dashboard/teacher')) return 'teacher';
     if (pathname.startsWith('/dashboard/student')) return 'student';
-    if (pathname.startsWith('/dashboard/parent')) return 'parent';
     return 'student'; // default
   };
 
@@ -43,59 +41,55 @@ export default function DashboardLayout({
   const getDisplayName = () => user?.displayName || user?.email?.split('@')[0] || 'User';
   const getAvatarFallback = () => (user?.displayName || user?.email || 'U').charAt(0).toUpperCase();
 
-  // The parent dashboard is a special case that doesn't need a sidebar nav
-  const showSidebar = role !== 'parent';
-
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
-        {showSidebar && (
-            <Sidebar>
-            <div className="flex flex-col h-full">
-                <SidebarHeader className="p-4 border-b">
-                <Link href="/" className="flex items-center gap-2">
-                    <Icons.logo className="h-6 w-6 text-primary" />
-                    <h1 className="text-xl font-bold font-headline">EduConnect Pro</h1>
-                </Link>
-                </SidebarHeader>
-                <SidebarContent className="flex-1 overflow-y-auto">
-                <DashboardNav role={role} />
-                </SidebarContent>
-                <div className="p-4 border-t">
-                {isUserLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex flex-col gap-1">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
+        <Sidebar>
+          <div className="flex flex-col h-full">
+            <SidebarHeader className="p-4 border-b">
+              <Link href="/" className="flex items-center gap-2">
+                <Icons.logo className="h-6 w-6 text-primary" />
+                <h1 className="text-xl font-bold font-headline">EduConnect Pro</h1>
+              </Link>
+            </SidebarHeader>
+            <SidebarContent className="flex-1 overflow-y-auto">
+              <DashboardNav role={role} />
+            </SidebarContent>
+            <div className="p-4 border-t">
+              {isUserLoading ? (
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex flex-col gap-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
-                ) : user ? (
-                  <div className="flex items-center gap-3">
-                      <Avatar>
-                      <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
-                      <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                      <span className="font-semibold text-sm">{getDisplayName()}</span>
-                      <span className="text-xs text-muted-foreground capitalize">{role}</span>
-                      </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback><User /></AvatarFallback>
-                    </Avatar>
-                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm">Not logged in</span>
-                    </div>
-                  </div>
-                )}
                 </div>
+              ) : user ? (
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
+                    <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm">{getDisplayName()}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{role}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback>
+                      <User />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm">Not logged in</span>
+                  </div>
+                </div>
+              )}
             </div>
-            </Sidebar>
-        )}
+          </div>
+        </Sidebar>
         <SidebarInset>
           <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b">
             <div className="container mx-auto flex h-16 items-center justify-between px-6">
@@ -118,16 +112,16 @@ export default function DashboardLayout({
                     <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
                   </Avatar>
                 ) : (
-                   <Avatar>
-                      <AvatarFallback><User /></AvatarFallback>
-                    </Avatar>
+                  <Avatar>
+                    <AvatarFallback>
+                      <User />
+                    </AvatarFallback>
+                  </Avatar>
                 )}
               </div>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6 lg:p-8">
-            {children}
-          </main>
+          <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>

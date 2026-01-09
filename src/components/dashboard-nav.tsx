@@ -15,7 +15,6 @@ import {
   BarChart3,
   Users2,
   CalendarDays,
-  Shield,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -27,7 +26,7 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { useAuth } from '@/firebase';
 
-type Role = 'teacher' | 'student' | 'parent';
+type Role = 'teacher' | 'student';
 
 const navItems = {
   teacher: [
@@ -40,16 +39,15 @@ const navItems = {
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
   ],
   student: [
+    { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },
     { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
   ],
-  parent: [], // Parent dashboard has no sidebar navigation
 };
 
 const roleIcons = {
   teacher: <User className="h-5 w-5" />,
   student: <BookOpenCheck className="h-5 w-5" />,
-  parent: <Shield className="h-5 w-5" />,
 };
 
 export function DashboardNav({ role }: { role: Role }) {
@@ -64,18 +62,15 @@ export function DashboardNav({ role }: { role: Role }) {
   }, []);
 
   const handleLogout = () => {
-    auth.signOut();
+    if (auth) {
+      auth.signOut();
+    }
     router.push('/');
   };
 
-  if (role === 'parent') {
-    return null; // No navigation for parents in the sidebar
-  }
-
-
   return (
     <nav className="flex flex-col gap-2 p-4">
-       {isClient ? (
+      {isClient ? (
         <Collapsible defaultOpen={true} key={role}>
           <CollapsibleTrigger
             className={cn(
@@ -113,7 +108,6 @@ export function DashboardNav({ role }: { role: Role }) {
           </div>
         </div>
       )}
-
 
       <div className="mt-auto flex flex-col gap-1 pt-4 border-t">
         <button

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { User, Shield, GraduationCap } from 'lucide-react';
+import { User, GraduationCap } from 'lucide-react';
 
 export default function RoleSelectionPage() {
   const [selectedRole, setSelectedRole] = useState<string>('student');
@@ -18,9 +18,6 @@ export default function RoleSelectionPage() {
       router.push('/login');
     } else if (selectedRole === 'student') {
         router.push('/login-student');
-    }
-     else if (selectedRole === 'parent') {
-        router.push('/dashboard/parent');
     }
      else {
       router.push('/dashboard');
@@ -42,14 +39,6 @@ export default function RoleSelectionPage() {
               <div>
                 <h3 className="font-semibold">Student</h3>
                 <p className="text-sm text-muted-foreground">Access materials and track progress.</p>
-              </div>
-            </Label>
-             <Label htmlFor="parent" className="flex items-center gap-4 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
-              <RadioGroupItem value="parent" id="parent" className="sr-only" />
-              <Shield className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold">Parent</h3>
-                <p className="text-sm text-muted-foreground">Monitor your child's journey.</p>
               </div>
             </Label>
              <Label htmlFor="tutor" className="flex items-center gap-4 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
