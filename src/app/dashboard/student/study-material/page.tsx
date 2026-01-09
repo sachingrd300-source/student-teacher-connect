@@ -25,14 +25,18 @@ import {
   Download,
   BookOpenCheck,
 } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+
 
 const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
   DPP: <ClipboardList className="h-5 w-5 text-orange-500" />,
-  Test: <Pencil className="h-5 w-5 text-purple-500" />,
+  "Question Bank": <FileText className="h-5 w-5 text-indigo-500" />,
+  "Homework": <Pencil className="h-5 w-5 text-yellow-500" />,
+  "Test Paper": <Pencil className="h-5 w-5 text-purple-500" />,
   Solution: <CheckCircle className="h-5 w-5 text-green-500" />,
 };
 
@@ -43,17 +47,45 @@ type StudyMaterial = {
     type: string;
     createdAt: { toDate: () => Date };
     isFree: boolean;
+    teacherId: string;
+}
+
+type Enrollment = {
+  teacherId: string;
 }
 
 export default function StudyMaterialPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
+
+  const enrollmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid), where('status', '==', 'approved'));
+  }, [firestore, user]);
+
+  const { data: enrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
+  const teacherIds = useMemo(() => enrollments?.map(e => e.teacherId) || [], [enrollments]);
 
   const materialsQuery = useMemoFirebase(() => {
-    if(!firestore) return null;
-    return query(collection(firestore, 'studyMaterials'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+    if(!firestore || teacherIds.length === 0) return null;
+    return query(collection(firestore, 'studyMaterials'), where('teacherId', 'in', teacherIds), orderBy('createdAt', 'desc'));
+  }, [firestore, teacherIds]);
 
   const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
+  
+  const freeMaterialsQuery = useMemoFirebase(() => {
+    if(!firestore) return null;
+    return query(collection(firestore, 'studyMaterials'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: freeStudyMaterials, isLoading: isLoadingFree } = useCollection<StudyMaterial>(freeMaterialsQuery);
+  
+  const allMaterials = useMemo(() => {
+    const combined = [...(studyMaterials || []), ...(freeStudyMaterials || [])];
+    const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+    return unique.sort((a,b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+  }, [studyMaterials, freeStudyMaterials])
 
   return (
     <div className="space-y-6">
@@ -64,7 +96,7 @@ export default function StudyMaterialPage() {
         <Card className="shadow-lg">
         <CardHeader>
             <CardTitle>All Study Materials</CardTitle>
-            <CardDescription>Browse and download notes, DPPs, tests, and more from your teacher.</CardDescription>
+            <CardDescription>Browse materials from your teachers and public resources.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -73,23 +105,25 @@ export default function StudyMaterialPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Subject</TableHead>
+                    <TableHead>Access</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {isLoading && Array.from({ length: 5 }).map((_, i) => (
+                {(isLoading || isLoadingFree) && Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell>
+                        <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                     </TableRow>
                 ))}
-                {studyMaterials?.map((material) => (
+                {allMaterials.map((material) => (
                     <TableRow key={material.id}>
-                    <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
+                    <TableCell className="font-medium">{materialIcons[material.type] || <FileText className="h-5 w-5 text-gray-500" />}</TableCell>
                     <TableCell>
                         <div className="font-medium">{material.title}</div>
                         <div className="text-sm text-muted-foreground">{material.createdAt.toDate().toLocaleDateString()}</div>
                     </TableCell>
-                    <TableCell><Badge variant={material.isFree ? "default" : "secondary"} className={material.isFree ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
+                    <TableCell><Badge variant={"outline"}>{material.subject}</Badge></TableCell>
+                    <TableCell><Badge variant={material.isFree ? "default" : "secondary"}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
                     <TableCell className="text-right">
                         <Button variant="ghost" size="icon">
                         <Download className="h-4 w-4" />
@@ -99,7 +133,7 @@ export default function StudyMaterialPage() {
                 ))}
                 </TableBody>
             </Table>
-            {!isLoading && studyMaterials?.length === 0 && (
+            {!(isLoading || isLoadingFree) && allMaterials.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">No study materials found.</p>
             )}
         </CardContent>

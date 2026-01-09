@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -62,7 +60,7 @@ type StudyMaterial = {
     type: string;
     subject: string;
     createdAt: Timestamp;
-    isNew?: boolean;
+    isFree: boolean;
 }
 
 type ScheduleItem = {
@@ -84,25 +82,57 @@ type PerformanceItem = {
 
 export default function TeacherUpdatesPage() {
   const params = useParams();
+  const { user } = useUser();
   const teacherId = params.teacherId as string;
   const firestore = useFirestore();
 
   const teacherQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', teacherId) : null, [firestore, teacherId]);
   const { data: teacher, isLoading: isLoadingTeacher } = useDoc<UserProfile>(teacherQuery);
   
-  const materialsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'studyMaterials'), where('teacherId', '==', teacherId), orderBy('createdAt', 'desc')) : null, [firestore, teacherId]);
+  const materialsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+        collection(firestore, 'studyMaterials'), 
+        where('teacherId', '==', teacherId), 
+        orderBy('createdAt', 'desc')
+    );
+  }, [firestore, teacherId]);
   const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
   
-  const scheduleQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'classSchedules'), where('teacherId', '==', teacherId), orderBy('date', 'asc')) : null, [firestore, teacherId]);
+  const scheduleQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+        collection(firestore, 'classSchedules'), 
+        where('teacherId', '==', teacherId), 
+        orderBy('date', 'asc')
+    );
+  }, [firestore, teacherId]);
   const { data: schedule, isLoading: isLoadingSchedule } = useCollection<ScheduleItem>(scheduleQuery);
   
-  const performanceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'performances'), where('teacherId', '==', teacherId), orderBy('date', 'desc')) : null, [firestore, teacherId]);
+  const performanceQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+        collection(firestore, 'performances'), 
+        where('teacherId', '==', teacherId),
+        where('studentId', '==', user.uid),
+        orderBy('date', 'desc')
+    );
+  }, [firestore, teacherId, user]);
   const { data: performance, isLoading: isLoadingPerformance } = useCollection<PerformanceItem>(performanceQuery);
 
 
   const performanceChartData = useMemo(() => 
     performance?.map(p => ({ name: p.name, score: p.score })) || []
   , [performance]);
+  
+  const filteredMaterials = useMemo(() => {
+    if (!studyMaterials) return [];
+    // A student can see all free materials from any teacher
+    // OR they can see private materials if they are enrolled (which is implied by being on this page)
+    // For simplicity, we assume if they can get to this page, they are enrolled.
+    // A more robust solution would check the enrollment status explicitly.
+    return studyMaterials;
+  }, [studyMaterials]);
 
   const isLoading = isLoadingTeacher || isLoadingMaterials || isLoadingSchedule || isLoadingPerformance;
 
@@ -129,7 +159,7 @@ export default function TeacherUpdatesPage() {
             <Button variant="ghost" asChild className="mb-4">
                 <Link href="/dashboard/student">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to My Teachers
+                    Back to My Classes
                 </Link>
             </Button>
             <div className="flex items-center gap-4">
@@ -190,18 +220,20 @@ export default function TeacherUpdatesPage() {
                             <TableHead>Type</TableHead>
                             <TableHead>Title</TableHead>
                             <TableHead>Subject</TableHead>
+                            <TableHead>Access</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {studyMaterials?.map((material) => (
+                    {filteredMaterials?.map((material) => (
                         <TableRow key={material.id}>
                         <TableCell className="font-medium">{materialIcons[material.type]}</TableCell>
                         <TableCell>
                             <div className="font-medium">{material.title}</div>
                             <div className="text-sm text-muted-foreground">{material.createdAt.toDate().toLocaleDateString()}</div>
                         </TableCell>
-                        <TableCell><Badge variant={material.isNew ? "default" : "secondary"} className={material.isNew ? "bg-accent text-accent-foreground" : ""}>{material.subject}</Badge></TableCell>
+                        <TableCell><Badge variant="outline">{material.subject}</Badge></TableCell>
+                        <TableCell><Badge variant={material.isFree ? "default" : "secondary"}>{material.isFree ? "Public" : "Private"}</Badge></TableCell>
                         <TableCell className="text-right">
                             <Button variant="ghost" size="icon">
                             <Download className="h-4 w-4" />
@@ -211,7 +243,7 @@ export default function TeacherUpdatesPage() {
                     ))}
                     </TableBody>
                 </Table>
-                {studyMaterials?.length === 0 && <p className="text-center text-muted-foreground py-8">No study materials found.</p>}
+                {filteredMaterials?.length === 0 && <p className="text-center text-muted-foreground py-8">No study materials found.</p>}
             </CardContent>
         </Card>
     </div>

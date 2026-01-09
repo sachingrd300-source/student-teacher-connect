@@ -18,25 +18,46 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, ClipboardList } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 
 type StudyMaterial = {
     id: string;
     title: string;
     subject: string;
     type: string;
+    teacherId: string;
     createdAt: { toDate: () => Date };
+}
+
+type Enrollment = {
+  teacherId: string;
 }
 
 export default function DailyPracticePage() {
   const firestore = useFirestore();
+  const { user } = useUser();
+
+  const enrollmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid), where('status', '==', 'approved'));
+  }, [firestore, user]);
+
+  const { data: enrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
+  const teacherIds = useMemo(() => enrollments?.map(e => e.teacherId) || [], [enrollments]);
 
   const dppQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'studyMaterials'), where('type', '==', 'DPP'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+    if (!firestore || teacherIds.length === 0) return null;
+    return query(
+      collection(firestore, 'studyMaterials'), 
+      where('type', '==', 'DPP'), 
+      where('teacherId', 'in', teacherIds),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, teacherIds]);
   
   const { data: dailyPracticePapers, isLoading } = useCollection<StudyMaterial>(dppQuery);
 
@@ -50,7 +71,7 @@ export default function DailyPracticePage() {
       <Card>
         <CardHeader>
           <CardTitle>Daily Practice Papers (DPPs)</CardTitle>
-          <CardDescription>Stay sharp with these daily exercises from your teacher.</CardDescription>
+          <CardDescription>Stay sharp with these daily exercises from your teachers.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -87,7 +108,7 @@ export default function DailyPracticePage() {
                 ))}
               </TableBody>
             </Table>
-            {!isLoading && dailyPracticePapers?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice papers available yet.</p>}
+            {!isLoading && dailyPracticePapers?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice papers available yet from your enrolled teachers.</p>}
         </CardContent>
       </Card>
     </div>

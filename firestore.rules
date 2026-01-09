@@ -31,6 +31,14 @@ service cloud.firestore {
         get(/databases/$(database)/documents/studyMaterials/$(submissionData.studyMaterialId)).data;
       return isTeacherOwner(material);
     }
+    
+    function isStudentEnrolled(teacherId) {
+      return exists(/databases/$(database)/documents/enrollments/{enrollmentId_unused}
+        where studentId == request.auth.uid
+        where teacherId == teacherId
+        where status == 'approved'
+      );
+    }
 
     /* ===============================
        USERS
@@ -72,10 +80,8 @@ service cloud.firestore {
 
       allow list: if isSignedIn()
                   && (
-                       (request.query.where.studentId is string
-                        && request.query.where.studentId == request.auth.uid)
-                    || (request.query.where.teacherId is string
-                        && request.query.where.teacherId == request.auth.uid)
+                       (request.query.where.studentId is string && request.query.where.studentId == request.auth.uid)
+                    || (request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid)
                   );
 
       allow create: if isSignedIn()
@@ -93,11 +99,18 @@ service cloud.firestore {
     =============================== */
 
     match /studyMaterials/{studyMaterialId} {
-      allow get: if (isExistingDoc()
-                     && resource.data.isFree == true)
+      allow get: if (isExistingDoc() && resource.data.isFree == true)
+                  || (isExistingDoc() && isSignedIn() && isStudentEnrolled(resource.data.teacherId))
                   || isTeacherOwner(resource.data);
 
-      allow list: if false; // 🔒 restricted listing
+      allow list: if isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid
+                  || isSignedIn() && request.query.where.isFree == true
+                  || isSignedIn() && request.query.where.teacherId is list && request.query.where.teacherId.size() > 0 && request.query.where.teacherId.hasAny(
+                        get(/databases/$(database)/documents/enrollments/{enrollmentId_unused}
+                            where studentId == request.auth.uid
+                            where status == 'approved'
+                        ).teacherId
+                      );
 
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
@@ -151,7 +164,11 @@ service cloud.firestore {
                  && (isStudentOwner(resource.data)
                      || isTeacherOwner(resource.data));
 
-      allow list: if false;
+      allow list: if isSignedIn() 
+                  && (
+                        request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid && request.query.where.studentId is string
+                     || request.query.where.studentId is string && request.query.where.studentId == request.auth.uid && request.query.where.teacherId is string
+                  );
 
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
@@ -187,7 +204,11 @@ service cloud.firestore {
       allow get: if isExistingDoc()
                  && isTeacherOwner(resource.data);
 
-      allow list: if false;
+      allow list: if isSignedIn() && request.query.where.teacherId is string 
+                  && (
+                       request.query.where.teacherId == request.auth.uid
+                    || isStudentEnrolled(request.query.where.teacherId)
+                  );
 
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);

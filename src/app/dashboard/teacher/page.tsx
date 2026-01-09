@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -67,7 +67,7 @@ type Class = {
     teacherId: string;
 }
 
-function StudentRequestRow({ enrollment }: { enrollment: Enrollment }) {
+function StudentRequestRow({ enrollment, onAction }: { enrollment: Enrollment, onAction: () => void }) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -79,6 +79,7 @@ function StudentRequestRow({ enrollment }: { enrollment: Enrollment }) {
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         await updateDoc(enrollmentRef, { status: 'approved' });
         toast({ title: 'Student Approved', description: `${student?.name} is now enrolled in the class.`});
+        onAction();
     };
 
     const handleDeny = async () => {
@@ -86,6 +87,7 @@ function StudentRequestRow({ enrollment }: { enrollment: Enrollment }) {
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         await updateDoc(enrollmentRef, { status: 'denied' });
         toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'});
+        onAction();
     };
     
     if(isLoading) {
@@ -142,6 +144,7 @@ export default function TeacherDashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const userProfileQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
@@ -157,14 +160,29 @@ export default function TeacherDashboardPage() {
         where('teacherId', '==', user.uid),
         where('status', '==', 'pending')
     );
-  }, [firestore, user]);
+  }, [firestore, user, refreshKey]);
   const { data: studentRequests, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
+  const approvedEnrollmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+        collection(firestore, 'enrollments'), 
+        where('teacherId', '==', user.uid),
+        where('status', '==', 'approved')
+    );
+  }, [firestore, user, refreshKey]);
+  const { data: approvedEnrollments, isLoading: isLoadingApproved } = useCollection<Enrollment>(approvedEnrollmentsQuery);
+
 
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
     return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
+
+  const handleRequestAction = () => {
+    setRefreshKey(prev => prev + 1);
+  }
 
   if (isLoadingProfile) {
     return <div className="space-y-4">
@@ -195,7 +213,7 @@ export default function TeacherDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">-</div>
+            {isLoadingApproved ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{approvedEnrollments?.length || 0}</div>}
             <p className="text-xs text-muted-foreground">Total unique students</p>
           </CardContent>
         </Card>
@@ -252,7 +270,7 @@ export default function TeacherDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {studentRequests.map((enrollment) => (
-                    <StudentRequestRow key={enrollment.id} enrollment={enrollment} />
+                    <StudentRequestRow key={enrollment.id} enrollment={enrollment} onAction={handleRequestAction} />
                   ))}
                 </TableBody>
               </Table>
