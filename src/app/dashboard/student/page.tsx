@@ -14,9 +14,11 @@ import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BookOpenCheck, ClipboardList, ShoppingCart, CalendarDays } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 export default function StudentDashboardPage() {
   const [teacherConnected, setTeacherConnected] = useState(false);
+  const { user, isUserLoading } = useUser();
 
   const handleConnectionSuccess = () => {
     setTeacherConnected(true);
@@ -24,11 +26,20 @@ export default function StudentDashboardPage() {
   
   const currentData = teacherConnected ? teacherData : studentData;
 
+  const quickAccessItems = [
+    { href: '/dashboard/student/schedule', icon: CalendarDays, title: 'Schedule', description: 'View upcoming classes.', requireAuth: true },
+    { href: '/dashboard/student/study-material', icon: BookOpenCheck, title: 'Study Material', description: 'Notes, videos, and more.' },
+    { href: '/dashboard/student/daily-practice', icon: ClipboardList, title: 'Daily Practice', description: 'DPPs and assignments.' },
+    { href: '/dashboard/student/shop', icon: ShoppingCart, title: 'Shop', description: 'Books and courses.' },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold font-headline">Welcome back, {studentData.name}!</h1>
-        {!teacherConnected && (
+        <h1 className="text-3xl font-bold font-headline">
+          {user ? `Welcome back, ${user.displayName || studentData.name}!` : 'Welcome!'}
+        </h1>
+        {user && !teacherConnected && (
             <Card className="w-full max-w-md">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg">Connect with a Teacher</CardTitle>
@@ -47,54 +58,28 @@ export default function StudentDashboardPage() {
           <CardDescription>Jump to your resources.</CardDescription>
         </CardHeader>
         <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/dashboard/student/schedule">
-            <Card className="hover:bg-muted/50 transition-colors h-full">
-              <CardHeader className="flex-row items-center gap-4">
-                <CalendarDays className="w-8 h-8 text-primary" />
-                <div>
-                  <CardTitle>Schedule</CardTitle>
-                  <CardDescription>View upcoming classes.</CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
-          <Link href="/dashboard/student/study-material">
-            <Card className="hover:bg-muted/50 transition-colors h-full">
-              <CardHeader className="flex-row items-center gap-4">
-                <BookOpenCheck className="w-8 h-8 text-primary" />
-                <div>
-                  <CardTitle>Study Material</CardTitle>
-                  <CardDescription>Notes, videos, and more.</CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
-          <Link href="/dashboard/student/daily-practice">
-            <Card className="hover:bg-muted/50 transition-colors h-full">
-              <CardHeader className="flex-row items-center gap-4">
-                <ClipboardList className="w-8 h-8 text-primary" />
-                <div>
-                  <CardTitle>Daily Practice</CardTitle>
-                  <CardDescription>DPPs and assignments.</CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
-          <Link href="/dashboard/student/shop">
-            <Card className="hover:bg-muted/50 transition-colors h-full">
-              <CardHeader className="flex-row items-center gap-4">
-                <ShoppingCart className="w-8 h-8 text-primary" />
-                <div>
-                  <CardTitle>Shop</CardTitle>
-                  <CardDescription>Books and courses.</CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
+          {quickAccessItems.map((item) => {
+            if (item.requireAuth && !user) {
+              return null;
+            }
+            return (
+              <Link href={item.href} key={item.href}>
+                <Card className="hover:bg-muted/50 transition-colors h-full">
+                  <CardHeader className="flex-row items-center gap-4">
+                    <item.icon className="w-8 h-8 text-primary" />
+                    <div>
+                      <CardTitle>{item.title}</CardTitle>
+                      <CardDescription>{item.description}</CardDescription>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </Link>
+            );
+          })}
         </CardContent>
        </Card>
 
-      {teacherConnected && (
+      {user && teacherConnected && (
         <Card>
           <CardHeader>
             <CardTitle>Teacher Connected!</CardTitle>
