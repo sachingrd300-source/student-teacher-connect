@@ -1,0 +1,194 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ===============================
+       Helper Functions
+    =============================== */
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    function isTeacherOwner(docData) {
+      return isSignedIn() && docData.teacherId == request.auth.uid;
+    }
+
+    function isStudentOwner(docData) {
+      return isSignedIn() && docData.studentId == request.auth.uid;
+    }
+
+    function isTeacherOfDppSubmission(submissionData) {
+      let material =
+        get(/databases/$(database)/documents/studyMaterials/$(submissionData.studyMaterialId)).data;
+      return isTeacherOwner(material);
+    }
+    
+    function isStudentEnrolled(teacherId) {
+       // This checks if an enrollment document exists where the requesting user is the student,
+       // for the specific teacher, and the status is 'approved'.
+       return exists(/databases/$(database)/documents/enrollments/{enrollmentId}
+         where studentId == request.auth.uid
+         where teacherId == teacherId
+         where status == 'approved'
+       );
+    }
+
+    /* ===============================
+       USERS
+    =============================== */
+
+    match /users/{userId} {
+      allow get, update: if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && request.resource.data.id == userId;
+      allow list, delete: if false;
+    }
+
+    /* ===============================
+       CLASSES
+    =============================== */
+
+    match /classes/{classId} {
+      // A student can get class info if they are enrolled with the teacher of that class.
+      allow get: if isSignedIn();
+
+      allow list: if isSignedIn()
+                  && request.query.where.teacherId is string
+                  && request.query.where.teacherId == request.auth.uid;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.teacherId == request.auth.uid;
+
+      allow update, delete: if isExistingDoc()
+                            && isTeacherOwner(resource.data);
+    }
+
+    /* ===============================
+       STUDY MATERIALS
+    =============================== */
+
+    match /studyMaterials/{studyMaterialId} {
+      // Anyone can get a free document.
+      // The teacher owner can get the document.
+      allow get: if (isExistingDoc() && resource.data.isFree == true)
+                  || isTeacherOwner(resource.data);
+      
+      // Teachers can list their own materials.
+      // Any signed in user can list all free materials.
+      allow list: if (isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid)
+                  || (isSignedIn() && request.query.where.isFree == true);
+
+
+      allow create: if isSignedIn()
+                    && isTeacherOwner(request.resource.data);
+
+      allow update, delete: if isExistingDoc()
+                            && isTeacherOwner(resource.data);
+    }
+
+    /* ===============================
+       ATTENDANCES
+    =============================== */
+
+    match /attendances/{attendanceId} {
+      allow get: if isExistingDoc()
+                 && (isTeacherOwner(resource.data)
+                     || isStudentOwner(resource.data));
+
+      allow list: if false;
+
+      allow create: if isSignedIn()
+                    && isTeacherOwner(request.resource.data);
+
+      allow update, delete: if isExistingDoc()
+                            && isTeacherOwner(resource.data);
+    }
+
+    /* ===============================
+       TESTS
+    =============================== */
+
+    match /tests/{testId} {
+      allow get: if isExistingDoc()
+                 && isTeacherOwner(resource.data);
+
+      allow list: if false;
+
+      allow create: if isSignedIn()
+                    && isTeacherOwner(request.resource.data);
+
+      allow update, delete: if isExistingDoc()
+                            && isTeacherOwner(resource.data);
+    }
+
+    /* ===============================
+       PERFORMANCES
+       (Schema MUST contain: studentId, teacherId)
+    =============================== */
+
+    match /performances/{performanceId} {
+      allow get: if isExistingDoc()
+                 && (isStudentOwner(resource.data)
+                     || isTeacherOwner(resource.data));
+
+      allow list: if isSignedIn() 
+                  && (
+                        (request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid && request.query.where.studentId is string)
+                     || (request.query.where.studentId is string && request.query.where.studentId == request.auth.uid && request.query.where.teacherId is string)
+                  );
+
+      allow create: if isSignedIn()
+                    && isTeacherOwner(request.resource.data);
+
+      allow update, delete: if false;
+    }
+
+    /* ===============================
+       DPP SUBMISSIONS
+    =============================== */
+
+    match /dPPSubmissions/{dPPSubmissionId} {
+      allow get, update: if isExistingDoc()
+                         && (
+                              isStudentOwner(resource.data)
+                           || isTeacherOfDppSubmission(resource.data)
+                         );
+
+      allow list: if false;
+
+      allow create: if isSignedIn()
+                    && isStudentOwner(request.resource.data);
+
+      allow delete: if isExistingDoc()
+                    && isStudentOwner(resource.data);
+    }
+
+    /* ===============================
+       CLASS SCHEDULES
+    =============================== */
+
+    match /classSchedules/{classScheduleId} {
+      allow get: if isExistingDoc()
+                 && (isTeacherOwner(resource.data) || resource.data.isPublic == true);
+
+      allow list: if (isSignedIn() && request.query.where.teacherId is string && request.query.where.teacherId == request.auth.uid)
+                  || (isSignedIn() && request.query.where.isPublic == true);
+
+      allow create: if isSignedIn()
+                    && isTeacherOwner(request.resource.data);
+
+      allow update, delete: if isExistingDoc()
+                            && isTeacherOwner(resource.data);
+    }
+
+  }
+}

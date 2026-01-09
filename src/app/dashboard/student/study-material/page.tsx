@@ -25,10 +25,9 @@ import {
   Download,
   BookOpenCheck,
 } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo } from 'react';
 
 
 const materialIcons: Record<string, JSX.Element> = {
@@ -50,46 +49,15 @@ type StudyMaterial = {
     teacherId: string;
 }
 
-type Enrollment = {
-  teacherId: string;
-}
-
 export default function StudyMaterialPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
 
-  const enrollmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid), where('status', '==', 'approved'));
-  }, [firestore, user]);
-
-  const { data: enrollments } = useCollection<Enrollment>(enrollmentsQuery);
-
-  // IMPORTANT: We can only query for one teacher at a time to satisfy security rules.
-  // We'll pick the first enrolled teacher for this page.
-  const firstTeacherId = useMemo(() => enrollments?.[0]?.teacherId, [enrollments]);
-
-  const materialsQuery = useMemoFirebase(() => {
-    if(!firestore || !firstTeacherId) return null;
-    return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', firstTeacherId), orderBy('createdAt', 'desc'));
-  }, [firestore, firstTeacherId]);
-
-  const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
-  
   const freeMaterialsQuery = useMemoFirebase(() => {
     if(!firestore) return null;
     return query(collection(firestore, 'studyMaterials'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: freeStudyMaterials, isLoading: isLoadingFree } = useCollection<StudyMaterial>(freeMaterialsQuery);
-  
-  const allMaterials = useMemo(() => {
-    const combined = [...(studyMaterials || []), ...(freeStudyMaterials || [])];
-    const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-    return unique.sort((a,b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
-  }, [studyMaterials, freeStudyMaterials])
-
-  const isLoading = isLoadingMaterials || isLoadingFree;
+  const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(freeMaterialsQuery);
 
   return (
     <div className="space-y-6">
@@ -99,8 +67,8 @@ export default function StudyMaterialPage() {
         </h1>
         <Card className="shadow-lg">
         <CardHeader>
-            <CardTitle>All Study Materials</CardTitle>
-            <CardDescription>Browse materials from your teachers and public resources.</CardDescription>
+            <CardTitle>All Public Study Materials</CardTitle>
+            <CardDescription>Browse materials from all our tutors.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -119,7 +87,7 @@ export default function StudyMaterialPage() {
                         <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                     </TableRow>
                 ))}
-                {allMaterials.map((material) => (
+                {studyMaterials?.map((material) => (
                     <TableRow key={material.id}>
                     <TableCell className="font-medium">{materialIcons[material.type] || <FileText className="h-5 w-5 text-gray-500" />}</TableCell>
                     <TableCell>
@@ -137,7 +105,7 @@ export default function StudyMaterialPage() {
                 ))}
                 </TableBody>
             </Table>
-            {!isLoading && allMaterials.length === 0 && (
+            {!isLoading && studyMaterials?.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">No study materials found.</p>
             )}
         </CardContent>

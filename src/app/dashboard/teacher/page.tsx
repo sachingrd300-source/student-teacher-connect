@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -18,11 +18,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Users,
-  Check,
-  X,
   UserCheck,
   Users2,
   DoorOpen,
@@ -39,7 +36,7 @@ import {
   useDoc,
   useMemoFirebase,
 } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { CreateClassDialog } from '@/components/create-class-dialog';
 
 type UserProfile = {
@@ -52,74 +49,12 @@ type UserProfile = {
   avatarUrl?: string;
 };
 
-type Enrollment = {
-    id: string;
-    studentId: string;
-    classId: string;
-    status: 'pending' | 'approved' | 'denied';
-};
-
 type Class = {
     id: string;
     subject: string;
     classLevel: string;
     classCode: string;
     teacherId: string;
-}
-
-function StudentRequestRow({ enrollment, onAction }: { enrollment: Enrollment, onAction: () => void }) {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-
-    const studentQuery = useMemoFirebase(() => firestore ? doc(firestore, 'users', enrollment.studentId) : null, [firestore, enrollment.studentId]);
-    const { data: student, isLoading } = useDoc<UserProfile>(studentQuery);
-
-    const handleApprove = async () => {
-        if (!firestore) return;
-        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        await updateDoc(enrollmentRef, { status: 'approved' });
-        toast({ title: 'Student Approved', description: `${student?.name} is now enrolled in the class.`});
-        onAction();
-    };
-
-    const handleDeny = async () => {
-        if (!firestore) return;
-        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        await updateDoc(enrollmentRef, { status: 'denied' });
-        toast({ variant: 'destructive', title: 'Request Denied', description: 'The enrollment request has been denied.'});
-        onAction();
-    };
-    
-    if(isLoading) {
-        return (
-            <TableRow>
-                <TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell>
-            </TableRow>
-        );
-    }
-
-    return (
-        <TableRow>
-            <TableCell className="font-medium flex items-center gap-3">
-            <Avatar>
-                <AvatarImage src={student?.avatarUrl} />
-                <AvatarFallback>{student?.name?.charAt(0) || 'S'}</AvatarFallback>
-            </Avatar>
-            {student?.name || 'Loading...'}
-            </TableCell>
-             <TableCell>
-                <Badge variant="outline">ClassId: ...{enrollment.classId.slice(-6)}</Badge>
-            </TableCell>
-            <TableCell className="text-right space-x-2">
-            <Button onClick={handleApprove} variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
-                <Check className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleDeny} variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700">
-                <X className="h-4 w-4" />
-            </Button>
-            </TableCell>
-        </TableRow>
-    )
 }
 
 function PendingVerificationCard() {
@@ -144,7 +79,6 @@ export default function TeacherDashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const userProfileQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
@@ -152,37 +86,11 @@ export default function TeacherDashboardPage() {
   }, [firestore, user]);
   const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
-
-  const enrollmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-        collection(firestore, 'enrollments'), 
-        where('teacherId', '==', user.uid),
-        where('status', '==', 'pending')
-    );
-  }, [firestore, user, refreshKey]);
-  const { data: studentRequests, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
-
-  const approvedEnrollmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-        collection(firestore, 'enrollments'), 
-        where('teacherId', '==', user.uid),
-        where('status', '==', 'approved')
-    );
-  }, [firestore, user, refreshKey]);
-  const { data: approvedEnrollments, isLoading: isLoadingApproved } = useCollection<Enrollment>(approvedEnrollmentsQuery);
-
-
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
     return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
-
-  const handleRequestAction = () => {
-    setRefreshKey(prev => prev + 1);
-  }
 
   if (isLoadingProfile) {
     return <div className="space-y-4">
@@ -209,26 +117,6 @@ export default function TeacherDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Enrolled Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingApproved ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{approvedEnrollments?.length || 0}</div>}
-            <p className="text-xs text-muted-foreground">Total unique students</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingEnrollments ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold text-accent">{studentRequests?.length || 0}</div>}
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Your Classes</CardTitle>
             <Users2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -239,46 +127,27 @@ export default function TeacherDashboardPage() {
         </Card>
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Profile Status</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold"><Badge variant="default">{userProfile?.status === 'approved' ? 'Approved' : 'Pending'}</Badge></div>
+            <p className="text-xs text-muted-foreground">Your tutor profile status</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Class Status</CardTitle>
             <DoorOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold"><Badge variant="default">Open</Badge></div>
-            <p className="text-xs text-muted-foreground">Your classes are open for enrollment</p>
+            <div className="text-xl font-bold"><Badge variant="secondary">Public</Badge></div>
+            <p className="text-xs text-muted-foreground">Your classes materials can be viewed by all students</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle>Enrollment Requests</CardTitle>
-                <CardDescription>Approve or deny new student requests.</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoadingEnrollments && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
-            {studentRequests && studentRequests.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {studentRequests.map((enrollment) => (
-                    <StudentRequestRow key={enrollment.id} enrollment={enrollment} onAction={handleRequestAction} />
-                  ))}
-                </TableBody>
-              </Table>
-            ) : !isLoadingEnrollments && (
-              <p className="text-sm text-center text-muted-foreground py-4">No pending requests.</p>
-            )}
-          </CardContent>
-        </Card>
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -291,9 +160,7 @@ export default function TeacherDashboardPage() {
               <Button variant="outline" asChild><Link href="/dashboard/teacher/schedule">Manage Schedule</Link></Button>
           </CardContent>
         </Card>
-      </div>
-
-       <Card>
+         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>My Classes</CardTitle>
@@ -309,7 +176,6 @@ export default function TeacherDashboardPage() {
                   <TableRow>
                     <TableHead>Class</TableHead>
                     <TableHead>Class Code</TableHead>
-                    <TableHead className="text-right">Enrolled</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -327,9 +193,6 @@ export default function TeacherDashboardPage() {
                             </Button>
                         </div>
                        </TableCell>
-                      <TableCell className="text-right">
-                         -
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -339,6 +202,7 @@ export default function TeacherDashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
     </div>
   );
 }
