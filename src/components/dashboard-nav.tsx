@@ -11,7 +11,6 @@ import {
   FileText,
   Users,
   LogOut,
-  ShoppingCart,
   ClipboardList,
   BarChart3,
   Users2,
@@ -26,6 +25,7 @@ import {
 import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
+import { useAuth } from '@/firebase';
 
 type Role = 'teacher' | 'student' | 'parent';
 
@@ -46,7 +46,6 @@ const navItems = {
     { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
     { href: '/dashboard/student/performance', label: 'Performance', icon: BarChart3 },
     { href: '/dashboard/student/passport', label: 'Learning Passport', icon: FileText },
-    { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
   ],
   parent: [], // Parent dashboard has no sidebar navigation
 };
@@ -60,6 +59,7 @@ const roleIcons = {
 export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
   const items = navItems[role] || [];
   const [isClient, setIsClient] = useState(false);
 
@@ -68,7 +68,7 @@ export function DashboardNav({ role }: { role: Role }) {
   }, []);
 
   const handleLogout = () => {
-    // In a real app, this would also call a Firebase sign-out method.
+    auth.signOut();
     router.push('/');
   };
 

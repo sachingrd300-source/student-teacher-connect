@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { UserCheck, BookOpen, Star, BadgeCheck } from 'lucide-react';
 import { LandingHeader } from '@/components/landing-header';
-import { tutorsData } from '@/lib/data';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
@@ -84,63 +83,17 @@ export default function Home() {
                     {feature.isStudent ? (
                         <>
                           <Button variant="outline" asChild>
-                            <Link href="/dashboard/student">Free Content</Link>
+                            <Link href="/dashboard/student/study-material">Free Content</Link>
                           </Button>
                           <Button asChild>
                             <Link href="/signup-student">My Dashboard</Link>
                           </Button>
                         </>
                     ) : (
-                      <Button variant="link" asChild className="text-primary">
-                        <Link href="/dashboard/teacher">Explore {feature.title} &rarr;</Link>
+                      <Button asChild>
+                        <Link href="/signup">Become a Tutor</Link>
                       </Button>
                     )}
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Find a Tutor Section */}
-        <section id="find-tutor" className="py-20 md:py-28 bg-background">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline">Find the Perfect Tutor</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">
-                Browse our community of verified and experienced educators.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {tutorsData.map((tutor) => (
-                <Card key={tutor.id} className="overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="p-0">
-                    <div className="relative h-48 w-full">
-                      <Image src={tutor.avatarUrl} alt={tutor.name} fill className="object-cover" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                        <h3 className="font-bold font-headline text-xl">{tutor.name}</h3>
-                        {tutor.isVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{tutor.qualification}</p>
-                     <div className="flex items-center gap-1 text-yellow-500 mt-2">
-                        <Star className="h-4 w-4 fill-current"/>
-                        <Star className="h-4 w-4 fill-current"/>
-                        <Star className="h-4 w-4 fill-current"/>
-                        <Star className="h-4 w-4 fill-current"/>
-                        <Star className="h-4 w-4 fill-current/50"/>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        {tutor.subjects.slice(0, 2).map(sub => <Badge key={sub} variant="secondary">{sub}</Badge>)}
-                        {tutor.subjects.length > 2 && <Badge variant="outline">+{tutor.subjects.length - 2} more</Badge>}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 bg-muted/50">
-                    <Button asChild className="w-full">
-                      <Link href={`/tutor/${tutor.id}`}>View Profile</Link>
-                    </Button>
                   </CardFooter>
                 </Card>
               ))}

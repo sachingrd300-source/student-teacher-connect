@@ -20,9 +20,7 @@ export function LandingHeader() {
             <span className="font-bold sm:inline-block font-headline text-lg">EduConnect Pro</span>
           </Link>
         </div>
-        <nav className="hidden md:flex flex-1 items-center space-x-6 text-sm font-medium">
-          <Link href="/students" className="text-foreground/60 transition-colors hover:text-foreground/80">For Students</Link>
-        </nav>
+        
         <div className="flex flex-1 items-center justify-end space-x-2">
           {!isUserLoading && (
             <>
@@ -58,7 +56,6 @@ export function LandingHeader() {
                     <span className="ml-2 font-bold font-headline text-lg">EduConnect Pro</span>
                 </div>
                 <nav className="flex flex-col gap-4 text-lg font-medium">
-                    <Link href="/students" className="text-foreground/60 hover:text-foreground">For Students</Link>
                     {!isUserLoading && !user && (
                       <Link href="/signup" className="text-foreground/60 hover:text-foreground">Become a Tutor</Link>
                     )}
