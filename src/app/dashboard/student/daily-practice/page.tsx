@@ -86,7 +86,7 @@ export default function DailyPracticePage() {
                     </TableCell>
                     <TableCell>{paper.createdAt.toDate().toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" disabled>
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </Button>

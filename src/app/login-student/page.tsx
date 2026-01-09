@@ -118,11 +118,6 @@ export default function StudentLoginPage() {
                 <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="pl-10"/>
               </div>
-               <div className="text-right">
-                <Link href="#" className="text-sm text-primary hover:underline">
-                    Forgot Password?
-                </Link>
-            </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

@@ -98,8 +98,8 @@ export default function StudyMaterialPage() {
                     <TableCell><Badge variant={"outline"}>{material.subject}</Badge></TableCell>
                     <TableCell><Badge variant={material.isFree ? "default" : "secondary"}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
                     <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                        <Download className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" disabled>
+                            <Download className="h-4 w-4" />
                         </Button>
                     </TableCell>
                     </TableRow>
