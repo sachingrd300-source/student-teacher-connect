@@ -2,7 +2,6 @@
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
       "description": "Represents a user in the EduConnect Pro application. Could be a teacher or student.",
@@ -61,18 +60,6 @@
         "experienceType": {
           "type": "string",
           "description": "For tutors, the type of their teaching experience (e.g., School, Online)."
-        },
-        "coachingName": {
-          "type": "string",
-          "description": "The name of the tutor's coaching center or institute."
-        },
-        "address": {
-          "type": "string",
-          "description": "The physical address or city of the tutor for location-based searching."
-        },
-        "whatsappNumber": {
-          "type": "string",
-          "description": "The tutor's WhatsApp number for students to connect."
         }
       },
       "required": [
@@ -165,6 +152,12 @@
         "$ref": "#/entities/Class"
       },
       "description": "Stores classes created by teachers."
+    },
+    "/enrollments/{enrollmentId}": {
+      "schema": {
+        "$ref": "#/entities/Enrollment"
+      },
+      "description": "Stores student enrollment requests for specific classes."
     }
   }
 }

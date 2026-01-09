@@ -10,9 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, Key, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignIn, useAuth, initiateGoogleSignIn, useFirestore } from '@/firebase'; // Using the non-blocking sign-in
-import { getAdditionalUserInfo, UserCredential } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { initiateEmailSignIn, useAuth, initiateGoogleSignIn } from '@/firebase';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -30,7 +28,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -69,7 +66,6 @@ export default function LoginPage() {
         router.push('/dashboard/teacher');
 
     } catch (error: any) {
-        // Don't show an error toast if the user closes the popup
         if (error.code === 'auth/popup-closed-by-user') {
             setGoogleLoading(false);
             return;
@@ -136,5 +132,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

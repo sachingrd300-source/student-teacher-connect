@@ -6,29 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
 import { LandingHeader } from '@/components/landing-header';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { User, GraduationCap, CheckCircle } from 'lucide-react';
-
-const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
 
 const features = [
     {
         icon: <User className="h-10 w-10 text-primary" />,
         title: 'For Students',
-        description: 'Access study materials, track your performance, and connect with your teachers seamlessly.',
+        description: 'Find the best tutors in your area, view their profiles, and connect with them instantly.',
         comingSoon: false,
     },
     {
         icon: <GraduationCap className="h-10 w-10 text-primary" />,
         title: 'For Teachers',
-        description: 'Manage classes, upload materials, take attendance, and monitor student progress all in one place.',
+        description: 'Showcase your expertise, manage your classes, and connect with students seeking your knowledge.',
         comingSoon: false,
     },
     {
         icon: <CheckCircle className="h-10 w-10 text-primary" />,
-        title: 'For Admins',
-        description: 'A comprehensive dashboard to manage tutors, students, and content across the platform.',
-        comingSoon: true,
+        title: 'Verified Tutors',
+        description: 'All tutors on our platform are manually verified to ensure quality and safety for our students.',
+        comingSoon: false,
     }
 ]
 
@@ -51,25 +48,23 @@ export default function LandingPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <Button asChild size="lg">
-                                <Link href="/login">Get Started</Link>
+                                <Link href="/login-student">I am a Student</Link>
                             </Button>
                             <Button asChild size="lg" variant="outline">
-                                <Link href="/signup">Become a Tutor</Link>
+                                <Link href="/login">I am a Tutor</Link>
                             </Button>
                         </div>
                     </div>
                     <div className="relative h-64 md:h-96 lg:h-[450px] rounded-xl shadow-2xl overflow-hidden border-4 border-primary/10">
-                        {heroImage && (
-                             <Image
-                                src={heroImage.imageUrl}
-                                alt={heroImage.description}
-                                fill
-                                style={{ objectFit: 'cover' }}
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                data-ai-hint={heroImage.imageHint}
-                                priority
-                            />
-                        )}
+                         <Image
+                            src="https://picsum.photos/seed/hero/1200/800"
+                            alt="A student learning on a tablet in a modern classroom setting."
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            data-ai-hint="education learning"
+                            priority
+                        />
                         <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent"></div>
                     </div>
                 </div>

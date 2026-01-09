@@ -1,25 +1,44 @@
+
 'use client';
 
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc } from 'firebase/firestore';
+
+type UserProfile = {
+  role: 'teacher' | 'student';
+}
 
 export default function DashboardRedirectPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
 
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
+  
   useEffect(() => {
-    if (!isUserLoading && user) {
-      // Logic to determine user role and redirect will be based on Firestore profile
-      // For now, we'll assume a simple redirect.
-      // A full implementation would fetch the user's profile and redirect based on the 'role' field.
-      // This is a placeholder for redirection logic.
-      router.push('/dashboard/student'); // Default redirect, can be improved with role data
-    } else if (!isUserLoading && !user) {
-      router.push('/login');
+    const isLoading = isUserLoading || isProfileLoading;
+    
+    if (!isLoading && user && userProfile) {
+      if (userProfile.role === 'teacher') {
+        router.push('/dashboard/teacher');
+      } else if (userProfile.role === 'student') {
+        router.push('/dashboard/student');
+      } else {
+        // Fallback or error for unknown role
+        router.push('/login');
+      }
+    } else if (!isLoading && !user) {
+      router.push('/');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

@@ -29,14 +29,14 @@ export function LandingHeader() {
                   <Link href="/dashboard">Go to Dashboard</Link>
                 </Button>
               ) : (
-                <>
+                <div className="hidden md:flex gap-2">
                   <Button variant="ghost" asChild>
-                    <Link href="/login">Login</Link>
+                    <Link href="/login-student">Student Login</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/signup">Become a Tutor</Link>
+                    <Link href="/login">Tutor Login / Sign Up</Link>
                   </Button>
-                </>
+                </div>
               )}
             </>
           )}
@@ -55,11 +55,6 @@ export function LandingHeader() {
                     <Icons.logo className="h-6 w-6 text-primary" />
                     <span className="ml-2 font-bold font-headline text-lg">EduConnect Pro</span>
                 </div>
-                <nav className="flex flex-col gap-4 text-lg font-medium">
-                    {!isUserLoading && !user && (
-                      <Link href="/signup" className="text-foreground/60 hover:text-foreground">Become a Tutor</Link>
-                    )}
-                </nav>
                 <div className="mt-auto flex flex-col gap-2">
                     {!isUserLoading && (
                       <>
@@ -68,9 +63,14 @@ export function LandingHeader() {
                               <Link href="/dashboard">Go to Dashboard</Link>
                            </Button>
                         ) : (
-                           <Button asChild>
-                              <Link href="/login">Login</Link>
-                           </Button>
+                           <>
+                             <Button asChild>
+                                <Link href="/login-student">Student Login</Link>
+                             </Button>
+                             <Button variant="outline" asChild>
+                               <Link href="/login">Tutor Login / Sign Up</Link>
+                             </Button>
+                           </>
                         )}
                       </>
                     )}

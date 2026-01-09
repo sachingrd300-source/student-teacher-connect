@@ -197,6 +197,10 @@ export default function SignUpPage() {
                         </Select>
                     </div>
                     <div className="space-y-2">
+                        <Label>Subjects you teach in this category</Label>
+                        <Input id="subjects" onChange={e => handleSelectChange('subjects', e.target.value)} placeholder="e.g. Algebra, Calculus (comma-separated)" />
+                    </div>
+                    <div className="space-y-2">
                         <Label>Class / Level</Label>
                         <div className="grid grid-cols-2 gap-2">
                             {classLevels.map(level => (
@@ -249,7 +253,8 @@ export default function SignUpPage() {
                         <p><strong>Name:</strong> {formData.name}</p>
                         <p><strong>Email:</strong> {formData.email}</p>
                         <p><strong>Mobile:</strong> {formData.mobileNumber}</p>
-                        <p><strong>Subjects:</strong> {formData.subjectCategory}</p>
+                        <p><strong>Subject Category:</strong> {formData.subjectCategory}</p>
+                        <p><strong>Subjects:</strong> {Array.isArray(formData.subjects) ? formData.subjects.join(', ') : formData.subjects}</p>
                          <p><strong>Classes:</strong> {formData.classLevels.join(', ')}</p>
                         <p><strong>Qualification:</strong> {formData.qualification}</p>
                         <p><strong>Experience:</strong> {formData.experience} ({formData.experienceType})</p>
@@ -275,5 +280,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    
