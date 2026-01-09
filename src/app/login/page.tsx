@@ -105,6 +105,7 @@ export default function LoginPage() {
         // Don't show an error toast if the user closes the popup
         if (error.code === 'auth/popup-closed-by-user') {
             console.log("Google Sign-In popup closed by user.");
+            setGoogleLoading(false);
             return;
         }
         console.error("Google Sign In Error:", error);
