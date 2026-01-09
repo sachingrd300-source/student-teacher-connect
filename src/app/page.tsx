@@ -84,10 +84,10 @@ export default function Home() {
                     {feature.isStudent ? (
                         <>
                           <Button variant="outline" asChild>
-                            <Link href="/dashboard/student/study-material">Free Content</Link>
+                            <Link href="/dashboard/student">Free Content</Link>
                           </Button>
                           <Button asChild>
-                            <Link href="/dashboard/student">My Dashboard</Link>
+                            <Link href="/signup-student">My Dashboard</Link>
                           </Button>
                         </>
                     ) : (
