@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, writeBatch, Timestamp, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, writeBatch, Timestamp, doc, getDocs, getDoc } from 'firebase/firestore';
 
 
 type StudentEnrollment = { id: string; studentName: string, studentId: string; };
@@ -58,7 +58,9 @@ export default function AttendancePage() {
 
     const batchesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid));
+        // This query is hypothetical. A 'batches' collection is not in the schema.
+        // Assuming classes are used as batches for now.
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
     
@@ -70,22 +72,23 @@ export default function AttendancePage() {
             }
             setIsLoadingStudents(true);
             try {
+                // Securely query enrollments for the selected class (batch) and teacher
                 const enrollmentsQuery = query(
                     collection(firestore, 'enrollments'), 
                     where('teacherId', '==', user.uid), 
-                    where('batchId', '==', selectedBatchId), 
+                    where('classId', '==', selectedBatchId), 
                     where('status', '==', 'approved')
                 );
 
                 const querySnapshot = await getDocs(enrollmentsQuery);
-                const studentEnrollments = querySnapshot.docs.map(d => ({...d.data(), id: d.id}));
+                const studentEnrollmentsData = querySnapshot.docs.map(d => ({...d.data(), id: d.id}));
 
-                const studentPromises = studentEnrollments.map(async (enrollment) => {
+                const studentPromises = studentEnrollmentsData.map(async (enrollment) => {
                     const studentDocRef = doc(firestore, 'users', enrollment.studentId);
-                    const studentDoc = await getDocs(query(collection(firestore, 'users'), where('id', '==', enrollment.studentId)));
+                    const studentDoc = await getDoc(studentDocRef);
 
-                    if (!studentDoc.empty) {
-                        const studentData = studentDoc.docs[0].data() as UserProfile;
+                    if (studentDoc.exists()) {
+                        const studentData = studentDoc.data() as UserProfile;
                         return { id: enrollment.id, studentId: enrollment.studentId, studentName: studentData.name };
                     }
                     return null;
@@ -178,7 +181,7 @@ export default function AttendancePage() {
                         </Popover>
                         <Select onValueChange={setSelectedBatchId} value={selectedBatchId}>
                             <SelectTrigger className="w-full sm:w-[280px]">
-                                <SelectValue placeholder="Select a batch" />
+                                <SelectValue placeholder="Select a class" />
                             </SelectTrigger>
                             <SelectContent>
                                 {isLoadingBatches && <SelectItem value="" disabled>Loading...</SelectItem>}
@@ -220,11 +223,11 @@ export default function AttendancePage() {
                                     </Button>
                                 </div>
                             )}
-                             {students?.length === 0 && !isLoadingStudents && <p className="text-center text-muted-foreground py-4">No students found in this batch.</p>}
+                             {students?.length === 0 && !isLoadingStudents && <p className="text-center text-muted-foreground py-4">No students found in this class.</p>}
                         </>
                     ) : (
                         <div className="text-center py-12 text-muted-foreground">
-                            <p>Please select a batch to view students.</p>
+                            <p>Please select a class to view students.</p>
                         </div>
                     )}
                 </CardContent>

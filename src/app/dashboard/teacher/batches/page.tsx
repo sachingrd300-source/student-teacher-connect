@@ -72,7 +72,9 @@ export default function BatchesPage() {
 
     const batchesQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
-        return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+        // This is a hypothetical collection. The current schema uses 'classes'
+        // Let's query 'classes' instead, assuming that's what 'batches' refers to.
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
     const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 
@@ -87,11 +89,12 @@ export default function BatchesPage() {
             teacherId: user.uid,
             createdAt: serverTimestamp(),
         };
-
-        const batchesCollection = collection(firestore, 'batches');
+        
+        // Sticking with 'classes' as the collection name based on schema
+        const batchesCollection = collection(firestore, 'classes');
         addDocumentNonBlocking(batchesCollection, newBatch);
 
-        toast({ title: 'Batch Created', description: `The batch "${newBatchName}" has been successfully created.`});
+        toast({ title: 'Class Created', description: `The class "${newBatchName}" has been successfully created.`});
         
         setNewBatchName('');
         setCreateBatchOpen(false);
@@ -99,9 +102,9 @@ export default function BatchesPage() {
 
     const handleDeleteBatch = (batchId: string) => {
         if(!firestore) return;
-        const batchRef = doc(firestore, 'batches', batchId);
+        const batchRef = doc(firestore, 'classes', batchId);
         deleteDocumentNonBlocking(batchRef);
-        toast({ title: 'Batch Deleted', description: 'The selected batch has been removed.' });
+        toast({ title: 'Class Deleted', description: 'The selected class has been removed.' });
     };
 
     return (
@@ -110,18 +113,18 @@ export default function BatchesPage() {
                 <div>
                     <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
                         <Users2 className="h-8 w-8"/>
-                        Manage Batches
+                        Manage Classes
                     </h1>
                     <p className="text-muted-foreground">Create, view, and manage your student groups.</p>
                 </div>
                 <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
                     <DialogTrigger asChild>
-                        <Button><PlusCircle className="mr-2 h-4 w-4"/> Create Batch</Button>
+                        <Button><PlusCircle className="mr-2 h-4 w-4"/> Create Class</Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>Create New Batch</DialogTitle>
-                            <DialogDescription>Enter a name for your new batch. You can assign students later.</DialogDescription>
+                            <DialogTitle>Create New Class</DialogTitle>
+                            <DialogDescription>Enter a name for your new class. You can assign students later.</DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -130,7 +133,7 @@ export default function BatchesPage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleCreateBatch}>Create Batch</Button>
+                            <Button onClick={handleCreateBatch}>Create Class</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -138,8 +141,8 @@ export default function BatchesPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Your Batches</CardTitle>
-                    <CardDescription>A list of all the student batches you have created.</CardDescription>
+                    <CardTitle>Your Classes</CardTitle>
+                    <CardDescription>A list of all the student classes you have created.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-12 mb-2 w-full" />)}
@@ -147,7 +150,7 @@ export default function BatchesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Batch Name</TableHead>
+                                    <TableHead>Class Name</TableHead>
                                     <TableHead>Created On</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -170,7 +173,7 @@ export default function BatchesPage() {
                                                         <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 !cursor-pointer">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                                Delete Batch
+                                                                Delete Class
                                                             </DropdownMenuItem>
                                                         </AlertDialogTrigger>
                                                     </DropdownMenuContent>
@@ -179,7 +182,7 @@ export default function BatchesPage() {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the batch.
+                                                            This action cannot be undone. This will permanently delete the class.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
@@ -194,11 +197,10 @@ export default function BatchesPage() {
                             </TableBody>
                         </Table>
                     ) : !isLoading && (
-                        <p className="text-sm text-center text-muted-foreground py-8">You haven't created any batches yet.</p>
+                        <p className="text-sm text-center text-muted-foreground py-8">You haven't created any classes yet.</p>
                     )}
                 </CardContent>
             </Card>
         </div>
     );
 }
-
