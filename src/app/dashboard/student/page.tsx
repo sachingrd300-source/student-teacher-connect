@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -8,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,11 @@ type TeacherProfile = {
 function ApprovedClassCard({ enrollment }: { enrollment: Enrollment }) {
   const firestore = useFirestore();
 
-  const classQuery = useMemoFirebase(() => firestore ? doc(firestore, 'classes', enrollment.classId) : null, [firestore, enrollment.classId]);
+  const classQuery = useMemoFirebase(() => {
+    if (!firestore || !enrollment.classId) return null;
+    return doc(firestore, 'classes', enrollment.classId);
+  }, [firestore, enrollment.classId]);
+  
   const { data: classInfo, isLoading: isLoadingClass } = useDoc<ClassInfo>(classQuery);
 
   const teacherQuery = useMemoFirebase(() => {
@@ -61,7 +65,16 @@ function ApprovedClassCard({ enrollment }: { enrollment: Enrollment }) {
   }
 
   if (!teacher || !classInfo) {
-    return null;
+    // This can happen if a class or teacher is deleted but enrollment isn't.
+    // Or if there was a permission issue fetching one of them.
+    return (
+        <Card className="border-destructive/50">
+            <CardHeader>
+                <CardTitle className="text-destructive text-lg">Error Loading Class</CardTitle>
+                <CardDescription>Could not load details for one of your enrollments. The class or teacher may no longer exist.</CardDescription>
+            </CardHeader>
+        </Card>
+    );
   }
 
   return (
@@ -206,7 +219,7 @@ export default function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/login">Log In / Sign Up</Link>
+              <Link href="/login-student">Log In / Sign Up</Link>
             </Button>
           </CardContent>
         </Card>
