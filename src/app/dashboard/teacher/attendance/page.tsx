@@ -112,6 +112,9 @@ export default function AttendancePage() {
         fetchStudentsForClass();
     }, [firestore, user, selectedClassId, toast]);
 
+    const handleAttendanceChange = (studentId: string, checked: boolean) => {
+        setAttendance(prev => ({...prev, [studentId]: checked}))
+    }
 
     const handleSaveAttendance = async () => {
         if (!selectedClassId || !selectedDate || !firestore || !user || !students) {
