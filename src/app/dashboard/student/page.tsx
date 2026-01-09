@@ -1,29 +1,29 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
+  CardFooter
 } from '@/components/ui/card';
-import { studentData, teacherData, tutorsData } from '@/lib/data';
 import { ConnectTeacherForm } from '@/components/connect-teacher-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpenCheck, CalendarDays, BarChart3, User, CheckCircle, Clock } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, CalendarDays, BarChart3, User, Clock } from 'lucide-react';
 import {
   useUser,
   useFirestore,
   useCollection,
   useMemoFirebase,
+  useDoc,
 } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, doc } from 'firebase/firestore';
 
 type Enrollment = {
   id: string;
@@ -35,9 +35,9 @@ type Enrollment = {
 type TeacherProfile = {
     id: string;
     name: string;
-    avatarUrl: string;
-    subjects: string[];
-}
+    avatarUrl?: string;
+    subjects?: string[];
+};
 
 type StudyMaterial = { id: string; title: string; subject: string; type: string; };
 type ClassSchedule = { id: string; topic: string; date: { toDate: () => Date }; time: string; };
@@ -78,9 +78,11 @@ function TeacherUpdateCard({ teacherId }: { teacherId: string }) {
                 </Avatar>
                 <div>
                     <CardTitle className="text-2xl font-headline">{teacher.name}</CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary">{teacher.subjects?.join(', ')}</Badge>
-                    </div>
+                    {teacher.subjects && (
+                      <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary">{teacher.subjects?.join(', ')}</Badge>
+                      </div>
+                    )}
                 </div>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-3">
@@ -226,3 +228,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    

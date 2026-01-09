@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -34,7 +34,6 @@ type StudentProfile = {
   email: string;
   mobileNumber?: string;
   avatarUrl?: string;
-  batch?: string;
 };
 
 type AttendanceRecord = { id: string; date: { toDate: () => Date }; isPresent: boolean };
@@ -96,7 +95,6 @@ export default function StudentProfilePage() {
     </div>;
   }
 
-  // After loading, if no student was found, show a not found page.
   if (!student) {
     notFound();
   }
@@ -116,7 +114,7 @@ export default function StudentProfilePage() {
                     <AvatarFallback className="text-3xl">{student?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <CardTitle className="text-4xl font-headline">{student?.name}</CardTitle>
-                <CardDescription className="text-base">{studentBatch ? <Badge variant="secondary">{studentBatch}</Badge> : 'No Batch Assigned'}</CardDescription>
+                {studentBatch && <CardDescription className="text-base"><Badge variant="secondary">{studentBatch}</Badge></CardDescription>}
             </CardHeader>
             <CardContent className="p-6 grid gap-4 md:grid-cols-2">
                 <div className="space-y-4">
@@ -195,3 +193,5 @@ export default function StudentProfilePage() {
     </div>
   );
 }
+
+    

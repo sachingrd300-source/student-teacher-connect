@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -30,13 +30,12 @@ import { BarChart3, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
-import { teacherData } from '@/lib/data';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
-type Student = { id: string; studentName: string; studentId: string; };
+type StudentEnrollment = { id: string; studentName: string; studentId: string; };
 type TestResult = { 
     id: string; 
     studentId: string;
@@ -61,14 +60,14 @@ export default function PerformancePage() {
     const [subject, setSubject] = useState('');
     const [marks, setMarks] = useState<number | ''>('');
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
+    const [teacherSubjects, setTeacherSubjects] = useState<string[]>([]);
 
-    const teacherSubjects = teacherData.subjects;
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'approved'));
     }, [firestore, user]);
-    const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
+    const { data: students, isLoading: isLoadingStudents } = useCollection<StudentEnrollment>(studentsQuery);
 
     const performanceQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -210,3 +209,5 @@ export default function PerformancePage() {
         </div>
     );
 }
+
+    

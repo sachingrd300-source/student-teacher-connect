@@ -31,13 +31,12 @@ import { ClipboardCheck, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { teacherData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, writeBatch, Timestamp, doc } from 'firebase/firestore';
 
 
-type Student = { id: string; studentName: string, studentId: string, batch?: string; };
+type StudentEnrollment = { id: string; studentName: string, studentId: string, batch?: string; };
 type Batch = { id: string; name: string; };
 
 export default function AttendancePage() {
@@ -61,7 +60,6 @@ export default function AttendancePage() {
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore || !user || !selectedBatchId) return null;
-        // This query needs to filter by teacherId as per security rules
         return query(
             collection(firestore, 'enrollments'), 
             where('teacherId', '==', user.uid), 
@@ -69,7 +67,7 @@ export default function AttendancePage() {
             where('status', '==', 'approved')
         );
     }, [firestore, user, selectedBatchId]);
-    const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
+    const { data: students, isLoading: isLoadingStudents } = useCollection<StudentEnrollment>(studentsQuery);
     
     useEffect(() => {
         if (students) {
@@ -94,8 +92,7 @@ export default function AttendancePage() {
         setIsSaving(true);
 
         const batch = writeBatch(firestore);
-        const presentCount = students.length;
-
+        
         students.forEach(student => {
             const isPresent = attendance[student.studentId] ?? false;
             const attendanceRef = doc(collection(firestore, 'attendances'));
@@ -203,3 +200,5 @@ export default function AttendancePage() {
         </div>
     );
 }
+
+    

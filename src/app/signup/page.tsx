@@ -11,8 +11,9 @@ import { Check, User, Briefcase, MapPin, Mail, Key } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useAuth, initiateEmailSignUp, useFirestore } from '@/firebase'; // Using the non-blocking sign-up
+import { useAuth, initiateEmailSignUp, useFirestore } from '@/firebase';
 import { setDoc, doc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 
 const steps = [
     { id: 1, name: 'Account Details', fields: ['name', 'email', 'password'], icon: User },
@@ -54,11 +55,13 @@ export default function SignUpPage() {
   };
   
   const handleRegistration = async () => {
-    if (!firestore) return;
+    if (!firestore || !auth) return;
     setIsLoading(true);
     try {
         const userCredential = await initiateEmailSignUp(auth, formData.email, formData.password);
         const user = userCredential.user;
+
+        await updateProfile(user, { displayName: formData.name });
 
         // Create user profile document in Firestore
         const userRef = doc(firestore, 'users', user.uid);
@@ -74,6 +77,7 @@ export default function SignUpPage() {
             mobileNumber: formData.mobileNumber,
         });
 
+        // Create a corresponding teacher document
         const teacherRef = doc(firestore, 'teachers', user.uid);
         await setDoc(teacherRef, {
           userId: user.uid,
@@ -191,3 +195,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    

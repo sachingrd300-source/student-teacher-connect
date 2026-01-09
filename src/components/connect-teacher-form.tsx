@@ -8,12 +8,18 @@ import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Link as LinkIcon } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type ConnectTeacherFormProps = {
     onConnectionSuccess: () => void;
 };
+
+type TeacherUser = {
+    id: string;
+    name: string;
+    role: string;
+}
 
 export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormProps) {
     const [teacherCode, setTeacherCode] = useState('');
@@ -47,9 +53,9 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
         setIsLoading(true);
 
         try {
-            // Find the teacher by their verification code (which is their user ID in this design)
-            const teachersRef = collection(firestore, 'teachers');
-            const q = query(teachersRef, where('userId', '==', teacherCode));
+            // The teacher's verification code is their user ID.
+            const usersRef = collection(firestore, 'users');
+            const q = query(usersRef, where('id', '==', teacherCode), where('role', '==', 'teacher'));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
@@ -63,13 +69,9 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
             }
             
             const teacherDoc = querySnapshot.docs[0];
-            const teacherId = teacherDoc.data().userId;
-
-            // Fetch teacher user profile to get their name
-            const teacherUserDoc = (await getDocs(query(collection(firestore, 'users'), where('id', '==', teacherId)))).docs[0];
-            const teacherData = teacherUserDoc.data();
+            const teacherData = teacherDoc.data() as TeacherUser;
+            const teacherId = teacherData.id;
             
-            // Check if an enrollment already exists
             const enrollmentsRef = collection(firestore, 'enrollments');
             const existingEnrollmentQuery = query(enrollmentsRef, where('studentId', '==', user.uid), where('teacherId', '==', teacherId));
             const existingEnrollmentSnapshot = await getDocs(existingEnrollmentQuery);
@@ -84,8 +86,6 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
                 return;
             }
 
-
-            // Create a new enrollment request document
             const enrollmentData = {
                 studentId: user.uid,
                 studentName: user.displayName || 'New Student',
@@ -138,3 +138,5 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
         </form>
     );
 }
+
+    
