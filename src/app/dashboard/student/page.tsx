@@ -28,10 +28,12 @@ export default function StudentDashboardPage() {
 
   const quickAccessItems = [
     { href: '/dashboard/student/schedule', icon: CalendarDays, title: 'Schedule', description: 'View upcoming classes.', requireAuth: true },
-    { href: '/dashboard/student/study-material', icon: BookOpenCheck, title: 'Study Material', description: 'Notes, videos, and more.' },
-    { href: '/dashboard/student/daily-practice', icon: ClipboardList, title: 'Daily Practice', description: 'DPPs and assignments.' },
-    { href: '/dashboard/student/shop', icon: ShoppingCart, title: 'Shop', description: 'Books and courses.' },
+    { href: '/dashboard/student/study-material', icon: BookOpenCheck, title: 'Study Material', description: 'Notes, videos, and more.', requireAuth: false },
+    { href: '/dashboard/student/daily-practice', icon: ClipboardList, title: 'Daily Practice', description: 'DPPs and assignments.', requireAuth: false },
+    { href: '/dashboard/student/shop', icon: ShoppingCart, title: 'Shop', description: 'Books and courses.', requireAuth: false },
   ];
+
+  const displayedItems = user ? quickAccessItems : quickAccessItems.filter(item => !item.requireAuth);
 
   return (
     <div className="space-y-6">
@@ -57,25 +59,21 @@ export default function StudentDashboardPage() {
           <CardTitle>Quick Access</CardTitle>
           <CardDescription>Jump to your resources.</CardDescription>
         </CardHeader>
-        <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickAccessItems.map((item) => {
-            if (item.requireAuth && !user) {
-              return null;
-            }
-            return (
-              <Link href={item.href} key={item.href}>
-                <Card className="hover:bg-muted/50 transition-colors h-full">
-                  <CardHeader className="flex-row items-center gap-4">
-                    <item.icon className="w-8 h-8 text-primary" />
-                    <div>
-                      <CardTitle>{item.title}</CardTitle>
-                      <CardDescription>{item.description}</CardDescription>
-                    </div>
-                  </CardHeader>
-                </Card>
-              </Link>
-            );
-          })}
+        <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {displayedItems.map((item) => (
+            <Link href={item.href} key={item.href}>
+              <Card className="hover:bg-muted/50 transition-colors h-full">
+                <CardHeader className="flex-row items-center gap-4">
+                  <item.icon className="w-8 h-8 text-primary" />
+                  <div>
+                    <CardTitle>{item.title}</CardTitle>
+
+                    <CardDescription>{item.description}</CardDescription>
+                  </div>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
         </CardContent>
        </Card>
 
