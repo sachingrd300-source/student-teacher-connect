@@ -40,7 +40,6 @@ const navItems = {
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
   ],
   student: [
-    { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },
     { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
   ],
