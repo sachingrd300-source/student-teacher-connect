@@ -21,7 +21,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, XCircle, Mail, Phone, ArrowLeft } from 'lucide-react';
-import { PerformanceChart } from '@/components/performance-chart';
 import { notFound, useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, where, orderBy } from 'firebase/firestore';
@@ -36,13 +35,11 @@ type StudentProfile = {
   avatarUrl?: string;
 };
 
-type AttendanceRecord = { id: string; date: { toDate: () => Date }; isPresent: boolean };
-type TestResult = { id: string; date: { toDate: () => Date }; marks: number; maxMarks: number; subject: string, testName: string };
-
 export default function StudentProfilePage() {
   const params = useParams();
   const studentId = params.studentId as string;
   const firestore = useFirestore();
+  const { user: teacherUser } = useUser();
 
   const studentQuery = useMemoFirebase(() => {
     if (!firestore || !studentId) return null;
@@ -50,24 +47,7 @@ export default function StudentProfilePage() {
   }, [firestore, studentId]);
   const { data: student, isLoading: isLoadingStudent } = useDoc<StudentProfile>(studentQuery);
 
-  const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !studentId) return null;
-    return query(collection(firestore, 'attendances'), where('studentId', '==', studentId), orderBy('date', 'desc'))
-  }, [firestore, studentId]);
-  const { data: attendanceHistory, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
-
-  const performanceQuery = useMemoFirebase(() => {
-    if (!firestore || !studentId) return null;
-    return query(collection(firestore, 'performances'), where('studentId', '==', studentId), orderBy('date', 'desc'))
-  }, [firestore, studentId]);
-  const { data: testResults, isLoading: isLoadingPerformance } = useCollection<TestResult>(performanceQuery);
-
-
-  const performanceChartData = useMemo(() => 
-    testResults?.map(p => ({ name: p.testName, score: p.marks })) || []
-  , [testResults]);
-  
-  const isLoading = isLoadingStudent || isLoadingAttendance || isLoadingPerformance;
+  const isLoading = isLoadingStudent;
 
   if (isLoading) {
     return <div className="space-y-6">
@@ -114,66 +94,6 @@ export default function StudentProfilePage() {
                  </div>
             </CardContent>
         </Card>
-      
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PerformanceChart data={performanceChartData} />
-        
-        <Card>
-            <CardHeader>
-                <CardTitle>Recent Attendance</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {attendanceHistory?.slice(0, 5).map((att) => (
-                            <TableRow key={att!.id}>
-                                <TableCell>{att!.date.toDate().toLocaleDateString()}</TableCell>
-                                <TableCell className="text-right">
-                                    <Badge variant={att.isPresent ? 'default' : 'destructive'}>
-                                        {att.isPresent ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-                                        {att.isPresent ? 'Present' : 'Absent'}
-                                    </Badge>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-      </div>
-
-       <Card>
-        <CardHeader>
-            <CardTitle>Test History</CardTitle>
-        </CardHeader>
-        <CardContent>
-             <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Test Name</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead className="text-right">Score</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {testResults?.map((result) => (
-                        <TableRow key={result.id}>
-                            <TableCell className="font-medium">{result.testName}</TableCell>
-                            <TableCell>{result.subject}</TableCell>
-                            <TableCell className="text-right font-semibold">{result.marks} / {result.maxMarks}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </CardContent>
-       </Card>
-
     </div>
   );
 }
