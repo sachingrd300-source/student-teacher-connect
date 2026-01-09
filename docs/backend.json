@@ -70,73 +70,47 @@
         "email"
       ]
     },
-    "Teacher": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Teacher",
+    "Class": {
+      "title": "Class",
       "type": "object",
-      "description": "Represents a teacher in the EduConnect Pro application. This entity stores additional, non-public details about the teacher.",
+      "description": "Represents a class created by a teacher.",
       "properties": {
-        "userId": {
+        "teacherId": {
           "type": "string",
-          "description": "Reference to the User entity's ID. (Relationship: User 1:1 Teacher)"
+          "description": "The ID of the teacher who created the class."
         },
-        "verificationCode": {
+        "subject": {
           "type": "string",
-          "description": "A unique code for the teacher, can be same as userId for simplicity."
-        }
-      },
-      "required": [
-        "userId",
-        "verificationCode"
-      ]
-    },
-    "Student": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Student",
-      "type": "object",
-      "description": "Represents a student in the EduConnect Pro application.",
-      "properties": {
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User entity. (Relationship: User 1:1 Student)"
-        }
-      },
-      "required": [
-        "userId"
-      ]
-    },
-    "Parent": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Parent",
-      "type": "object",
-      "description": "Represents a parent in the EduConnect Pro application.",
-      "properties": {
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User entity. (Relationship: User 1:1 Parent)"
+          "description": "The subject of the class."
         },
-        "studentId": {
+        "classLevel": {
           "type": "string",
-          "description": "Reference to the Student entity's user ID. (Relationship: Student 1:N Parent)"
+          "description": "The level of the class (e.g., 9-10, 11-12)."
+        },
+        "classCode": {
+          "type": "string",
+          "description": "A unique, shareable code for students to join the class."
         }
       },
       "required": [
-        "userId",
-        "studentId"
+        "teacherId",
+        "subject",
+        "classLevel",
+        "classCode"
       ]
     },
     "Enrollment": {
       "title": "Enrollment",
       "type": "object",
-      "description": "Represents the connection between a student and a teacher, including its status.",
+      "description": "Represents a student's request to enroll in a specific class.",
       "properties": {
         "studentId": {
           "type": "string",
-          "description": "Reference to the Student entity's user ID."
+          "description": "The ID of the student requesting to enroll."
         },
-        "teacherId": {
+        "classId": {
           "type": "string",
-          "description": "Reference to the Teacher entity's user ID."
+          "description": "The ID of the class the student wants to join."
         },
         "status": {
           "type": "string",
@@ -150,109 +124,8 @@
       },
       "required": [
         "studentId",
-        "teacherId",
+        "classId",
         "status"
-      ]
-    },
-    "StudyMaterial": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "StudyMaterial",
-      "type": "object",
-      "description": "Represents a study material resource.",
-      "properties": {
-        "teacherId": {
-          "type": "string",
-          "description": "Reference to the Teacher entity. (Relationship: Teacher 1:N StudyMaterial)"
-        },
-        "title": {
-          "type": "string",
-          "description": "The title of the study material."
-        },
-        "description": {
-          "type": "string",
-          "description": "A description of the study material."
-        },
-        "fileUrl": {
-          "type": "string",
-          "description": "URL to the study material file.",
-          "format": "uri"
-        },
-        "subject": {
-          "type": "string",
-          "description": "The subject of the study material."
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of study material (notes, DPP, test, etc.)."
-        }
-      },
-      "required": [
-        "teacherId",
-        "title",
-        "fileUrl",
-        "subject",
-        "type"
-      ]
-    },
-    "Attendance": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Attendance",
-      "type": "object",
-      "description": "Represents a student's attendance record.",
-      "properties": {
-        "studentId": {
-          "type": "string",
-          "description": "Reference to the Student entity's user ID."
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "Reference to the Teacher entity's user ID."
-        },
-        "date": {
-          "type": "string",
-          "description": "The date of the attendance record.",
-          "format": "date-time"
-        },
-        "isPresent": {
-          "type": "boolean",
-          "description": "Indicates whether the student was present."
-        }
-      },
-      "required": [
-        "studentId",
-        "teacherId",
-        "date",
-        "isPresent"
-      ]
-    },
-    "Performance": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Performance",
-      "type": "object",
-      "description": "Represents a student's performance on a test.",
-      "properties": {
-        "studentId": {
-          "type": "string",
-          "description": "Reference to the Student entity's user ID."
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "Reference to the Teacher entity's user ID."
-        },
-        "testId": {
-          "type": "string",
-          "description": "Reference to the Test entity."
-        },
-        "marks": {
-          "type": "number",
-          "description": "The marks obtained by the student on the test."
-        }
-      },
-      "required": [
-        "studentId",
-        "teacherId",
-        "testId",
-        "marks"
       ]
     }
   },
@@ -275,14 +148,14 @@
           "description": "Stores public user profiles (tutors, students, parents)."
         }
       },
-      {
-        "path": "/teachers/{teacherId}",
+       {
+        "path": "/classes/{classId}",
         "definition": {
-          "entityName": "Teacher",
+          "entityName": "Class",
           "schema": {
-            "$ref": "#/entities/Teacher"
+            "$ref": "#/entities/Class"
           },
-          "description": "Stores teacher-specific private data."
+          "description": "Stores classes created by teachers."
         }
       },
       {
@@ -292,37 +165,7 @@
           "schema": {
             "$ref": "#/entities/Enrollment"
           },
-          "description": "Stores the many-to-many relationship between students and teachers."
-        }
-      },
-      {
-        "path": "/studyMaterials/{studyMaterialId}",
-        "definition": {
-          "entityName": "StudyMaterial",
-          "schema": {
-            "$ref": "#/entities/StudyMaterial"
-          },
-          "description": "Stores study materials uploaded by teachers."
-        }
-      },
-      {
-        "path": "/attendances/{attendanceId}",
-        "definition": {
-          "entityName": "Attendance",
-          "schema": {
-            "$ref": "#/entities/Attendance"
-          },
-          "description": "Stores attendance records."
-        }
-      },
-      {
-        "path": "/performances/{performanceId}",
-        "definition": {
-          "entityName": "Performance",
-          "schema": {
-            "$ref": "#/entities/Performance"
-          },
-          "description": "Stores student performance data."
+          "description": "Stores student enrollment requests for specific classes."
         }
       }
     ]

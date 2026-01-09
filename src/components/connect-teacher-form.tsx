@@ -8,21 +8,15 @@ import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Link as LinkIcon } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type ConnectTeacherFormProps = {
     onConnectionSuccess: () => void;
 };
 
-type TeacherUser = {
-    id: string;
-    name: string;
-    role: string;
-}
-
 export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormProps) {
-    const [teacherCode, setTeacherCode] = useState('');
+    const [classCode, setClassCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const { user } = useUser();
@@ -30,57 +24,53 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!teacherCode) {
+        if (!classCode) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Please enter your teacher\'s verification code.',
+                description: 'Please enter a class code.',
             });
             return;
         }
 
-        if (!user) {
+        if (!user || !firestore) {
             toast({
                 variant: 'destructive',
                 title: 'Not Logged In',
-                description: 'You must be logged in to connect with a teacher.',
+                description: 'You must be logged in to join a class.',
             });
             return;
         }
-
-        if (!firestore) return;
 
         setIsLoading(true);
 
         try {
-            // The teacher's verification code is their user ID.
-            const usersRef = collection(firestore, 'users');
-            const q = query(usersRef, where('id', '==', teacherCode), where('role', '==', 'teacher'));
+            const classesRef = collection(firestore, 'classes');
+            const q = query(classesRef, where('classCode', '==', classCode.trim()));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
                 toast({
                     variant: 'destructive',
                     title: 'Invalid Code',
-                    description: 'No teacher found with that verification code. Please try again.',
+                    description: 'No class found with that code. Please check the code and try again.',
                 });
                 setIsLoading(false);
                 return;
             }
             
-            const teacherDoc = querySnapshot.docs[0];
-            const teacherData = teacherDoc.data() as TeacherUser;
-            const teacherId = teacherData.id;
+            const classDoc = querySnapshot.docs[0];
+            const classId = classDoc.id;
             
             const enrollmentsRef = collection(firestore, 'enrollments');
-            const existingEnrollmentQuery = query(enrollmentsRef, where('studentId', '==', user.uid), where('teacherId', '==', teacherId));
+            const existingEnrollmentQuery = query(enrollmentsRef, where('studentId', '==', user.uid), where('classId', '==', classId));
             const existingEnrollmentSnapshot = await getDocs(existingEnrollmentQuery);
 
             if (!existingEnrollmentSnapshot.empty) {
                 toast({
                     variant: 'default',
-                    title: 'Already Connected',
-                    description: 'You already have a pending or approved connection with this teacher.',
+                    title: 'Already Enrolled',
+                    description: 'You have already sent a request to join this class.',
                 });
                 setIsLoading(false);
                 return;
@@ -88,28 +78,27 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
 
             const enrollmentData = {
                 studentId: user.uid,
+                classId: classId,
+                status: 'pending',
                 studentName: user.displayName || 'New Student',
                 studentAvatar: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
-                teacherId: teacherId,
-                teacherName: teacherData.name || 'Teacher',
-                status: 'pending'
             };
             
-            addDocumentNonBlocking(collection(firestore, "enrollments"), enrollmentData);
+            addDocumentNonBlocking(enrollmentsRef, enrollmentData);
 
             toast({
                 title: 'Request Sent!',
-                description: `Your connection request has been sent to ${teacherData.name}.`,
+                description: `Your request to join the class has been sent for approval.`,
             });
             onConnectionSuccess();
-            setTeacherCode('');
+            setClassCode('');
 
         } catch (error) {
-            console.error("Error connecting with teacher:", error);
+            console.error("Error joining class:", error);
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Could not send connection request. Please try again later.',
+                description: 'Could not send join request. Please try again later.',
             });
         } finally {
             setIsLoading(false);
@@ -120,23 +109,21 @@ export function ConnectTeacherForm({ onConnectionSuccess }: ConnectTeacherFormPr
         <form onSubmit={handleSubmit}>
             <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-grow">
-                     <Label htmlFor="teacher-code" className="sr-only">Teacher's Verification Code</Label>
+                     <Label htmlFor="class-code" className="sr-only">Class Code</Label>
                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
-                        id="teacher-code"
-                        placeholder="Enter teacher's code"
-                        value={teacherCode}
-                        onChange={(e) => setTeacherCode(e.target.value)}
+                        id="class-code"
+                        placeholder="Enter class code"
+                        value={classCode}
+                        onChange={(e) => setClassCode(e.target.value)}
                         className="pl-10 text-base"
                         required
                     />
                 </div>
                 <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
-                    {isLoading ? 'Sending Request...' : 'Send Request'}
+                    {isLoading ? 'Sending Request...' : 'Join Class'}
                 </Button>
             </div>
         </form>
     );
 }
-
-    
