@@ -140,18 +140,7 @@ export default function StudentDashboardPage() {
 
       {user && (
         <div className="space-y-6">
-          {approvedEnrollments.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold">My Classes</h2>
-              {approvedEnrollments.map((enrollment) => (
-                <ApprovedClassCard
-                  key={enrollment.id}
-                  enrollment={enrollment}
-                />
-              ))}
-            </div>
-          )}
-
+          
           {pendingEnrollments.length > 0 && (
             <Card>
               <CardHeader>
