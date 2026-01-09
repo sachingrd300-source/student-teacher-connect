@@ -25,15 +25,6 @@ import {
     DropdownMenuSeparator,
   } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -45,60 +36,33 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { PlusCircle, MoreVertical, Users2, Trash2 } from 'lucide-react';
+import { MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, orderBy } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, doc, orderBy } from 'firebase/firestore';
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 type Batch = {
     id: string;
-    name: string;
-    teacherId: string;
+    subject: string;
+    classLevel: string;
     createdAt: { toDate: () => Date };
 };
 
 export default function BatchesPage() {
     const { toast } = useToast();
-    const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
     
     const { user } = useUser();
     const firestore = useFirestore();
-    
-    const [newBatchName, setNewBatchName] = useState('');
 
     const batchesQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
-        // This is a hypothetical collection. The current schema uses 'classes'
-        // Let's query 'classes' instead, assuming that's what 'batches' refers to.
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
     const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 
-    const handleCreateBatch = async () => {
-        if (!newBatchName || !firestore || !user) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a name for the batch.' });
-            return;
-        }
-
-        const newBatch = {
-            name: newBatchName,
-            teacherId: user.uid,
-            createdAt: serverTimestamp(),
-        };
-        
-        // Sticking with 'classes' as the collection name based on schema
-        const batchesCollection = collection(firestore, 'classes');
-        addDocumentNonBlocking(batchesCollection, newBatch);
-
-        toast({ title: 'Class Created', description: `The class "${newBatchName}" has been successfully created.`});
-        
-        setNewBatchName('');
-        setCreateBatchOpen(false);
-    }
 
     const handleDeleteBatch = (batchId: string) => {
         if(!firestore) return;
@@ -115,28 +79,11 @@ export default function BatchesPage() {
                         <Users2 className="h-8 w-8"/>
                         Manage Classes
                     </h1>
-                    <p className="text-muted-foreground">Create, view, and manage your student groups.</p>
+                    <p className="text-muted-foreground">View, and manage your student classes.</p>
                 </div>
-                <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
-                    <DialogTrigger asChild>
-                        <Button><PlusCircle className="mr-2 h-4 w-4"/> Create Class</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle>Create New Class</DialogTitle>
-                            <DialogDescription>Enter a name for your new class. You can assign students later.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">Name*</Label>
-                                <Input id="name" value={newBatchName} onChange={e => setNewBatchName(e.target.value)} className="col-span-3" placeholder="e.g. Weekend Maths 2025" />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button onClick={handleCreateBatch}>Create Class</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <Button asChild>
+                    <Link href="/dashboard/teacher">Create Class</Link>
+                </Button>
             </div>
 
             <Card>
@@ -158,7 +105,7 @@ export default function BatchesPage() {
                             <TableBody>
                                 {batches.map((batch) => (
                                     <TableRow key={batch.id}>
-                                        <TableCell className="font-medium">{batch.name}</TableCell>
+                                        <TableCell className="font-medium">{batch.subject} - {batch.classLevel}</TableCell>
                                         <TableCell>{batch.createdAt?.toDate().toLocaleDateString()}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
@@ -167,8 +114,8 @@ export default function BatchesPage() {
                                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem>Edit Name</DropdownMenuItem>
-                                                        <DropdownMenuItem>Assign Students</DropdownMenuItem>
+                                                        <DropdownMenuItem disabled>Edit Name</DropdownMenuItem>
+                                                        <DropdownMenuItem disabled>Assign Students</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 !cursor-pointer">

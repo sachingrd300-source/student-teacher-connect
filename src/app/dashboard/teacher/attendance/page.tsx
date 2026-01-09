@@ -37,8 +37,8 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, writeBatch, Timestamp, doc, getDocs, getDoc } from 'firebase/firestore';
 
 
-type StudentEnrollment = { id: string; studentName: string, studentId: string; };
-type Batch = { id: string; name: string; };
+type StudentEnrollment = { id: string; studentName: string; studentId: string; };
+type Class = { id: string; subject: string; classLevel: string; };
 type UserProfile = { name: string; };
 
 export default function AttendancePage() {
@@ -48,7 +48,7 @@ export default function AttendancePage() {
 
     // Filters
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-    const [selectedBatchId, setSelectedBatchId] = useState('');
+    const [selectedClassId, setSelectedClassId] = useState('');
 
     // State
     const [attendance, setAttendance] = useState<Record<string, boolean>>({});
@@ -56,32 +56,30 @@ export default function AttendancePage() {
     const [students, setStudents] = useState<StudentEnrollment[]>([]);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
-    const batchesQuery = useMemoFirebase(() => {
+    const classesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query is hypothetical. A 'batches' collection is not in the schema.
-        // Assuming classes are used as batches for now.
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
-    const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
+    const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
     
     useEffect(() => {
-        const fetchStudentsForBatch = async () => {
-            if (!firestore || !user || !selectedBatchId) {
+        const fetchStudentsForClass = async () => {
+            if (!firestore || !user || !selectedClassId) {
                 setStudents([]);
                 return;
             }
             setIsLoadingStudents(true);
             try {
-                // Securely query enrollments for the selected class (batch) and teacher
+                // Securely query enrollments for the selected class and teacher
                 const enrollmentsQuery = query(
                     collection(firestore, 'enrollments'), 
                     where('teacherId', '==', user.uid), 
-                    where('classId', '==', selectedBatchId), 
+                    where('classId', '==', selectedClassId), 
                     where('status', '==', 'approved')
                 );
 
                 const querySnapshot = await getDocs(enrollmentsQuery);
-                const studentEnrollmentsData = querySnapshot.docs.map(d => ({...d.data(), id: d.id}));
+                const studentEnrollmentsData = querySnapshot.docs.map(d => ({...d.data(), id: d.id} as {studentId: string, id: string}));
 
                 const studentPromises = studentEnrollmentsData.map(async (enrollment) => {
                     const studentDocRef = doc(firestore, 'users', enrollment.studentId);
@@ -104,15 +102,15 @@ export default function AttendancePage() {
                 setAttendance(initialAttendance);
 
             } catch (error) {
-                console.error("Error fetching students for batch:", error);
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch students for this batch.' });
+                console.error("Error fetching students for class:", error);
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch students for this class.' });
             } finally {
                 setIsLoadingStudents(false);
             }
         };
 
-        fetchStudentsForBatch();
-    }, [firestore, user, selectedBatchId, toast]);
+        fetchStudentsForClass();
+    }, [firestore, user, selectedClassId, toast]);
 
 
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
@@ -120,8 +118,8 @@ export default function AttendancePage() {
     };
 
     const handleSaveAttendance = async () => {
-        if (!selectedBatchId || !selectedDate || !firestore || !user || !students) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and batch.' });
+        if (!selectedClassId || !selectedDate || !firestore || !user || !students) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and class.' });
             return;
         }
         setIsSaving(true);
@@ -134,7 +132,7 @@ export default function AttendancePage() {
             batch.set(attendanceRef, {
                 studentId: student.studentId,
                 teacherId: user.uid,
-                batchId: selectedBatchId,
+                classId: selectedClassId,
                 date: Timestamp.fromDate(selectedDate),
                 isPresent: isPresent,
             });
@@ -158,12 +156,12 @@ export default function AttendancePage() {
                     <ClipboardCheck className="h-8 w-8"/>
                     Mark Attendance
                 </h1>
-                <p className="text-muted-foreground">Select a batch and date to mark student attendance.</p>
+                <p className="text-muted-foreground">Select a class and date to mark student attendance.</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Select Batch and Date</CardTitle>
+                    <CardTitle>Select Class and Date</CardTitle>
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                         <Popover>
                             <PopoverTrigger asChild>
@@ -179,19 +177,19 @@ export default function AttendancePage() {
                                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus />
                             </PopoverContent>
                         </Popover>
-                        <Select onValueChange={setSelectedBatchId} value={selectedBatchId}>
+                        <Select onValueChange={setSelectedClassId} value={selectedClassId}>
                             <SelectTrigger className="w-full sm:w-[280px]">
                                 <SelectValue placeholder="Select a class" />
                             </SelectTrigger>
                             <SelectContent>
-                                {isLoadingBatches && <SelectItem value="" disabled>Loading...</SelectItem>}
-                                {batches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                                {isLoadingClasses && <SelectItem value="" disabled>Loading classes...</SelectItem>}
+                                {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {selectedBatchId ? (
+                    {selectedClassId ? (
                         <>
                             <Table>
                                 <TableHeader>
@@ -223,7 +221,7 @@ export default function AttendancePage() {
                                     </Button>
                                 </div>
                             )}
-                             {students?.length === 0 && !isLoadingStudents && <p className="text-center text-muted-foreground py-4">No students found in this class.</p>}
+                             {students?.length === 0 && !isLoadingStudents && <p className="text-center text-muted-foreground py-4">No approved students found in this class.</p>}
                         </>
                     ) : (
                         <div className="text-center py-12 text-muted-foreground">
@@ -235,4 +233,3 @@ export default function AttendancePage() {
         </div>
     );
 }
-

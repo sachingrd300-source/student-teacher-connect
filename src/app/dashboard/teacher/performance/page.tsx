@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -30,9 +30,8 @@ import { Label } from '@/components/ui/label';
 import { BarChart3, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, serverTimestamp, doc, getDocs, getDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -48,22 +47,28 @@ type TestResult = {
     date: { toDate: () => Date };
 };
 type UserProfile = {
+  name: string;
   subjects?: string[];
 }
+type Class = { id: string; subject: string; classLevel: string; };
+
 
 export default function PerformancePage() {
     const { toast } = useToast();
-    const searchParams = useSearchParams();
     
     const { user } = useUser();
     const firestore = useFirestore();
 
     // Form state
-    const [selectedStudentId, setSelectedStudentId] = useState(searchParams.get('studentId') || '');
+    const [selectedClassId, setSelectedClassId] = useState('');
+    const [selectedStudentId, setSelectedStudentId] = useState('');
     const [testName, setTestName] = useState('');
     const [subject, setSubject] = useState('');
     const [marks, setMarks] = useState<number | ''>('');
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
+    
+    const [students, setStudents] = useState<StudentEnrollment[]>([]);
+    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
     
     const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -72,11 +77,56 @@ export default function PerformancePage() {
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
-    const studentsQuery = useMemoFirebase(() => {
+    const classesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'approved'));
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
-    const { data: students, isLoading: isLoadingStudents } = useCollection<StudentEnrollment>(studentsQuery);
+    const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
+
+     useEffect(() => {
+        const fetchStudentsForClass = async () => {
+            if (!firestore || !user || !selectedClassId) {
+                setStudents([]);
+                setSelectedStudentId('');
+                return;
+            }
+            setIsLoadingStudents(true);
+            try {
+                const enrollmentsQuery = query(
+                    collection(firestore, 'enrollments'), 
+                    where('teacherId', '==', user.uid), 
+                    where('classId', '==', selectedClassId), 
+                    where('status', '==', 'approved')
+                );
+
+                const querySnapshot = await getDocs(enrollmentsQuery);
+                const studentEnrollmentsData = querySnapshot.docs.map(d => ({...d.data(), id: d.id} as {studentId: string, id: string}));
+
+                const studentPromises = studentEnrollmentsData.map(async (enrollment) => {
+                    const studentDocRef = doc(firestore, 'users', enrollment.studentId);
+                    const studentDoc = await getDoc(studentDocRef);
+
+                    if (studentDoc.exists()) {
+                        const studentData = studentDoc.data() as UserProfile;
+                        return { id: enrollment.id, studentId: enrollment.studentId, studentName: studentData.name };
+                    }
+                    return null;
+                });
+
+                const resolvedStudents = (await Promise.all(studentPromises)).filter(Boolean) as StudentEnrollment[];
+                setStudents(resolvedStudents);
+
+            } catch (error) {
+                console.error("Error fetching students for class:", error);
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch students for this class.' });
+            } finally {
+                setIsLoadingStudents(false);
+            }
+        };
+
+        fetchStudentsForClass();
+    }, [firestore, user, selectedClassId, toast]);
+
 
     const performanceQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -121,7 +171,7 @@ export default function PerformancePage() {
         return testResults?.filter(r => r.studentId === selectedStudentId);
     }, [testResults, selectedStudentId]);
 
-    const isLoading = isLoadingStudents || isLoadingResults;
+    const isLoading = isLoadingClasses || isLoadingResults;
 
     return (
         <div className="space-y-6">
@@ -139,15 +189,25 @@ export default function PerformancePage() {
                 <Card className="lg:col-span-1">
                     <CardHeader>
                         <CardTitle>Enter Test Marks</CardTitle>
-                        <CardDescription>Select a student and enter their latest test score.</CardDescription>
+                        <CardDescription>Select a class and student to enter their score.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
+                            <Label htmlFor="class">Class*</Label>
+                            <Select onValueChange={setSelectedClassId} value={selectedClassId}>
+                                <SelectTrigger id="class"><SelectValue placeholder="Select a class" /></SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingClasses && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                                    {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
                             <Label htmlFor="student">Student*</Label>
-                            <Select onValueChange={setSelectedStudentId} value={selectedStudentId}>
+                            <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedClassId || isLoadingStudents}>
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
-                                    {isLoadingStudents && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                                    {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
                                     {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
                                 </SelectContent>
                             </Select>
@@ -187,7 +247,7 @@ export default function PerformancePage() {
                         <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || 'all students'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                    {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+                    {isLoadingResults && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
                         {displayedResults && displayedResults.length > 0 ? (
                             <Table>
                                 <TableHeader>
@@ -209,8 +269,8 @@ export default function PerformancePage() {
                                     ))}
                                 </TableBody>
                             </Table>
-                        ) : !isLoading && (
-                            <p className="text-sm text-center text-muted-foreground py-8">No test results found.</p>
+                        ) : !isLoadingResults && (
+                            <p className="text-sm text-center text-muted-foreground py-8">No test results found for the selected student.</p>
                         )}
                     </CardContent>
                 </Card>
@@ -218,4 +278,3 @@ export default function PerformancePage() {
         </div>
     );
 }
-
