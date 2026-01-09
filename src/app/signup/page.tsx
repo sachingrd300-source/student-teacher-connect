@@ -118,16 +118,10 @@ export default function SignUpPage() {
             qualification: formData.qualification,
             experience: formData.experience,
             experienceType: formData.experienceType,
-            status: 'pending_verification'
-        });
-
-        const teacherRef = doc(firestore, 'teachers', user.uid);
-        await setDoc(teacherRef, {
-          userId: user.uid,
-          verificationCode: user.uid, 
+            status: 'approved' // Changed for testing
         });
         
-        toast({ title: 'Registration Submitted!', description: 'Your profile is now pending verification.' });
+        toast({ title: 'Registration Submitted!', description: 'Your profile has been approved for testing.' });
         router.push('/dashboard/teacher');
     } catch (error: any) {
         let description = 'An unexpected error occurred. Please try again.';
@@ -281,3 +275,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    
