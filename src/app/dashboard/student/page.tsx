@@ -42,8 +42,8 @@ export default function StudentDashboardPage() {
         <h1 className="text-3xl font-bold font-headline">
           {user ? `Welcome back, ${user.displayName || studentData.name}!` : 'Welcome!'}
         </h1>
-        {/* Only show the connection form if the user is NOT logged in and we are NOT loading user data */}
-        {!isUserLoading && !user && (
+        {/* Show the connection form only if the user is logged in and not yet connected. */}
+        {!isUserLoading && user && !teacherConnected && (
             <Card className="w-full max-w-md">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg">Connect with a Teacher</CardTitle>
