@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Briefcase, Book, MapPin, MessageSquare } from 'lucide-react';
+import { Search, User, Briefcase, MapPin, MessageSquare } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -80,6 +82,7 @@ const TutorCard = ({ tutor }: { tutor: TutorProfile }) => {
 
 export default function FindTutorPage() {
   const firestore = useFirestore();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const tutorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -91,6 +94,20 @@ export default function FindTutorPage() {
   }, [firestore]);
 
   const { data: tutors, isLoading } = useCollection<TutorProfile>(tutorsQuery);
+
+  const filteredTutors = useMemo(() => {
+    if (!tutors) return [];
+    if (!searchTerm) return tutors;
+
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return tutors.filter(tutor => {
+        const nameMatch = tutor.name?.toLowerCase().includes(lowercasedTerm);
+        const addressMatch = tutor.address?.toLowerCase().includes(lowercasedTerm);
+        const subjectsMatch = tutor.subjects?.some(s => s.toLowerCase().includes(lowercasedTerm));
+        return nameMatch || addressMatch || subjectsMatch;
+    });
+  }, [tutors, searchTerm]);
+
 
   return (
     <div className="space-y-6">
@@ -106,7 +123,12 @@ export default function FindTutorPage() {
 
        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input placeholder="Search by subject, name, or location..." className="pl-10" />
+          <Input 
+            placeholder="Search by subject, name, or location..." 
+            className="pl-10" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -126,14 +148,19 @@ export default function FindTutorPage() {
             </Card>
           ))}
         
-        {tutors?.map((tutor) => (
+        {!isLoading && filteredTutors.map((tutor) => (
           <TutorCard key={tutor.id} tutor={tutor} />
         ))}
       </div>
-      {!isLoading && tutors?.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
+
+      {!isLoading && filteredTutors.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground col-span-full">
               <p className="font-semibold text-lg">No Tutors Found</p>
-              <p>There are currently no approved tutors available. Please check back later.</p>
+              <p>
+                {tutors && tutors.length > 0 
+                  ? "No tutors match your search criteria. Try a different search term." 
+                  : "There are currently no approved tutors available. Please check back later."}
+              </p>
           </div>
       )}
     </div>
