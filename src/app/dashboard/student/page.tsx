@@ -50,7 +50,7 @@ function ApprovedClassCard({ enrollment }: { enrollment: Enrollment }) {
   const { data: classInfo, isLoading: isLoadingClass } = useDoc<ClassInfo>(classQuery);
 
   const teacherQuery = useMemoFirebase(() => {
-    if (!firestore || !classInfo) return null;
+    if (!firestore || !classInfo?.teacherId) return null;
     return doc(firestore, 'users', classInfo.teacherId);
   }, [firestore, classInfo]);
 
