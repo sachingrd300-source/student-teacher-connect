@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -16,7 +17,7 @@ export default function RoleSelectionPage() {
     if (selectedRole === 'tutor') {
       router.push('/login');
     } else if (selectedRole === 'student') {
-        router.push('/dashboard/student');
+        router.push('/login-student');
     }
      else if (selectedRole === 'parent') {
         router.push('/dashboard/parent');

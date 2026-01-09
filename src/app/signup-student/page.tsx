@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -148,10 +149,8 @@ export default function SignUpStudentPage() {
         </CardFooter>
       </Card>
       <p className="text-center text-sm text-muted-foreground mt-4">
-        Already have an account? <Link href="/login" className="text-primary hover:underline">Log in</Link>
+        Already have an account? <Link href="/login-student" className="text-primary hover:underline">Log in</Link>
       </p>
     </div>
   );
 }
-
-    
