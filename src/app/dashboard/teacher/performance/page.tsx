@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -30,8 +31,8 @@ import { BarChart3, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -46,6 +47,9 @@ type TestResult = {
     maxMarks: number;
     date: { toDate: () => Date };
 };
+type UserProfile = {
+  subjects?: string[];
+}
 
 export default function PerformancePage() {
     const { toast } = useToast();
@@ -60,8 +64,13 @@ export default function PerformancePage() {
     const [subject, setSubject] = useState('');
     const [marks, setMarks] = useState<number | ''>('');
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
-    const [teacherSubjects, setTeacherSubjects] = useState<string[]>([]);
-
+    
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+    const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -210,4 +219,3 @@ export default function PerformancePage() {
     );
 }
 
-    
