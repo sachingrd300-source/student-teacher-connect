@@ -11,8 +11,8 @@ import { Mail, Key, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { initiateEmailSignIn, useAuth, initiateGoogleSignIn, useFirestore } from '@/firebase';
-import { getAdditionalUserInfo, UserCredential } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getAdditionalUserInfo } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>

@@ -25,79 +25,87 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Book, Briefcase, MapPin, Mail, Phone, Edit, Info } from 'lucide-react';
+import { User, Book, Briefcase, Mail, Phone, Edit, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { teacherData as initialTeacherData } from '@/lib/data';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 type TeacherProfileData = {
     id: string;
     name: string;
-    className: string;
-    subjects: string;
-    experience: string;
-    address: string;
     email: string;
-    mobileNumber: string;
-    avatarUrl: string;
-    qualification: string;
+    mobileNumber?: string;
+    avatarUrl?: string;
+    qualification?: string;
+    experience?: string;
+    experienceType?: string;
+    address?: string;
+    subjects?: string[];
+    classLevels?: string[];
+    coachingName?: string;
 };
 
 export default function TeacherProfilePage() {
     const { toast } = useToast();
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+    
     const [isEditOpen, setEditOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const [teacherProfile, setTeacherProfile] = useState<TeacherProfileData | null>(null);
-
-    // Form state
-    const [name, setName] = useState('');
-    const [className, setClassName] = useState('');
-    const [subjects, setSubjects] = useState('');
-    const [experience, setExperience] = useState('');
-    const [address, setAddress] = useState('');
-    const [qualification, setQualification] = useState('');
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    
+    const { data: teacherProfile, isLoading: isLoadingProfile } = useDoc<TeacherProfileData>(userProfileQuery);
+    
+    const [formData, setFormData] = useState<Partial<TeacherProfileData>>({});
 
     useEffect(() => {
-        // Simulate fetching data for a newly registered user
-        setTimeout(() => {
-            const profile: TeacherProfileData = {
-                id: initialTeacherData.id,
-                name: 'New Tutor', // Default name
-                className: "Your Coaching Center", // Default
-                subjects: 'Your Subjects', // Default
-                experience: '', // Empty initially
-                address: '', // Empty initially
-                email: 'new.tutor@example.com',
-                mobileNumber: '123-456-7890',
-                avatarUrl: initialTeacherData.avatarUrl,
-                qualification: '' // Empty initially
-            };
-            setTeacherProfile(profile);
+        if (teacherProfile) {
+            setFormData({
+                name: teacherProfile.name || '',
+                coachingName: teacherProfile.coachingName || 'Your Coaching Center',
+                subjects: teacherProfile.subjects || [],
+                qualification: teacherProfile.qualification || '',
+                experience: teacherProfile.experience || '',
+                address: teacherProfile.address || '',
+            });
+        }
+    }, [teacherProfile]);
 
-            // Populate form fields for the edit dialog
-            setName(profile.name);
-            setClassName(profile.className);
-            setSubjects(profile.subjects);
-            setExperience(profile.experience);
-            setAddress(profile.address);
-            setQualification(profile.qualification);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setFormData(prev => ({...prev, [id]: value}));
+    }
 
-            setIsLoading(false);
-        }, 1000);
-    }, []);
-
-    const handleProfileUpdate = () => {
-        if (!teacherProfile) return;
-
-        const updatedProfile = { ...teacherProfile, name, className, subjects, experience, address, qualification };
-        setTeacherProfile(updatedProfile);
-
-        toast({ title: 'Profile Updated', description: 'Your information has been successfully saved.' });
-        setEditOpen(false);
+    const handleProfileUpdate = async () => {
+        if (!user || !firestore) return;
+        setIsSaving(true);
+        const userRef = doc(firestore, 'users', user.uid);
+        try {
+            await updateDoc(userRef, {
+                name: formData.name,
+                coachingName: formData.coachingName,
+                // For simplicity, we are not updating array fields like subjects in this form
+                qualification: formData.qualification,
+                experience: formData.experience,
+                address: formData.address,
+            });
+            toast({ title: 'Profile Updated', description: 'Your information has been successfully saved.' });
+            setEditOpen(false);
+        } catch (error) {
+            console.error("Failed to update profile:", error);
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save your changes.' });
+        } finally {
+            setIsSaving(false);
+        }
     };
     
-    const isProfileIncomplete = !experience || !address || !qualification;
+    const isProfileIncomplete = !teacherProfile?.experience || !teacherProfile?.address || !teacherProfile?.qualification;
+    const isLoading = isUserLoading || isLoadingProfile;
 
     if (isLoading || !teacherProfile) {
         return (
@@ -146,31 +154,34 @@ export default function TeacherProfilePage() {
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                            <Input id="name" value={formData.name} onChange={handleInputChange} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="className">Coaching Name</Label>
-                            <Input id="className" value={className} onChange={(e) => setClassName(e.target.value)} />
+                            <Label htmlFor="coachingName">Coaching Name</Label>
+                            <Input id="coachingName" value={formData.coachingName} onChange={handleInputChange} />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="subjects">Subjects</Label>
-                            <Input id="subjects" value={subjects} onChange={(e) => setSubjects(e.target.value)} placeholder="e.g. Physics, Chemistry" />
+                            <Input id="subjects" value={formData.subjects?.join(', ')} disabled placeholder="e.g. Physics, Chemistry" />
+                             <p className="text-xs text-muted-foreground">Subjects can be changed during sign up.</p>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="qualification">Qualification</Label>
-                            <Input id="qualification" value={qualification} onChange={(e) => setQualification(e.target.value)} placeholder="e.g. B.Sc. Physics" />
+                            <Input id="qualification" value={formData.qualification} onChange={handleInputChange} placeholder="e.g. B.Sc. Physics" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="experience">Experience</Label>
-                            <Input id="experience" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 5 Years" />
+                            <Input id="experience" value={formData.experience} onChange={handleInputChange} placeholder="e.g. 5 Years" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="address">Address</Label>
-                            <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Your coaching or home address" />
+                            <Textarea id="address" value={formData.address} onChange={handleInputChange} placeholder="Your coaching or home address" />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button onClick={handleProfileUpdate}>Save Changes</Button>
+                        <Button onClick={handleProfileUpdate} disabled={isSaving}>
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -198,9 +209,9 @@ export default function TeacherProfilePage() {
                     <AvatarFallback className="text-3xl">{teacherProfile?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <CardTitle className="text-3xl font-headline">{teacherProfile?.name}</CardTitle>
-                <CardDescription className="text-base">{teacherProfile?.className}</CardDescription>
+                <CardDescription className="text-base">{teacherProfile?.coachingName || 'Coaching Center'}</CardDescription>
                 <div className="flex gap-2 mt-2">
-                    {teacherProfile?.subjects?.split(',').map(sub => <Badge key={sub} variant="secondary">{sub.trim()}</Badge>)}
+                    {teacherProfile?.subjects?.map(sub => <Badge key={sub} variant="secondary">{sub.trim()}</Badge>)}
                 </div>
             </CardHeader>
             <CardContent className="p-6 grid gap-4 md:grid-cols-2">
@@ -215,12 +226,8 @@ export default function TeacherProfilePage() {
                         <span>Experience: <span className="font-medium">{teacherProfile?.experience || 'N/A'}</span></span>
                     </div>
                     <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                         <Book className="h-5 w-5 text-muted-foreground" />
                         <span>Address: <span className="font-medium">{teacherProfile?.address || 'N/A'}</span></span>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <Book className="h-5 w-5 text-muted-foreground" />
-                        <span>Verification Code: <Badge variant="default">{teacherProfile?.id}</Badge></span>
                     </div>
                 </div>
                  <div className="space-y-4">
@@ -239,3 +246,4 @@ export default function TeacherProfilePage() {
     </div>
   );
 }
+
