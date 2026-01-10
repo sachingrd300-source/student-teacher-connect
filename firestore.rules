@@ -54,8 +54,10 @@ service cloud.firestore {
                     && request.resource.data.id == userId;
       // Allow any signed in user to list approved tutors
       allow list: if isSignedIn() 
-                  && request.query.get('role') == 'tutor' 
-                  && request.query.get('status') == 'approved';
+                  && request.query.where[0][1] == 'role' 
+                  && request.query.where[0][2] == 'tutor' 
+                  && request.query.where[1][1] == 'status' 
+                  && request.query.where[1][2] == 'approved';
       allow delete: if false;
     }
 
@@ -85,7 +87,7 @@ service cloud.firestore {
       
       // Teachers can list their own materials.
       // Any signed in user can list all free materials.
-      allow list: if isSignedIn();
+      allow list: if (isSignedIn() && request.query.where.teacherId == request.auth.uid) || (isSignedIn() && request.query.where[0][2] == true);
 
 
       allow create: if isSignedIn()

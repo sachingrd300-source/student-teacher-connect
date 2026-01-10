@@ -76,7 +76,7 @@ export default function DailyPracticePage() {
                         <TableCell colSpan={4}><Skeleton className="h-10 w-full"/></TableCell>
                     </TableRow>
                 ))}
-                {dailyPracticePapers?.map((paper) => (
+                {!isLoading && dailyPracticePapers?.map((paper) => (
                   <TableRow key={paper.id}>
                     <TableCell>
                       <div className="font-medium">{paper.title}</div>

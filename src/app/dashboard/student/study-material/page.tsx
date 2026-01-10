@@ -88,7 +88,7 @@ export default function StudyMaterialPage() {
                         <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                     </TableRow>
                 ))}
-                {studyMaterials?.map((material) => (
+                {!isLoading && studyMaterials?.map((material) => (
                     <TableRow key={material.id}>
                     <TableCell className="font-medium">{materialIcons[material.type] || <FileText className="h-5 w-5 text-gray-500" />}</TableCell>
                     <TableCell>
