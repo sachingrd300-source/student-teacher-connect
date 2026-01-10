@@ -161,6 +161,7 @@ export default function PerformancePage() {
         toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
         
         // Reset form
+        setSelectedStudentId('');
         setTestName('');
         setSubject('');
         setMarks('');
@@ -210,6 +211,7 @@ export default function PerformancePage() {
                                 <SelectContent>
                                     {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
                                     {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
+                                     {!isLoadingStudents && students.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>

@@ -194,6 +194,23 @@
         "type",
         "status"
       ]
+    },
+    "Performance": {
+        "title": "Performance",
+        "type": "object",
+        "description": "Represents a student's performance in a test.",
+        "properties": {
+            "teacherId": { "type": "string" },
+            "studentId": { "type": "string" },
+            "studentName": { "type": "string" },
+            "classId": { "type": "string" },
+            "testName": { "type": "string" },
+            "subject": { "type": "string" },
+            "marks": { "type": "number" },
+            "maxMarks": { "type": "number" },
+            "date": { "type": "string", "format": "date-time" }
+        },
+        "required": ["teacherId", "studentId", "classId", "testName", "subject", "marks", "maxMarks", "date"]
     }
   },
   "auth": {
@@ -227,6 +244,12 @@
         "$ref": "#/entities/ClassSchedule"
       },
       "description": "Stores individual class sessions scheduled by teachers."
+    },
+    "/performances/{performanceId}": {
+      "schema": {
+        "$ref": "#/entities/Performance"
+      },
+      "description": "Stores student test results."
     }
   }
 }
