@@ -51,15 +51,6 @@ export default function SignUpPage() {
   const auth = useAuth();
   const firestore = useFirestore();
 
-  const handleSubjectChange = (subject: string) => {
-    setFormData(prev => {
-        const newSubjects = prev.subjects.includes(subject)
-            ? prev.subjects.filter(s => s !== subject)
-            : [...prev.subjects, subject];
-        return { ...prev, subjects: newSubjects };
-    });
-  };
-
   const handleClassLevelChange = (level: string) => {
     setFormData(prev => {
         const newLevels = prev.classLevels.includes(level)
@@ -74,8 +65,14 @@ export default function SignUpPage() {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleSelectChange = (id: keyof typeof formData, value: string) => {
+  const handleSelectChange = (id: keyof Omit<typeof formData, 'subjects' | 'classLevels'>, value: string) => {
     setFormData(prev => ({...prev, [id]: value}))
+  }
+
+  const handleSubjectsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const subjectsArray = value.split(',').map(s => s.trim()).filter(s => s);
+    setFormData(prev => ({...prev, subjects: subjectsArray}));
   }
 
   const handleNext = () => {
@@ -198,7 +195,7 @@ export default function SignUpPage() {
                     </div>
                     <div className="space-y-2">
                         <Label>Subjects you teach in this category</Label>
-                        <Input id="subjects" onChange={e => handleSelectChange('subjects', e.target.value)} placeholder="e.g. Algebra, Calculus (comma-separated)" />
+                        <Input id="subjects" onChange={handleSubjectsInputChange} value={formData.subjects.join(', ')} placeholder="e.g. Algebra, Calculus (comma-separated)" />
                     </div>
                     <div className="space-y-2">
                         <Label>Class / Level</Label>
@@ -254,7 +251,7 @@ export default function SignUpPage() {
                         <p><strong>Email:</strong> {formData.email}</p>
                         <p><strong>Mobile:</strong> {formData.mobileNumber}</p>
                         <p><strong>Subject Category:</strong> {formData.subjectCategory}</p>
-                        <p><strong>Subjects:</strong> {Array.isArray(formData.subjects) ? formData.subjects.join(', ') : formData.subjects}</p>
+                        <p><strong>Subjects:</strong> {formData.subjects.join(', ')}</p>
                          <p><strong>Classes:</strong> {formData.classLevels.join(', ')}</p>
                         <p><strong>Qualification:</strong> {formData.qualification}</p>
                         <p><strong>Experience:</strong> {formData.experience} ({formData.experienceType})</p>
@@ -280,3 +277,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    
