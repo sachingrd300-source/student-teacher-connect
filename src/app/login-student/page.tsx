@@ -45,7 +45,7 @@ export default function StudentLoginPage() {
       await initiateEmailSignIn(auth, email, password);
       toast({ title: 'Login Successful', description: "You're being redirected to your dashboard." });
       
-      router.push('/dashboard/student');
+      router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
       let description = "An unexpected error occurred. Please try again."
@@ -81,7 +81,7 @@ export default function StudentLoginPage() {
             toast({ title: 'Login Successful', description: "Welcome back!" });
         }
         
-        router.push('/dashboard/student');
+        router.push('/dashboard');
 
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {

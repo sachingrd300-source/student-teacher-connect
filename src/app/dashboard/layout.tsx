@@ -42,6 +42,42 @@ export default function DashboardLayout({
   const getDisplayName = () => user?.displayName || user?.email?.split('@')[0] || 'User';
   const getAvatarFallback = () => (user?.displayName || user?.email || 'U').charAt(0).toUpperCase();
 
+  const UserInfo = () => (
+    <>
+      {isUserLoading ? (
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      ) : user ? (
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
+            <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm">{getDisplayName()}</span>
+            <span className="text-xs text-muted-foreground capitalize">{role === 'teacher' ? 'Tutor' : 'Student'}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarFallback>
+              <User />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm">Not logged in</span>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
@@ -57,37 +93,7 @@ export default function DashboardLayout({
               <DashboardNav role={role} />
             </SidebarContent>
             <div className="p-4 border-t">
-              {isUserLoading ? (
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="flex flex-col gap-1">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                </div>
-              ) : user ? (
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
-                    <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">{getDisplayName()}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{role === 'teacher' ? 'Tutor' : 'Student'}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>
-                      <User />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">Not logged in</span>
-                  </div>
-                </div>
-              )}
+              <UserInfo />
             </div>
           </div>
         </Sidebar>
@@ -108,7 +114,7 @@ export default function DashboardLayout({
                 {isUserLoading ? (
                   <Skeleton className="h-10 w-10 rounded-full" />
                 ) : user ? (
-                  <Avatar>
+                   <Avatar>
                     <AvatarImage src={user.photoURL || undefined} alt={getDisplayName()} />
                     <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
                   </Avatar>

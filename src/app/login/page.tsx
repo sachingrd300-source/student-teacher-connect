@@ -42,7 +42,7 @@ export default function LoginPage() {
       await initiateEmailSignIn(auth, email, password);
       toast({ title: 'Login Successful', description: "You're being redirected to your dashboard." });
       
-      router.push('/dashboard/teacher');
+      router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
       let description = "An unexpected error occurred. Please try again."
@@ -63,7 +63,7 @@ export default function LoginPage() {
         await initiateGoogleSignIn(auth);
         
         toast({ title: 'Login Successful', description: "Welcome back!" });
-        router.push('/dashboard/teacher');
+        router.push('/dashboard');
 
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {

@@ -130,7 +130,7 @@ export default function TeacherDashboardPage() {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold"><Badge variant="default">{userProfile?.status === 'approved' ? 'Approved' : 'Pending'}</Badge></div>
+            <div className="text-xl font-bold"><Badge variant={userProfile?.status === 'approved' ? 'default' : 'secondary'}>{userProfile?.status === 'approved' ? 'Approved' : 'Pending'}</Badge></div>
             <p className="text-xs text-muted-foreground">Your tutor profile status</p>
           </CardContent>
         </Card>
