@@ -233,7 +233,7 @@ export default function TeacherProfilePage() {
                         <span>Experience: <span className="font-medium">{teacherProfile?.experience || 'N/A'}</span></span>
                     </div>
                     <div className="flex items-start gap-3">
-                         <Book className="h-5 w-5 text-muted-foreground" />
+                         <Book className="h-5 w-5 text-muted-foreground mt-1" />
                         <span>Address: <span className="font-medium">{teacherProfile?.address || 'N/A'}</span></span>
                     </div>
                 </div>
@@ -245,7 +245,7 @@ export default function TeacherProfilePage() {
                     </div>
                      <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-muted-foreground" />
-                        <span>Mobile: <span className="font-medium">{teacherProfile?.mobileNumber}</span></span>
+                        <span>Mobile: <span className="font-medium">{teacherProfile?.mobileNumber || 'N/A'}</span></span>
                     </div>
                     <div className="flex items-center gap-3">
                         <MessageSquare className="h-5 w-5 text-muted-foreground" />

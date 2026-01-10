@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Check, User, Briefcase, BookCopy } from 'lucide-react';
+import { Check, User, Briefcase, BookCopy, MessageSquare, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ import { setDoc, doc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const steps = [
     { id: 1, name: 'Basic Details', icon: User },
@@ -44,6 +45,9 @@ export default function SignUpPage() {
     qualification: '',
     experience: '',
     experienceType: '',
+    address: '',
+    coachingName: '',
+    whatsappNumber: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -60,12 +64,12 @@ export default function SignUpPage() {
     });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleSelectChange = (id: keyof Omit<typeof formData, 'subjects' | 'classLevels'>, value: string) => {
+  const handleSelectChange = (id: keyof Omit<typeof formData, 'subjects' | 'classLevels' | 'confirmPassword'>, value: string) => {
     setFormData(prev => ({...prev, [id]: value}))
   }
 
@@ -115,6 +119,9 @@ export default function SignUpPage() {
             qualification: formData.qualification,
             experience: formData.experience,
             experienceType: formData.experienceType,
+            address: formData.address,
+            coachingName: formData.coachingName,
+            whatsappNumber: formData.whatsappNumber,
             status: 'pending_verification'
         });
         
@@ -237,6 +244,14 @@ export default function SignUpPage() {
                           </Select>
                       </div>
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="address">Address / City</Label>
+                        <Textarea id="address" value={formData.address} onChange={handleChange} placeholder="Your coaching or city where you teach" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+                        <Input id="whatsappNumber" value={formData.whatsappNumber} onChange={handleChange} placeholder="e.g. 919876543210 (with country code)" />
+                    </div>
                 </div>
             )}
              {currentStep === 4 && (
@@ -255,6 +270,8 @@ export default function SignUpPage() {
                          <p><strong>Classes:</strong> {formData.classLevels.join(', ')}</p>
                         <p><strong>Qualification:</strong> {formData.qualification}</p>
                         <p><strong>Experience:</strong> {formData.experience} ({formData.experienceType})</p>
+                        <p><strong>Address:</strong> {formData.address}</p>
+                        <p><strong>WhatsApp:</strong> {formData.whatsappNumber}</p>
                     </Card>
                     <Button size="lg" className="w-full max-w-xs" onClick={handleRegistration} disabled={isLoading}>
                         {isLoading ? 'Submitting...' : 'Agree & Submit for Verification'}
@@ -278,4 +295,3 @@ export default function SignUpPage() {
   );
 }
 
-    
