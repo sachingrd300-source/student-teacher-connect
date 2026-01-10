@@ -143,6 +143,57 @@
         "teacherId",
         "status"
       ]
+    },
+    "ClassSchedule": {
+      "title": "Class Schedule",
+      "type": "object",
+      "description": "Represents a single scheduled class session by a teacher.",
+      "properties": {
+        "teacherId": {
+          "type": "string",
+          "description": "The ID of the teacher who owns this schedule."
+        },
+        "topic": {
+          "type": "string",
+          "description": "The topic to be covered in the class."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject of the class."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time of the scheduled class."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time of the class session (e.g., '10:00 AM')."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Online", "Offline"],
+          "description": "The type of the class."
+        },
+        "locationOrLink": {
+          "type": "string",
+          "description": "The physical location or online meeting link for the class."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Scheduled", "Canceled"],
+          "description": "The current status of the scheduled class."
+        }
+      },
+      "required": [
+        "teacherId",
+        "topic",
+        "subject",
+        "date",
+        "time",
+        "type",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -170,6 +221,12 @@
         "$ref": "#/entities/Enrollment"
       },
       "description": "Stores student enrollment requests for specific classes."
+    },
+    "/classSchedules/{scheduleId}": {
+      "schema": {
+        "$ref": "#/entities/ClassSchedule"
+      },
+      "description": "Stores individual class sessions scheduled by teachers."
     }
   }
 }

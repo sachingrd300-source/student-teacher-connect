@@ -34,10 +34,9 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { teacherData } from '@/lib/data';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, doc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -55,6 +54,10 @@ type ScheduleItem = {
     createdAt: Timestamp;
 };
 
+type UserProfile = {
+    subjects?: string[];
+}
+
 export default function SchedulePage() {
     const { toast } = useToast();
     const [isAddClassOpen, setAddClassOpen] = useState(false);
@@ -70,7 +73,12 @@ export default function SchedulePage() {
     const [classType, setClassType] = useState<'Online' | 'Offline' | ''>('');
     const [locationOrLink, setLocationOrLink] = useState('');
 
-    const teacherSubjects = teacherData.subjects;
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+    const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const scheduleQuery = useMemoFirebase(() => {
       if (!firestore || !user) return null;
@@ -80,7 +88,8 @@ export default function SchedulePage() {
     const { data: schedule, isLoading } = useCollection<ScheduleItem>(scheduleQuery);
     
     const sortedSchedule = useMemo(() => {
-        return schedule?.sort((a,b) => a.date.toMillis() - b.date.toMillis());
+        if (!schedule) return [];
+        return [...schedule].sort((a,b) => a.date.toMillis() - b.date.toMillis());
     }, [schedule]);
 
 
@@ -242,7 +251,7 @@ export default function SchedulePage() {
                                             <Button variant="ghost" size="icon"><MoreVertical className="h-5 w-5"/></Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent>
-                                            <DropdownMenuItem onClick={() => handleCancelClass(item.id)} className="text-red-600 focus:text-red-600 focus:bg-red-100">
+                                            <DropdownMenuItem onClick={() => handleCancelClass(item.id)} className="text-red-600 focus:text-red-600 focus:bg-red-100 !cursor-pointer">
                                                 <XCircle className="mr-2 h-4 w-4"/>
                                                 Cancel Class
                                             </DropdownMenuItem>
