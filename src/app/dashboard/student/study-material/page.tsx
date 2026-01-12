@@ -34,7 +34,7 @@ import {
   Download,
   BookOpenCheck,
   Book,
-  FileFormula,
+  Calculator,
 } from 'lucide-react';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -45,7 +45,7 @@ const materialIcons: Record<string, JSX.Element> = {
   Notes: <FileText className="h-5 w-5 text-blue-500" />,
   Books: <Book className="h-5 w-5 text-amber-500" />,
   PYQs: <ClipboardList className="h-5 w-5 text-indigo-500" />,
-  Formulas: <FileFormula className="h-5 w-5 text-purple-500" />,
+  Formulas: <Calculator className="h-5 w-5 text-purple-500" />,
   DPP: <ClipboardList className="h-5 w-5 text-orange-500" />,
   Homework: <Pencil className="h-5 w-5 text-yellow-500" />,
   "Test Paper": <Pencil className="h-5 w-5 text-purple-500" />,
