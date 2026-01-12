@@ -29,6 +29,7 @@ service cloud.firestore {
     
     // Check if the requesting user is approved for a specific class
     function isEnrolledInClass(classId) {
+      // Check for a specific enrollment doc with a predictable ID format: {studentId}_{classId}
       return exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId))
              && get(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId)).data.status == 'approved';
     }
@@ -49,10 +50,8 @@ service cloud.firestore {
                     && request.resource.data.id == userId;
       // Allow any signed in user to list approved tutors
       allow list: if isSignedIn() 
-                  && request.query.where[0][0] == 'role'
-                  && request.query.where[0][2] == 'tutor' 
-                  && request.query.where[1][0] == 'status'
-                  && request.query.where[1][2] == 'approved';
+                  && request.query.get('role') == 'tutor' 
+                  && request.query.get('status') == 'approved';
       allow delete: if false;
     }
 
@@ -79,11 +78,10 @@ service cloud.firestore {
         // The student or teacher involved can get the document.
         allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
         
-        // A student can list their own enrollments. A teacher can list theirs.
-        allow list: if isSignedIn() && (
-          (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) ||
-          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
-        );
+        // A user can list their own enrollments, either as a student or a teacher
+        allow list: if isSignedIn() && 
+            (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
+            (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid);
 
         // A student can create their own enrollment request with a predictable ID
         allow create: if isSignedIn() 
@@ -130,8 +128,7 @@ service cloud.firestore {
                  && (isTeacherOwner(resource.data)
                      || isStudentOwner(resource.data));
       allow list: if isSignedIn()
-                  && request.query.where[0][0] == 'teacherId'
-                  && request.query.where[0][2] == request.auth.uid;
+                  && request.query.get('teacherId') == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if isExistingDoc()
@@ -178,3 +175,5 @@ service cloud.firestore {
 
   }
 }
+
+    

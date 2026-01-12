@@ -100,13 +100,18 @@
         "classCode": {
           "type": "string",
           "description": "A unique, shareable code for students to join the class."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "teacherId",
         "subject",
         "classLevel",
-        "classCode"
+        "classCode",
+        "createdAt"
       ]
     },
     "Enrollment": {
@@ -134,13 +139,18 @@
             "denied"
           ],
           "description": "The status of the enrollment request."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "studentId",
         "classId",
         "teacherId",
-        "status"
+        "status",
+        "createdAt"
       ]
     },
     "ClassSchedule": {
@@ -214,15 +224,20 @@
     "StudyMaterial": {
         "title": "Study Material",
         "type": "object",
-        "description": "Represents a study material resource uploaded by a teacher.",
+        "description": "Represents a study material resource uploaded by a teacher or admin.",
         "properties": {
-            "teacherId": { "type": "string" },
+            "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
+            "classId": { "type": "string", "description": "The ID of the class this material belongs to. Null if not class-specific." },
+            "classLevel": { "type": "string", "description": "The class level this material is for (e.g., Class 9, Class 12)." },
+            "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material." },
             "title": { "type": "string" },
             "description": { "type": "string" },
             "subject": { "type": "string" },
             "chapter": { "type": "string" },
-            "type": { "type": "string", "enum": ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"] },
-            "isFree": { "type": "boolean" },
+            "type": { "type": "string", "enum": ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", "Test Paper", "Solution"] },
+            "isFree": { "type": "boolean", "description": "Whether the material is publically accessible."},
+            "price": { "type": "number", "description": "The price of the material if it is not free." },
+            "isOfficial": { "type": "boolean", "description": "Whether the material is official content from the platform." },
             "fileUrl": { "type": "string" },
             "createdAt": { "type": "string", "format": "date-time" }
         },
@@ -271,7 +286,9 @@
         "schema": {
             "$ref": "#/entities/StudyMaterial"
         },
-        "description": "Stores study materials uploaded by teachers."
+        "description": "Stores study materials uploaded by teachers or admins."
     }
   }
 }
+
+    

@@ -140,7 +140,7 @@ export default function MaterialsPage() {
     const [materialType, setMaterialType] = useState('');
     const [classId, setClassId] = useState<string | null>(null);
     const [classLevel, setClassLevel] = useState<string | null>(null);
-    const [isFree, setIsFree] = useState(false);
+    const [isFree, setIsFree] = useState(true);
     const [isOfficial, setIsOfficial] = useState(false);
     const [price, setPrice] = useState<number | ''>('');
 
@@ -173,7 +173,7 @@ export default function MaterialsPage() {
         setMaterialType('');
         setClassId(null);
         setClassLevel(null);
-        setIsFree(false);
+        setIsFree(true);
         setIsOfficial(false);
         setPrice('');
         setAddMaterialOpen(false);
@@ -363,7 +363,7 @@ export default function MaterialsPage() {
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
                                         <TableCell>{material.subject}</TableCell>
                                         <TableCell>{material.classLevel || 'N/A'}</TableCell>
-                                        <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
+                                        <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Public' : 'Premium'}</Badge></TableCell>
                                         <TableCell>{material.isFree ? 'Free' : `₹${material.price}`}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
@@ -408,5 +408,7 @@ export default function MaterialsPage() {
         </div>
     );
 }
+
+    
 
     
