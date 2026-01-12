@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -42,8 +41,7 @@ import {
   useDoc,
   useMemoFirebase,
 } from '@/firebase';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, doc, serverTimestamp, addDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -176,7 +174,8 @@ export default function TeacherDashboardPage() {
       createdAt: serverTimestamp(),
     };
 
-    await addDocumentNonBlocking(collection(firestore, 'classes'), classData);
+    const classesCollection = collection(firestore, 'classes');
+    await addDoc(classesCollection, classData);
 
     toast({
       title: 'Class Created!',
