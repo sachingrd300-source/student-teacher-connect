@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, User, Briefcase, MapPin, MessageSquare } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -86,12 +86,11 @@ export default function FindTutorPage() {
 
   const tutorsQuery = useMemo(() => {
     if (!firestore) return null;
-    const q = query(
+    return query(
       collection(firestore, 'users'),
       where('role', '==', 'tutor'),
       where('status', '==', 'approved')
     );
-    return q;
   }, [firestore]);
 
   const { data: tutors, isLoading } = useCollection<TutorProfile>(tutorsQuery);
