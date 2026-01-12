@@ -29,7 +29,7 @@ import { Label } from '@/components/ui/label';
 import { BarChart3, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, getDocs, getDoc, Timestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -69,20 +69,16 @@ export default function PerformancePage() {
     const [students, setStudents] = useState<StudentEnrollment[]>([]);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);
     
-    const userProfileQuery = useMemoFirebase(() => {
+    const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = doc(firestore, 'users', user.uid);
-        (q as any).__memo = true;
-        return q;
+        return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
-    const classesQuery = useMemoFirebase(() => {
+    const classesQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-        (q as any).__memo = true;
-        return q;
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
     const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
@@ -131,11 +127,9 @@ export default function PerformancePage() {
     }, [firestore, user, selectedClassId, toast]);
 
 
-    const performanceQuery = useMemoFirebase(() => {
+    const performanceQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
-        (q as any).__memo = true;
-        return q;
+        return query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
     }, [firestore, user]);
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 
@@ -152,6 +146,7 @@ export default function PerformancePage() {
             studentId: selectedStudentId,
             studentName: student?.studentName,
             teacherId: user.uid,
+            classId: selectedClassId,
             testName,
             name: testName, // for chart
             subject,

@@ -60,13 +60,24 @@
         "experienceType": {
           "type": "string",
           "description": "For tutors, the type of their teaching experience (e.g., School, Online)."
+        },
+        "address": {
+          "type": "string",
+          "description": "For tutors, their address or city for location-based search."
+        },
+        "coachingName": {
+            "type": "string",
+            "description": "The name of the tutor's coaching center or institute."
+        },
+        "whatsappNumber": {
+            "type": "string",
+            "description": "The tutor's WhatsApp number for student communication."
         }
       },
       "required": [
         "id",
         "role",
-        "name",
-        "email"
+        "name"
       ]
     },
     "Class": {
@@ -131,6 +142,91 @@
         "teacherId",
         "status"
       ]
+    },
+    "ClassSchedule": {
+      "title": "Class Schedule",
+      "type": "object",
+      "description": "Represents a single scheduled class session by a teacher.",
+      "properties": {
+        "teacherId": {
+          "type": "string",
+          "description": "The ID of the teacher who owns this schedule."
+        },
+        "topic": {
+          "type": "string",
+          "description": "The topic to be covered in the class."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject of the class."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time of the scheduled class."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time of the class session (e.g., '10:00 AM')."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Online", "Offline"],
+          "description": "The type of the class."
+        },
+        "locationOrLink": {
+          "type": "string",
+          "description": "The physical location or online meeting link for the class."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Scheduled", "Canceled"],
+          "description": "The current status of the scheduled class."
+        }
+      },
+      "required": [
+        "teacherId",
+        "topic",
+        "subject",
+        "date",
+        "time",
+        "type",
+        "status"
+      ]
+    },
+    "Performance": {
+        "title": "Performance",
+        "type": "object",
+        "description": "Represents a student's performance in a test.",
+        "properties": {
+            "teacherId": { "type": "string" },
+            "studentId": { "type": "string" },
+            "studentName": { "type": "string" },
+            "classId": { "type": "string" },
+            "testName": { "type": "string" },
+            "subject": { "type": "string" },
+            "marks": { "type": "number" },
+            "maxMarks": { "type": "number" },
+            "date": { "type": "string", "format": "date-time" }
+        },
+        "required": ["teacherId", "studentId", "classId", "testName", "subject", "marks", "maxMarks", "date"]
+    },
+    "StudyMaterial": {
+        "title": "Study Material",
+        "type": "object",
+        "description": "Represents a study material resource uploaded by a teacher.",
+        "properties": {
+            "teacherId": { "type": "string" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "subject": { "type": "string" },
+            "chapter": { "type": "string" },
+            "type": { "type": "string", "enum": ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"] },
+            "isFree": { "type": "boolean" },
+            "fileUrl": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["teacherId", "title", "subject", "type", "isFree", "fileUrl", "createdAt"]
     }
   },
   "auth": {
@@ -158,6 +254,24 @@
         "$ref": "#/entities/Enrollment"
       },
       "description": "Stores student enrollment requests for specific classes."
+    },
+    "/classSchedules/{scheduleId}": {
+      "schema": {
+        "$ref": "#/entities/ClassSchedule"
+      },
+      "description": "Stores individual class sessions scheduled by teachers."
+    },
+    "/performances/{performanceId}": {
+      "schema": {
+        "$ref": "#/entities/Performance"
+      },
+      "description": "Stores student test results."
+    },
+    "/studyMaterials/{studyMaterialId}": {
+        "schema": {
+            "$ref": "#/entities/StudyMaterial"
+        },
+        "description": "Stores study materials uploaded by teachers."
     }
   }
 }

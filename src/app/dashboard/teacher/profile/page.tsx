@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { User, Book, Briefcase, Mail, Phone, Edit, Info, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
 type TeacherProfileData = {
@@ -54,11 +54,9 @@ export default function TeacherProfilePage() {
     const [isEditOpen, setEditOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const userProfileQuery = useMemoFirebase(() => {
+    const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = doc(firestore, 'users', user.uid);
-        (q as any).__memo = true;
-        return q;
+        return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     
     const { data: teacherProfile, isLoading: isLoadingProfile } = useDoc<TeacherProfileData>(userProfileQuery);

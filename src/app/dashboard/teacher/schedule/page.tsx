@@ -36,7 +36,7 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -73,20 +73,16 @@ export default function SchedulePage() {
     const [classType, setClassType] = useState<'Online' | 'Offline' | ''>('');
     const [locationOrLink, setLocationOrLink] = useState('');
 
-    const userProfileQuery = useMemoFirebase(() => {
+    const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = doc(firestore, 'users', user.uid);
-        (q as any).__memo = true;
-        return q;
+        return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
-    const scheduleQuery = useMemoFirebase(() => {
+    const scheduleQuery = useMemo(() => {
       if (!firestore || !user) return null;
-      const q = query(collection(firestore, 'classSchedules'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
-      (q as any).__memo = true;
-      return q;
+      return query(collection(firestore, 'classSchedules'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
     }, [firestore, user]);
 
     const { data: schedule, isLoading } = useCollection<ScheduleItem>(scheduleQuery);
