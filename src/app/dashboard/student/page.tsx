@@ -153,10 +153,14 @@ export default function StudentDashboardPage() {
         const classDoc = querySnapshot.docs[0];
         const classData = classDoc.data();
 
-        // Check if already enrolled
-        const alreadyEnrolled = enrollments?.some(e => e.classId === classDoc.id);
-        if (alreadyEnrolled) {
-            toast({ variant: 'default', title: 'Already Enrolled', description: 'You have already sent a request to join this class.' });
+        // Check if already enrolled or request is pending
+        const existingEnrollment = enrollments?.find(e => e.classId === classDoc.id);
+        if (existingEnrollment) {
+            toast({ 
+                variant: 'default', 
+                title: `You have already sent a request to join this class.`,
+                description: `Current status: ${existingEnrollment.status.charAt(0).toUpperCase() + existingEnrollment.status.slice(1)}.`
+            });
             setIsJoining(false);
             return;
         }

@@ -77,7 +77,11 @@ export function DashboardNav({ role }: { role: Role }) {
 
   const approvedEnrollmentsQuery = useMemo(() => {
     if (!firestore || !user || role !== 'student') return null;
-    return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid), where('status', '==', 'approved'));
+    return query(
+      collection(firestore, 'enrollments'), 
+      where('studentId', '==', user.uid), 
+      where('status', '==', 'approved')
+    );
   }, [firestore, user, role]);
 
   const { data: approvedEnrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(approvedEnrollmentsQuery);
