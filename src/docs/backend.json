@@ -267,7 +267,7 @@
         "condition": { "type": "string", "enum": ["New", "Like New", "Used", "Acceptable"] },
         "itemType": { "type": "string", "enum": ["Book", "Notes", "Equipment", "Other"] },
         "imageUrl": { "type": "string" },
-        "status": { "type": "string", "enum": ["available", "sold"], "default": "available" },
+        "status": { "type": "string", "enum": ["pending", "available", "sold"], "default": "available" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sellerId", "sellerName", "title", "price", "itemType", "status", "createdAt"]

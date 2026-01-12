@@ -18,6 +18,13 @@ service cloud.firestore {
     function isStudent() {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
     }
+    
+    function isAdmin() {
+      // In a real app, this should be a custom claim or a role in a separate document.
+      // For now, we will hardcode a specific UID as the admin.
+      // The app creator should replace this with their actual Firebase User ID (UID).
+      return request.auth.uid == 'YOUR_ADMIN_USER_ID_HERE';
+    }
 
     function isApprovedSeller() {
         return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.marketplaceStatus == 'approved';
@@ -56,8 +63,8 @@ service cloud.firestore {
       // A user can get their own document.
       // An approved tutor's profile can be read by any signed-in user.
       allow get: if isOwner(userId) || (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'tutor' && get(/databases/$(database)/documents/users/$(userId)).data.status == 'approved');
-      // A user can update their own document.
-      allow update: if isOwner(userId);
+      // A user can update their own document. An admin can also update any user document (e.g. for verification).
+      allow update: if isOwner(userId) || isAdmin();
       // A user can create their own profile document.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
@@ -152,8 +159,13 @@ service cloud.firestore {
       // An approved student seller can create a listing for themselves.
       allow create: if isApprovedSeller() && request.resource.data.sellerId == request.auth.uid;
       
-      // Only the student who created the listing can update or delete it.
-      allow update, delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
+      // The seller can update the status between 'available' and 'sold'.
+      // An admin can update the status from 'pending' to 'available'.
+      // The seller can delete their own item.
+      allow update: if isExistingDoc() && resource.data.sellerId == request.auth.uid &&
+                        (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold']) ||
+                     (isAdmin() && request.resource.data.status == 'available' && resource.data.status == 'pending');
+      allow delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
     }
 
     /* ===============================
@@ -214,5 +226,3 @@ service cloud.firestore {
 
   }
 }
-
-    

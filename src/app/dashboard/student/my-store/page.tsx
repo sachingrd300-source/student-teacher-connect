@@ -44,7 +44,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Store, PlusCircle, MoreVertical, Trash2, Tag, Info, ShieldCheck, Loader2 } from 'lucide-react';
+import { Store, PlusCircle, MoreVertical, Trash2, Tag, Info, ShieldCheck, Clock, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -62,7 +62,7 @@ type MarketplaceItem = {
     price: number;
     subject: string;
     itemType: string;
-    status: 'available' | 'sold';
+    status: 'pending' | 'available' | 'sold';
     createdAt: { toDate: () => Date };
 };
 
@@ -191,7 +191,7 @@ export default function MyStorePage() {
             subject,
             condition,
             itemType,
-            status: 'available' as const,
+            status: 'pending' as const, // New items are now pending
             createdAt: serverTimestamp(),
             imageUrl: `https://picsum.photos/seed/${Math.random()}/600/400`,
         };
@@ -199,7 +199,7 @@ export default function MyStorePage() {
         const marketplaceCollection = collection(firestore, 'marketplaceItems');
         addDoc(marketplaceCollection, newItem)
             .then(() => {
-                 toast({ title: 'Item Listed!', description: `${title} is now available in the marketplace.`});
+                 toast({ title: 'Item Submitted!', description: `${title} has been submitted for review.`});
                  resetForm();
             })
             .catch(error => {
@@ -252,6 +252,19 @@ export default function MyStorePage() {
             });
     }
 
+    const getStatusBadge = (status: MarketplaceItem['status']) => {
+        switch (status) {
+            case 'available':
+                return <Badge variant="default"><CheckCircle className="mr-1 h-3 w-3" />Available</Badge>;
+            case 'sold':
+                return <Badge variant="secondary">Sold</Badge>;
+            case 'pending':
+                return <Badge variant="outline" className="text-amber-600 border-amber-600"><Clock className="mr-1 h-3 w-3" />Pending</Badge>;
+            default:
+                return <Badge variant="destructive">Unknown</Badge>;
+        }
+    }
+
     const isLoading = isLoadingProfile || isLoadingListings;
     
     if (isLoading) {
@@ -277,7 +290,7 @@ export default function MyStorePage() {
                         <DialogContent className="sm:max-w-[480px]">
                             <DialogHeader>
                                 <DialogTitle>List a New Item for Sale</DialogTitle>
-                                <DialogDescription>Fill in the details for the item you want to sell.</DialogDescription>
+                                <DialogDescription>Fill in the details for the item you want to sell. It will be reviewed by an admin before it's public.</DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                                 <div className="space-y-2">
@@ -325,7 +338,7 @@ export default function MyStorePage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button onClick={handleAddItem}>List Item</Button>
+                                <Button onClick={handleAddItem}>Submit for Review</Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -333,7 +346,7 @@ export default function MyStorePage() {
                  <Card className="shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Your Listings</CardTitle>
-                        <CardDescription>All items you currently have listed for sale.</CardDescription>
+                        <CardDescription>All items you have submitted for sale.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isLoadingListings && <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
@@ -350,11 +363,11 @@ export default function MyStorePage() {
                                 </TableHeader>
                                 <TableBody>
                                     {listings.map(item => (
-                                        <TableRow key={item.id}>
+                                        <TableRow key={item.id} className={item.status === 'pending' ? 'opacity-70' : ''}>
                                             <TableCell className="font-medium">{item.title}</TableCell>
                                             <TableCell><Badge variant="outline">{item.itemType}</Badge></TableCell>
                                             <TableCell>₹{item.price}</TableCell>
-                                            <TableCell><Badge variant={item.status === 'available' ? 'default' : 'secondary'}>{item.status}</Badge></TableCell>
+                                            <TableCell>{getStatusBadge(item.status)}</TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -364,10 +377,18 @@ export default function MyStorePage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                         <DropdownMenuItem onClick={() => handleUpdateStatus(item.id, item.status === 'available' ? 'sold' : 'available')}>
-                                                            <Tag className="mr-2 h-4 w-4" />
-                                                            Mark as {item.status === 'available' ? 'Sold' : 'Available'}
-                                                        </DropdownMenuItem>
+                                                         {item.status === 'available' && (
+                                                            <DropdownMenuItem onClick={() => handleUpdateStatus(item.id, 'sold')}>
+                                                                <Tag className="mr-2 h-4 w-4" />
+                                                                Mark as Sold
+                                                            </DropdownMenuItem>
+                                                         )}
+                                                          {item.status === 'sold' && (
+                                                            <DropdownMenuItem onClick={() => handleUpdateStatus(item.id, 'available')}>
+                                                                <Tag className="mr-2 h-4 w-4" />
+                                                                Mark as Available
+                                                            </DropdownMenuItem>
+                                                         )}
                                                         <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600" onClick={() => handleDeleteItem(item.id)}>
                                                             <Trash2 className="mr-2 h-4 w-4" />
                                                             Delete
