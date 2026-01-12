@@ -81,13 +81,17 @@ export default function TeacherDashboardPage() {
 
   const userProfileQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
+    const q = doc(firestore, 'users', user.uid);
+    (q as any).__memo = true;
+    return q;
   }, [firestore, user]);
   const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
   const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
-    return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+    const q = query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+    (q as any).__memo = true;
+    return q;
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 

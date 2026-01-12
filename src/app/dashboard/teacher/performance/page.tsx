@@ -71,14 +71,18 @@ export default function PerformancePage() {
     
     const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        const q = doc(firestore, 'users', user.uid);
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const classesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+        const q = query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
     const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
@@ -129,7 +133,9 @@ export default function PerformancePage() {
 
     const performanceQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
+        const q = query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 

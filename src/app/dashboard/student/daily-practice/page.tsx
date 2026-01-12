@@ -38,12 +38,14 @@ export default function DailyPracticePage() {
   const dppQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     // Query for all public DPPs
-    return query(
+    const q = query(
       collection(firestore, 'studyMaterials'), 
       where('type', '==', 'DPP'), 
       where('isFree', '==', true),
       orderBy('createdAt', 'desc')
     );
+    (q as any).__memo = true;
+    return q;
   }, [firestore]);
   
   const { data: dailyPracticePapers, isLoading } = useCollection<StudyMaterial>(dppQuery);

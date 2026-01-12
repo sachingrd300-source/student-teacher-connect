@@ -55,7 +55,9 @@ export default function StudyMaterialPage() {
 
   const freeMaterialsQuery = useMemoFirebase(() => {
     if(!firestore) return null;
-    return query(collection(firestore, 'studyMaterials'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
+    const q = query(collection(firestore, 'studyMaterials'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
+    (q as any).__memo = true;
+    return q;
   }, [firestore]);
 
   const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(freeMaterialsQuery);

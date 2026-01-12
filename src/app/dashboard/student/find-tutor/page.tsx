@@ -86,11 +86,13 @@ export default function FindTutorPage() {
 
   const tutorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(
+    const q = query(
       collection(firestore, 'users'),
       where('role', '==', 'tutor'),
       where('status', '==', 'approved')
     );
+    (q as any).__memo = true;
+    return q;
   }, [firestore]);
 
   const { data: tutors, isLoading } = useCollection<TutorProfile>(tutorsQuery);

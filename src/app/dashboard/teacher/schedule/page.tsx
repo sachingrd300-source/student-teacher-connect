@@ -75,14 +75,18 @@ export default function SchedulePage() {
 
     const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        const q = doc(firestore, 'users', user.uid);
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const scheduleQuery = useMemoFirebase(() => {
       if (!firestore || !user) return null;
-      return query(collection(firestore, 'classSchedules'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
+      const q = query(collection(firestore, 'classSchedules'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
+      (q as any).__memo = true;
+      return q;
     }, [firestore, user]);
 
     const { data: schedule, isLoading } = useCollection<ScheduleItem>(scheduleQuery);

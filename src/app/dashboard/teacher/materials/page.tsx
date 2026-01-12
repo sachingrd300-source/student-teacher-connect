@@ -97,14 +97,18 @@ export default function MaterialsPage() {
 
     const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        const q = doc(firestore, 'users', user.uid);
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+        const q = query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
 
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);

@@ -56,7 +56,9 @@ export default function TeacherProfilePage() {
 
     const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        const q = doc(firestore, 'users', user.uid);
+        (q as any).__memo = true;
+        return q;
     }, [firestore, user]);
     
     const { data: teacherProfile, isLoading: isLoadingProfile } = useDoc<TeacherProfileData>(userProfileQuery);
