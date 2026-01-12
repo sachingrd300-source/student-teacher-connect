@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -86,7 +87,7 @@ export default function DashboardLayout({
           <div className="flex flex-col h-full">
             <SidebarHeader className="p-4 border-b">
               <Link href="/" className="flex items-center gap-2">
-                <Icons.logo className="h-6 w-6 text-primary" />
+                <Icons.logo className="h-6 w-6 text-primary animate-logo-glow" />
                 <h1 className="text-xl font-bold font-headline">EduConnect Pro</h1>
               </Link>
             </SidebarHeader>

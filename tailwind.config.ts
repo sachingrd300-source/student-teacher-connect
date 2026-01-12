@@ -101,12 +101,23 @@ export default {
             backgroundPosition: '0% 50%',
           },
         },
+        'logo-glow': {
+          '0%, 100%': {
+            opacity: '1',
+            filter: 'brightness(1) drop-shadow(0 0 2px hsl(var(--primary)))',
+          },
+          '50%': {
+            opacity: '0.9',
+            filter: 'brightness(1.5) drop-shadow(0 0 8px hsl(var(--primary)))',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'multi-color-blink': 'multi-color-blink 4s ease-in-out infinite',
         aurora: 'aurora 8s ease infinite',
+        'logo-glow': 'logo-glow 1.5s ease-in-out',
       },
     },
   },
