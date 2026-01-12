@@ -123,6 +123,10 @@
           "type": "string",
           "description": "The ID of the student requesting to enroll."
         },
+        "studentName": {
+          "type": "string",
+          "description": "The name of the student requesting to enroll. Denormalized for performance."
+        },
         "classId": {
           "type": "string",
           "description": "The ID of the class the student wants to join."
@@ -147,6 +151,7 @@
       },
       "required": [
         "studentId",
+        "studentName",
         "classId",
         "teacherId",
         "status",
@@ -242,6 +247,25 @@
             "createdAt": { "type": "string", "format": "date-time" }
         },
         "required": ["teacherId", "title", "subject", "type", "isFree", "fileUrl", "createdAt"]
+    },
+    "MarketplaceItem": {
+      "title": "Marketplace Item",
+      "type": "object",
+      "description": "Represents an item listed for sale by a student in the marketplace.",
+      "properties": {
+        "sellerId": { "type": "string", "description": "The UID of the student selling the item." },
+        "sellerName": { "type": "string", "description": "The name of the student selling the item." },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "subject": { "type": "string" },
+        "price": { "type": "number" },
+        "condition": { "type": "string", "enum": ["New", "Like New", "Used", "Acceptable"] },
+        "itemType": { "type": "string", "enum": ["Book", "Notes", "Equipment", "Other"] },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "sold"], "default": "available" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "sellerName", "title", "price", "itemType", "status", "createdAt"]
     }
   },
   "auth": {
@@ -287,8 +311,12 @@
             "$ref": "#/entities/StudyMaterial"
         },
         "description": "Stores study materials uploaded by teachers or admins."
+    },
+    "/marketplaceItems/{itemId}": {
+        "schema": {
+            "$ref": "#/entities/MarketplaceItem"
+        },
+        "description": "Stores items listed for sale by students."
     }
   }
 }
-
-    

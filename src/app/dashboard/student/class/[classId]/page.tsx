@@ -7,8 +7,7 @@ import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 import { doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Download, AlertTriangle, BookOpenCheck } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { FileText, AlertTriangle, BookOpenCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -148,21 +147,15 @@ export default function ClassRoomPage() {
                                 <TableHead>Type</TableHead>
                                 <TableHead>Title</TableHead>
                                 <TableHead>Date</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoadingMaterials && <tr><td colSpan={4}><Skeleton className="w-full h-12"/></td></tr>}
+                            {isLoadingMaterials && <tr><td colSpan={3}><Skeleton className="w-full h-12"/></td></tr>}
                             {materials && materials.map(material => (
                                 <TableRow key={material.id}>
                                     <TableCell>{materialIcons[material.type] || <FileText className="h-5 w-5" />}</TableCell>
                                     <TableCell className="font-medium">{material.title}</TableCell>
                                     <TableCell>{material.createdAt.toDate().toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" disabled>
-                                            <Download className="mr-2 h-4 w-4" /> Download
-                                        </Button>
-                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

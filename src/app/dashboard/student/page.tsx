@@ -158,8 +158,8 @@ export default function StudentDashboardPage() {
         if (existingEnrollment) {
             toast({ 
                 variant: 'default', 
-                title: `You have already sent a request to join this class.`,
-                description: `Current status: ${existingEnrollment.status.charAt(0).toUpperCase() + existingEnrollment.status.slice(1)}.`
+                title: `Request already sent`,
+                description: `Your request to join this class has a status of: ${existingEnrollment.status}.`
             });
             setIsJoining(false);
             return;
@@ -167,6 +167,7 @@ export default function StudentDashboardPage() {
         
         const enrollmentData = {
             studentId: user.uid,
+            studentName: user.displayName,
             classId: classDoc.id,
             teacherId: classData.teacherId,
             status: 'pending',

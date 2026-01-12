@@ -31,7 +31,6 @@ import {
   ClipboardList,
   Pencil,
   CheckCircle,
-  Download,
   BookOpenCheck,
   Book,
   Calculator,
@@ -142,13 +141,12 @@ export default function StudyMaterialPage() {
                     <TableHead>Title</TableHead>
                     <TableHead>Subject</TableHead>
                     <TableHead>Source</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
                 {isLoading && Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
+                        <TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell>
                     </TableRow>
                 ))}
                 {!isLoading && filteredMaterials.map((material) => (
@@ -164,11 +162,6 @@ export default function StudyMaterialPage() {
                             ? <Badge>Official</Badge>
                             : <span className="text-sm text-muted-foreground">{material.teacherName || 'Tutor'}</span>
                         }
-                    </TableCell>
-                    <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" disabled>
-                            <Download className="h-4 w-4" />
-                        </Button>
                     </TableCell>
                     </TableRow>
                 ))}

@@ -28,13 +28,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 type Enrollment = {
     id: string;
     studentId: string;
+    studentName: string;
     classId: string;
     status: 'pending' | 'approved' | 'denied';
     createdAt: { toDate: () => Date };
-};
-
-type UserProfile = {
-    name: string;
 };
 
 type ClassInfo = {
@@ -46,12 +43,6 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     
-    const studentQuery = useMemo(() => {
-        if(!firestore) return null;
-        return doc(firestore, 'users', enrollment.studentId);
-    }, [firestore, enrollment.studentId]);
-    const { data: student, isLoading: isLoadingStudent } = useDoc<UserProfile>(studentQuery);
-
     const classQuery = useMemo(() => {
         if(!firestore) return null;
         return doc(firestore, 'classes', enrollment.classId);
@@ -65,7 +56,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
             await updateDoc(enrollmentRef, { status });
             toast({
                 title: `Request ${status}`,
-                description: `The enrollment request from ${student?.name} has been ${status}.`
+                description: `The enrollment request from ${enrollment.studentName} has been ${status}.`
             });
         } catch (error) {
             toast({
@@ -76,7 +67,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
         }
     };
 
-    if (isLoadingStudent || isLoadingClass) {
+    if (isLoadingClass) {
         return (
             <TableRow>
                 <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
@@ -86,7 +77,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
     
     return (
         <TableRow>
-            <TableCell className="font-medium">{student?.name || 'Loading...'}</TableCell>
+            <TableCell className="font-medium">{enrollment.studentName || 'Loading...'}</TableCell>
             <TableCell>{classInfo?.subject} - {classInfo?.classLevel}</TableCell>
             <TableCell>{enrollment.createdAt.toDate().toLocaleDateString()}</TableCell>
             <TableCell>
