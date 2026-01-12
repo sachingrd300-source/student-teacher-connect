@@ -62,7 +62,7 @@ export default function StudentLoginPage() {
         const userDoc = await getDoc(userDocRef);
         
         if (!userDoc.exists()) {
-            await setDoc(userRef, {
+            await setDoc(userDocRef, {
                 id: user.uid,
                 name: user.displayName,
                 email: user.email,
