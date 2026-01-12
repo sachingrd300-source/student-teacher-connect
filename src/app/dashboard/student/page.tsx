@@ -22,7 +22,7 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { collection, query, where, getDocs, setDoc, serverTimestamp, doc } from 'firebase/firestore';
@@ -118,7 +118,7 @@ export default function StudentDashboardPage() {
   const [classCode, setClassCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
-  const enrollmentsQuery = useMemo(() => {
+  const enrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
   }, [firestore, user]);

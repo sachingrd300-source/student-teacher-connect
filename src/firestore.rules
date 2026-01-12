@@ -90,8 +90,7 @@ service cloud.firestore {
         // The query MUST include a where clause on studentId or teacherId.
         allow list: if isSignedIn() && (
           (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
-          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
-          (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'approved')
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
         );
 
         // A student can create their own enrollment request with a predictable ID

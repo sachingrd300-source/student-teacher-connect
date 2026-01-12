@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -93,10 +93,9 @@ export default function ClassRoomPage() {
     }, [firestore, classId]);
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
 
-    const enrollmentQuery = useMemo(() => {
+    const enrollmentQuery = useMemoFirebase(() => {
         if (!firestore || !user || !classId) return null;
-        const enrollmentsRef = collection(firestore, 'enrollments');
-        return query(enrollmentsRef, where('studentId', '==', user.uid), where('classId', '==', classId), where('status', '==', 'approved'));
+        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid), where('classId', '==', classId), where('status', '==', 'approved'));
     }, [firestore, user, classId]);
     const {data: enrollments, isLoading: isLoadingEnrollment} = useCollection(enrollmentQuery);
     
