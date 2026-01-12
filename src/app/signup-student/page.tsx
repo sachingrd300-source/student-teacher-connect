@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Check, User, Mail, Key } from 'lucide-react';
+import { Check, User, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useAuth, initiateEmailSignUp, useFirestore } from '@/firebase';
+import { signupWithEmail } from '@/firebase/auth';
+import { firestore } from '@/firebase/firebase';
 import { setDoc, doc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 
@@ -30,8 +31,6 @@ export default function SignUpStudentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,20 +57,18 @@ export default function SignUpStudentPage() {
   };
   
   const handleRegistration = async () => {
-    if (!firestore || !auth) return;
     setIsLoading(true);
     try {
-        const userCredential = await initiateEmailSignUp(auth, formData.email, formData.password);
+        const userCredential = await signupWithEmail(formData.email, formData.password);
         const user = userCredential.user;
 
         await updateProfile(user, { displayName: formData.name });
 
-        // Create user profile document in Firestore
         const userRef = doc(firestore, 'users', user.uid);
         await setDoc(userRef, {
             id: user.uid,
             name: formData.name,
-            email: formData.email,
+            email: user.email,
             role: 'student',
         });
         

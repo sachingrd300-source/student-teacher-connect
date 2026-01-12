@@ -10,14 +10,14 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, User as UserIcon, BookOpenCheck, ClipboardList } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
 export default function StudentDashboardPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading } = useUser();
 
-  if (isUserLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/2" />

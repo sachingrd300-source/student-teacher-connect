@@ -1,44 +1,60 @@
 
 'use client';
 
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser } from '@/firebase/auth';
+import { firestore } from '@/firebase/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 type UserProfile = {
   role: 'teacher' | 'student';
 }
 
 export default function DashboardRedirectPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
-
-  const userProfileQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
   
   useEffect(() => {
-    const isLoading = isUserLoading || isProfileLoading;
+    if (isUserLoading) {
+      return; // Wait until user status is resolved
+    }
     
-    if (!isLoading && user && userProfile) {
-      if (userProfile.role === 'teacher') {
-        router.push('/dashboard/teacher');
-      } else if (userProfile.role === 'student') {
-        router.push('/dashboard/student');
-      } else {
-        // Fallback or error for unknown role
+    if (!user) {
+      router.push('/');
+      return;
+    }
+
+    const checkUserProfile = async () => {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userProfile = userDoc.data() as UserProfile;
+          if (userProfile.role === 'teacher') {
+            router.push('/dashboard/teacher');
+          } else if (userProfile.role === 'student') {
+            router.push('/dashboard/student');
+          } else {
+            // Fallback for unknown role
+            router.push('/login');
+          }
+        } else {
+          // If profile doesn't exist, maybe they are mid-signup
+          // Or it's an error state. Redirect to login.
+          console.warn("User profile not found for logged-in user.");
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
         router.push('/login');
       }
-    } else if (!isLoading && !user) {
-      router.push('/');
-    }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+    };
+    
+    checkUserProfile();
+
+  }, [user, isUserLoading, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

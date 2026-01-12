@@ -1,17 +1,18 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Check, User, Briefcase, BookCopy, MessageSquare, MapPin } from 'lucide-react';
+import { Check, User, Briefcase, BookCopy } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { useAuth, initiateEmailSignUp, useFirestore } from '@/firebase';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signupWithEmail, auth } from '@/firebase/auth';
+import { firestore } from '@/firebase/firebase';
 import { setDoc, doc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,7 +33,12 @@ const experienceTypes = ["School", "Coaching", "Home Tutor", "Online"];
 
 
 export default function SignUpPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  
   const [currentStep, setCurrentStep] = useState(1);
+  const [isGoogleSignIn, setIsGoogleSignIn] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -50,10 +56,15 @@ export default function SignUpPage() {
     whatsappNumber: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
+
+  useEffect(() => {
+    const name = searchParams.get('name');
+    const email = searchParams.get('email');
+    if (name && email) {
+      setFormData(prev => ({ ...prev, name, email }));
+      setIsGoogleSignIn(true);
+    }
+  }, [searchParams]);
 
   const handleClassLevelChange = (level: string) => {
     setFormData(prev => {
@@ -69,7 +80,7 @@ export default function SignUpPage() {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleSelectChange = (id: keyof Omit<typeof formData, 'subjects' | 'classLevels' | 'confirmPassword'>, value: string) => {
+  const handleSelectChange = (id: keyof typeof formData, value: string) => {
     setFormData(prev => ({...prev, [id]: value}))
   }
 
@@ -80,7 +91,7 @@ export default function SignUpPage() {
   }
 
   const handleNext = () => {
-    if (currentStep === 1) {
+    if (currentStep === 1 && !isGoogleSignIn) {
         if (!formData.name || !formData.email || !formData.mobileNumber || !formData.password || !formData.confirmPassword) {
             toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill all the basic details.'});
             return;
@@ -98,13 +109,19 @@ export default function SignUpPage() {
   };
   
   const handleRegistration = async () => {
-    if (!firestore || !auth) return;
     setIsLoading(true);
     try {
-        const userCredential = await initiateEmailSignUp(auth, formData.email, formData.password);
-        const user = userCredential.user;
-
-        await updateProfile(user, { displayName: formData.name });
+        let user;
+        if (isGoogleSignIn) {
+            user = auth.currentUser;
+            if (!user) {
+                throw new Error("User not found. Please try logging in with Google again.");
+            }
+        } else {
+            const userCredential = await signupWithEmail(formData.email, formData.password);
+            user = userCredential.user;
+            await updateProfile(user, { displayName: formData.name });
+        }
 
         const userRef = doc(firestore, 'users', user.uid);
         await setDoc(userRef, {
@@ -164,19 +181,18 @@ export default function SignUpPage() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                           <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" value={formData.name} onChange={handleChange} placeholder="John Doe" />
+                          <Input id="name" value={formData.name} onChange={handleChange} placeholder="John Doe" disabled={isGoogleSignIn} />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="mobileNumber">Mobile Number</Label>
                           <Input id="mobileNumber" type="tel" value={formData.mobileNumber} onChange={handleChange} placeholder="9876543210" />
-                          {/* OTP verification would go here */}
                       </div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" />
+                        <Input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" disabled={isGoogleSignIn} />
                     </div>
-                     <div className="grid sm:grid-cols-2 gap-4">
+                     {!isGoogleSignIn && <div className="grid sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
                             <Input id="password" type="password" value={formData.password} onChange={handleChange} />
@@ -185,7 +201,7 @@ export default function SignUpPage() {
                             <Label htmlFor="confirmPassword">Confirm Password</Label>
                             <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} />
                         </div>
-                    </div>
+                    </div>}
                 </div>
             )}
              {currentStep === 2 && (
@@ -288,10 +304,9 @@ export default function SignUpPage() {
             ) : <div></div>}
         </CardFooter>
       </Card>
-      <p className="text-center text-sm text-muted-foreground mt-4">
+       {!isGoogleSignIn && <p className="text-center text-sm text-muted-foreground mt-4">
         Already have an account? <Link href="/login" className="text-primary hover:underline">Log in</Link>
-      </p>
+      </p>}
     </div>
   );
 }
-

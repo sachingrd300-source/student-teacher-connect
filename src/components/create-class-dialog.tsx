@@ -19,7 +19,8 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase/auth';
+import { firestore } from '@/firebase/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Label } from '@/components/ui/label';
@@ -42,7 +43,6 @@ type CreateClassDialogProps = {
 export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
   const { toast } = useToast();
   const { user } = useUser();
-  const firestore = useFirestore();
 
   const [isCreateClassOpen, setCreateClassOpen] = useState(false);
   const [newClassData, setNewClassData] = useState({

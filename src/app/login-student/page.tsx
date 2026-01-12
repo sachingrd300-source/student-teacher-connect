@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, Key, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignIn, useAuth, initiateGoogleSignIn, useFirestore } from '@/firebase';
+import { loginWithEmail, loginWithGoogle } from '@/firebase/auth';
+import { firestore } from '@/firebase/firebase';
 import { getAdditionalUserInfo } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -29,8 +30,6 @@ export default function StudentLoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
-  const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -39,12 +38,8 @@ export default function StudentLoginPage() {
     setIsLoading(true);
 
     try {
-      if (!auth) {
-        throw new Error("Auth service is not available.");
-      }
-      await initiateEmailSignIn(auth, email, password);
+      await loginWithEmail(email, password);
       toast({ title: 'Login Successful', description: "You're being redirected to your dashboard." });
-      
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
@@ -61,14 +56,11 @@ export default function StudentLoginPage() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-        if (!auth || !firestore) throw new Error("Auth service not available.");
-
-        const userCredential = await initiateGoogleSignIn(auth);
+        const userCredential = await loginWithGoogle();
         const user = userCredential.user;
         const additionalInfo = getAdditionalUserInfo(userCredential);
         
         if (additionalInfo?.isNewUser) {
-            // Create a new user document in Firestore for the student
             const userRef = doc(firestore, 'users', user.uid);
             await setDoc(userRef, {
                 id: user.uid,

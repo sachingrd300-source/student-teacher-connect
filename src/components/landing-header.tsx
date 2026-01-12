@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/auth';
 
 export function LandingHeader() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading } = useUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
@@ -22,7 +22,7 @@ export function LandingHeader() {
         </div>
         
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {!isUserLoading && (
+          {!isLoading && (
             <>
               {user ? (
                 <Button asChild>
@@ -56,7 +56,7 @@ export function LandingHeader() {
                     <span className="ml-2 font-bold font-headline text-lg">EduConnect Pro</span>
                 </div>
                 <div className="mt-auto flex flex-col gap-2">
-                    {!isUserLoading && (
+                    {!isLoading && (
                       <>
                         {user ? (
                            <Button asChild>

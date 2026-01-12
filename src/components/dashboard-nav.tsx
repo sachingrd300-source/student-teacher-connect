@@ -25,7 +25,7 @@ import {
 import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
-import { useAuth } from '@/firebase';
+import { logout } from '@/firebase/auth';
 
 type Role = 'teacher' | 'student';
 
@@ -55,7 +55,6 @@ const roleIcons = {
 export function DashboardNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const router = useRouter();
-  const auth = useAuth();
   const items = navItems[role] || [];
   const [isClient, setIsClient] = useState(false);
 
@@ -63,10 +62,8 @@ export function DashboardNav({ role }: { role: Role }) {
     setIsClient(true);
   }, []);
 
-  const handleLogout = () => {
-    if (auth) {
-      auth.signOut();
-    }
+  const handleLogout = async () => {
+    await logout();
     router.push('/');
   };
 

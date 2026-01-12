@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -16,7 +17,7 @@ import { DashboardNav } from '@/components/dashboard-nav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, User } from 'lucide-react';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Role = 'teacher' | 'student';
@@ -27,7 +28,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
 
   const getRole = (): Role => {
     if (pathname.startsWith('/dashboard/teacher')) return 'teacher';

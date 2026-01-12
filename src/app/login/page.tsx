@@ -10,8 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, Key, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignIn, useAuth, initiateGoogleSignIn, useFirestore } from '@/firebase';
-import { getAdditionalUserInfo } from 'firebase/auth';
+import { loginWithEmail, loginWithGoogle } from '@/firebase/auth';
+import { firestore } from '@/firebase/firebase';
+import { getDoc, doc } from 'firebase/firestore';
+
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -28,8 +30,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
-  const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -38,12 +38,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      if (!auth) {
-        throw new Error("Auth service is not available.");
-      }
-      await initiateEmailSignIn(auth, email, password);
+      await loginWithEmail(email, password);
       toast({ title: 'Login Successful', description: "You're being redirected to your dashboard." });
-      
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
@@ -60,18 +56,16 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-        if (!auth || !firestore) throw new Error("Auth service not available.");
+        const userCredential = await loginWithGoogle();
+        const user = userCredential.user;
 
-        const userCredential = await initiateGoogleSignIn(auth);
-        const additionalInfo = getAdditionalUserInfo(userCredential);
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-        if (additionalInfo?.isNewUser) {
-            // This is a new user. Redirect them to the multi-step signup
-            // form to complete their profile as a tutor.
+        if (!userDoc.exists()) {
             toast({ title: 'Welcome!', description: "Please complete your tutor profile." });
-            router.push('/signup');
+            router.push(`/signup?name=${encodeURIComponent(user.displayName || '')}&email=${encodeURIComponent(user.email || '')}`);
         } else {
-            // This is an existing user. Log them in.
             toast({ title: 'Login Successful', description: "Welcome back!" });
             router.push('/dashboard');
         }
@@ -79,6 +73,7 @@ export default function LoginPage() {
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {
             // User closed the popup, do nothing.
+            setGoogleLoading(false);
             return;
         }
         console.error("Google Sign In Error:", error);
@@ -138,5 +133,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
