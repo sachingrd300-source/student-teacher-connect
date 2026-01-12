@@ -5,12 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, StepForward, Atom, FlaskConical, Book, BrainCircuit, MessageSquare, TestTube, Edit, Layers } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnimatedCard } from '@/components/ui/animated-card';
+import { ScrollToTop } from '@/components/ui/scroll-to-top';
 
 
 const features = [
@@ -81,34 +82,35 @@ const floatingIcons = [
 ]
 
 const FloatingIconsBackground = () => {
-    const [isClient, setIsClient] = useState(false);
-  
-    useEffect(() => {
-      setIsClient(true);
-    }, []);
-  
-    if (!isClient) {
-      return null;
-    }
-  
-    return (
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {Array.from({ length: 15 }).map((_, i) => {
-          const Icon = floatingIcons[i % floatingIcons.length].icon;
-          const style = {
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 10}s`,
-            animationDuration: `${10 + Math.random() * 10}s`,
-          };
-          return (
-            <div key={i} style={style} className="floating-icon">
-              {Icon}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+  const [icons, setIcons] = useState<{ style: React.CSSProperties, icon: React.ReactNode }[]>([]);
+
+  useEffect(() => {
+    const generatedIcons = Array.from({ length: 15 }).map((_, i) => {
+      const Icon = floatingIcons[i % floatingIcons.length].icon;
+      const style = {
+        left: `${Math.random() * 100}%`,
+        animationDelay: `${Math.random() * 10}s`,
+        animationDuration: `${10 + Math.random() * 10}s`,
+      };
+      return { style, icon: Icon };
+    });
+    setIcons(generatedIcons);
+  }, []);
+
+  if (icons.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden">
+      {icons.map((item, i) => (
+        <div key={i} style={item.style} className="floating-icon">
+          {item.icon}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 
 export default function LandingPage() {
@@ -172,9 +174,8 @@ export default function LandingPage() {
         <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/20">
             <div className="container px-4 md:px-6">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animation-multi-color-blink">
-                        <StepForward className="w-8 h-8"/>
-                        Getting Started is Easy
+                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
+                       <span className="animation-multi-color-blink">Getting Started is Easy</span>
                     </h2>
                     <p className="max-w-2xl mx-auto mt-4 text-muted-foreground md:text-lg">
                         Follow these simple steps to join our learning community.
@@ -245,7 +246,7 @@ export default function LandingPage() {
                 </Tabs>
             </div>
         </section>
-
+        <ScrollToTop />
       </main>
 
       {/* Footer */}
