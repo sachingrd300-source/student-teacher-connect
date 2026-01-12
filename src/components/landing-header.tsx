@@ -5,12 +5,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Menu } from 'lucide-react';
-import { useUser } from '@/firebase/auth';
+import { Menu, ArrowRight } from 'lucide-react';
 
 export function LandingHeader() {
-  const { user, isLoading } = useUser();
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
       <div className="container flex h-16 max-w-screen-2xl items-center">
@@ -22,24 +19,13 @@ export function LandingHeader() {
         </div>
         
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {!isLoading && (
             <>
-              {user ? (
-                <Button asChild>
-                  <Link href="/dashboard">Go to Dashboard</Link>
-                </Button>
-              ) : (
                 <div className="hidden md:flex gap-2">
-                  <Button variant="ghost" asChild>
-                    <Link href="/login-student">Student Login</Link>
-                  </Button>
                   <Button asChild>
-                    <Link href="/login">Tutor Login / Sign Up</Link>
+                    <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2" /></Link>
                   </Button>
                 </div>
-              )}
             </>
-          )}
 
           <Sheet>
             <SheetTrigger asChild>
@@ -56,24 +42,9 @@ export function LandingHeader() {
                     <span className="ml-2 font-bold font-headline text-lg">EduConnect Pro</span>
                 </div>
                 <div className="mt-auto flex flex-col gap-2">
-                    {!isLoading && (
-                      <>
-                        {user ? (
-                           <Button asChild>
-                              <Link href="/dashboard">Go to Dashboard</Link>
-                           </Button>
-                        ) : (
-                           <>
-                             <Button asChild>
-                                <Link href="/login-student">Student Login</Link>
-                             </Button>
-                             <Button variant="outline" asChild>
-                               <Link href="/login">Tutor Login / Sign Up</Link>
-                             </Button>
-                           </>
-                        )}
-                      </>
-                    )}
+                    <Button asChild>
+                        <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2" /></Link>
+                    </Button>
                 </div>
               </div>
             </SheetContent>

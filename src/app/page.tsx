@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight } from 'lucide-react';
 
 const features = [
     {
@@ -48,10 +48,7 @@ export default function LandingPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <Button asChild size="lg">
-                                <Link href="/login-student">I am a Student</Link>
-                            </Button>
-                            <Button asChild size="lg" variant="outline">
-                                <Link href="/login">I am a Tutor</Link>
+                                <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" /></Link>
                             </Button>
                         </div>
                     </div>

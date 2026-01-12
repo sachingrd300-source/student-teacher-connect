@@ -25,7 +25,8 @@ import {
 import { buttonVariants } from './ui/button';
 import { useEffect, useState } from 'react';
 import { Skeleton } from './ui/skeleton';
-import { logout } from '@/firebase/auth';
+// Auth functionality is temporarily removed
+// import { logout } from '@/firebase/auth';
 
 type Role = 'teacher' | 'student';
 
@@ -63,7 +64,8 @@ export function DashboardNav({ role }: { role: Role }) {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
+    // Auth functionality is temporarily removed
+    // await logout();
     router.push('/');
   };
 
