@@ -66,7 +66,7 @@ type StudyMaterial = {
 }
 
 const classLevelOptions = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Undergraduate", "Postgraduate"];
-const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Test Paper", "Solution"];
+const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", "Test Paper", "Solution"];
 
 export default function StudyMaterialPage() {
   const firestore = useFirestore();
@@ -184,5 +184,3 @@ export default function StudyMaterialPage() {
     </div>
   );
 }
-
-    
