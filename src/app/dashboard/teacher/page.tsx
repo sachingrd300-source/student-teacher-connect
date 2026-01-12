@@ -91,7 +91,7 @@ export default function TeacherDashboardPage() {
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
-  if (isLoadingProfile) {
+  if (isLoadingProfile || !userProfile) {
     return <div className="space-y-4">
         <Skeleton className="h-10 w-1/3" />
         <Skeleton className="h-40 w-full" />
