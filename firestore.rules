@@ -35,16 +35,9 @@ service cloud.firestore {
     
     // Check if the requesting user is approved for a specific class
     function isEnrolledInClass(classId) {
-      // This function needs to query the enrollments collection.
-      // A student is enrolled if a document exists for them in the specified class with 'approved' status.
-      // As direct querying is not possible in rules, we rely on checking specific document paths if possible,
-      // or structure list rules to enforce this check. For a 'get' rule, this is tricky.
-      // A better pattern for `get` is often to duplicate the enrollment status on the user or have a subcollection.
-      // For now, we will rely on list rules and a slightly more open get rule for classes.
-      return exists(/databases/$(database)/documents/enrollments?path=auto_id_placeholder) 
-             && get(/databases/$(database)/documents/enrollments?path=auto_id_placeholder).data.studentId == request.auth.uid
-             && get(/databases/$(database)/documents/enrollments?path=auto_id_placeholder).data.classId == classId
-             && get(/databases/$(database)/documents/enrollments?path=auto_id_placeholder).data.status == 'approved';
+      // Check for a specific enrollment doc with a predictable ID format: {studentId}_{classId}
+      return exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId))
+             && get(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId)).data.status == 'approved';
     }
 
 
@@ -74,9 +67,7 @@ service cloud.firestore {
 
     match /classes/{classId} {
       // An enrolled student or the teacher can get class details
-      // The isEnrolledInClass function is complex for a `get` rule. A more secure, but complex, way would be to check a specific enrollment doc path.
-      // For simplicity now, we allow any signed-in user to get class details, but secure the materials within.
-      allow get: if isSignedIn();
+      allow get: if isSignedIn() && (isTeacherOwner(get(/databases/$(database)/documents/classes/$(classId)).data) || isEnrolledInClass(classId));
       // A teacher can list their own classes
       allow list: if isSignedIn() && request.query.get('teacherId') == request.auth.uid;
       allow create: if isSignedIn()
@@ -90,14 +81,25 @@ service cloud.firestore {
     =============================== */
 
     match /enrollments/{enrollmentId} {
+        // A student can create their own enrollment request with a predictable ID
+        allow create: if isSignedIn() 
+                      && isStudentOwner(request.resource.data)
+                      && enrollmentId == request.auth.uid + '_' + request.resource.data.classId;
+
+        // The student or teacher involved can get the document.
         allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
+        
         // A user can list their own enrollments, either as a student or a teacher
         allow list: if isSignedIn() && (
-            (request.query.get('studentId') == request.auth.uid) || 
-            (request.query.get('teacherId') == request.auth.uid)
+            (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
+            (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
         );
-        allow create: if isSignedIn() && isStudentOwner(request.resource.data);
-        allow update: if isExistingDoc() && isTeacherOwner(resource.data); // only teacher can approve/deny
+
+        // Only the teacher can approve/deny the request.
+        allow update: if isExistingDoc() 
+                      && isTeacherOwner(resource.data)
+                      && request.resource.data.status != resource.data.status; // Ensure status is the only thing changing for this rule
+                      
         allow delete: if false;
     }
 
@@ -112,14 +114,10 @@ service cloud.firestore {
       // An enrolled student can get private documents for their class.
       allow get: if (isExistingDoc() && resource.data.isFree == true)
                   || isTeacherOwner(resource.data)
-                  || (isExistingDoc() && isEnrolledInClass(resource.data.classId));
+                  || (isExistingDoc() && resource.data.classId != null && isEnrolledInClass(resource.data.classId));
       
       // Allow listing materials under certain conditions
-      allow list: if isSignedIn() && (
-          request.query.get('teacherId') == request.auth.uid ||
-          request.query.get('isFree') == true ||
-          (request.query.get('classId') != null && isEnrolledInClass(request.query.get('classId')))
-      );
+      allow list: if isSignedIn(); // Allow browsing the shop and public materials
 
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);

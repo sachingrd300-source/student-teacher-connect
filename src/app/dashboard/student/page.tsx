@@ -24,10 +24,10 @@ import {
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, setDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type Enrollment = {
   id: string;
@@ -155,8 +155,12 @@ export default function StudentDashboardPage() {
             status: 'pending',
             createdAt: serverTimestamp(),
         };
+        
+        // Use a composite ID for the enrollment document
+        const enrollmentId = `${user.uid}_${classDoc.id}`;
+        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
 
-        addDocumentNonBlocking(collection(firestore, 'enrollments'), enrollmentData);
+        setDocumentNonBlocking(enrollmentRef, enrollmentData, {});
         
         toast({ title: 'Request Sent!', description: `Your request to join ${classData.subject} has been sent to the teacher.` });
         setClassCode('');
