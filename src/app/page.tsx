@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube, ShoppingCart, StickyNote, Shirt } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube, ShoppingCart, StickyNote, Shirt, Library } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -84,14 +84,14 @@ const floatingIcons = [
 
 const marketplaceItems = [
     {
-        icon: <StickyNote className="h-8 w-8 text-primary" />,
-        title: "Notes & DPPs",
-        description: "Purchase high-quality, curated notes and daily practice problems from top educators."
+        icon: <Library className="h-8 w-8 text-primary" />,
+        title: "Free Resource Library",
+        description: "Access a wealth of free notes, practice papers, and books for various subjects and classes."
     },
     {
-        icon: <Book className="h-8 w-8 text-primary" />,
-        title: "New & Old Books",
-        description: "Find new textbooks or purchase second-hand books from other students and centers."
+        icon: <StickyNote className="h-8 w-8 text-primary" />,
+        title: "Premium Notes & DPPs",
+        description: "Purchase high-quality, curated notes and daily practice problems from top educators."
     },
     {
         icon: <Shirt className="h-8 w-8 text-primary" />,
@@ -113,12 +113,14 @@ const FloatingIconsBackground = () => {
         animationDelay: `${Math.random() * 10}s`,
         animationDuration: `${10 + Math.random() * 10}s`,
       };
-      return { style, icon: iconData.icon };
+      return { style, icon: typeof iconData.icon === 'string' ? iconData.icon : React.cloneElement(iconData.icon as React.ReactElement, {key: i}) };
     });
     setIcons(generatedIcons);
+
+    return () => { isMounted.current = false }
   }, []);
 
-  if (!isMounted.current || icons.length === 0) {
+  if (!isMounted.current) {
     return null;
   }
 
@@ -273,10 +275,10 @@ export default function LandingPage() {
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
-                <ShoppingCart className="h-8 w-8 text-primary" /> One Marketplace for All Topics
+                <ShoppingCart className="h-8 w-8 text-primary" /> A Marketplace for Every Learner
               </h2>
               <p className="max-w-3xl mx-auto mt-4 text-muted-foreground md:text-lg">
-                For the first time, tutors, coaching centers, and schools can connect with students to sell notes, DPPs, books, t-shirts, and other custom items. Students can also purchase materials directly or trade old books.
+                Explore a rich ecosystem of free and premium content. Tutors and centers can sell materials, and students can find everything from notes to second-hand books.
               </p>
             </div>
             <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
