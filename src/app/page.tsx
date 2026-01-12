@@ -101,13 +101,13 @@ const marketplaceItems = [
     },
     {
         icon: <StickyNote className="h-8 w-8 text-primary" />,
-        title: "Premium Notes & DPPs",
-        description: "Purchase high-quality, curated notes and daily practice problems from top educators."
+        title: "Premium Educator Content",
+        description: "Purchase high-quality, curated notes and daily practice problems directly from top educators."
     },
     {
-        icon: <Shirt className="h-8 w-8 text-primary" />,
-        title: "Custom Merch",
-        description: "Get custom t-shirts, and other merchandise from your favorite tutors and coaching centers."
+        icon: <Book className="h-8 w-8 text-primary" />,
+        title: "Student-to-Student Marketplace",
+        description: "Buy and sell second-hand books and other study materials directly with other students."
     }
 ];
 
@@ -287,7 +287,7 @@ export default function LandingPage() {
                 <ShoppingCart className="h-8 w-8 text-primary" /> A Marketplace for Every Learner
               </h2>
               <p className="max-w-3xl mx-auto mt-4 text-muted-foreground md:text-lg">
-                Explore a rich ecosystem of free and premium content. Tutors and centers can sell materials, and students can find everything from notes to second-hand books.
+                Explore a rich ecosystem of educational content. Purchase premium materials from top educators or buy and sell second-hand books with fellow students.
               </p>
             </div>
             <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
