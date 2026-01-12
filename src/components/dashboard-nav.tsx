@@ -16,6 +16,7 @@ import {
   Users2,
   CalendarDays,
   Search,
+  UserPlus,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -34,6 +35,7 @@ const navItems = {
   teacher: [
     { href: '/dashboard/teacher', label: 'Dashboard', icon: Home },
     { href: '/dashboard/teacher/profile', label: 'My Profile', icon: User },
+    { href: '/dashboard/teacher/enrollments', label: 'Enrollments', icon: UserPlus },
     { href: '/dashboard/teacher/batches', label: 'Classes', icon: Users2 },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
     { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
