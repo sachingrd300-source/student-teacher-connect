@@ -17,8 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['"PT Sans"', 'sans-serif'],
-        headline: ['"Playfair Display"', 'serif'],
+        body: ['"Inter"', 'sans-serif'],
+        headline: ['"Lora"', 'serif'],
         code: ['monospace'],
       },
       colors: {
@@ -81,15 +81,29 @@ export default {
             height: '0',
           },
         },
-        blink: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.6' },
+        'multi-color-blink': {
+          '0%, 100%': { color: 'hsl(var(--foreground) / 0.8)' },
+          '15%': { color: 'hsl(var(--primary))' },
+          '30%': { color: 'hsl(var(--accent))' },
+          '45%': { color: 'hsl(48, 95%, 75%)' },
+          '60%': { color: 'hsl(0, 0%, 98% / 0.9)' },
+          '75%': { color: 'hsl(var(--accent))' },
+          '90%': { color: 'hsl(var(--primary))' },
+        },
+        aurora: {
+          from: {
+            backgroundPosition: '0% 50%',
+          },
+          to: {
+            backgroundPosition: '350% 50%',
+          },
         },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        blink: 'blink 2s ease-in-out infinite',
+        'multi-color-blink': 'multi-color-blink 4s ease-in-out infinite',
+        aurora: 'aurora 20s linear infinite',
       },
     },
   },
