@@ -59,10 +59,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, MoreVertical, BookOpenCheck, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, orderBy, serverTimestamp, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 
 type StudyMaterial = {
@@ -201,25 +202,46 @@ export default function MaterialsPage() {
             teacherName: userProfile?.name || 'EduConnect Pro',
             isFree: isFree,
             isOfficial: user.uid === ADMIN_USER_ID ? isOfficial : false, // Only admin can set official status
-            price: isFree ? null : Number(price),
+            price: isFree ? 0 : Number(price),
             createdAt: serverTimestamp(),
             // In a real app, you would handle file uploads and store a URL
             fileUrl: 'https://example.com/placeholder.pdf'
         };
         
         const materialsCollection = collection(firestore, 'studyMaterials');
-        addDocumentNonBlocking(materialsCollection, newMaterial);
-
-        toast({ title: 'Material Added', description: `${title} has been successfully uploaded.`});
-        
-        resetForm();
+        addDoc(materialsCollection, newMaterial)
+            .then(() => {
+                 toast({ title: 'Material Added', description: `${title} has been successfully uploaded.`});
+                 resetForm();
+            })
+            .catch(error => {
+                errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: materialsCollection.path,
+                        operation: 'create',
+                        requestResourceData: newMaterial,
+                    })
+                )
+            });
     }
     
     const handleDeleteMaterial = (materialId: string) => {
         if(!firestore) return;
         const materialRef = doc(firestore, 'studyMaterials', materialId);
-        deleteDocumentNonBlocking(materialRef);
-        toast({ title: 'Material Deleted', description: 'The selected material has been removed.' });
+        deleteDoc(materialRef)
+         .then(() => {
+                toast({ title: 'Material Deleted', description: 'The selected material has been removed.' });
+            })
+            .catch(error => {
+                errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: materialRef.path,
+                        operation: 'delete',
+                    })
+                )
+            });
     };
 
     if (isLoading) {
@@ -306,7 +328,8 @@ export default function MaterialsPage() {
                             </div>
                              <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="file" className="text-right">File*</Label>
-                                <Input id="file" type="file" className="col-span-3" />
+                                <Input id="file" type="file" className="col-span-3" disabled />
+                                <p className="col-start-2 col-span-3 text-xs text-muted-foreground">File upload coming soon.</p>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">Access</Label>
@@ -343,6 +366,7 @@ export default function MaterialsPage() {
                     <CardDescription>A list of all the resources you have uploaded.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {isLoading && <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
                     {materials && materials.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -408,3 +432,5 @@ export default function MaterialsPage() {
         </div>
     );
 }
+
+    
