@@ -61,6 +61,12 @@ type Class = {
     classLevel: string;
     classCode: string;
     teacherId: string;
+    createdAt: { toDate: () => Date };
+}
+
+type Enrollment = {
+    classId: string;
+    status: 'approved' | 'pending' | 'denied';
 }
 
 const quickActions = [
@@ -106,12 +112,21 @@ export default function TeacherDashboardPage() {
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
+  const enrollmentsQuery = useMemoFirebase(() => {
+      if(!firestore || !user) return null;
+      // Fetch all approved enrollments for this teacher
+      return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'approved'));
+  }, [firestore, user]);
+  const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
   };
+
+  const isLoading = isLoadingProfile || isLoadingClasses || isLoadingEnrollments;
 
   if (isLoadingProfile || !userProfile) {
     return <div className="space-y-4">
@@ -148,6 +163,16 @@ export default function TeacherDashboardPage() {
           <CardContent>
              {isLoadingClasses ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{classes?.length || 0}</div>}
             <p className="text-xs text-muted-foreground">Total created classes</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-soft-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+             {isLoadingEnrollments ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{enrollments?.length || 0}</div>}
+            <p className="text-xs text-muted-foreground">Across all your classes</p>
           </CardContent>
         </Card>
         <Card className="shadow-soft-shadow">
@@ -198,35 +223,42 @@ export default function TeacherDashboardPage() {
             <CreateClassDialog userProfile={userProfile} />
           </CardHeader>
           <CardContent>
-           {isLoadingClasses && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
+           {isLoading && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
            {classes && classes.length > 0 ? (
             <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Class</TableHead>
+                    <TableHead>Students</TableHead>
+                    <TableHead>Created On</TableHead>
                     <TableHead>Class Code</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {classes.map((cls) => (
-                    <TableRow key={cls.id}>
-                      <TableCell className="font-medium">{cls.subject} - {cls.classLevel}</TableCell>
-                       <TableCell>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{cls.classCode}</Badge>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                                navigator.clipboard.writeText(cls.classCode);
-                                toast({title: "Copied! 👍", description: "Class code copied to clipboard."})
-                            }}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </div>
-                       </TableCell>
-                    </TableRow>
-                  ))}
+                  {classes.map((cls) => {
+                    const studentCount = enrollments?.filter(e => e.classId === cls.id).length || 0;
+                    return (
+                        <TableRow key={cls.id}>
+                            <TableCell className="font-medium">{cls.subject} - {cls.classLevel}</TableCell>
+                            <TableCell>{studentCount}</TableCell>
+                            <TableCell>{cls.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="secondary">{cls.classCode}</Badge>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                                        navigator.clipboard.writeText(cls.classCode);
+                                        toast({title: "Copied! 👍", description: "Class code copied to clipboard."})
+                                    }}>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
-            ) : !isLoadingClasses && (
+            ) : !isLoading && (
               <p className="text-sm text-center text-muted-foreground py-8">You haven't created any classes yet.</p>
             )}
           </CardContent>
@@ -235,5 +267,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    
