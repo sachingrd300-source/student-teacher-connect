@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { collection, query, where, getDocs, setDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type Enrollment = {
   id: string;
