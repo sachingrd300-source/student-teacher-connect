@@ -5,9 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube, ShoppingCart, StickyNote, Shirt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnimatedCard } from '@/components/ui/animated-card';
@@ -81,18 +81,36 @@ const floatingIcons = [
     { icon: "📈" },
 ]
 
+const marketplaceItems = [
+    {
+        icon: <StickyNote className="h-8 w-8 text-primary" />,
+        title: "Notes & DPPs",
+        description: "Purchase high-quality, curated notes and daily practice problems from top educators."
+    },
+    {
+        icon: <Book className="h-8 w-8 text-primary" />,
+        title: "New & Old Books",
+        description: "Find new textbooks or purchase second-hand books from other students and centers."
+    },
+    {
+        icon: <Shirt className="h-8 w-8 text-primary" />,
+        title: "Custom Merch",
+        description: "Get custom t-shirts, and other merchandise from your favorite tutors and coaching centers."
+    }
+];
+
 const FloatingIconsBackground = () => {
   const [icons, setIcons] = useState<{ style: React.CSSProperties, icon: React.ReactNode }[]>([]);
 
   useEffect(() => {
     const generatedIcons = Array.from({ length: 15 }).map((_, i) => {
-      const Icon = floatingIcons[i % floatingIcons.length].icon;
+      const iconData = floatingIcons[i % floatingIcons.length];
       const style = {
         left: `${Math.random() * 100}%`,
         animationDelay: `${Math.random() * 10}s`,
         animationDuration: `${10 + Math.random() * 10}s`,
       };
-      return { style, icon: Icon };
+      return { style, icon: iconData.icon };
     });
     setIcons(generatedIcons);
   }, []);
@@ -246,6 +264,36 @@ export default function LandingPage() {
                 </Tabs>
             </div>
         </section>
+
+        {/* Marketplace Section */}
+        <section id="marketplace" className="w-full py-16 md:py-24 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
+                <ShoppingCart className="h-8 w-8 text-primary" /> One Marketplace for All Topics
+              </h2>
+              <p className="max-w-3xl mx-auto mt-4 text-muted-foreground md:text-lg">
+                For the first time, tutors, coaching centers, and schools can connect with students to sell notes, DPPs, books, t-shirts, and other custom items. Students can also purchase materials directly or trade old books.
+              </p>
+            </div>
+            <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
+                {marketplaceItems.map((item, index) => (
+                     <AnimatedCard index={index} key={item.title}>
+                        <Card className="text-center p-8 flex flex-col items-center gap-4 h-full">
+                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
+                                {item.icon}
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-xl font-headline">{item.title}</h3>
+                                <p className="text-muted-foreground">{item.description}</p>
+                            </div>
+                        </Card>
+                     </AnimatedCard>
+                ))}
+            </div>
+          </div>
+        </section>
+        
         <ScrollToTop />
       </main>
 
@@ -264,3 +312,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
