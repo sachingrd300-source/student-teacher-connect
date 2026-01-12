@@ -18,6 +18,7 @@ import {
   Search,
   UserPlus,
   ShoppingCart,
+  Store,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -52,6 +53,7 @@ const navItems = {
     { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
     { href: '/dashboard/student/performance', label: 'My Performance', icon: BarChart3, conditional: true },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
+    { href: '/dashboard/student/my-store', label: 'My Store', icon: Store },
   ],
 };
 

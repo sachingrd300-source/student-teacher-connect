@@ -14,6 +14,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function isStudent() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+    }
 
     function isExistingDoc() {
       return resource != null;
@@ -83,7 +87,7 @@ service cloud.firestore {
         allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
         
         // A user can list their own enrollments, either as a student or a teacher
-        allow list: if isSignedIn() &&
+        allow list: if isSignedIn() && 
             (request.query.get('studentId') == request.auth.uid || request.query.get('teacherId') == request.auth.uid);
 
         // A student can create their own enrollment request with a predictable ID
@@ -120,6 +124,20 @@ service cloud.firestore {
 
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
+    }
+
+    /* ===============================
+       MARKETPLACE ITEMS
+    =============================== */
+    match /marketplaceItems/{itemId} {
+      // Anyone signed in can view marketplace items
+      allow get, list: if isSignedIn();
+      
+      // A student can create a listing for themselves.
+      allow create: if isStudent() && request.resource.data.sellerId == request.auth.uid;
+      
+      // Only the student who created the listing can update or delete it.
+      allow update, delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
     }
 
     /* ===============================
