@@ -20,3 +20,5 @@ export function AnimatedGradient() {
         </div>
     );
 }
+
+    
