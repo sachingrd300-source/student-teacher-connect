@@ -18,6 +18,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+  } from '@/components/ui/dropdown-menu';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -38,12 +44,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Store, PlusCircle, MoreVertical, Trash2 } from 'lucide-react';
+import { Store, PlusCircle, MoreVertical, Trash2, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, orderBy, serverTimestamp, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 const itemConditions = ["New", "Like New", "Used", "Acceptable"];
 const itemTypes = ["Book", "Notes", "Equipment", "Other"];
@@ -107,22 +115,63 @@ export default function MyStorePage() {
             itemType,
             status: 'available',
             createdAt: serverTimestamp(),
-            // In a real app, you would handle image uploads and store the URL
             imageUrl: 'https://picsum.photos/seed/book/600/400',
         };
 
         const marketplaceCollection = collection(firestore, 'marketplaceItems');
-        addDocumentNonBlocking(marketplaceCollection, newItem);
-
-        toast({ title: 'Item Listed!', description: `${title} is now available in the marketplace.`});
-        resetForm();
+        addDoc(marketplaceCollection, newItem)
+            .then(() => {
+                 toast({ title: 'Item Listed!', description: `${title} is now available in the marketplace.`});
+                 resetForm();
+            })
+            .catch(error => {
+                errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: marketplaceCollection.path,
+                        operation: 'create',
+                        requestResourceData: newItem,
+                    })
+                )
+            });
     };
+
+    const handleUpdateStatus = (itemId: string, status: 'available' | 'sold') => {
+        if(!firestore) return;
+        const itemRef = doc(firestore, 'marketplaceItems', itemId);
+        updateDoc(itemRef, { status })
+            .then(() => {
+                toast({ title: 'Status Updated', description: `Item status changed to ${status}.` });
+            })
+            .catch(error => {
+                 errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: itemRef.path,
+                        operation: 'update',
+                        requestResourceData: { status },
+                    })
+                )
+            });
+    };
+
 
     const handleDeleteItem = (itemId: string) => {
         if(!firestore) return;
         const itemRef = doc(firestore, 'marketplaceItems', itemId);
-        deleteDocumentNonBlocking(itemRef);
-        toast({ title: 'Item Removed', description: 'Your listing has been removed from the marketplace.' });
+        deleteDoc(itemRef)
+         .then(() => {
+                toast({ title: 'Item Removed', description: 'Your listing has been removed from the marketplace.' });
+            })
+            .catch(error => {
+                errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: itemRef.path,
+                        operation: 'delete',
+                    })
+                )
+            });
     }
 
     return (
@@ -220,9 +269,24 @@ export default function MyStorePage() {
                                         <TableCell>₹{item.price}</TableCell>
                                         <TableCell><Badge variant={item.status === 'available' ? 'default' : 'secondary'}>{item.status}</Badge></TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)}>
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <span className="sr-only">Open menu</span>
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                     <DropdownMenuItem onClick={() => handleUpdateStatus(item.id, item.status === 'available' ? 'sold' : 'available')}>
+                                                        <Tag className="mr-2 h-4 w-4" />
+                                                        Mark as {item.status === 'available' ? 'Sold' : 'Available'}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600" onClick={() => handleDeleteItem(item.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -238,4 +302,3 @@ export default function MyStorePage() {
         </div>
     );
 }
-
