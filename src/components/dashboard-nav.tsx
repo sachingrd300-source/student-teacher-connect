@@ -28,7 +28,7 @@ import {
 import { buttonVariants } from './ui/button';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from './ui/skeleton';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 // Auth functionality is temporarily removed
 // import { logout } from '@/firebase/auth';
@@ -75,7 +75,7 @@ export function DashboardNav({ role }: { role: Role }) {
 
   const [isClient, setIsClient] = useState(false);
 
-  const approvedEnrollmentsQuery = useMemo(() => {
+  const approvedEnrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user || role !== 'student') return null;
     return query(
       collection(firestore, 'enrollments'), 
