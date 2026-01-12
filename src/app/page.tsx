@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
+import { AnimatedGradient } from '@/components/ui/animated-gradient';
 
 const features = [
     {
@@ -76,36 +77,13 @@ export default function LandingPage() {
       <LandingHeader />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-white">
-            <div className="absolute inset-0">
-                 <Carousel 
-                    className="w-full h-full"
-                    plugins={[autoplay.current]}
-                    opts={{ loop: true }}
-                 >
-                    <CarouselContent className="h-full" data-testid="carousel-content">
-                        {heroImages.map((image, index) => (
-                           <CarouselItem key={index} className="h-full">
-                                <Image
-                                    src={image.imageUrl}
-                                    alt={image.description}
-                                    fill
-                                    style={{ objectFit: 'cover' }}
-                                    className="brightness-50"
-                                    data-ai-hint={image.imageHint}
-                                    priority={index === 0}
-                                />
-                           </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                </Carousel>
-                <div className="absolute inset-0 bg-black/50"></div>
-            </div>
+        <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-foreground overflow-hidden">
+            <AnimatedGradient />
              <div className="relative z-10 px-4 md:px-6 space-y-6">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-shadow-lg">
                     Empowering Education, <span className="text-primary">Connecting Minds</span>
                 </h1>
-                <p className="max-w-2xl mx-auto text-lg md:text-xl text-primary-foreground/90">
+                <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground">
                     EduConnect Pro is a modern, all-in-one platform designed to bring teachers and students closer together for a richer learning experience.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -214,5 +192,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    

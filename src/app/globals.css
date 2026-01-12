@@ -67,4 +67,23 @@
       linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
     background-size: 2rem 2rem;
   }
+  
+  @property --gradient-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  .gradient-rotate {
+    animation: gradient-rotation 10s linear infinite;
+  }
+
+  @keyframes gradient-rotation {
+    0% {
+      --gradient-angle: 0deg;
+    }
+    100% {
+      --gradient-angle: 360deg;
+    }
+  }
 }
