@@ -266,8 +266,30 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Teacher Selling Section */}
+        <section id="teacher-sell" className="w-full py-16 md:py-24 bg-muted/20">
+          <div className="container">
+            <div className="relative rounded-2xl overflow-hidden p-8 md:p-12 text-center text-foreground border">
+                <AnimatedGradient />
+                <div className="relative z-10 flex flex-col items-center gap-6">
+                    <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
+                         <GraduationCap className="h-10 w-10 text-primary" />
+                    </div>
+                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Share Your Knowledge, Earn Your Worth</h2>
+                     <p className="max-w-2xl mx-auto text-lg text-foreground/80">
+                        Monetize your expertise by selling premium study materials. Create high-quality notes, question banks, and practice papers to reach a broader audience and generate additional income.
+                     </p>
+                     <Button asChild size="lg" variant="secondary">
+                        <Link href="/signup">Become a Verified Tutor <ArrowRight className="ml-2" /></Link>
+                    </Button>
+                </div>
+            </div>
+          </div>
+        </section>
+
+
         {/* Free Resources Section */}
-        <section id="free-resources" className="w-full py-16 md:py-24 bg-muted/20">
+        <section id="free-resources" className="w-full py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
@@ -301,7 +323,7 @@ export default function LandingPage() {
         </section>
 
         {/* Marketplace Section */}
-        <section id="marketplace" className="w-full py-16 md:py-24 bg-background">
+        <section id="marketplace" className="w-full py-16 md:py-24 bg-muted/20">
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
