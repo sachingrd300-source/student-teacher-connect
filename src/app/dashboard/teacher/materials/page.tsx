@@ -129,6 +129,9 @@ export default function MaterialsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
+    // The app creator should replace this with their actual Firebase User ID (UID)
+    const ADMIN_USER_ID = 'YOUR_ADMIN_USER_ID_HERE';
+
     // Form state
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -197,7 +200,7 @@ export default function MaterialsPage() {
             teacherId: user.uid,
             teacherName: userProfile?.name,
             isFree: isFree,
-            isOfficial: isOfficial,
+            isOfficial: user.uid === ADMIN_USER_ID ? isOfficial : false, // Only admin can set official status
             price: isFree ? null : Number(price),
             createdAt: serverTimestamp(),
             // In a real app, you would handle file uploads and store a URL
@@ -312,10 +315,12 @@ export default function MaterialsPage() {
                                         <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
                                         <Label htmlFor="isFree">Free (Public)</Label>
                                     </div>
+                                    {user?.uid === ADMIN_USER_ID && (
                                      <div className="flex items-center space-x-2">
                                         <Switch id="isOfficial" checked={isOfficial} onCheckedChange={setIsOfficial} />
                                         <Label htmlFor="isOfficial">Official (App Creator)</Label>
                                     </div>
+                                    )}
                                 </div>
                             </div>
                             {!isFree && (
@@ -403,3 +408,5 @@ export default function MaterialsPage() {
         </div>
     );
 }
+
+    
