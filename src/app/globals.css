@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 220 20% 96%; /* #EEF0F2 */
+    --background: 220 20% 98%;
     --foreground: 220 10% 15%;
     --card: 220 20% 100%;
     --card-foreground: 220 10% 15%;
     --popover: 220 20% 100%;
     --popover-foreground: 220 10% 15%;
-    --primary: 210 80% 50%; /* A modern, friendly blue */
+    --primary: 210 80% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 10% 90%;
+    --secondary: 220 10% 92%;
     --secondary-foreground: 220 10% 25%;
-    --muted: 220 10% 85%;
+    --muted: 220 10% 88%;
     --muted-foreground: 220 5% 45%;
-    --accent: 180 80% 40%; /* A vibrant teal for highlights */
+    --accent: 180 80% 45%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 88%;
-    --input: 220 15% 92%;
-    --ring: 210 80% 50%;
+    --border: 220 15% 90%;
+    --input: 220 15% 94%;
+    --ring: 210 80% 55%;
     --radius: 0.75rem;
   }
  

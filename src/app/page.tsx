@@ -83,7 +83,7 @@ export default function LandingPage() {
             </div>
             <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
                 {features.map((feature) => (
-                     <Card key={feature.title} className="hover:shadow-xl transition-shadow duration-300">
+                     <Card key={feature.title} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <CardHeader className="flex flex-col items-center text-center gap-4">
                             {feature.icon}
                             <CardTitle className="font-headline text-2xl">{feature.title}</CardTitle>
