@@ -10,7 +10,7 @@
     --card-foreground: 240 8% 15%;
     --popover: 45 40% 96%;
     --popover-foreground: 240 8% 15%;
-    --primary: 45 85% 55%;
+    --primary: 48 95% 55%;
     --primary-foreground: 240 8% 10%;
     --secondary: 45 20% 92%;
     --secondary-foreground: 240 8% 25%;
@@ -22,29 +22,29 @@
     --destructive-foreground: 0 0% 98%;
     --border: 45 20% 85%;
     --input: 45 20% 90%;
-    --ring: 45 85% 55%;
+    --ring: 48 95% 55%;
     --radius: 1.25rem;
   }
  
   .dark {
-    --background: 222 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
     --primary: 48 95% 55%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 48 95% 55%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --primary-foreground: 240 8% 10%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 48 95% 65%;
+    --accent-foreground: 240 8% 10%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 48 95% 55%;
   }
 }
@@ -72,12 +72,24 @@
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
   }
 
-  @keyframes gradient-spin {
+  @keyframes aurora {
     0% {
-      --gradient-angle: 0deg;
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
     }
     100% {
-      --gradient-angle: 360deg;
+      background-position: 0% 50%;
     }
+  }
+
+  .aurora-viz {
+    background: radial-gradient(ellipse at 20% 20%, hsl(var(--primary)) 0%, transparent 40%),
+                radial-gradient(ellipse at 80% 30%, hsl(var(--accent)) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, hsl(var(--secondary-foreground)) 0%, transparent 40%),
+                radial-gradient(ellipse at 90% 90%, hsl(var(--primary)) 0%, transparent 40%);
+    background-size: 400% 400%;
+    animation: aurora 8s ease infinite;
   }
 }

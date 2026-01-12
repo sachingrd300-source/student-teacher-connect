@@ -142,7 +142,7 @@ export default function LandingPage() {
         </section>
 
         {/* How It Works Section */}
-        <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/40">
+        <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/20">
             <div className="container px-4 md:px-6">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
@@ -162,15 +162,9 @@ export default function LandingPage() {
                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2 ml-4"></div>
                              {howItWorksStudent.map((step, index) => (
                                 <div key={step.title} className="flex items-start gap-6">
-                                    <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10">
-                                      <div
-                                        className={cn(
-                                          "absolute inset-[-2px] animate-[gradient-spin_3s_linear_infinite] rounded-full",
-                                          "[--gradient-angle:0deg]",
-                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,hsl(var(--primary))_0%,hsl(var(--primary-foreground))_25%,hsl(var(--accent))_50%,hsl(var(--primary-foreground))_75%,hsl(var(--primary))_100%)]"
-                                        )}
-                                      ></div>
-                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background">
+                                    <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10 bg-background">
+                                      <div className="absolute inset-0 rounded-full aurora-viz" />
+                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm">
                                         <span className="font-bold text-primary">{index + 1}</span>
                                       </div>
                                     </div>
@@ -190,15 +184,9 @@ export default function LandingPage() {
                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2 ml-4"></div>
                              {howItWorksTeacher.map((step, index) => (
                                 <div key={step.title} className="flex items-start gap-6">
-                                     <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10">
-                                      <div
-                                        className={cn(
-                                          "absolute inset-[-2px] animate-[gradient-spin_3s_linear_infinite] rounded-full",
-                                          "[--gradient-angle:0deg]",
-                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,hsl(var(--primary))_0%,hsl(var(--primary-foreground))_25%,hsl(var(--accent))_50%,hsl(var(--primary-foreground))_75%,hsl(var(--primary))_100%)]"
-                                        )}
-                                      ></div>
-                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background">
+                                     <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10 bg-background">
+                                      <div className="absolute inset-0 rounded-full aurora-viz" />
+                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm">
                                         <span className="font-bold text-primary">{index + 1}</span>
                                       </div>
                                     </div>
