@@ -33,10 +33,10 @@ import {
   useFirestore,
   useCollection,
   useDoc,
-  useMemoFirebase,
 } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { CreateClassDialog } from '@/components/create-class-dialog';
+import React from 'react';
 
 type UserProfile = {
   id: string;
@@ -79,19 +79,15 @@ export default function TeacherDashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const userProfileQuery = useMemoFirebase(() => {
+  const userProfileQuery = React.useMemo(() => {
     if(!firestore || !user) return null;
-    const q = doc(firestore, 'users', user.uid);
-    (q as any).__memo = true;
-    return q;
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
-  const classesQuery = useMemoFirebase(() => {
+  const classesQuery = React.useMemo(() => {
     if(!firestore || !user) return null;
-    const q = query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    (q as any).__memo = true;
-    return q;
+    return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 

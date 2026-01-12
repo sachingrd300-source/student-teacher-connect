@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -37,7 +37,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, orderBy } from 'firebase/firestore';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,11 +56,9 @@ export default function BatchesPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const batchesQuery = useMemoFirebase(() => {
+    const batchesQuery = useMemo(() => {
         if(!firestore || !user) return null;
-        const q = query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-        (q as any).__memo = true;
-        return q;
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
     const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 
