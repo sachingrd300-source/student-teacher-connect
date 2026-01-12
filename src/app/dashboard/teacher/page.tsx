@@ -39,6 +39,7 @@ import {
   useFirestore,
   useCollection,
   useDoc,
+  useMemoFirebase,
 } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { CreateClassDialog } from '@/components/create-class-dialog';
@@ -93,13 +94,13 @@ export default function TeacherDashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const userProfileQuery = React.useMemo(() => {
+  const userProfileQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
-  const classesQuery = React.useMemo(() => {
+  const classesQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
     return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
@@ -234,3 +235,5 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
+
+    
