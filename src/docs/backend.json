@@ -31,6 +31,11 @@
           "type": "string",
           "description": "The verification status of the user (e.g., pending_verification, approved)."
         },
+        "marketplaceStatus": {
+            "type": "string",
+            "enum": ["unverified", "pending", "approved"],
+            "description": "The verification status for a student to sell in the marketplace."
+        },
         "subjectCategory": {
           "type": "string",
           "description": "For tutors, the main category of subjects they teach."
@@ -123,6 +128,10 @@
           "type": "string",
           "description": "The ID of the student requesting to enroll."
         },
+        "studentName": {
+          "type": "string",
+          "description": "The name of the student requesting to enroll. Denormalized for performance."
+        },
         "classId": {
           "type": "string",
           "description": "The ID of the class the student wants to join."
@@ -147,6 +156,7 @@
       },
       "required": [
         "studentId",
+        "studentName",
         "classId",
         "teacherId",
         "status",

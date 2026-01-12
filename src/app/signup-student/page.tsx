@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { signupWithEmail } from '@/firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
 
 export default function SignUpStudentPage() {
@@ -48,6 +48,8 @@ export default function SignUpStudentPage() {
         email: email,
         role: 'student',
         status: 'approved', // Students are auto-approved
+        marketplaceStatus: 'unverified',
+        createdAt: serverTimestamp(),
       });
 
       toast({

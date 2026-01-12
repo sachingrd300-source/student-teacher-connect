@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { loginWithGoogle, loginWithEmail } from '@/firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
 
 export default function StudentLoginPage() {
@@ -73,7 +73,9 @@ export default function StudentLoginPage() {
                 name: user.displayName,
                 email: user.email,
                 role: 'student',
-                status: 'approved'
+                status: 'approved',
+                marketplaceStatus: 'unverified',
+                createdAt: serverTimestamp(),
             });
         }
       }

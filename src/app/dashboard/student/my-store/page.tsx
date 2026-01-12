@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -43,9 +44,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Store, PlusCircle, MoreVertical, Trash2, Tag } from 'lucide-react';
+import { Store, PlusCircle, MoreVertical, Trash2, Tag, Info, ShieldCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -65,12 +66,70 @@ type MarketplaceItem = {
     createdAt: { toDate: () => Date };
 };
 
+type UserProfile = {
+    marketplaceStatus?: 'unverified' | 'pending' | 'approved';
+}
+
+function BecomeSellerCard({ onApply }: { onApply: () => void }) {
+    return (
+        <Card className="shadow-soft-shadow">
+            <CardHeader className="items-center text-center">
+                 <ShieldCheck className="h-12 w-12 text-primary mb-2" />
+                <CardTitle>Become a Verified Seller</CardTitle>
+                <CardDescription>To ensure a safe marketplace, we require a quick verification.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-center text-muted-foreground">
+                    Once you apply, an admin will review your request. You'll be able to list items after approval.
+                </p>
+            </CardContent>
+            <CardFooter className="justify-center">
+                <Button onClick={onApply}>Apply to Sell</Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
+function PendingVerificationCard() {
+    return (
+        <Card className="bg-amber-50 border-amber-200 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <Info className="h-8 w-8 text-amber-600"/>
+                <div>
+                    <CardTitle className="text-xl text-amber-800">Application Pending</CardTitle>
+                    <CardDescription className="text-amber-700">
+                        Your request to become a seller is under review. We'll notify you once it's approved.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
+
+
+function MyStoreSkeleton() {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-48 w-full" />
+        </div>
+    )
+}
+
 export default function MyStorePage() {
     const { toast } = useToast();
     const [isAddItemOpen, setAddItemOpen] = useState(false);
+    const [isApplying, setIsApplying] = useState(false);
     
     const { user } = useUser();
     const firestore = useFirestore();
+
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
+
 
     // Form State
     const [title, setTitle] = useState('');
@@ -85,7 +144,7 @@ export default function MyStorePage() {
         return query(collection(firestore, 'marketplaceItems'), where('sellerId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
 
-    const { data: listings, isLoading } = useCollection<MarketplaceItem>(userListingsQuery);
+    const { data: listings, isLoading: isLoadingListings } = useCollection<MarketplaceItem>(userListingsQuery);
     
     const resetForm = () => {
         setTitle('');
@@ -96,6 +155,26 @@ export default function MyStorePage() {
         setItemType('');
         setAddItemOpen(false);
     }
+
+    const handleApplyToSell = async () => {
+        if (!firestore || !user) return;
+        setIsApplying(true);
+        const userRef = doc(firestore, 'users', user.uid);
+        try {
+            await updateDoc(userRef, { marketplaceStatus: 'pending' });
+            toast({ title: 'Application Submitted!', description: 'Your request to become a seller has been sent for review.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not submit your application. Please try again.'});
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'update',
+                requestResourceData: { marketplaceStatus: 'pending' }
+            }));
+        } finally {
+            setIsApplying(false);
+        }
+    }
+
 
     const handleAddItem = async () => {
         if(!title || price === '' || !itemType || !firestore || !user) {
@@ -114,7 +193,7 @@ export default function MyStorePage() {
             itemType,
             status: 'available' as const,
             createdAt: serverTimestamp(),
-            imageUrl: 'https://picsum.photos/seed/book/600/400',
+            imageUrl: `https://picsum.photos/seed/${Math.random()}/600/400`,
         };
 
         const marketplaceCollection = collection(firestore, 'marketplaceItems');
@@ -173,131 +252,155 @@ export default function MyStorePage() {
             });
     }
 
+    const isLoading = isLoadingProfile || isLoadingListings;
+    
+    if (isLoading) {
+        return <MyStoreSkeleton />;
+    }
+
+    const renderContent = () => {
+        if (userProfile?.marketplaceStatus === 'approved') {
+            return (
+                <>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
+                            <Store className="h-8 w-8"/>
+                            My Store
+                        </h1>
+                        <p className="text-muted-foreground">Manage the items you're selling in the student marketplace.</p>
+                    </div>
+                    <Dialog open={isAddItemOpen} onOpenChange={setAddItemOpen}>
+                        <DialogTrigger asChild>
+                            <Button><PlusCircle className="mr-2 h-4 w-4"/> List a New Item</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[480px]">
+                            <DialogHeader>
+                                <DialogTitle>List a New Item for Sale</DialogTitle>
+                                <DialogDescription>Fill in the details for the item you want to sell.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="title">Title*</Label>
+                                    <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. HC Verma Physics Vol. 1" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="description">Description</Label>
+                                    <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Briefly describe the item and its condition." />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="price">Price (INR)*</Label>
+                                        <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="e.g. 250" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="subject">Subject</Label>
+                                        <Input id="subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Physics" />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="itemType">Item Type*</Label>
+                                        <Select onValueChange={setItemType} value={itemType}>
+                                            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                                            <SelectContent>
+                                                {itemTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="condition">Condition</Label>
+                                        <Select onValueChange={setCondition} value={condition}>
+                                            <SelectTrigger><SelectValue placeholder="Select condition" /></SelectTrigger>
+                                            <SelectContent>
+                                                {itemConditions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="image">Image</Label>
+                                    <Input id="image" type="file" disabled />
+                                    <p className="text-xs text-muted-foreground">Image upload is coming soon.</p>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleAddItem}>List Item</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                 <Card className="shadow-soft-shadow">
+                    <CardHeader>
+                        <CardTitle>Your Listings</CardTitle>
+                        <CardDescription>All items you currently have listed for sale.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingListings && <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
+                        {listings && listings.length > 0 ? (
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Price</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {listings.map(item => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.title}</TableCell>
+                                            <TableCell><Badge variant="outline">{item.itemType}</Badge></TableCell>
+                                            <TableCell>₹{item.price}</TableCell>
+                                            <TableCell><Badge variant={item.status === 'available' ? 'default' : 'secondary'}>{item.status}</Badge></TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                         <DropdownMenuItem onClick={() => handleUpdateStatus(item.id, item.status === 'available' ? 'sold' : 'available')}>
+                                                            <Tag className="mr-2 h-4 w-4" />
+                                                            Mark as {item.status === 'available' ? 'Sold' : 'Available'}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600" onClick={() => handleDeleteItem(item.id)}>
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : !isLoadingListings && (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <p>You haven't listed any items for sale yet.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                </>
+            );
+        }
+
+        if (userProfile?.marketplaceStatus === 'pending') {
+            return <PendingVerificationCard />;
+        }
+        
+        return <BecomeSellerCard onApply={handleApplyToSell} />;
+    }
+
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-                        <Store className="h-8 w-8"/>
-                        My Store
-                    </h1>
-                    <p className="text-muted-foreground">Manage the items you're selling in the student marketplace.</p>
-                </div>
-                 <Dialog open={isAddItemOpen} onOpenChange={setAddItemOpen}>
-                    <DialogTrigger asChild>
-                        <Button><PlusCircle className="mr-2 h-4 w-4"/> List a New Item</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[480px]">
-                        <DialogHeader>
-                            <DialogTitle>List a New Item for Sale</DialogTitle>
-                            <DialogDescription>Fill in the details for the item you want to sell.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Title*</Label>
-                                <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. HC Verma Physics Vol. 1" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Briefly describe the item and its condition." />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="price">Price (INR)*</Label>
-                                    <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="e.g. 250" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="subject">Subject</Label>
-                                    <Input id="subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Physics" />
-                                </div>
-                            </div>
-                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="itemType">Item Type*</Label>
-                                    <Select onValueChange={setItemType} value={itemType}>
-                                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                                        <SelectContent>
-                                            {itemTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="condition">Condition</Label>
-                                    <Select onValueChange={setCondition} value={condition}>
-                                        <SelectTrigger><SelectValue placeholder="Select condition" /></SelectTrigger>
-                                        <SelectContent>
-                                             {itemConditions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="image">Image</Label>
-                                <Input id="image" type="file" />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button onClick={handleAddItem}>List Item</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
-             <Card className="shadow-soft-shadow">
-                <CardHeader>
-                    <CardTitle>Your Listings</CardTitle>
-                    <CardDescription>All items you currently have listed for sale.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isLoading && <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
-                    {listings && listings.length > 0 ? (
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {listings.map(item => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.title}</TableCell>
-                                        <TableCell><Badge variant="outline">{item.itemType}</Badge></TableCell>
-                                        <TableCell>₹{item.price}</TableCell>
-                                        <TableCell><Badge variant={item.status === 'available' ? 'default' : 'secondary'}>{item.status}</Badge></TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                     <DropdownMenuItem onClick={() => handleUpdateStatus(item.id, item.status === 'available' ? 'sold' : 'available')}>
-                                                        <Tag className="mr-2 h-4 w-4" />
-                                                        Mark as {item.status === 'available' ? 'Sold' : 'Available'}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600" onClick={() => handleDeleteItem(item.id)}>
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : !isLoading && (
-                        <div className="text-center py-12 text-muted-foreground">
-                            <p>You haven't listed any items for sale yet.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            {renderContent()}
         </div>
     );
 }

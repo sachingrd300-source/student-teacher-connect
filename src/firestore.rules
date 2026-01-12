@@ -19,6 +19,10 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
     }
 
+    function isApprovedSeller() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.marketplaceStatus == 'approved';
+    }
+
     function isExistingDoc() {
       return resource != null;
     }
@@ -139,8 +143,8 @@ service cloud.firestore {
       // Allow listing available items, or a user listing their own items
       allow list: if isSignedIn() && ((request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid));
 
-      // A student can create a listing for themselves.
-      allow create: if isStudent() && request.resource.data.sellerId == request.auth.uid;
+      // An approved student seller can create a listing for themselves.
+      allow create: if isApprovedSeller() && request.resource.data.sellerId == request.auth.uid;
       
       // Only the student who created the listing can update or delete it.
       allow update, delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
