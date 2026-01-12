@@ -57,7 +57,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, MoreVertical, BookOpenCheck, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -95,20 +95,16 @@ export default function MaterialsPage() {
     const [materialType, setMaterialType] = useState('');
     const [isFree, setIsFree] = useState(false);
 
-    const userProfileQuery = useMemoFirebase(() => {
+    const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = doc(firestore, 'users', user.uid);
-        (q as any).__memo = true;
-        return q;
+        return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
-    const materialsQuery = useMemoFirebase(() => {
+    const materialsQuery = useMemo(() => {
         if (!firestore || !user) return null;
-        const q = query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-        (q as any).__memo = true;
-        return q;
+        return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
 
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
