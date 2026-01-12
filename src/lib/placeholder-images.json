@@ -1,1 +1,10 @@
-[]
+{
+  "placeholderImages": [
+    {
+      "id": "hero-landing",
+      "description": "A vibrant image of a modern, collaborative learning environment.",
+      "imageUrl": "https://images.unsplash.com/photo-1501504905252-473c47e087f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZWR1Y2F0aW9uJTIwdGVjaG5vbG9neXxlbnwwfHx8fDE3NjgxMTY1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "education technology"
+    }
+  ]
+}
