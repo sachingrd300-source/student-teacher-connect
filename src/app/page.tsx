@@ -11,7 +11,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
-import { AnimatedGradient } from '@/components/ui/animated-gradient';
 
 const features = [
     {
@@ -78,12 +77,33 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-foreground overflow-hidden">
-            <AnimatedGradient />
-             <div className="relative z-10 px-4 md:px-6 space-y-6">
+            <Carousel 
+                opts={{ loop: true }} 
+                plugins={[autoplay.current]} 
+                className="absolute inset-0 w-full h-full"
+            >
+                <CarouselContent className="-ml-0">
+                    {heroImages.map((img) => (
+                         <CarouselItem key={img.id} className="pl-0">
+                            <div className="relative w-full h-full">
+                                <Image 
+                                    src={img.imageUrl}
+                                    alt={img.description}
+                                    fill
+                                    className="object-cover"
+                                    data-ai-hint={img.imageHint}
+                                />
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+            <div className="absolute inset-0 bg-black/50"></div>
+             <div className="relative z-10 px-4 md:px-6 space-y-6 text-white">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-shadow-lg">
                     Empowering Education, <span className="text-primary">Connecting Minds</span>
                 </h1>
-                <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground">
+                <p className="max-w-2xl mx-auto text-lg md:text-xl text-primary-foreground/80">
                     EduConnect Pro is a modern, all-in-one platform designed to bring teachers and students closer together for a richer learning experience.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">

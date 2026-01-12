@@ -68,22 +68,7 @@
     background-size: 2rem 2rem;
   }
   
-  @property --gradient-angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-  }
-
-  .gradient-rotate {
-    animation: gradient-rotation 10s linear infinite;
-  }
-
-  @keyframes gradient-rotation {
-    0% {
-      --gradient-angle: 0deg;
-    }
-    100% {
-      --gradient-angle: 360deg;
-    }
+  .text-shadow-lg {
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
   }
 }
