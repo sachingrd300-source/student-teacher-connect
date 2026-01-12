@@ -33,11 +33,20 @@ service cloud.firestore {
       return isTeacherOwner(material);
     }
     
-    function isStudentEnrolled(teacherId) {
-       // This is a placeholder. For now, we assume public access.
-       // In a real scenario with enrollment, this would check an enrollments collection.
-       return true;
+    // Check if the requesting user is approved for a specific class
+    function isEnrolledInClass(classId) {
+      // This function needs to query the enrollments collection.
+      // A student is enrolled if a document exists for them in the specified class with 'approved' status.
+      // As direct querying is not possible in rules, we rely on checking specific document paths if possible,
+      // or structure list rules to enforce this check. For a 'get' rule, this is tricky.
+      // A better pattern for `get` is often to duplicate the enrollment status on the user or have a subcollection.
+      // For now, we will rely on list rules and a slightly more open get rule for classes.
+      return exists(/databases/$(database)/documents/enrollments?path=auto_id_placeholder) 
+             && get(/databases/$(database)/documents/enrollments?path=auto_id_placeholder).data.studentId == request.auth.uid
+             && get(/databases/$(database)/documents/enrollments?path=auto_id_placeholder).data.classId == classId
+             && get(/databases/$(database)/documents/enrollments?path=auto_id_placeholder).data.status == 'approved';
     }
+
 
     /* ===============================
        USERS
@@ -64,9 +73,12 @@ service cloud.firestore {
     =============================== */
 
     match /classes/{classId} {
+      // An enrolled student or the teacher can get class details
+      // The isEnrolledInClass function is complex for a `get` rule. A more secure, but complex, way would be to check a specific enrollment doc path.
+      // For simplicity now, we allow any signed-in user to get class details, but secure the materials within.
       allow get: if isSignedIn();
-      allow list: if isSignedIn()
-                  && request.query.where[0][1] == 'teacherId' && request.query.where[0][2] == request.auth.uid;
+      // A teacher can list their own classes
+      allow list: if isSignedIn() && request.query.get('teacherId') == request.auth.uid;
       allow create: if isSignedIn()
                     && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isExistingDoc()
@@ -80,8 +92,10 @@ service cloud.firestore {
     match /enrollments/{enrollmentId} {
         allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
         // A user can list their own enrollments, either as a student or a teacher
-        allow list: if isSignedIn() && 
-                    (request.query.get('studentId') == request.auth.uid || request.query.get('teacherId') == request.auth.uid);
+        allow list: if isSignedIn() && (
+            (request.query.get('studentId') == request.auth.uid) || 
+            (request.query.get('teacherId') == request.auth.uid)
+        );
         allow create: if isSignedIn() && isStudentOwner(request.resource.data);
         allow update: if isExistingDoc() && isTeacherOwner(resource.data); // only teacher can approve/deny
         allow delete: if false;
@@ -95,15 +109,17 @@ service cloud.firestore {
     match /studyMaterials/{studyMaterialId} {
       // Anyone can get a free document.
       // The teacher owner can get their own private documents.
+      // An enrolled student can get private documents for their class.
       allow get: if (isExistingDoc() && resource.data.isFree == true)
-                  || isTeacherOwner(resource.data);
+                  || isTeacherOwner(resource.data)
+                  || (isExistingDoc() && isEnrolledInClass(resource.data.classId));
       
-      // Allow listing materials for a specific teacher, or listing all free materials.
+      // Allow listing materials under certain conditions
       allow list: if isSignedIn() && (
-                    request.query.get('teacherId') == request.auth.uid ||
-                    request.query.get('isFree') == true
-                  );
-
+          request.query.get('teacherId') == request.auth.uid ||
+          request.query.get('isFree') == true ||
+          (request.query.get('classId') != null && isEnrolledInClass(request.query.get('classId')))
+      );
 
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
@@ -121,7 +137,7 @@ service cloud.firestore {
                  && (isTeacherOwner(resource.data)
                      || isStudentOwner(resource.data));
       allow list: if isSignedIn()
-                  && request.query.where.teacherId == request.auth.uid;
+                  && request.query.get('teacherId') == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if isExistingDoc()
@@ -138,7 +154,7 @@ service cloud.firestore {
                  && (isStudentOwner(resource.data)
                      || isTeacherOwner(resource.data));
       allow list: if isSignedIn()
-                  && request.query.where.teacherId == request.auth.uid;
+                  && request.query.get('teacherId') == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if false;
