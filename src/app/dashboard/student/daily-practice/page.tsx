@@ -18,9 +18,9 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, ClipboardList } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { Download, ClipboardList, CheckBadge } from 'lucide-react';
+import { useFirestore, useCollection, useDoc } from '@/firebase';
+import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
 
@@ -30,7 +30,33 @@ type StudyMaterial = {
     subject: string;
     type: string;
     teacherId: string;
+    teacherName?: string;
+    isOfficial?: boolean;
     createdAt: { toDate: () => Date };
+}
+
+function MaterialRow({ paper }: { paper: StudyMaterial}) {
+    return (
+        <TableRow>
+            <TableCell>
+              <div className="font-medium">{paper.title}</div>
+              <div className="text-sm text-muted-foreground">
+                by {paper.teacherName || 'EduConnect Pro'}
+                {paper.isOfficial && <Badge variant="secondary" className="ml-2">Official</Badge>}
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline">{paper.subject}</Badge>
+            </TableCell>
+            <TableCell>{paper.createdAt.toDate().toLocaleDateString()}</TableCell>
+            <TableCell className="text-right">
+                <Button variant="outline" size="sm" disabled>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </TableCell>
+          </TableRow>
+    )
 }
 
 export default function DailyPracticePage() {
@@ -74,25 +100,11 @@ export default function DailyPracticePage() {
               <TableBody>
                 {isLoading && Array.from({ length: 3 }).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell colSpan={4}><Skeleton className="h-10 w-full"/></TableCell>
+                        <TableCell colSpan={4}><Skeleton className="h-12 w-full"/></TableCell>
                     </TableRow>
                 ))}
                 {!isLoading && dailyPracticePapers?.map((paper) => (
-                  <TableRow key={paper.id}>
-                    <TableCell>
-                      <div className="font-medium">{paper.title}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{paper.subject}</Badge>
-                    </TableCell>
-                    <TableCell>{paper.createdAt.toDate().toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                        <Button variant="outline" size="sm" disabled>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                    <MaterialRow key={paper.id} paper={paper} />
                 ))}
               </TableBody>
             </Table>

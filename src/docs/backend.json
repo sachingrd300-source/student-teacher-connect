@@ -134,13 +134,18 @@
             "denied"
           ],
           "description": "The status of the enrollment request."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "studentId",
         "classId",
         "teacherId",
-        "status"
+        "status",
+        "createdAt"
       ]
     },
     "ClassSchedule": {
@@ -214,15 +219,17 @@
     "StudyMaterial": {
         "title": "Study Material",
         "type": "object",
-        "description": "Represents a study material resource uploaded by a teacher.",
+        "description": "Represents a study material resource uploaded by a teacher or admin.",
         "properties": {
-            "teacherId": { "type": "string" },
+            "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
+            "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material." },
             "title": { "type": "string" },
             "description": { "type": "string" },
             "subject": { "type": "string" },
             "chapter": { "type": "string" },
             "type": { "type": "string", "enum": ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"] },
-            "isFree": { "type": "boolean" },
+            "isFree": { "type": "boolean", "description": "Whether the material is publically accessible."},
+            "isOfficial": { "type": "boolean", "description": "Whether the material is official content from the platform." },
             "fileUrl": { "type": "string" },
             "createdAt": { "type": "string", "format": "date-time" }
         },
@@ -271,7 +278,7 @@
         "schema": {
             "$ref": "#/entities/StudyMaterial"
         },
-        "description": "Stores study materials uploaded by teachers."
+        "description": "Stores study materials uploaded by teachers or admins."
     }
   }
 }

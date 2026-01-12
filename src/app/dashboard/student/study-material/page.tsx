@@ -48,7 +48,9 @@ type StudyMaterial = {
     type: string;
     createdAt: { toDate: () => Date };
     isFree: boolean;
+    isOfficial?: boolean;
     teacherId: string;
+    teacherName?: string;
 }
 
 export default function StudyMaterialPage() {
@@ -74,7 +76,7 @@ export default function StudyMaterialPage() {
         <Card className="shadow-lg">
         <CardHeader>
             <CardTitle>All Public Study Materials</CardTitle>
-            <CardDescription>Browse materials from all our tutors.</CardDescription>
+            <CardDescription>Browse materials from all our tutors and official content.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -83,7 +85,7 @@ export default function StudyMaterialPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Subject</TableHead>
-                    <TableHead>Access</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
@@ -101,7 +103,12 @@ export default function StudyMaterialPage() {
                         <div className="text-sm text-muted-foreground">{material.createdAt.toDate().toLocaleDateString()}</div>
                     </TableCell>
                     <TableCell><Badge variant={"outline"}>{material.subject}</Badge></TableCell>
-                    <TableCell><Badge variant={material.isFree ? "default" : "secondary"}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
+                    <TableCell>
+                        {material.isOfficial 
+                            ? <Badge>Official</Badge>
+                            : <span className="text-sm text-muted-foreground">{material.teacherName || 'Tutor'}</span>
+                        }
+                    </TableCell>
                     <TableCell className="text-right">
                         <Button variant="ghost" size="icon" disabled>
                             <Download className="h-4 w-4" />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -61,6 +62,7 @@ import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 
 type StudyMaterial = {
@@ -75,6 +77,7 @@ type StudyMaterial = {
 };
 
 type UserProfile = {
+  name: string;
   subjects?: string[];
 }
 
@@ -122,6 +125,7 @@ export default function MaterialsPage() {
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
     const [isFree, setIsFree] = useState(false);
+    const [isOfficial, setIsOfficial] = useState(false);
 
     const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
@@ -150,7 +154,9 @@ export default function MaterialsPage() {
             chapter,
             type: materialType,
             teacherId: user.uid,
+            teacherName: userProfile?.name,
             isFree: isFree,
+            isOfficial: isOfficial,
             createdAt: serverTimestamp(),
             // In a real app, you would handle file uploads and store a URL
             fileUrl: 'https://example.com/placeholder.pdf'
@@ -167,6 +173,7 @@ export default function MaterialsPage() {
         setChapter('');
         setMaterialType('');
         setIsFree(false);
+        setIsOfficial(false);
         setAddMaterialOpen(false);
     }
     
@@ -240,16 +247,17 @@ export default function MaterialsPage() {
                                 <Input id="file" type="file" className="col-span-3" />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="isFree" className="text-right">Free?</Label>
-                                <Select onValueChange={(v) => setIsFree(v === 'true')} value={String(isFree)}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="false">No (Requires Enrollment)</SelectItem>
-                                        <SelectItem value="true">Yes (Public)</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label className="text-right">Access</Label>
+                                <div className="col-span-3 space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
+                                        <Label htmlFor="isFree">Free (Public)</Label>
+                                    </div>
+                                     <div className="flex items-center space-x-2">
+                                        <Switch id="isOfficial" checked={isOfficial} onCheckedChange={setIsOfficial} />
+                                        <Label htmlFor="isOfficial">Official (App Creator)</Label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <DialogFooter>
