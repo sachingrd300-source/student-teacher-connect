@@ -132,9 +132,12 @@ service cloud.firestore {
        MARKETPLACE ITEMS
     =============================== */
     match /marketplaceItems/{itemId} {
-      // Anyone signed in can view marketplace items
-      allow get, list: if isSignedIn();
+      // Anyone signed in can view individual marketplace items
+      allow get: if isSignedIn();
       
+      // Allow listing available items
+      allow list: if isSignedIn() && request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available';
+
       // A student can create a listing for themselves.
       allow create: if isStudent() && request.resource.data.sellerId == request.auth.uid;
       
