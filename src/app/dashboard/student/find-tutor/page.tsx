@@ -38,7 +38,7 @@ const TutorCard = ({ tutor }: { tutor: TutorProfile }) => {
     : '#';
 
   return (
-    <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="flex flex-col shadow-soft-shadow transition-transform duration-200 active:scale-95">
       <CardHeader className="flex flex-row items-start gap-4">
         <Avatar className="h-16 w-16 border">
           <AvatarImage src={tutor.avatarUrl} alt={tutor.name} />
@@ -134,7 +134,7 @@ export default function FindTutorPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading &&
           Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="space-y-4 p-4">
+            <Card key={i} className="space-y-4 p-4 shadow-soft-shadow">
               <div className="flex items-center gap-4">
                 <Skeleton className="h-16 w-16 rounded-full" />
                 <div className="space-y-2 flex-1">

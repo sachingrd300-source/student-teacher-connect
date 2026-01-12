@@ -61,6 +61,9 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      boxShadow: {
+        'soft-shadow': '6px 6px 12px hsl(var(--border)), -6px -6px 12px #ffffff',
+      },
       keyframes: {
         'accordion-down': {
           from: {

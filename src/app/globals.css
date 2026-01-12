@@ -6,7 +6,7 @@
   :root {
     --background: 220 20% 98%;
     --foreground: 220 10% 15%;
-    --card: 220 20% 100%;
+    --card: 220 20% 98%;
     --card-foreground: 220 10% 15%;
     --popover: 220 20% 100%;
     --popover-foreground: 220 10% 15%;
@@ -23,13 +23,13 @@
     --border: 220 15% 90%;
     --input: 220 15% 94%;
     --ring: 210 80% 55%;
-    --radius: 0.75rem;
+    --radius: 1.25rem;
   }
  
   .dark {
     --background: 220 15% 10%;
     --foreground: 220 10% 90%;
-    --card: 220 15% 15%;
+    --card: 220 15% 10%;
     --card-foreground: 220 10% 90%;
     --popover: 220 15% 10%;
     --popover-foreground: 220 10% 90%;

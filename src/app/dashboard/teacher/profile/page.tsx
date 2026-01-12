@@ -194,7 +194,7 @@ export default function TeacherProfilePage() {
         </div>
       
         {isProfileIncomplete && (
-            <Card className="bg-primary/10 border-primary/20">
+            <Card className="bg-primary/10 border-primary/20 shadow-soft-shadow">
                 <CardHeader className="flex-row items-center gap-4">
                     <Info className="h-6 w-6 text-primary"/>
                     <div>
@@ -208,7 +208,7 @@ export default function TeacherProfilePage() {
             </Card>
         )}
 
-        <Card className="shadow-lg">
+        <Card className="shadow-soft-shadow">
             <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
                 <Avatar className="h-24 w-24 mb-4 border-4 border-background">
                     <AvatarImage src={teacherProfile?.avatarUrl} alt={teacherProfile?.name} />

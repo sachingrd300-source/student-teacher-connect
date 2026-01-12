@@ -212,7 +212,7 @@ export default function SchedulePage() {
                 </Dialog>
             </div>
             
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Upcoming Classes</CardTitle>
                     <CardDescription>Here is your schedule for the upcoming days.</CardDescription>
@@ -227,7 +227,7 @@ export default function SchedulePage() {
                      )}
                      {sortedSchedule && sortedSchedule.length > 0 ? (
                         sortedSchedule.map(item => (
-                            <div key={item.id} className={cn("flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50", item.status === 'Canceled' && 'bg-muted/50 opacity-60')}>
+                            <div key={item.id} className={cn("flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors", item.status === 'Canceled' && 'bg-muted/50 opacity-60')}>
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
                                         <span>{item.date.toDate().toLocaleDateString('en-US', { day: '2-digit' })}</span>

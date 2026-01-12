@@ -337,7 +337,7 @@ export default function MaterialsPage() {
                 </Dialog>
             </div>
 
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Uploaded Materials</CardTitle>
                     <CardDescription>A list of all the resources you have uploaded.</CardDescription>

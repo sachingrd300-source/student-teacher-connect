@@ -46,7 +46,7 @@ function ClassRoomSkeleton() {
         <div className="space-y-6">
             <Skeleton className="h-10 w-2/3" />
             <Skeleton className="h-5 w-1/3" />
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <Skeleton className="h-7 w-48" />
                     <Skeleton className="h-5 w-72" />
@@ -131,7 +131,7 @@ export default function ClassRoomPage() {
                 <p className="text-muted-foreground">Tutor: {teacherInfo?.name || 'Loading...'}</p>
             </div>
 
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <BookOpenCheck className="w-6 h-6" />

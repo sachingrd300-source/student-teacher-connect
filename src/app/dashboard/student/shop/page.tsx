@@ -31,7 +31,7 @@ type StudyMaterial = {
 
 const MaterialCard = ({ material }: { material: StudyMaterial }) => {
   return (
-    <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="flex flex-col shadow-soft-shadow transition-transform duration-200 active:scale-95">
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
@@ -88,7 +88,7 @@ export default function ShopPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading &&
           Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="space-y-4 p-4">
+            <Card key={i} className="space-y-4 p-4 shadow-soft-shadow">
               <Skeleton className="h-6 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
               <Skeleton className="h-10 w-full" />

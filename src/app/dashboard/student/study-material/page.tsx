@@ -106,7 +106,7 @@ export default function StudyMaterialPage() {
             <BookOpenCheck className="w-8 h-8"/>
             Study Materials
         </h1>
-        <Card className="shadow-lg">
+        <Card className="shadow-soft-shadow">
         <CardHeader>
             <CardTitle>All Public Study Materials</CardTitle>
             <CardDescription>Browse materials from all our tutors and official content. Use the filters to find what you need.</CardDescription>

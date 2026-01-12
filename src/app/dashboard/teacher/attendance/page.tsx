@@ -24,7 +24,7 @@ export default function AttendancePage() {
                 <p className="text-muted-foreground">Select a class and date to mark student attendance.</p>
             </div>
 
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Attendance</CardTitle>
                     <CardDescription>

@@ -77,7 +77,7 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
     }
 
     return (
-        <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="flex flex-col shadow-soft-shadow transition-transform duration-200 active:scale-95">
             <CardHeader>
                 <CardTitle>{classInfo.subject} - {classInfo.classLevel}</CardTitle>
                 <CardDescription>Tutor: {teacherInfo.name}</CardDescription>
@@ -197,7 +197,7 @@ export default function StudentDashboardPage() {
 
       {user ? (
         <>
-            <Card className="shadow-lg">
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Join a New Class</CardTitle>
                     <CardDescription>Enter the unique code provided by your teacher to request access to their class.</CardDescription>
@@ -238,7 +238,7 @@ export default function StudentDashboardPage() {
             </div>
         </>
       ) : (
-        <Card className="text-center">
+        <Card className="text-center shadow-soft-shadow">
           <CardHeader>
             <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
             <CardTitle>Log In to View Your Dashboard</CardTitle>

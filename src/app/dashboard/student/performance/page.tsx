@@ -102,7 +102,7 @@ export default function StudentPerformancePage() {
         </p>
       </div>
 
-      <Card>
+      <Card className="shadow-soft-shadow">
         <CardHeader>
           <CardTitle>Performance Overview</CardTitle>
           <CardDescription>
@@ -132,7 +132,7 @@ export default function StudentPerformancePage() {
       </Card>
 
 
-      <Card>
+      <Card className="shadow-soft-shadow">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>

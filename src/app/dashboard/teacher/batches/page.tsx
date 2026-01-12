@@ -85,7 +85,7 @@ export default function BatchesPage() {
                 </Button>
             </div>
 
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Your Classes</CardTitle>
                     <CardDescription>A list of all the student classes you have created.</CardDescription>

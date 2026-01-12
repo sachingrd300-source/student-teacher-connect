@@ -58,7 +58,7 @@ type Class = {
 
 function PendingVerificationCard() {
     return (
-        <Card className="bg-amber-50 border-amber-200 shadow-lg">
+        <Card className="bg-amber-50 border-amber-200 shadow-soft-shadow">
             <CardHeader className="flex-row items-center gap-4">
                 <Info className="h-8 w-8 text-amber-600"/>
                 <div>
@@ -114,7 +114,7 @@ export default function TeacherDashboardPage() {
       <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-lg">
+        <Card className="shadow-soft-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Your Classes</CardTitle>
             <Users2 className="h-4 w-4 text-muted-foreground" />
@@ -124,7 +124,7 @@ export default function TeacherDashboardPage() {
             <p className="text-xs text-muted-foreground">Total created classes</p>
           </CardContent>
         </Card>
-        <Card className="shadow-lg">
+        <Card className="shadow-soft-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Profile Status</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -134,7 +134,7 @@ export default function TeacherDashboardPage() {
             <p className="text-xs text-muted-foreground">Your tutor profile status</p>
           </CardContent>
         </Card>
-        <Card className="shadow-lg">
+        <Card className="shadow-soft-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Class Status</CardTitle>
             <DoorOpen className="h-4 w-4 text-muted-foreground" />
@@ -147,7 +147,7 @@ export default function TeacherDashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-lg">
+        <Card className="shadow-soft-shadow">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Jump to common tasks.</CardDescription>
@@ -159,7 +159,7 @@ export default function TeacherDashboardPage() {
               <Button variant="outline" asChild><Link href="/dashboard/teacher/schedule">Manage Schedule</Link></Button>
           </CardContent>
         </Card>
-         <Card className="shadow-lg">
+         <Card className="shadow-soft-shadow">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>My Classes</CardTitle>

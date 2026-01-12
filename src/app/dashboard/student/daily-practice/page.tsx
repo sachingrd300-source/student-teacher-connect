@@ -82,7 +82,7 @@ export default function DailyPracticePage() {
         Daily Practice
       </h1>
 
-      <Card>
+      <Card className="shadow-soft-shadow">
         <CardHeader>
           <CardTitle>Daily Practice Papers (DPPs)</CardTitle>
           <CardDescription>Stay sharp with these daily exercises from our tutors.</CardDescription>

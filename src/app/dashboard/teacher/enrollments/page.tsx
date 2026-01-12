@@ -132,7 +132,7 @@ export default function EnrollmentsPage() {
                 <p className="text-muted-foreground">Manage requests from students to join your classes.</p>
             </div>
 
-            <Card>
+            <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Enrollment Requests</CardTitle>
                     <CardDescription>Review and respond to student enrollment requests.</CardDescription>

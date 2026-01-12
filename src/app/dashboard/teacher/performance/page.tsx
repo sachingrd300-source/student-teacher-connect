@@ -189,7 +189,7 @@ export default function PerformancePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-1">
+                <Card className="lg:col-span-1 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Enter Test Marks</CardTitle>
                         <CardDescription>Select a class and student to enter their score.</CardDescription>
@@ -245,7 +245,7 @@ export default function PerformancePage() {
                         </Button>
                     </CardContent>
                 </Card>
-                 <Card className="lg:col-span-2">
+                 <Card className="lg:col-span-2 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Test History</CardTitle>
                         <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || 'all students'}.</CardDescription>
