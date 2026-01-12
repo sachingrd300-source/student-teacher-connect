@@ -102,10 +102,8 @@ const marketplaceItems = [
 
 const FloatingIconsBackground = () => {
   const [icons, setIcons] = useState<{ style: React.CSSProperties, icon: React.ReactNode }[]>([]);
-  const isMounted = useRef(false);
 
   useEffect(() => {
-    isMounted.current = true;
     const generatedIcons = Array.from({ length: 15 }).map((_, i) => {
       const iconData = floatingIcons[i % floatingIcons.length];
       const style = {
@@ -116,13 +114,7 @@ const FloatingIconsBackground = () => {
       return { style, icon: typeof iconData.icon === 'string' ? iconData.icon : React.cloneElement(iconData.icon as React.ReactElement, {key: i}) };
     });
     setIcons(generatedIcons);
-
-    return () => { isMounted.current = false }
   }, []);
-
-  if (!isMounted.current) {
-    return null;
-  }
 
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
