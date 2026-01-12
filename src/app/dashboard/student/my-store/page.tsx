@@ -113,7 +113,7 @@ export default function MyStorePage() {
             subject,
             condition,
             itemType,
-            status: 'available',
+            status: 'available' as const,
             createdAt: serverTimestamp(),
             imageUrl: 'https://picsum.photos/seed/book/600/400',
         };
