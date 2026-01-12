@@ -210,6 +210,23 @@
             "date": { "type": "string", "format": "date-time" }
         },
         "required": ["teacherId", "studentId", "classId", "testName", "subject", "marks", "maxMarks", "date"]
+    },
+    "StudyMaterial": {
+        "title": "Study Material",
+        "type": "object",
+        "description": "Represents a study material resource uploaded by a teacher.",
+        "properties": {
+            "teacherId": { "type": "string" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "subject": { "type": "string" },
+            "chapter": { "type": "string" },
+            "type": { "type": "string", "enum": ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"] },
+            "isFree": { "type": "boolean" },
+            "fileUrl": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["teacherId", "title", "subject", "type", "isFree", "fileUrl", "createdAt"]
     }
   },
   "auth": {
@@ -249,6 +266,12 @@
         "$ref": "#/entities/Performance"
       },
       "description": "Stores student test results."
+    },
+    "/studyMaterials/{studyMaterialId}": {
+        "schema": {
+            "$ref": "#/entities/StudyMaterial"
+        },
+        "description": "Stores study materials uploaded by teachers."
     }
   }
 }
