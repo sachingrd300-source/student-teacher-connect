@@ -53,7 +53,9 @@ service cloud.firestore {
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
       // Allow any signed in user to list approved tutors
-      allow list: if isSignedIn() && request.query.where[0][1] == 'role' && request.query.where[0][2] == 'tutor' && request.query.where[1][1] == 'status' && request.query.where[1][2] == 'approved';
+      allow list: if isSignedIn() 
+                  && request.query.get('role') == 'tutor' 
+                  && request.query.get('status') == 'approved';
       allow delete: if false;
     }
 
@@ -63,7 +65,8 @@ service cloud.firestore {
 
     match /classes/{classId} {
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow list: if isSignedIn()
+                  && request.query.where[0][1] == 'teacherId' && request.query.where[0][2] == request.auth.uid;
       allow create: if isSignedIn()
                     && request.resource.data.teacherId == request.auth.uid;
       allow update, delete: if isExistingDoc()
@@ -76,12 +79,12 @@ service cloud.firestore {
 
     match /studyMaterials/{studyMaterialId} {
       // Anyone can get a free document.
-      // The teacher owner can get the document.
+      // The teacher owner can get their own private documents.
       allow get: if (isExistingDoc() && resource.data.isFree == true)
                   || isTeacherOwner(resource.data);
       
-      // Teachers can list their own materials.
-      // Any signed in user can list all free materials.
+      // Any signed in user can list documents. The queries in the app
+      // are responsible for filtering (e.g., by teacherId or isFree).
       allow list: if isSignedIn();
 
 
@@ -100,7 +103,8 @@ service cloud.firestore {
       allow get: if isExistingDoc()
                  && (isTeacherOwner(resource.data)
                      || isStudentOwner(resource.data));
-      allow list: if isSignedIn();
+      allow list: if isSignedIn()
+                  && request.query.where.teacherId == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if isExistingDoc()
@@ -116,7 +120,8 @@ service cloud.firestore {
       allow get: if isExistingDoc()
                  && (isStudentOwner(resource.data)
                      || isTeacherOwner(resource.data));
-      allow list: if isSignedIn();
+      allow list: if isSignedIn()
+                  && request.query.where.teacherId == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if false;
@@ -131,7 +136,9 @@ service cloud.firestore {
        // A teacher can get their own schedule.
       allow get: if isExistingDoc()
                  && isTeacherOwner(resource.data);
-      allow list: if isSignedIn();
+      // A teacher can list their own schedules.
+      allow list: if isSignedIn()
+                  && request.query.where.teacherId == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if isExistingDoc()
