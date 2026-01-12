@@ -47,21 +47,40 @@ export function useUser() {
 
 // Phone Auth Functions
 export const setupRecaptcha = (containerId: string) => {
-    if (typeof window !== 'undefined' && (window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.render().then((widgetId: any) => {
-            (window as any).grecaptcha.reset(widgetId);
-        });
+    if (typeof window === 'undefined') {
+        throw new Error("reCAPTCHA must be run in a browser environment");
+    }
+
+    const recaptchaContainer = document.getElementById(containerId);
+    if (!recaptchaContainer) {
+        throw new Error(`Element with id '${containerId}' not found.`);
+    }
+
+    // Clear any previous verifier
+    if ((window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier.clear();
+      // Ensure the container is empty
+      while (recaptchaContainer.firstChild) {
+          recaptchaContainer.removeChild(recaptchaContainer.firstChild);
+      }
     }
     
     const recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
         'size': 'invisible',
         'callback': (response: any) => {
           // reCAPTCHA solved, allow signInWithPhoneNumber.
+          console.log("reCAPTCHA solved");
+        },
+        'expired-callback': () => {
+          // Response expired. Ask user to solve reCAPTCHA again.
+          console.log("reCAPTCHA expired");
         }
     });
+
     (window as any).recaptchaVerifier = recaptchaVerifier;
     return recaptchaVerifier;
 };
+
 
 export const sendOtp = (phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {
     return signInWithPhoneNumber(auth, phoneNumber, appVerifier);

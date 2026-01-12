@@ -10,9 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Phone, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { setupRecaptcha, sendOtp, auth } from '@/firebase/auth';
+import { setupRecaptcha, sendOtp } from '@/firebase/auth';
 import { firestore } from '@/firebase/firebase';
-import { getAdditionalUserInfo, type ConfirmationResult } from 'firebase/auth';
+import { type ConfirmationResult } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function PhoneLoginPage() {
@@ -25,7 +25,11 @@ export default function PhoneLoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setupRecaptcha('recaptcha-container');
+    const verifier = setupRecaptcha('recaptcha-container');
+    // Cleanup function to clear recaptcha on component unmount
+    return () => {
+      verifier.clear();
+    };
   }, []);
 
   const handleSendOtp = async (e: React.FormEvent) => {
