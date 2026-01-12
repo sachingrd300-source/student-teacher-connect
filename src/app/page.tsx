@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube, ShoppingCart, StickyNote, Shirt, Library } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube, ShoppingCart, StickyNote, Shirt, Library, FileCheck, History, Lightbulb } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -82,6 +82,30 @@ const floatingIcons = [
     { icon: "📈" },
 ]
 
+const freeResourceItems = [
+    {
+        icon: <FileCheck className="h-8 w-8 text-primary" />,
+        title: "NCERT Solutions",
+        description: "Detailed, step-by-step solutions for your textbook questions."
+    },
+    {
+        icon: <History className="h-8 w-8 text-primary" />,
+        title: "Previous Year Papers",
+        description: "Practice with past exam papers to understand patterns and excel."
+    },
+    {
+        icon: <Lightbulb className="h-8 w-8 text-primary" />,
+        title: "Subject Notes",
+        description: "Concise and comprehensive notes from expert tutors to aid your revision."
+    },
+    {
+        icon: <BookOpenCheck className="h-8 w-8 text-primary" />,
+        title: "Daily Practice Problems",
+        description: "Stay sharp with daily questions to test your knowledge and skills."
+    }
+];
+
+
 const marketplaceItems = [
     {
         icon: <Library className="h-8 w-8 text-primary" />,
@@ -100,6 +124,7 @@ const marketplaceItems = [
     }
 ];
 
+
 const FloatingIconsBackground = () => {
   const [icons, setIcons] = useState<{ style: React.CSSProperties, icon: React.ReactNode }[]>([]);
 
@@ -111,6 +136,7 @@ const FloatingIconsBackground = () => {
         animationDelay: `${Math.random() * 10}s`,
         animationDuration: `${10 + Math.random() * 10}s`,
       };
+      // For some reason, if I don't clone the element, it gives a "Cannot add property key, object is not extensible" error
       return { style, icon: typeof iconData.icon === 'string' ? iconData.icon : React.cloneElement(iconData.icon as React.ReactElement, {key: i}) };
     });
     setIcons(generatedIcons);
@@ -262,8 +288,42 @@ export default function LandingPage() {
             </div>
         </section>
 
+        {/* Free Resources Section */}
+        <section id="free-resources" className="w-full py-16 md:py-24 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
+                <Library className="h-8 w-8 text-primary" /> Empowering Every Student
+              </h2>
+              <p className="max-w-3xl mx-auto mt-4 text-muted-foreground md:text-lg">
+                We believe in accessible education for all. That's why we offer a rich library of free notes, past papers, and practice problems to help you succeed.
+              </p>
+            </div>
+            <div className="mx-auto grid items-stretch gap-6 sm:max-w-4xl sm:grid-cols-2 lg:max-w-5xl lg:grid-cols-4">
+                {freeResourceItems.map((item, index) => (
+                     <AnimatedCard index={index} key={item.title} className="flex">
+                        <Card className="text-center p-6 flex flex-col items-center gap-4 h-full w-full">
+                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
+                                {item.icon}
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-lg font-headline">{item.title}</h3>
+                                <p className="text-sm text-muted-foreground">{item.description}</p>
+                            </div>
+                        </Card>
+                     </AnimatedCard>
+                ))}
+            </div>
+            <div className="text-center mt-12">
+                <Button asChild size="lg">
+                    <Link href="/login-student">Explore Free Materials <ArrowRight className="ml-2" /></Link>
+                </Button>
+            </div>
+          </div>
+        </section>
+
         {/* Marketplace Section */}
-        <section id="marketplace" className="w-full py-16 md:py-24 bg-background">
+        <section id="marketplace" className="w-full py-16 md:py-24 bg-muted/20">
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
