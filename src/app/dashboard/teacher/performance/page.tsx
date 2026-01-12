@@ -91,6 +91,12 @@ export default function PerformancePage() {
             }
             setIsLoadingStudents(true);
             try {
+                // Set subject automatically when class is selected
+                const selectedClass = classes?.find(c => c.id === selectedClassId);
+                if (selectedClass) {
+                    setSubject(selectedClass.subject);
+                }
+
                 const enrollmentsQuery = query(
                     collection(firestore, 'enrollments'), 
                     where('teacherId', '==', user.uid), 
@@ -99,21 +105,9 @@ export default function PerformancePage() {
                 );
 
                 const querySnapshot = await getDocs(enrollmentsQuery);
-                const studentEnrollmentsData = querySnapshot.docs.map(d => ({...d.data(), id: d.id} as {studentId: string, id: string}));
+                const studentEnrollmentsData = querySnapshot.docs.map(d => ({...d.data(), id: d.id} as {studentId: string, studentName: string, id: string}));
 
-                const studentPromises = studentEnrollmentsData.map(async (enrollment) => {
-                    const studentDocRef = doc(firestore, 'users', enrollment.studentId);
-                    const studentDoc = await getDoc(studentDocRef);
-
-                    if (studentDoc.exists()) {
-                        const studentData = studentDoc.data() as UserProfile;
-                        return { id: enrollment.id, studentId: enrollment.studentId, studentName: studentData.name };
-                    }
-                    return null;
-                });
-
-                const resolvedStudents = (await Promise.all(studentPromises)).filter(Boolean) as StudentEnrollment[];
-                setStudents(resolvedStudents);
+                setStudents(studentEnrollmentsData.map(e => ({ id: e.id, studentId: e.studentId, studentName: e.studentName })));
 
             } catch (error) {
                 console.error("Error fetching students for class:", error);
@@ -124,7 +118,7 @@ export default function PerformancePage() {
         };
 
         fetchStudentsForClass();
-    }, [firestore, user, selectedClassId, toast]);
+    }, [firestore, user, selectedClassId, toast, classes]);
 
 
     const performanceQuery = useMemo(() => {
@@ -161,18 +155,18 @@ export default function PerformancePage() {
 
         toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
         
-        // Reset form
+        // Reset form but keep class and subject
         setSelectedStudentId('');
         setTestName('');
-        setSubject('');
         setMarks('');
         setMaxMarks('');
     }
     
     const displayedResults = useMemo(() => {
-        if (!selectedStudentId) return testResults;
-        return testResults?.filter(r => r.studentId === selectedStudentId);
-    }, [testResults, selectedStudentId]);
+        if (!selectedClassId) return testResults;
+        if (!selectedStudentId) return testResults?.filter(r => r.classId === selectedClassId);
+        return testResults?.filter(r => r.studentId === selectedStudentId && r.classId === selectedClassId);
+    }, [testResults, selectedStudentId, selectedClassId]);
 
     const isLoading = isLoadingClasses || isLoadingResults;
 
@@ -211,7 +205,7 @@ export default function PerformancePage() {
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
                                     {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
-                                    {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
+                                    {students?.map(s => <SelectItem key={s.studentId} value={s.studentId}>{s.studentName}</SelectItem>)}
                                      {!isLoadingStudents && students.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
                                 </SelectContent>
                             </Select>
@@ -221,13 +215,8 @@ export default function PerformancePage() {
                             <Input id="testName" value={testName} onChange={e => setTestName(e.target.value)} placeholder="e.g. Unit Test 1" />
                         </div>
                         <div>
-                            <Label htmlFor="subject">Subject*</Label>
-                             <Select onValueChange={setSubject} value={subject}>
-                                <SelectTrigger id="subject"><SelectValue placeholder="Select a subject" /></SelectTrigger>
-                                <SelectContent>
-                                    {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="subject">Subject</Label>
+                             <Input id="subject" value={subject} disabled placeholder="Select a class to auto-fill" />
                         </div>
                         <div className="flex gap-4">
                             <div className="flex-1">
@@ -248,7 +237,7 @@ export default function PerformancePage() {
                  <Card className="lg:col-span-2 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Test History</CardTitle>
-                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || 'all students'}.</CardDescription>
+                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || classes?.find(c => c.id === selectedClassId)?.subject || 'all students'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     {isLoadingResults && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
@@ -274,7 +263,7 @@ export default function PerformancePage() {
                                 </TableBody>
                             </Table>
                         ) : !isLoadingResults && (
-                            <p className="text-sm text-center text-muted-foreground py-8">No test results found for the selected student.</p>
+                            <p className="text-sm text-center text-muted-foreground py-8">No test results found for the selected filter.</p>
                         )}
                     </CardContent>
                 </Card>

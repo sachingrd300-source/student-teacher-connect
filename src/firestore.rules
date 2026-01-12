@@ -173,6 +173,7 @@ service cloud.firestore {
                  && (isStudentOwner(resource.data)
                      || isTeacherOwner(resource.data));
       // A student can list their own performance records. A teacher can list all for their students.
+      // The query MUST include a where clause on studentId or teacherId.
       allow list: if isSignedIn() && (
           (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) ||
           (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
@@ -191,7 +192,7 @@ service cloud.firestore {
        // A teacher can get their own schedule.
       allow get: if isExistingDoc()
                  && isTeacherOwner(resource.data);
-      // A teacher can list their own schedules.
+      // A teacher can list their own schedules. The query MUST be filtered by teacherId.
       allow list: if isSignedIn()
                   && request.query.where[0][0] == 'teacherId'
                   && request.query.where[0][2] == request.auth.uid;

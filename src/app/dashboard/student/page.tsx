@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -28,7 +27,8 @@ import Link from 'next/link';
 import { collection, query, where, getDocs, setDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type Enrollment = {
   id: string;
@@ -170,7 +170,7 @@ export default function StudentDashboardPage() {
             studentName: user.displayName,
             classId: classDoc.id,
             teacherId: classData.teacherId,
-            status: 'pending',
+            status: 'pending' as const,
             createdAt: serverTimestamp(),
         };
         
@@ -178,10 +178,21 @@ export default function StudentDashboardPage() {
         const enrollmentId = `${user.uid}_${classDoc.id}`;
         const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
 
-        setDocumentNonBlocking(enrollmentRef, enrollmentData, {});
-        
-        toast({ title: 'Request Sent! 🎉', description: `Your request to join ${classData.subject} has been sent to the teacher.` });
-        setClassCode('');
+        setDoc(enrollmentRef, enrollmentData)
+        .then(() => {
+            toast({ title: 'Request Sent! 🎉', description: `Your request to join ${classData.subject} has been sent to the teacher.` });
+            setClassCode('');
+        })
+        .catch(error => {
+             errorEmitter.emit(
+                'permission-error',
+                new FirestorePermissionError({
+                    path: enrollmentRef.path,
+                    operation: 'create',
+                    requestResourceData: enrollmentData,
+                })
+            )
+        });
 
     } catch (error) {
         console.error("Error joining class: ", error);
@@ -228,7 +239,7 @@ export default function StudentDashboardPage() {
                             onChange={(e) => setClassCode(e.target.value)}
                             disabled={isJoining}
                         />
-                        <Button onClick={handleJoinClass} disabled={isJoining}>
+                        <Button onClick={handleJoinClass} disabled={isJoining || !classCode.trim()}>
                             {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Join Class
                         </Button>
