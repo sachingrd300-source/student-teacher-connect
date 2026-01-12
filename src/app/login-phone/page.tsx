@@ -63,6 +63,7 @@ export default function PhoneLoginPage() {
               email: null, // No email with phone auth
               mobileNumber: user.phoneNumber,
               role: 'student',
+              status: 'approved',
           });
           toast({ title: 'Account Created!', description: 'Welcome to EduConnect Pro.' });
       } else {
@@ -106,6 +107,7 @@ export default function PhoneLoginPage() {
                 <Input id="otp" type="text" maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} placeholder="123456" required />
               </div>
             )}
+             <div id="recaptcha-container" className="flex justify-center"></div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -118,7 +120,6 @@ export default function PhoneLoginPage() {
           </CardFooter>
         </form>
       </Card>
-      <div id="recaptcha-container"></div>
     </div>
   );
 }

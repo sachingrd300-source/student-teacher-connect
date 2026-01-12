@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { loginWithEmail, loginWithGoogle } from '@/firebase/auth';
 import { firestore } from '@/firebase/firebase';
 import { getAdditionalUserInfo } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -58,15 +58,16 @@ export default function StudentLoginPage() {
     try {
         const userCredential = await loginWithGoogle();
         const user = userCredential.user;
-        const additionalInfo = getAdditionalUserInfo(userCredential);
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
         
-        if (additionalInfo?.isNewUser) {
-            const userRef = doc(firestore, 'users', user.uid);
+        if (!userDoc.exists()) {
             await setDoc(userRef, {
                 id: user.uid,
                 name: user.displayName,
                 email: user.email,
                 role: 'student',
+                status: 'approved',
             });
             toast({ title: 'Account Created!', description: 'Welcome to EduConnect Pro.' });
         } else {

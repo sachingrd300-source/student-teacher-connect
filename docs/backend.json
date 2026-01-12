@@ -77,8 +77,7 @@
       "required": [
         "id",
         "role",
-        "name",
-        "email"
+        "name"
       ]
     },
     "Class": {

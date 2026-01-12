@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -47,7 +48,9 @@ export function useUser() {
 // Phone Auth Functions
 export const setupRecaptcha = (containerId: string) => {
     if (typeof window !== 'undefined' && (window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+        (window as any).recaptchaVerifier.render().then((widgetId: any) => {
+            (window as any).grecaptcha.reset(widgetId);
+        });
     }
     
     const recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
