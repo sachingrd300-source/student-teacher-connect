@@ -49,7 +49,6 @@ type TeacherInfo = {
 
 function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
     const firestore = useFirestore();
-    const { toast } = useToast();
 
     const classQuery = useMemo(() => {
         if (!firestore) return null;
@@ -70,7 +69,7 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
     }
 
     if (isLoadingClass || isLoadingTeacher) {
-        return <Skeleton className="h-24 w-full" />;
+        return <Skeleton className="h-40 w-full" />;
     }
     
     if (!classInfo || !teacherInfo) {

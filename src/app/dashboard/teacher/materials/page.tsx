@@ -81,6 +81,12 @@ type UserProfile = {
   subjects?: string[];
 }
 
+type Class = {
+    id: string;
+    subject: string;
+    classLevel: string;
+}
+
 const materialTypes = ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"];
 
 function MaterialsPageSkeleton() {
@@ -124,6 +130,7 @@ export default function MaterialsPage() {
     const [subject, setSubject] = useState('');
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
+    const [classId, setClassId] = useState<string | null>(null);
     const [isFree, setIsFree] = useState(false);
     const [isOfficial, setIsOfficial] = useState(false);
 
@@ -139,7 +146,13 @@ export default function MaterialsPage() {
         return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
 
+    const classesQuery = useMemo(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+    }, [firestore, user]);
+    
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
+    const { data: classes } = useCollection<Class>(classesQuery);
 
     const handleAddMaterial = async () => {
         if (!title || !subject || !materialType || !firestore || !user) {
@@ -153,6 +166,7 @@ export default function MaterialsPage() {
             subject,
             chapter,
             type: materialType,
+            classId,
             teacherId: user.uid,
             teacherName: userProfile?.name,
             isFree: isFree,
@@ -172,6 +186,7 @@ export default function MaterialsPage() {
         setSubject('');
         setChapter('');
         setMaterialType('');
+        setClassId(null);
         setIsFree(false);
         setIsOfficial(false);
         setAddMaterialOpen(false);
@@ -215,6 +230,18 @@ export default function MaterialsPage() {
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="description" className="text-right">Description</Label>
                                 <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" placeholder="A brief summary of the material." />
+                            </div>
+                             <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="class" className="text-right">Class</Label>
+                                <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Assign to a class (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">None (General Material)</SelectItem>
+                                        {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="subject" className="text-right">Subject*</Label>

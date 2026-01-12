@@ -100,13 +100,18 @@
         "classCode": {
           "type": "string",
           "description": "A unique, shareable code for students to join the class."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "teacherId",
         "subject",
         "classLevel",
-        "classCode"
+        "classCode",
+        "createdAt"
       ]
     },
     "Enrollment": {
@@ -222,6 +227,7 @@
         "description": "Represents a study material resource uploaded by a teacher or admin.",
         "properties": {
             "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
+            "classId": { "type": "string", "description": "The ID of the class this material belongs to. Null if not class-specific." },
             "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material." },
             "title": { "type": "string" },
             "description": { "type": "string" },
