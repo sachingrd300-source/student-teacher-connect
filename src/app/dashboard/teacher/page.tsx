@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -28,6 +29,7 @@ import {
   ClipboardCheck,
   BarChart3,
   CalendarDays,
+  ShoppingCart,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -62,7 +64,7 @@ type Class = {
 
 const quickActions = [
     { href: "/dashboard/teacher/materials", label: "Upload Materials", icon: BookOpenCheck },
-    { href: "/dashboard/teacher/attendance", label: "Take Attendance", icon: ClipboardCheck },
+    { href: "/dashboard/teacher/my-shop", label: "Manage My Shop", icon: ShoppingCart },
     { href: "/dashboard/teacher/performance", label: "Enter Marks", icon: BarChart3 },
     { href: "/dashboard/teacher/schedule", label: "Manage Schedule", icon: CalendarDays },
 ]

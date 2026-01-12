@@ -42,6 +42,7 @@ const navItems = {
     { href: '/dashboard/teacher/enrollments', label: 'Enrollments', icon: UserPlus },
     { href: '/dashboard/teacher/batches', label: 'Classes', icon: Users2 },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
+    { href: '/dashboard/teacher/my-shop', label: 'My Shop', icon: ShoppingCart },
     { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
     { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: FileText },
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
