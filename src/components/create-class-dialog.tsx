@@ -25,6 +25,7 @@ import { collection, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
+import { Input } from './ui/input';
 
 type UserProfile = {
   id: string;
@@ -48,6 +49,7 @@ export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
   const [newClassData, setNewClassData] = useState({
     subject: '',
     classLevel: '',
+    batchTime: '',
   });
 
   const handleCreateClass = () => {
@@ -80,7 +82,7 @@ export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
       description: `Your new class code is ${classCode}. Share it with your students.`,
     });
     setCreateClassOpen(false);
-    setNewClassData({ subject: '', classLevel: '' });
+    setNewClassData({ subject: '', classLevel: '', batchTime: '' });
   };
 
   return (
@@ -138,6 +140,15 @@ export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="batchTime">Batch Time</Label>
+            <Input
+              id="batchTime"
+              type="time"
+              value={newClassData.batchTime}
+              onChange={(e) => setNewClassData(p => ({...p, batchTime: e.target.value}))}
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button onClick={handleCreateClass}>Generate Code</Button>
@@ -146,3 +157,5 @@ export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
     </Dialog>
   );
 }
+
+    
