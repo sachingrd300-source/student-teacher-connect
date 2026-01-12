@@ -72,6 +72,7 @@ type StudyMaterial = {
     subject: string;
     chapter?: string;
     type: string;
+    classLevel?: string;
     createdAt: { toDate: () => Date };
     isFree: boolean;
     price?: number;
@@ -80,6 +81,7 @@ type StudyMaterial = {
 type UserProfile = {
   name: string;
   subjects?: string[];
+  classLevels?: string[];
 }
 
 type Class = {
@@ -88,7 +90,9 @@ type Class = {
     classLevel: string;
 }
 
-const materialTypes = ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"];
+const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", "Test Paper", "Solution"];
+const classLevelOptions = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Undergraduate", "Postgraduate"];
+
 
 function MaterialsPageSkeleton() {
     return (
@@ -132,6 +136,7 @@ export default function MaterialsPage() {
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
     const [classId, setClassId] = useState<string | null>(null);
+    const [classLevel, setClassLevel] = useState<string | null>(null);
     const [isFree, setIsFree] = useState(false);
     const [isOfficial, setIsOfficial] = useState(false);
     const [price, setPrice] = useState<number | ''>('');
@@ -157,6 +162,20 @@ export default function MaterialsPage() {
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
     const { data: classes } = useCollection<Class>(classesQuery);
 
+    const resetForm = () => {
+        setTitle('');
+        setDescription('');
+        setSubject('');
+        setChapter('');
+        setMaterialType('');
+        setClassId(null);
+        setClassLevel(null);
+        setIsFree(false);
+        setIsOfficial(false);
+        setPrice('');
+        setAddMaterialOpen(false);
+    }
+
     const handleAddMaterial = async () => {
         if (!title || !subject || !materialType || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
@@ -174,6 +193,7 @@ export default function MaterialsPage() {
             chapter,
             type: materialType,
             classId,
+            classLevel,
             teacherId: user.uid,
             teacherName: userProfile?.name,
             isFree: isFree,
@@ -189,16 +209,7 @@ export default function MaterialsPage() {
 
         toast({ title: 'Material Added', description: `${title} has been successfully uploaded.`});
         
-        setTitle('');
-        setDescription('');
-        setSubject('');
-        setChapter('');
-        setMaterialType('');
-        setClassId(null);
-        setIsFree(false);
-        setIsOfficial(false);
-        setPrice('');
-        setAddMaterialOpen(false);
+        resetForm();
     }
     
     const handleDeleteMaterial = (materialId: string) => {
@@ -231,7 +242,7 @@ export default function MaterialsPage() {
                             <DialogTitle>Add New Study Material</DialogTitle>
                             <DialogDescription>Fill in the details below to upload a new resource.</DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
+                        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="title" className="text-right">Title*</Label>
                                 <Input id="title" value={title} onChange={e => setTitle(e.target.value)} className="col-span-3" placeholder="e.g. Chapter 1 Notes" />
@@ -241,7 +252,7 @@ export default function MaterialsPage() {
                                 <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" placeholder="A brief summary of the material." />
                             </div>
                              <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="class" className="text-right">Class</Label>
+                                <Label htmlFor="class" className="text-right">Private Class</Label>
                                 <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'}>
                                     <SelectTrigger className="col-span-3">
                                         <SelectValue placeholder="Assign to a class (optional)" />
@@ -249,6 +260,18 @@ export default function MaterialsPage() {
                                     <SelectContent>
                                         <SelectItem value="none">None (General Material)</SelectItem>
                                         {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="classLevel" className="text-right">Public Class Level</Label>
+                                <Select onValueChange={(val) => setClassLevel(val === 'none' ? null : val)} value={classLevel || 'none'}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="For public filtering (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                         <SelectItem value="none">None</SelectItem>
+                                        {classLevelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -322,7 +345,7 @@ export default function MaterialsPage() {
                                     <TableHead>Title</TableHead>
                                     <TableHead>Type</TableHead>
                                     <TableHead>Subject</TableHead>
-                                    <TableHead>Date</TableHead>
+                                    <TableHead>Level</TableHead>
                                     <TableHead>Access</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -334,7 +357,7 @@ export default function MaterialsPage() {
                                         <TableCell className="font-medium">{material.title}</TableCell>
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
                                         <TableCell>{material.subject}</TableCell>
-                                        <TableCell>{material.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                                        <TableCell>{material.classLevel || 'N/A'}</TableCell>
                                         <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
                                         <TableCell>{material.isFree ? 'Free' : `₹${material.price}`}</TableCell>
                                         <TableCell className="text-right">
