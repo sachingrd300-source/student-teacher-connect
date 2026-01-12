@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -21,9 +20,12 @@ export function LandingHeader() {
         <div className="flex flex-1 items-center justify-end space-x-2">
             <>
                 <div className="hidden md:flex gap-2">
-                  <Button asChild>
-                    <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2" /></Link>
-                  </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/login">Tutor Login</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/login-student">Student Login <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
                 </div>
             </>
 
@@ -40,6 +42,11 @@ export function LandingHeader() {
                 <div className="flex items-center mb-8">
                     <Icons.logo className="h-6 w-6 text-primary" />
                     <span className="ml-2 font-bold font-headline text-lg">EduConnect Pro</span>
+                </div>
+                 <div className="flex flex-col gap-4">
+                    <Link href="/login-student" className="text-lg font-medium">Student Login</Link>
+                    <Link href="/login" className="text-lg font-medium">Tutor Login</Link>
+                    <Link href="/signup" className="text-lg font-medium">Become a Tutor</Link>
                 </div>
                 <div className="mt-auto flex flex-col gap-2">
                     <Button asChild>

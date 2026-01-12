@@ -48,7 +48,10 @@ export default function LandingPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <Button asChild size="lg">
-                                <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                                <Link href="/login-student">Find a Tutor <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                            </Button>
+                             <Button asChild size="lg" variant="outline">
+                                <Link href="/signup">Become a Tutor</Link>
                             </Button>
                         </div>
                     </div>
