@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -52,7 +53,7 @@ export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
     batchTime: '',
   });
 
-  const handleCreateClass = () => {
+  const handleCreateClass = async () => {
     if (!newClassData.subject || !newClassData.classLevel || !firestore || !user) {
       toast({
         variant: 'destructive',
@@ -75,7 +76,7 @@ export function CreateClassDialog({ userProfile }: CreateClassDialogProps) {
       createdAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(collection(firestore, 'classes'), classData);
+    await addDocumentNonBlocking(collection(firestore, 'classes'), classData);
 
     toast({
       title: 'Class Created!',
