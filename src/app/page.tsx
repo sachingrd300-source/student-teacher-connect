@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 const features = [
     {
@@ -161,8 +162,17 @@ export default function LandingPage() {
                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2 ml-4"></div>
                              {howItWorksStudent.map((step, index) => (
                                 <div key={step.title} className="flex items-start gap-6">
-                                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center ring-4 ring-background z-10">
-                                       <span className="font-bold">{index + 1}</span>
+                                    <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10">
+                                      <div
+                                        className={cn(
+                                          "absolute inset-[-2px] animate-[gradient-spin_3s_linear_infinite] rounded-full",
+                                          "[--gradient-angle:0deg]",
+                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,_hsl(var(--primary))_0%,_hsl(var(--accent))_50%,_hsl(var(--primary))_100%)]"
+                                        )}
+                                      ></div>
+                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background">
+                                        <span className="font-bold text-primary">{index + 1}</span>
+                                      </div>
                                     </div>
                                     <div className="mt-1">
                                         <h4 className="font-bold text-lg">{step.title}</h4>
@@ -180,8 +190,17 @@ export default function LandingPage() {
                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2 ml-4"></div>
                              {howItWorksTeacher.map((step, index) => (
                                 <div key={step.title} className="flex items-start gap-6">
-                                     <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center ring-4 ring-background z-10">
-                                       <span className="font-bold">{index + 1}</span>
+                                     <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10">
+                                      <div
+                                        className={cn(
+                                          "absolute inset-[-2px] animate-[gradient-spin_3s_linear_infinite] rounded-full",
+                                          "[--gradient-angle:0deg]",
+                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,_hsl(var(--primary))_0%,_hsl(var(--accent))_50%,_hsl(var(--primary))_100%)]"
+                                        )}
+                                      ></div>
+                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background">
+                                        <span className="font-bold text-primary">{index + 1}</span>
+                                      </div>
                                     </div>
                                     <div className="mt-1">
                                         <h4 className="font-bold text-lg">{step.title}</h4>
