@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
 import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, StepForward } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
@@ -15,17 +15,17 @@ import { cn } from '@/lib/utils';
 
 const features = [
     {
-        icon: <User className="h-8 w-8 text-primary" />,
+        icon: <User className="h-10 w-10 text-primary" />,
         title: 'For Students',
         description: 'Find the best tutors, view profiles, and connect instantly.',
     },
     {
-        icon: <GraduationCap className="h-8 w-8 text-primary" />,
+        icon: <GraduationCap className="h-10 w-10 text-primary" />,
         title: 'For Teachers',
         description: 'Showcase your expertise, manage classes, and connect with students.',
     },
     {
-        icon: <CheckCircle className="h-8 w-8 text-primary" />,
+        icon: <CheckCircle className="h-10 w-10 text-primary" />,
         title: 'Verified Tutors',
         description: 'All tutors are manually verified to ensure quality and safety.',
     }
@@ -129,13 +129,18 @@ export default function LandingPage() {
             </div>
             <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
                 {features.map((feature) => (
-                     <div key={feature.title} className="flex flex-col items-center text-center gap-4">
-                        {feature.icon}
-                        <div className="space-y-1">
-                            <h3 className="font-bold text-xl">{feature.title}</h3>
-                            <p className="text-muted-foreground">{feature.description}</p>
+                     <Card key={feature.title} className="relative overflow-hidden text-center p-8 flex flex-col items-center gap-4 transition-all duration-300 hover:scale-105 hover:shadow-primary/20 hover:shadow-2xl">
+                        <div className="absolute -inset-2 aurora-viz opacity-20 blur-2xl"></div>
+                        <div className="relative z-10 flex flex-col items-center gap-4">
+                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
+                                {feature.icon}
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-xl">{feature.title}</h3>
+                                <p className="text-muted-foreground">{feature.description}</p>
+                            </div>
                         </div>
-                     </div>
+                     </Card>
                 ))}
             </div>
           </div>
@@ -145,7 +150,7 @@ export default function LandingPage() {
         <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/20">
             <div className="container px-4 md:px-6">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animate-[multi-color-blink_4s_ease-in-out_infinite]">
+                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animate-multi-color-blink">
                         <StepForward className="w-8 h-8"/>
                         Getting Started is Easy
                     </h2>
