@@ -85,21 +85,22 @@
   }
 
   .aurora-viz {
-    background: radial-gradient(ellipse at 20% 20%, hsl(var(--primary)) 0%, transparent-40%),
-                radial-gradient(ellipse at 80% 30%, hsl(var(--accent)) 0%, transparent-40%),
-                radial-gradient(ellipse at 50% 80%, hsl(var(--foreground)) 0%, transparent-40%),
-                radial-gradient(ellipse at 90% 90%, hsl(var(--primary)) 0%, transparent-40%);
+    background: radial-gradient(ellipse at 20% 20%, hsl(var(--primary)) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, hsl(var(--accent)) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, hsl(var(--foreground)) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 90%, hsl(var(--primary)) 0%, transparent 50%);
     background-size: 400% 400%;
     animation: aurora 8s ease infinite;
   }
 
-  @keyframes blink {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.6;
-    }
+  @keyframes multi-color-blink {
+    0%, 100% { color: hsl(var(--foreground) / 0.8); }
+    15% { color: hsl(var(--primary)); }
+    30% { color: hsl(var(--accent)); }
+    45% { color: hsl(48, 95%, 75%)); }
+    60% { color: hsl(0, 0%, 98% / 0.9); }
+    75% { color: hsl(var(--accent)); }
+    90% { color: hsl(var(--primary)); }
   }
 
 }

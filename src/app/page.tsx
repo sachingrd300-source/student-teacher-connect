@@ -145,7 +145,7 @@ export default function LandingPage() {
         <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/20">
             <div className="container px-4 md:px-6">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animate-[blink_2s_ease-in-out_infinite]">
+                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animate-[multi-color-blink_4s_ease-in-out_infinite]">
                         <StepForward className="w-8 h-8"/>
                         Getting Started is Easy
                     </h2>
