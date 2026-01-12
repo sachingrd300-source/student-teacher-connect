@@ -1,3 +1,4 @@
+
 'use client';
 
 import { auth, firestore } from './firebase';
@@ -8,7 +9,7 @@ import { useMemo } from 'react';
 
 // A simple wrapper around React's useMemo to make it more explicit for Firebase queries.
 // This helps prevent re-renders by ensuring the query object is stable.
-const useMemoFirebase = <T>(factory: () => T, deps: React.DependencyList): T => {
+const useMemoFirebase = <T>(factory: () => T | null, deps: React.DependencyList): T | null => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return useMemo(factory, deps);
 }
@@ -26,3 +27,5 @@ export {
     useDoc,
     useMemoFirebase,
 };
+
+    

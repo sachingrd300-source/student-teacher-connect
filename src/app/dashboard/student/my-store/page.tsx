@@ -40,7 +40,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Store, PlusCircle, MoreVertical, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -73,7 +73,7 @@ export default function MyStorePage() {
     const [condition, setCondition] = useState('');
     const [itemType, setItemType] = useState('');
 
-    const userListingsQuery = useMemo(() => {
+    const userListingsQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
         return query(collection(firestore, 'marketplaceItems'), where('sellerId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
@@ -238,3 +238,5 @@ export default function MyStorePage() {
         </div>
     );
 }
+
+    
