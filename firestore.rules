@@ -72,6 +72,21 @@ service cloud.firestore {
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
     }
+    
+    /* ===============================
+       ENROLLMENTS
+    =============================== */
+
+    match /enrollments/{enrollmentId} {
+        allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
+        // A user can list their own enrollments, either as a student or a teacher
+        allow list: if isSignedIn() && 
+                    (request.query.get('studentId') == request.auth.uid || request.query.get('teacherId') == request.auth.uid);
+        allow create: if isSignedIn() && isStudentOwner(request.resource.data);
+        allow update: if isExistingDoc() && isTeacherOwner(resource.data); // only teacher can approve/deny
+        allow delete: if false;
+    }
+
 
     /* ===============================
        STUDY MATERIALS
@@ -140,7 +155,7 @@ service cloud.firestore {
                  && isTeacherOwner(resource.data);
       // A teacher can list their own schedules.
       allow list: if isSignedIn()
-                  && request.query.where.teacherId == request.auth.uid;
+                  && request.query.get('teacherId') == request.auth.uid;
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if isExistingDoc()
