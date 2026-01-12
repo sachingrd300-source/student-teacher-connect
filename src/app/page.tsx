@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
+import { AnimatedGradient } from '@/components/ui/animated-gradient';
 
 
 const features = [
@@ -101,8 +102,10 @@ const marketplaceItems = [
 
 const FloatingIconsBackground = () => {
   const [icons, setIcons] = useState<{ style: React.CSSProperties, icon: React.ReactNode }[]>([]);
+  const isMounted = useRef(false);
 
   useEffect(() => {
+    isMounted.current = true;
     const generatedIcons = Array.from({ length: 15 }).map((_, i) => {
       const iconData = floatingIcons[i % floatingIcons.length];
       const style = {
@@ -115,7 +118,7 @@ const FloatingIconsBackground = () => {
     setIcons(generatedIcons);
   }, []);
 
-  if (icons.length === 0) {
+  if (!isMounted.current || icons.length === 0) {
     return null;
   }
 
@@ -293,6 +296,29 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Call to Action Section */}
+        <section className="w-full py-16 md:py-24">
+            <div className="container">
+                <div className="relative rounded-2xl overflow-hidden p-8 md:p-12 text-center text-foreground">
+                    <AnimatedGradient />
+                    <div className="relative z-10 space-y-6">
+                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Join the Revolution?</h2>
+                         <p className="max-w-2xl mx-auto text-lg text-foreground/80">
+                            Whether you're a student eager to learn or a tutor ready to inspire, your journey starts here.
+                         </p>
+                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <Button asChild size="lg">
+                                <Link href="/login-student">Start Learning Today <ArrowRight className="ml-2" /></Link>
+                            </Button>
+                            <Button asChild size="lg" variant="secondary">
+                                <Link href="/signup">Become a Tutor</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
         
         <ScrollToTop />
       </main>
@@ -312,5 +338,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    

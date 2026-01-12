@@ -111,6 +111,10 @@ export default {
             filter: 'brightness(1.5) drop-shadow(0 0 8px hsl(var(--primary)))',
           },
         },
+        'spin-slow': {
+            '0%': { transform: 'rotate(0deg)' },
+            '100%': { transform: 'rotate(360deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -118,6 +122,7 @@ export default {
         'multi-color-blink': 'multi-color-blink 4s ease-in-out infinite',
         aurora: 'aurora 8s ease infinite',
         'logo-glow': 'logo-glow 1.5s ease-in-out',
+        'spin-slow': 'spin-slow 10s linear infinite',
       },
     },
   },
