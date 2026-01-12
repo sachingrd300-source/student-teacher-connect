@@ -24,6 +24,10 @@ import {
   DoorOpen,
   Info,
   Copy,
+  BookOpenCheck,
+  ClipboardCheck,
+  BarChart3,
+  CalendarDays,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -55,6 +59,14 @@ type Class = {
     classCode: string;
     teacherId: string;
 }
+
+const quickActions = [
+    { href: "/dashboard/teacher/materials", label: "Upload Materials", icon: BookOpenCheck },
+    { href: "/dashboard/teacher/attendance", label: "Take Attendance", icon: ClipboardCheck },
+    { href: "/dashboard/teacher/performance", label: "Enter Marks", icon: BarChart3 },
+    { href: "/dashboard/teacher/schedule", label: "Manage Schedule", icon: CalendarDays },
+]
+
 
 function PendingVerificationCard() {
     return (
@@ -91,6 +103,13 @@ export default function TeacherDashboardPage() {
   }, [firestore, user]);
   const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   if (isLoadingProfile || !userProfile) {
     return <div className="space-y-4">
         <Skeleton className="h-10 w-1/3" />
@@ -102,7 +121,7 @@ export default function TeacherDashboardPage() {
   if (userProfile?.status === 'pending_verification') {
     return (
         <div className="space-y-6">
-             <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
+             <h1 className="text-3xl font-bold font-headline">{`${getGreeting()}, ${userProfile.name}! 👋`}</h1>
              <PendingVerificationCard />
         </div>
     );
@@ -111,7 +130,11 @@ export default function TeacherDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
+        <div>
+            <h1 className="text-3xl font-bold font-headline">{`${getGreeting()}, ${userProfile.name}! 👋`}</h1>
+            <p className="text-muted-foreground">Here's a quick overview of your teaching dashboard.</p>
+        </div>
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-soft-shadow">
@@ -147,17 +170,21 @@ export default function TeacherDashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-soft-shadow">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Jump to common tasks.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-              <Button variant="outline" asChild><Link href="/dashboard/teacher/materials">Upload Materials</Link></Button>
-              <Button variant="outline" asChild><Link href="/dashboard/teacher/attendance">Take Attendance</Link></Button>
-              <Button variant="outline" asChild><Link href="/dashboard/teacher/performance">Enter Marks</Link></Button>
-              <Button variant="outline" asChild><Link href="/dashboard/teacher/schedule">Manage Schedule</Link></Button>
-          </CardContent>
+         <Card className="shadow-soft-shadow">
+            <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Jump to your most common tasks with a single click.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+                {quickActions.map(action => (
+                    <Button key={action.href} variant="outline" asChild className="h-20 flex-col gap-2 text-base shadow-soft-shadow active:scale-95 transition-transform">
+                        <Link href={action.href}>
+                            <action.icon className="h-6 w-6 text-primary" />
+                            {action.label}
+                        </Link>
+                    </Button>
+                ))}
+            </CardContent>
         </Card>
          <Card className="shadow-soft-shadow">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -186,7 +213,7 @@ export default function TeacherDashboardPage() {
                             <Badge variant="secondary">{cls.classCode}</Badge>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                                 navigator.clipboard.writeText(cls.classCode);
-                                toast({title: "Copied!", description: "Class code copied to clipboard."})
+                                toast({title: "Copied! 👍", description: "Class code copied to clipboard."})
                             }}>
                                 <Copy className="h-4 w-4" />
                             </Button>

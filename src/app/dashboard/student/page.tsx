@@ -79,8 +79,13 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
     return (
         <Card className="flex flex-col shadow-soft-shadow transition-transform duration-200 active:scale-95">
             <CardHeader>
-                <CardTitle>{classInfo.subject} - {classInfo.classLevel}</CardTitle>
-                <CardDescription>Tutor: {teacherInfo.name}</CardDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>{classInfo.subject} - {classInfo.classLevel}</CardTitle>
+                        <CardDescription>Tutor: {teacherInfo.name}</CardDescription>
+                    </div>
+                     {enrollment.status === 'approved' && <CheckCircle className="w-6 h-6 text-green-500" />}
+                </div>
             </CardHeader>
             <CardContent className="flex-1">
                  <div className="flex items-center gap-2">
@@ -95,7 +100,7 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
                 <CardFooter>
                     <Button variant="outline" asChild>
                         <Link href={`/dashboard/student/class/${enrollment.classId}`}>
-                            View Class <ArrowRight className="ml-2 h-4 w-4" />
+                            Enter Classroom <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </CardFooter>
@@ -118,6 +123,13 @@ export default function StudentDashboardPage() {
   }, [firestore, user]);
 
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
 
   const handleJoinClass = async () => {
     if (!classCode.trim() || !firestore || !user) {
@@ -162,7 +174,7 @@ export default function StudentDashboardPage() {
 
         setDocumentNonBlocking(enrollmentRef, enrollmentData, {});
         
-        toast({ title: 'Request Sent!', description: `Your request to join ${classData.subject} has been sent to the teacher.` });
+        toast({ title: 'Request Sent! 🎉', description: `Your request to join ${classData.subject} has been sent to the teacher.` });
         setClassCode('');
 
     } catch (error) {
@@ -188,7 +200,7 @@ export default function StudentDashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">
-          {user ? `Welcome back, ${user.displayName || 'Student'}!` : 'Student Dashboard'}
+          {user ? `${getGreeting()}, ${user.displayName || 'Student'}! 😊` : 'Student Dashboard'}
         </h1>
         <p className="text-muted-foreground">
           Join a class to access materials and connect with your teacher.

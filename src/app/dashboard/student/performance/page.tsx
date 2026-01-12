@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -53,6 +52,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+const getPerformanceEmoji = (percentage: number): string => {
+    if (percentage >= 80) return '😄';
+    if (percentage >= 60) return '😐';
+    return '😟';
+}
 
 export default function StudentPerformancePage() {
   const { user } = useUser();
@@ -95,7 +99,7 @@ export default function StudentPerformancePage() {
       <div>
         <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
           <BarChart3 className="w-8 h-8" />
-          My Performance
+          Keep Up the Great Work!
         </h1>
         <p className="text-muted-foreground">
           Track your academic progress and view your test results.
@@ -104,7 +108,7 @@ export default function StudentPerformancePage() {
 
       <Card className="shadow-soft-shadow">
         <CardHeader>
-          <CardTitle>Performance Overview</CardTitle>
+          <CardTitle>Performance Overview 🎉</CardTitle>
           <CardDescription>
             Your test scores over time. {subjectFilter !== 'all' && `Showing results for ${subjectFilter}.`}
           </CardDescription>
@@ -171,15 +175,21 @@ export default function StudentPerformancePage() {
                     <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))}
-              {!isLoading && filteredData.map((result) => (
-                <TableRow key={result.id}>
-                  <TableCell className="font-medium">{result.testName}</TableCell>
-                  <TableCell>{result.subject}</TableCell>
-                  <TableCell className="font-semibold">{result.marks} / {result.maxMarks}</TableCell>
-                  <TableCell>{((result.marks / result.maxMarks) * 100).toFixed(1)}%</TableCell>
-                  <TableCell className="text-right">{result.date?.toDate().toLocaleDateString()}</TableCell>
-                </TableRow>
-              ))}
+              {!isLoading && filteredData.map((result) => {
+                const percentage = (result.marks / result.maxMarks) * 100;
+                return (
+                    <TableRow key={result.id}>
+                        <TableCell className="font-medium">{result.testName}</TableCell>
+                        <TableCell>{result.subject}</TableCell>
+                        <TableCell className="font-semibold">{result.marks} / {result.maxMarks}</TableCell>
+                        <TableCell>
+                            <span className="mr-2">{percentage.toFixed(1)}%</span>
+                            <span>{getPerformanceEmoji(percentage)}</span>
+                        </TableCell>
+                        <TableCell className="text-right">{result.date?.toDate().toLocaleDateString()}</TableCell>
+                    </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           {!isLoading && filteredData.length === 0 && (
