@@ -4,10 +4,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LandingHeader } from '@/components/landing-header';
 import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, StepForward } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Card, CardContent } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
+import React from 'react';
 
 const features = [
     {
@@ -65,7 +68,9 @@ const howItWorksTeacher = [
 
 
 export default function LandingPage() {
-    const heroImage = PlaceHolderImages.find(p => p.id === 'hero-landing');
+    const heroImages = PlaceHolderImages.filter(p => p.id.startsWith('hero-'));
+    const autoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: false }));
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <LandingHeader />
@@ -73,15 +78,28 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-white">
             <div className="absolute inset-0">
-                <Image
-                    src={heroImage?.imageUrl || "https://picsum.photos/seed/learning/1600/900"}
-                    alt={heroImage?.description || "A vibrant image of a modern, collaborative learning environment."}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    data-ai-hint={heroImage?.imageHint}
-                    priority
-                />
-                <div className="absolute inset-0 bg-black/60"></div>
+                 <Carousel 
+                    className="w-full h-full"
+                    plugins={[autoplay.current]}
+                    opts={{ loop: true }}
+                 >
+                    <CarouselContent className="h-full" data-testid="carousel-content">
+                        {heroImages.map((image, index) => (
+                           <CarouselItem key={index} className="h-full">
+                                <Image
+                                    src={image.imageUrl}
+                                    alt={image.description}
+                                    fill
+                                    style={{ objectFit: 'cover' }}
+                                    className="brightness-50"
+                                    data-ai-hint={image.imageHint}
+                                    priority={index === 0}
+                                />
+                           </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                </Carousel>
+                <div className="absolute inset-0 bg-black/50"></div>
             </div>
              <div className="relative z-10 px-4 md:px-6 space-y-6">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-shadow-lg">
@@ -196,3 +214,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
