@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Key, LogIn } from 'lucide-react';
+import { Mail, Key, LogIn, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginWithEmail, loginWithGoogle } from '@/firebase/auth';
@@ -115,14 +115,17 @@ export default function StudentLoginPage() {
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
               <LogIn className="mr-2 h-4 w-4"/>
-              {isLoading ? 'Logging In...' : 'Login'}
+              {isLoading ? 'Logging In...' : 'Login with Email'}
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/login-phone"><Phone className="mr-2 h-4 w-4" /> Login with Phone</Link>
             </Button>
             <div className="relative w-full">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
               </div>
             </div>
             <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>

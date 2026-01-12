@@ -10,6 +10,9 @@ import {
   onAuthStateChanged,
   type User,
   type UserCredential,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  type ConfirmationResult,
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -40,6 +43,27 @@ export function useUser() {
 
   return { user, isLoading };
 }
+
+// Phone Auth Functions
+export const setupRecaptcha = (containerId: string) => {
+    if (typeof window !== 'undefined' && (window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+    }
+    
+    const recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        'size': 'invisible',
+        'callback': (response: any) => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+    });
+    (window as any).recaptchaVerifier = recaptchaVerifier;
+    return recaptchaVerifier;
+};
+
+export const sendOtp = (phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {
+    return signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+};
+
 
 // Re-exporting auth for convenience if needed elsewhere, though direct use is discouraged.
 export { auth };
