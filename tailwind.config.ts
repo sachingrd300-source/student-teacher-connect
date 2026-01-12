@@ -91,11 +91,14 @@ export default {
           '90%': { color: 'hsl(var(--primary))' },
         },
         aurora: {
-          from: {
+          '0%': {
             backgroundPosition: '0% 50%',
           },
-          to: {
-            backgroundPosition: '350% 50%',
+          '50%': {
+            backgroundPosition: '100% 50%',
+          },
+          '100%': {
+            backgroundPosition: '0% 50%',
           },
         },
       },
@@ -103,7 +106,7 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'multi-color-blink': 'multi-color-blink 4s ease-in-out infinite',
-        aurora: 'aurora 20s linear infinite',
+        aurora: 'aurora 8s ease infinite',
       },
     },
   },

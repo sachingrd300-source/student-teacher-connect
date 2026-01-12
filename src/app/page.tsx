@@ -6,13 +6,11 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
 import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, StepForward, Atom, FlaskConical, Book, BrainCircuit, MessageSquare, TestTube, Edit, Layers } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import Autoplay from "embla-carousel-autoplay";
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AnimatedCard } from '@/components/ui/animated-card';
 
 
 const features = [
@@ -86,12 +84,10 @@ const FloatingIconsBackground = () => {
     const [isClient, setIsClient] = useState(false);
   
     useEffect(() => {
-      // This effect runs only on the client, after the component has mounted.
       setIsClient(true);
     }, []);
   
     if (!isClient) {
-      // Render nothing on the server. The icons will be rendered on the client.
       return null;
     }
   
@@ -116,9 +112,6 @@ const FloatingIconsBackground = () => {
 
 
 export default function LandingPage() {
-    const heroImages = PlaceHolderImages.filter(p => p.id.startsWith('hero-'));
-    const autoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: false }));
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <LandingHeader />
@@ -165,7 +158,7 @@ export default function LandingPage() {
                                 {feature.icon}
                             </div>
                             <div className="space-y-1">
-                                <h3 className="font-bold text-xl">{feature.title}</h3>
+                                <h3 className="font-bold text-xl font-headline">{feature.title}</h3>
                                 <p className="text-muted-foreground">{feature.description}</p>
                             </div>
                         </div>
@@ -179,7 +172,7 @@ export default function LandingPage() {
         <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/20">
             <div className="container px-4 md:px-6">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animate-multi-color-blink">
+                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3 animation-multi-color-blink">
                         <StepForward className="w-8 h-8"/>
                         Getting Started is Easy
                     </h2>
@@ -198,27 +191,25 @@ export default function LandingPage() {
                             <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>
                             {howItWorksStudent.map((step, index) => (
                                 <div key={step.title} className={cn("relative flex items-center mb-12", index % 2 === 0 ? "justify-start" : "justify-end")}>
-                                    <div className={cn("w-1/2", index % 2 === 0 ? "pr-8" : "pl-8")}>
-                                        <Card className="shadow-lg">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-4">
-                                                    {step.icon}
-                                                    <CardTitle>{step.title}</CardTitle>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <p className="text-muted-foreground">{step.description}</p>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
-                                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                                     <div className="absolute left-1/2 top-8 -translate-x-1/2 h-16 w-16 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
+                                        <div className="relative w-12 h-12 rounded-full overflow-hidden">
                                             <div className="absolute inset-0 aurora-viz" />
-                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-lg text-primary">
+                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-primary">
                                                 {index + 1}
                                             </div>
                                         </div>
                                     </div>
+                                    <AnimatedCard index={index} className={cn("w-1/2", index % 2 === 0 ? "pr-12" : "pl-12")}>
+                                        <CardHeader>
+                                            <div className="flex items-center gap-4">
+                                                {step.icon}
+                                                <CardTitle className="font-headline">{step.title}</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-muted-foreground">{step.description}</p>
+                                        </CardContent>
+                                    </AnimatedCard>
                                 </div>
                             ))}
                         </div>
@@ -228,27 +219,25 @@ export default function LandingPage() {
                             <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>
                              {howItWorksTeacher.map((step, index) => (
                                 <div key={step.title} className={cn("relative flex items-center mb-12", index % 2 === 0 ? "justify-start" : "justify-end")}>
-                                    <div className={cn("w-1/2", index % 2 === 0 ? "pr-8" : "pl-8")}>
-                                        <Card className="shadow-lg">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-4">
-                                                    {step.icon}
-                                                    <CardTitle>{step.title}</CardTitle>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <p className="text-muted-foreground">{step.description}</p>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
-                                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                                    <div className="absolute left-1/2 top-8 -translate-x-1/2 h-16 w-16 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
+                                        <div className="relative w-12 h-12 rounded-full overflow-hidden">
                                             <div className="absolute inset-0 aurora-viz" />
-                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-lg text-primary">
+                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-primary">
                                                 {index + 1}
                                             </div>
                                         </div>
                                     </div>
+                                    <AnimatedCard index={index} className={cn("w-1/2", index % 2 === 0 ? "pr-12" : "pl-12")}>
+                                        <CardHeader>
+                                            <div className="flex items-center gap-4">
+                                                {step.icon}
+                                                <CardTitle className="font-headline">{step.title}</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-muted-foreground">{step.description}</p>
+                                        </CardContent>
+                                    </AnimatedCard>
                                 </div>
                             ))}
                         </div>

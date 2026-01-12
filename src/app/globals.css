@@ -103,6 +103,10 @@
     90% { color: hsl(var(--primary)); }
   }
 
+  .animation-multi-color-blink {
+    animation: multi-color-blink 4s ease-in-out infinite;
+  }
+
   .floating-icon {
       position: absolute;
       bottom: -50px;
