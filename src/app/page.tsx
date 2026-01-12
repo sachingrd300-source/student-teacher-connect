@@ -69,19 +69,6 @@ const howItWorksTeacher = [
     }
 ]
 
-const floatingIcons = [
-    { icon: <Book /> },
-    { icon: <Atom /> },
-    { icon: <FlaskConical /> },
-    { icon: <TestTube /> },
-    { icon: <BrainCircuit /> },
-    { icon: "🎓" },
-    { icon: "🔬" },
-    { icon: "📚" },
-    { icon: "💡" },
-    { icon: "📈" },
-]
-
 const freeResourceItems = [
     {
         icon: <FileCheck className="h-8 w-8 text-primary" />,
@@ -125,35 +112,6 @@ const marketplaceItems = [
 ];
 
 
-const FloatingIconsBackground = () => {
-  const [icons, setIcons] = useState<{ style: React.CSSProperties, icon: React.ReactNode }[]>([]);
-
-  useEffect(() => {
-    const generatedIcons = Array.from({ length: 15 }).map((_, i) => {
-      const iconData = floatingIcons[i % floatingIcons.length];
-      const style = {
-        left: `${Math.random() * 100}%`,
-        animationDelay: `${Math.random() * 10}s`,
-        animationDuration: `${10 + Math.random() * 10}s`,
-      };
-      // For some reason, if I don't clone the element, it gives a "Cannot add property key, object is not extensible" error
-      return { style, icon: typeof iconData.icon === 'string' ? iconData.icon : React.cloneElement(iconData.icon as React.ReactElement, {key: i}) };
-    });
-    setIcons(generatedIcons);
-  }, []);
-
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden">
-      {icons.map((item, i) => (
-        <div key={i} style={item.style} className="floating-icon">
-          {item.icon}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -161,10 +119,9 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-foreground overflow-hidden">
+             <div className="absolute inset-0 aurora-viz z-0"></div>
              <div className="absolute inset-0 bg-black/70 z-10"></div>
              
-             <FloatingIconsBackground />
-
              <div className="relative z-20 px-4 md:px-6 space-y-6 text-white">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-shadow-lg">
                     Empowering Education, <span className="text-primary">Connecting Minds</span>
