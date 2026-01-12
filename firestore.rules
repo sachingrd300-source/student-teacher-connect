@@ -64,7 +64,7 @@ service cloud.firestore {
     match /classes/{classId} {
       // An enrolled student or the teacher can get class details
       allow get: if isSignedIn() && (isTeacherOwner(get(/databases/$(database)/documents/classes/$(classId)).data) || isEnrolledInClass(classId));
-      // A teacher can list their own classes
+      // A teacher can list their own classes, requires teacherId in query
       allow list: if isSignedIn() 
                   && request.query.where[0][0] == 'teacherId' 
                   && request.query.where[0][2] == request.auth.uid;
@@ -84,8 +84,10 @@ service cloud.firestore {
         
         // A user can list their own enrollments, either as a student or a teacher
         allow list: if isSignedIn() && 
-            (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
-            (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid);
+            (
+                (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
+                (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
+            );
 
         // A student can create their own enrollment request with a predictable ID
         allow create: if isSignedIn() 
@@ -121,6 +123,26 @@ service cloud.firestore {
 
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);
+    }
+    
+    /* ===============================
+       MARKETPLACE ITEMS
+    =============================== */
+    match /marketplaceItems/{itemId} {
+      // Anyone signed in can view individual marketplace items
+      allow get: if isSignedIn();
+      
+      // Allow listing available items, or a user listing their own items
+      allow list: if isSignedIn() && (
+        (request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || 
+        (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid)
+      );
+
+      // A student can create a listing for themselves.
+      allow create: if isSignedIn() && request.resource.data.sellerId == request.auth.uid;
+      
+      // Only the student who created the listing can update or delete it.
+      allow update, delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
     }
 
     /* ===============================
