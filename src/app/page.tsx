@@ -167,7 +167,7 @@ export default function LandingPage() {
                                         className={cn(
                                           "absolute inset-[-2px] animate-[gradient-spin_3s_linear_infinite] rounded-full",
                                           "[--gradient-angle:0deg]",
-                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,_hsl(var(--primary))_0%,_hsl(var(--accent))_50%,_hsl(var(--primary))_100%)]"
+                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,hsl(var(--primary))_0%,hsl(var(--primary-foreground))_25%,hsl(var(--accent))_50%,hsl(var(--primary-foreground))_75%,hsl(var(--primary))_100%)]"
                                         )}
                                       ></div>
                                       <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background">
@@ -195,7 +195,7 @@ export default function LandingPage() {
                                         className={cn(
                                           "absolute inset-[-2px] animate-[gradient-spin_3s_linear_infinite] rounded-full",
                                           "[--gradient-angle:0deg]",
-                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,_hsl(var(--primary))_0%,_hsl(var(--accent))_50%,_hsl(var(--primary))_100%)]"
+                                          "bg-[conic-gradient(from_var(--gradient-angle)_at_50%_50%,hsl(var(--primary))_0%,hsl(var(--primary-foreground))_25%,hsl(var(--accent))_50%,hsl(var(--primary-foreground))_75%,hsl(var(--primary))_100%)]"
                                         )}
                                       ></div>
                                       <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background">
