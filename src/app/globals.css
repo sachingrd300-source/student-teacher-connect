@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 48 95% 55%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 5% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 45 95% 55%;
     --primary-foreground: 240 8% 10%;
-    --secondary: 240 6% 90%;
-    --secondary-foreground: 240 10% 3.9%;
-    --muted: 240 6% 90%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 240 6% 90%;
-    --accent-foreground: 240 10% 3.9%;
-    --destructive: 0 84% 60%;
+    --secondary: 240 4% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 45 95% 65%;
+    --accent-foreground: 240 8% 10%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 240 10% 3.9%;
+    --border: 240 4% 12%;
+    --input: 240 4% 12%;
+    --ring: 45 95% 55%;
     --radius: 1.25rem;
   }
  
@@ -40,7 +40,7 @@
     --muted: 240 4% 12%;
     --muted-foreground: 240 5% 65%;
     --accent: 45 95% 65%;
-    --accent-foreground: 240सल 8% 10%;
+    --accent-foreground: 240 8% 10%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 4% 12%;
@@ -97,10 +97,40 @@
     0%, 100% { color: hsl(var(--foreground) / 0.8); }
     15% { color: hsl(var(--primary)); }
     30% { color: hsl(var(--accent)); }
-    45% { color: hsl(48, 95%, 75%)); }
+    45% { color: hsl(48, 95%, 75%); }
     60% { color: hsl(0, 0%, 98% / 0.9); }
     75% { color: hsl(var(--accent)); }
     90% { color: hsl(var(--primary)); }
+  }
+
+  .floating-icon {
+      position: absolute;
+      bottom: -50px;
+      color: hsl(var(--foreground) / 0.1);
+      font-size: 2rem;
+      animation: rise-and-fade linear infinite;
+  }
+
+  .floating-icon svg {
+      width: 2rem;
+      height: 2rem;
+  }
+
+  @keyframes rise-and-fade {
+      0% {
+          transform: translateY(0);
+          opacity: 0;
+      }
+      10% {
+          opacity: 1;
+      }
+      90% {
+          opacity: 1;
+      }
+      100% {
+          transform: translateY(-100vh);
+          opacity: 0;
+      }
   }
 
 }
