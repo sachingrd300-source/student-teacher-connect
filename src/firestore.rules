@@ -90,7 +90,8 @@ service cloud.firestore {
         // The query MUST include a where clause on studentId or teacherId.
         allow list: if isSignedIn() && (
           (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
-          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'approved')
         );
 
         // A student can create their own enrollment request with a predictable ID
@@ -136,8 +137,8 @@ service cloud.firestore {
       // Anyone signed in can view individual marketplace items
       allow get: if isSignedIn();
       
-      // Allow listing available items
-      allow list: if isSignedIn() && request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available';
+      // Allow listing available items, or a user listing their own items
+      allow list: if isSignedIn() && ((request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid));
 
       // A student can create a listing for themselves.
       allow create: if isStudent() && request.resource.data.sellerId == request.auth.uid;
