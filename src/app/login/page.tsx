@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, Key, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignIn, useAuth, initiateGoogleSignIn } from '@/firebase';
+import { initiateEmailSignIn, useAuth, initiateGoogleSignIn, useFirestore } from '@/firebase';
+import { getAdditionalUserInfo } from 'firebase/auth';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -28,6 +29,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -58,16 +60,25 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-        if (!auth) throw new Error("Auth service not available.");
+        if (!auth || !firestore) throw new Error("Auth service not available.");
 
-        await initiateGoogleSignIn(auth);
-        
-        toast({ title: 'Login Successful', description: "Welcome back!" });
-        router.push('/dashboard');
+        const userCredential = await initiateGoogleSignIn(auth);
+        const additionalInfo = getAdditionalUserInfo(userCredential);
+
+        if (additionalInfo?.isNewUser) {
+            // This is a new user. Redirect them to the multi-step signup
+            // form to complete their profile as a tutor.
+            toast({ title: 'Welcome!', description: "Please complete your tutor profile." });
+            router.push('/signup');
+        } else {
+            // This is an existing user. Log them in.
+            toast({ title: 'Login Successful', description: "Welcome back!" });
+            router.push('/dashboard');
+        }
 
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {
-            setGoogleLoading(false);
+            // User closed the popup, do nothing.
             return;
         }
         console.error("Google Sign In Error:", error);
@@ -127,3 +138,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
