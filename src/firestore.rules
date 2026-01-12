@@ -100,14 +100,7 @@ service cloud.firestore {
                   || (isExistingDoc() && isEnrolledInClass(resource.data.classId));
       
       // Allow listing materials under certain conditions
-      allow list: if isSignedIn() && (
-                    // Teacher listing their own materials
-                    request.query.get('teacherId') == request.auth.uid ||
-                    // Anyone listing free materials
-                    request.query.get('isFree') == true ||
-                    // Student listing private materials for a class they are enrolled in
-                    isEnrolledInClass(request.query.get('classId'))
-                  );
+      allow list: if isSignedIn(); // Allow browsing the shop and public materials
 
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);

@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Search,
   UserPlus,
+  ShoppingCart,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -47,6 +48,7 @@ const navItems = {
     { href: '/dashboard/student/find-tutor', label: 'Find a Tutor', icon: Search },
     { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },
     { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
+    { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
   ],
 };
 

@@ -74,6 +74,7 @@ type StudyMaterial = {
     type: string;
     createdAt: { toDate: () => Date };
     isFree: boolean;
+    price?: number;
 };
 
 type UserProfile = {
@@ -133,6 +134,8 @@ export default function MaterialsPage() {
     const [classId, setClassId] = useState<string | null>(null);
     const [isFree, setIsFree] = useState(false);
     const [isOfficial, setIsOfficial] = useState(false);
+    const [price, setPrice] = useState<number | ''>('');
+
 
     const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
@@ -159,6 +162,10 @@ export default function MaterialsPage() {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
             return;
         }
+        if (!isFree && (price === '' || price <= 0)) {
+            toast({ variant: 'destructive', title: 'Invalid Price', description: 'Please enter a valid price for premium content.' });
+            return;
+        }
 
         const newMaterial = {
             title,
@@ -171,6 +178,7 @@ export default function MaterialsPage() {
             teacherName: userProfile?.name,
             isFree: isFree,
             isOfficial: isOfficial,
+            price: isFree ? null : Number(price),
             createdAt: serverTimestamp(),
             // In a real app, you would handle file uploads and store a URL
             fileUrl: 'https://example.com/placeholder.pdf'
@@ -189,6 +197,7 @@ export default function MaterialsPage() {
         setClassId(null);
         setIsFree(false);
         setIsOfficial(false);
+        setPrice('');
         setAddMaterialOpen(false);
     }
     
@@ -286,6 +295,12 @@ export default function MaterialsPage() {
                                     </div>
                                 </div>
                             </div>
+                            {!isFree && (
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="price" className="text-right">Price (INR)*</Label>
+                                    <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} className="col-span-3" placeholder="e.g. 199" />
+                                </div>
+                            )}
                         </div>
                         <DialogFooter>
                             <Button onClick={handleAddMaterial}>Upload Material</Button>
@@ -309,6 +324,7 @@ export default function MaterialsPage() {
                                     <TableHead>Subject</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Access</TableHead>
+                                    <TableHead>Price</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -320,6 +336,7 @@ export default function MaterialsPage() {
                                         <TableCell>{material.subject}</TableCell>
                                         <TableCell>{material.createdAt?.toDate().toLocaleDateString()}</TableCell>
                                         <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Public' : 'Private'}</Badge></TableCell>
+                                        <TableCell>{material.isFree ? 'Free' : `₹${material.price}`}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <DropdownMenu>

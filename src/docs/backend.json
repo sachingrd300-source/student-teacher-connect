@@ -235,6 +235,7 @@
             "chapter": { "type": "string" },
             "type": { "type": "string", "enum": ["Notes", "DPP", "Homework", "Question Bank", "Test Paper", "Solution"] },
             "isFree": { "type": "boolean", "description": "Whether the material is publically accessible."},
+            "price": { "type": "number", "description": "The price of the material if it is not free." },
             "isOfficial": { "type": "boolean", "description": "Whether the material is official content from the platform." },
             "fileUrl": { "type": "string" },
             "createdAt": { "type": "string", "format": "date-time" }
