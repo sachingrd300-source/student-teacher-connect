@@ -34,6 +34,16 @@ export default function PhoneLoginPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!phoneNumber.startsWith('+')) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Phone Number Format',
+        description: 'Please enter the phone number with your country code (e.g., +91 for India).',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const appVerifier = (window as any).recaptchaVerifier;
