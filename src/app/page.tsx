@@ -5,13 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, StepForward, Atom, FlaskConical, Book, BrainCircuit, MessageSquare, TestTube } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, StepForward, Atom, FlaskConical, Book, BrainCircuit, MessageSquare, TestTube, Edit, Layers } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const features = [
     {
@@ -51,12 +53,12 @@ const howItWorksStudent = [
 
 const howItWorksTeacher = [
     {
-        icon: <UserPlus className="h-8 w-8 text-primary" />,
+        icon: <Edit className="h-8 w-8 text-primary" />,
         title: "Create a Profile",
         description: "Sign up and build your tutor profile to showcase your skills and experience."
     },
     {
-        icon: <BookOpenCheck className="h-8 w-8 text-primary" />,
+        icon: <Layers className="h-8 w-8 text-primary" />,
         title: "Create Classes",
         description: "Set up your classes and receive a unique code to share with your students."
     },
@@ -82,33 +84,35 @@ const floatingIcons = [
 
 const FloatingIconsBackground = () => {
     const [isClient, setIsClient] = useState(false);
-
+  
     useEffect(() => {
-        setIsClient(true);
+      // This effect runs only on the client, after the component has mounted.
+      setIsClient(true);
     }, []);
-
+  
     if (!isClient) {
-        return null; // Don't render on the server
+      // Render nothing on the server. The icons will be rendered on the client.
+      return null;
     }
-
+  
     return (
-        <div className="absolute inset-0 z-0">
-            {Array.from({ length: 15 }).map((_, i) => {
-                const Icon = floatingIcons[i % floatingIcons.length].icon;
-                const style = {
-                    left: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 10}s`,
-                    animationDuration: `${10 + Math.random() * 10}s`,
-                };
-                return (
-                    <div key={i} style={style} className="floating-icon">
-                        {Icon}
-                    </div>
-                );
-            })}
-        </div>
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {Array.from({ length: 15 }).map((_, i) => {
+          const Icon = floatingIcons[i % floatingIcons.length].icon;
+          const style = {
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 10}s`,
+            animationDuration: `${10 + Math.random() * 10}s`,
+          };
+          return (
+            <div key={i} style={style} className="floating-icon">
+              {Icon}
+            </div>
+          );
+        })}
+      </div>
     );
-};
+  };
 
 
 export default function LandingPage() {
@@ -183,52 +187,73 @@ export default function LandingPage() {
                         Follow these simple steps to join our learning community.
                     </p>
                 </div>
-
-                <div className="grid lg:grid-cols-2 gap-16">
-                    {/* For Students */}
-                    <div className="space-y-8">
-                        <h3 className="text-2xl font-bold font-headline text-center">For Students</h3>
-                        <div className="relative flex flex-col gap-8 pl-8">
-                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2 ml-4"></div>
-                             {howItWorksStudent.map((step, index) => (
-                                <div key={step.title} className="flex items-start gap-6">
-                                    <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10 bg-background">
-                                      <div className="absolute inset-0 rounded-full aurora-viz" />
-                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm">
-                                        <span className="font-bold text-primary">{index + 1}</span>
-                                      </div>
+                
+                <Tabs defaultValue="student" className="w-full max-w-4xl mx-auto">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="student">For Students</TabsTrigger>
+                        <TabsTrigger value="teacher">For Teachers</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="student">
+                        <div className="relative mt-12">
+                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>
+                            {howItWorksStudent.map((step, index) => (
+                                <div key={step.title} className={cn("relative flex items-center mb-12", index % 2 === 0 ? "justify-start" : "justify-end")}>
+                                    <div className={cn("w-1/2", index % 2 === 0 ? "pr-8" : "pl-8")}>
+                                        <Card className="shadow-lg">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-4">
+                                                    {step.icon}
+                                                    <CardTitle>{step.title}</CardTitle>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-muted-foreground">{step.description}</p>
+                                            </CardContent>
+                                        </Card>
                                     </div>
-                                    <div className="mt-1">
-                                        <h4 className="font-bold text-lg">{step.title}</h4>
-                                        <p className="text-muted-foreground">{step.description}</p>
+                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
+                                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                                            <div className="absolute inset-0 aurora-viz" />
+                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-lg text-primary">
+                                                {index + 1}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                             ))}
+                            ))}
                         </div>
-                    </div>
-
-                     {/* For Teachers */}
-                     <div className="space-y-8">
-                        <h3 className="text-2xl font-bold font-headline text-center">For Teachers</h3>
-                        <div className="relative flex flex-col gap-8 pl-8">
-                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2 ml-4"></div>
+                    </TabsContent>
+                    <TabsContent value="teacher">
+                        <div className="relative mt-12">
+                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>
                              {howItWorksTeacher.map((step, index) => (
-                                <div key={step.title} className="flex items-start gap-6">
-                                     <div className="relative flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-background z-10 bg-background">
-                                      <div className="absolute inset-0 rounded-full aurora-viz" />
-                                      <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm">
-                                        <span className="font-bold text-primary">{index + 1}</span>
-                                      </div>
+                                <div key={step.title} className={cn("relative flex items-center mb-12", index % 2 === 0 ? "justify-start" : "justify-end")}>
+                                    <div className={cn("w-1/2", index % 2 === 0 ? "pr-8" : "pl-8")}>
+                                        <Card className="shadow-lg">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-4">
+                                                    {step.icon}
+                                                    <CardTitle>{step.title}</CardTitle>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-muted-foreground">{step.description}</p>
+                                            </CardContent>
+                                        </Card>
                                     </div>
-                                    <div className="mt-1">
-                                        <h4 className="font-bold text-lg">{step.title}</h4>
-                                        <p className="text-muted-foreground">{step.description}</p>
+                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
+                                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                                            <div className="absolute inset-0 aurora-viz" />
+                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-lg text-primary">
+                                                {index + 1}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                             ))}
+                            ))}
                         </div>
-                    </div>
-                </div>
+                    </TabsContent>
+                </Tabs>
             </div>
         </section>
 
