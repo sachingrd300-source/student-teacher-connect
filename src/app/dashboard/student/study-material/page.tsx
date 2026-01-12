@@ -26,9 +26,10 @@ import {
   Download,
   BookOpenCheck,
 } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 
 
 const materialIcons: Record<string, JSX.Element> = {
@@ -53,11 +54,13 @@ type StudyMaterial = {
 export default function StudyMaterialPage() {
   const firestore = useFirestore();
 
-  const freeMaterialsQuery = useMemoFirebase(() => {
+  const freeMaterialsQuery = useMemo(() => {
     if(!firestore) return null;
-    const q = query(collection(firestore, 'studyMaterials'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
-    (q as any).__memo = true;
-    return q;
+    return query(
+        collection(firestore, 'studyMaterials'), 
+        where('isFree', '==', true), 
+        orderBy('createdAt', 'desc')
+    );
   }, [firestore]);
 
   const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(freeMaterialsQuery);

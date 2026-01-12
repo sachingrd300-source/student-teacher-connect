@@ -19,9 +19,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, ClipboardList } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 
 type StudyMaterial = {
     id: string;
@@ -35,17 +36,15 @@ type StudyMaterial = {
 export default function DailyPracticePage() {
   const firestore = useFirestore();
 
-  const dppQuery = useMemoFirebase(() => {
+  const dppQuery = useMemo(() => {
     if (!firestore) return null;
     // Query for all public DPPs
-    const q = query(
+    return query(
       collection(firestore, 'studyMaterials'), 
       where('type', '==', 'DPP'), 
       where('isFree', '==', true),
       orderBy('createdAt', 'desc')
     );
-    (q as any).__memo = true;
-    return q;
   }, [firestore]);
   
   const { data: dailyPracticePapers, isLoading } = useCollection<StudyMaterial>(dppQuery);
