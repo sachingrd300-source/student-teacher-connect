@@ -49,11 +49,6 @@ export function LandingHeader() {
                     <Link href="/login" className="text-lg font-medium">Tutor Login</Link>
                     <Link href="/signup" className="text-lg font-medium">Become a Tutor</Link>
                 </div>
-                <div className="mt-auto flex flex-col gap-2">
-                    <Button asChild>
-                        <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2" /></Link>
-                    </Button>
-                </div>
               </div>
             </SheetContent>
           </Sheet>
