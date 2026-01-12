@@ -181,7 +181,7 @@ export default function MaterialsPage() {
     }
 
     const handleAddMaterial = async () => {
-        if (!title || !subject || !materialType || !firestore || !user) {
+        if (!title || !subject || !materialType || !firestore || !user || !userProfile) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
             return;
         }
@@ -199,7 +199,7 @@ export default function MaterialsPage() {
             classId,
             classLevel,
             teacherId: user.uid,
-            teacherName: userProfile?.name || 'EduConnect Pro',
+            teacherName: userProfile.name,
             isFree: isFree,
             isOfficial: user.uid === ADMIN_USER_ID ? isOfficial : false, // Only admin can set official status
             price: isFree ? 0 : Number(price),
@@ -328,7 +328,7 @@ export default function MaterialsPage() {
                             </div>
                              <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="file" className="text-right">File*</Label>
-                                <Input id="file" type="file" className="col-span-3" disabled />
+                                <Input id="file" type="file" className="col-span-3" />
                                 <p className="col-start-2 col-span-3 text-xs text-muted-foreground">File upload coming soon.</p>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -433,4 +433,5 @@ export default function MaterialsPage() {
     );
 }
 
+    
     

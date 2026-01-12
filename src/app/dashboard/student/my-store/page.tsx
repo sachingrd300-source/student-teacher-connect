@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -333,7 +334,7 @@ export default function MyStorePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="image">Image</Label>
-                                    <Input id="image" type="file" disabled />
+                                    <Input id="image" type="file" />
                                     <p className="text-xs text-muted-foreground">Image upload is coming soon.</p>
                                 </div>
                             </div>
@@ -425,3 +426,5 @@ export default function MyStorePage() {
         </div>
     );
 }
+
+    
