@@ -10,7 +10,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 const features = [
@@ -80,6 +80,36 @@ const floatingIcons = [
     { icon: "📈" },
 ]
 
+const FloatingIconsBackground = () => {
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        return null; // Don't render on the server
+    }
+
+    return (
+        <div className="absolute inset-0 z-0">
+            {Array.from({ length: 15 }).map((_, i) => {
+                const Icon = floatingIcons[i % floatingIcons.length].icon;
+                const style = {
+                    left: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 10}s`,
+                    animationDuration: `${10 + Math.random() * 10}s`,
+                };
+                return (
+                    <div key={i} style={style} className="floating-icon">
+                        {Icon}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 
 export default function LandingPage() {
     const heroImages = PlaceHolderImages.filter(p => p.id.startsWith('hero-'));
@@ -92,21 +122,8 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-foreground overflow-hidden">
              <div className="absolute inset-0 bg-black/70 z-10"></div>
-             <div className="absolute inset-0 z-0">
-                {Array.from({ length: 15 }).map((_, i) => {
-                    const Icon = floatingIcons[i % floatingIcons.length].icon;
-                    const style = {
-                        left: `${Math.random() * 100}%`,
-                        animationDelay: `${Math.random() * 10}s`,
-                        animationDuration: `${10 + Math.random() * 10}s`,
-                    };
-                    return (
-                        <div key={i} style={style} className="floating-icon">
-                            {Icon}
-                        </div>
-                    );
-                })}
-            </div>
+             
+             <FloatingIconsBackground />
 
              <div className="relative z-20 px-4 md:px-6 space-y-6 text-white">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-shadow-lg">
