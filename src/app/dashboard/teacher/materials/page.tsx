@@ -198,7 +198,7 @@ export default function MaterialsPage() {
             classId,
             classLevel,
             teacherId: user.uid,
-            teacherName: userProfile?.name,
+            teacherName: userProfile?.name || 'EduConnect Pro',
             isFree: isFree,
             isOfficial: user.uid === ADMIN_USER_ID ? isOfficial : false, // Only admin can set official status
             price: isFree ? null : Number(price),
