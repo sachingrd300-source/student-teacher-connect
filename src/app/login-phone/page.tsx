@@ -25,11 +25,7 @@ export default function PhoneLoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const verifier = setupRecaptcha('recaptcha-container');
-    // Cleanup function to clear recaptcha on component unmount
-    return () => {
-      verifier.clear();
-    };
+    setupRecaptcha('recaptcha-container');
   }, []);
 
   const handleSendOtp = async (e: React.FormEvent) => {

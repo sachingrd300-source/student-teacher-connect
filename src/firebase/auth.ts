@@ -56,12 +56,18 @@ export const setupRecaptcha = (containerId: string) => {
         throw new Error(`Element with id '${containerId}' not found.`);
     }
 
-    // Clear any previous verifier
+    // Safely clear any previous verifier
     if ((window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier.clear();
-      // Ensure the container is empty
-      while (recaptchaContainer.firstChild) {
-          recaptchaContainer.removeChild(recaptchaContainer.firstChild);
+      try {
+        (window as any).recaptchaVerifier.clear();
+        // Ensure the container is empty only if clear was successful
+        while (recaptchaContainer.firstChild) {
+            recaptchaContainer.removeChild(recaptchaContainer.firstChild);
+        }
+      } catch (error) {
+        // This can happen if the widget is already gone from the DOM.
+        // We can safely ignore this error.
+        console.warn('Could not clear previous reCAPTCHA verifier:', error);
       }
     }
     
