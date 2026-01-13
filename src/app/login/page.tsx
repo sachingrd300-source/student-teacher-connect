@@ -33,11 +33,15 @@ export default function LoginPage() {
         try {
             const result = await getGoogleRedirectResult();
             if (result) {
+                // This means the user is coming back from a redirect
                 toast({
                     title: 'Login Successful!',
                     description: 'Welcome to EduConnect Pro.',
                 });
                 router.push('/dashboard/teacher');
+            } else {
+                // This means the page loaded without a redirect result
+                setGoogleLoading(false);
             }
         } catch(error: any) {
             console.error(error);
@@ -46,7 +50,6 @@ export default function LoginPage() {
                 title: 'Uh oh! Something went wrong.',
                 description: 'There was a problem with Google Sign-In.',
             });
-        } finally {
             setGoogleLoading(false);
         }
     }
@@ -98,6 +101,7 @@ export default function LoginPage() {
         router.push('/dashboard/teacher');
       }
       // If on mobile, signInWithRedirect was called, and the useEffect will handle the result.
+      // We don't setGoogleLoading(false) here because the page will redirect.
     } catch (error: any) {
       console.error(error);
       toast({
@@ -137,7 +141,7 @@ export default function LoginPage() {
                 placeholder="tutor@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
             <div className="space-y-2">
@@ -148,11 +152,11 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
           </div>
-          <Button onClick={handleEmailLogin} className="mt-6 w-full" disabled={isLoading}>
+          <Button onClick={handleEmailLogin} className="mt-6 w-full" disabled={isLoading || isGoogleLoading}>
             {isLoading ? 'Signing In...' : 'Sign In'}
           </Button>
           <div className="relative my-6">
