@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -115,8 +114,7 @@ service cloud.firestore {
 
         // Only the teacher can approve/deny the request.
         allow update: if isExistingDoc() 
-                      && isTeacherOwner(resource.data)
-                      && request.resource.data.status != resource.data.status; // Ensure status is the only thing changing for this rule
+                      && isTeacherOwner(resource.data);
                       
         allow delete: if false;
     }
