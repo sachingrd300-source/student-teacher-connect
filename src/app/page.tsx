@@ -1,371 +1,274 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, Search, UserPlus, BookOpenCheck, Edit, Layers, Atom, FlaskConical, Book, BrainCircuit, TestTube, ShoppingCart, StickyNote, Shirt, Library, FileCheck, History, Lightbulb, DollarSign } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, Search, Star, MessageSquare, BookOpen, UserPlus, FileText, Bot } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AnimatedCard } from '@/components/ui/animated-card';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { AnimatedGradient } from '@/components/ui/animated-gradient';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
+import { Icons } from '@/components/icons';
 
 const features = [
     {
-        icon: <User className="h-10 w-10 text-primary" />,
+        icon: <User className="h-8 w-8 text-primary" />,
         title: 'For Students',
         description: 'Find the best tutors, view profiles, and connect instantly.',
     },
     {
-        icon: <GraduationCap className="h-10 w-10 text-primary" />,
+        icon: <GraduationCap className="h-8 w-8 text-primary" />,
         title: 'For Teachers',
         description: 'Showcase your expertise, manage classes, and connect with students.',
     },
     {
-        icon: <CheckCircle className="h-10 w-10 text-primary" />,
+        icon: <CheckCircle className="h-8 w-8 text-primary" />,
         title: 'Verified Tutors',
         description: 'All tutors are manually verified to ensure quality and safety.',
-    }
-]
-
-const howItWorksStudent = [
-    {
-        icon: <Search className="h-8 w-8 text-primary" />,
-        title: "Find a Tutor",
-        description: "Browse our list of expert tutors and find the perfect match for your needs."
     },
     {
-        icon: <UserPlus className="h-8 w-8 text-primary" />,
-        title: "Join a Class",
-        description: "Use the unique class code provided by your tutor to send an enrollment request."
-    },
-    {
-        icon: <BookOpenCheck className="h-8 w-8 text-primary" />,
-        title: "Start Learning",
-        description: "Access class materials, track your performance, and engage with your learning."
-    }
-]
-
-const howItWorksTeacher = [
-    {
-        icon: <Edit className="h-8 w-8 text-primary" />,
-        title: "Create a Profile",
-        description: "Sign up and build your tutor profile to showcase your skills and experience."
-    },
-    {
-        icon: <Layers className="h-8 w-8 text-primary" />,
-        title: "Create Classes",
-        description: "Set up your classes and receive a unique code to share with your students."
-    },
-    {
-        icon: <GraduationCap className="h-8 w-8 text-primary" />,
-        title: "Start Teaching",
-        description: "Manage enrollments, upload materials, and track student performance."
-    }
-]
-
-const freeResourceItems = [
-    {
-        icon: <FileCheck className="h-8 w-8 text-primary" />,
-        title: "NCERT Solutions",
-        description: "Detailed, step-by-step solutions for your textbook questions."
-    },
-    {
-        icon: <History className="h-8 w-8 text-primary" />,
-        title: "Previous Year Papers",
-        description: "Practice with past exam papers to understand patterns and excel."
-    },
-    {
-        icon: <Lightbulb className="h-8 w-8 text-primary" />,
-        title: "Subject Notes",
-        description: "Concise and comprehensive notes from expert tutors to aid your revision."
-    },
-    {
-        icon: <BookOpenCheck className="h-8 w-8 text-primary" />,
-        title: "Daily Practice Problems",
-        description: "Stay sharp with daily questions to test your knowledge and skills."
+        icon: <MessageSquare className="h-8 w-8 text-primary" />,
+        title: 'WhatsApp Connect',
+        description: 'Directly connect with tutors via WhatsApp for quick communication.',
     }
 ];
 
-
-const marketplaceItems = [
+const topTeachers = [
     {
-        icon: <Library className="h-8 w-8 text-primary" />,
-        title: "Free Resource Library",
-        description: "Access a wealth of free notes, practice papers, and books for various subjects and classes."
+        name: 'Aarav Sharma',
+        subject: 'Physics, IIT-JEE',
+        rating: 4.9,
+        verified: true,
+        avatar: '/avatars/01.png'
     },
     {
-        icon: <StickyNote className="h-8 w-8 text-primary" />,
-        title: "Premium Educator Content",
-        description: "Purchase high-quality, curated notes and daily practice problems directly from top educators."
+        name: 'Priya Patel',
+        subject: 'Biology, NEET',
+        rating: 4.8,
+        verified: true,
+        avatar: '/avatars/02.png'
     },
     {
-        icon: <Book className="h-8 w-8 text-primary" />,
-        title: "Student-to-Student Marketplace",
-        description: "Buy and sell second-hand books and other study materials directly with other students."
+        name: 'Rohan Gupta',
+        subject: 'Mathematics',
+        rating: 5.0,
+        verified: true,
+        avatar: '/avatars/03.png'
+    },
+    {
+        name: 'Sneha Verma',
+        subject: 'Chemistry',
+        rating: 4.9,
+        verified: true,
+        avatar: '/avatars/04.png'
     }
-];
+]
 
+const stats = [
+    { value: '10k+', label: 'Happy Students' },
+    { value: '500+', label: 'Verified Tutors' },
+    { value: '1k+', label: 'Free Resources' },
+    { value: '24/7', label: 'AI Support' }
+]
+
+const Illustration = () => (
+    <div className="relative w-full h-80 rounded-2xl bg-muted/50 overflow-hidden border border-border">
+        <div className="absolute inset-0 bg-grid-pattern opacity-30"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-64 h-64">
+                <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse"></div>
+                <div className="absolute inset-4 rounded-full bg-primary/20 animate-pulse delay-200"></div>
+                <div className="absolute inset-8 rounded-full bg-primary/30 flex items-center justify-center">
+                    <BookOpen className="w-24 h-24 text-primary animate-logo-glow" />
+                </div>
+            </div>
+        </div>
+    </div>
+)
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-dvh bg-background text-foreground">
       <LandingHeader />
       <main className="flex-1">
+
         {/* Hero Section */}
-        <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-foreground overflow-hidden">
-             <div className="absolute inset-0 aurora-viz z-0"></div>
-             <div className="absolute inset-0 bg-black/70 z-10"></div>
+        <section className="relative w-full h-[80vh] flex items-center justify-center text-center overflow-hidden">
+             <div className="absolute -inset-1/2 aurora-viz z-0"></div>
+             <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10"></div>
              
-             <div className="relative z-20 px-4 md:px-6 space-y-6 text-white">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-shadow-lg">
-                    Empowering Education, <span className="text-primary">Connecting Minds</span>
+             <div className="relative z-20 px-4 md:px-6 space-y-8">
+                <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold font-headline tracking-tighter leading-tight">
+                    Your Path to <span 
+                    className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
+                    >Academic Excellence</span>
                 </h1>
-                <p className="max-w-2xl mx-auto text-lg md:text-xl text-primary-foreground/80">
-                    EduConnect Pro is a modern, all-in-one platform designed to bring teachers and students closer together for a richer learning experience.
+                <p className="max-w-3xl mx-auto text-lg md:text-xl text-foreground/70">
+                    Discover expert tutors, access quality study materials, and connect with a community dedicated to learning and growth.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button asChild size="lg">
+                    <Button asChild size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow">
                         <Link href="/login-student">I'm a Student <ArrowRight className="ml-2 h-5 w-5" /></Link>
                     </Button>
-                     <Button asChild size="lg" variant="secondary">
-                        <Link href="/signup">I'm a Tutor</Link>
+                     <Button asChild size="lg" variant="outline" className="bg-background/50 backdrop-blur-md">
+                        <Link href="/signup">Become a Tutor</Link>
                     </Button>
                 </div>
+            </div>
+        </section>
+
+        {/* Search Section */}
+        <section className="relative -mt-20 z-30 px-4">
+            <div className="container">
+                 <Card className="p-6 bg-card/80 backdrop-blur-xl border-border/50 shadow-2xl shadow-black/20">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                        <Select>
+                            <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Select Class" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="9">Class 9</SelectItem>
+                                <SelectItem value="10">Class 10</SelectItem>
+                                <SelectItem value="11">Class 11</SelectItem>
+                                <SelectItem value="12">Class 12</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select>
+                            <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Select Subject" /></SelectTrigger>
+                             <SelectContent>
+                                <SelectItem value="physics">Physics</SelectItem>
+                                <SelectItem value="chemistry">Chemistry</SelectItem>
+                                <SelectItem value="maths">Maths</SelectItem>
+                                <SelectItem value="biology">Biology</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select>
+                            <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Location / Online" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="online">Online</SelectItem>
+                                <SelectItem value="delhi">Delhi</SelectItem>
+                                <SelectItem value="mumbai">Mumbai</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button size="lg" className="h-12 text-base"><Search className="mr-2 h-5 w-5"/> Search Tutors</Button>
+                    </div>
+                </Card>
             </div>
         </section>
 
         {/* Features Section */}
-        <section id="features" className="w-full py-16 md:py-24 bg-background">
+        <section id="features" className="w-full py-20 md:py-28">
           <div className="container px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl">Everything You Need to Succeed</h2>
-              <p className="max-w-2xl mx-auto mt-4 text-muted-foreground md:text-lg">
-                Our platform is packed with powerful features to enhance the teaching and learning process.
-              </p>
-            </div>
-            <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
+            <div className="grid items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-4">
                 {features.map((feature) => (
-                     <Card key={feature.title} className="relative overflow-hidden text-center p-8 flex flex-col items-center gap-4 transition-all duration-300 hover:scale-105 hover:shadow-primary/20 hover:shadow-2xl">
-                        <div className="absolute -inset-2 aurora-viz opacity-20 blur-2xl"></div>
-                        <div className="relative z-10 flex flex-col items-center gap-4">
-                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
-                                {feature.icon}
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="font-bold text-xl font-headline">{feature.title}</h3>
-                                <p className="text-muted-foreground">{feature.description}</p>
-                            </div>
+                     <div key={feature.title} className="flex flex-col items-center text-center gap-3">
+                        <div className="p-3 rounded-xl bg-muted border border-border">
+                            {feature.icon}
                         </div>
-                     </Card>
+                        <div className="space-y-1">
+                            <h3 className="font-bold text-xl font-headline">{feature.title}</h3>
+                            <p className="text-muted-foreground">{feature.description}</p>
+                        </div>
+                     </div>
                 ))}
             </div>
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="w-full py-16 md:py-24 bg-muted/20">
+        {/* Free Study Material Section */}
+        <section id="free-material" className="w-full py-20 md:py-28 bg-muted/30">
+            <div className="container px-4 md:px-6">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-6">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline tracking-tight">Unlock a World of Knowledge, for Free</h2>
+                        <ul className="space-y-4 text-lg text-foreground/80">
+                            <li className="flex items-start gap-3">
+                                <CheckCircle className="h-6 w-6 text-accent mt-1 shrink-0"/>
+                                <span>Access thousands of notes, previous year papers, and solutions.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <CheckCircle className="h-6 w-6 text-accent mt-1 shrink-0"/>
+                                <span>Curated by expert educators to align with your syllabus.</span>
+                            </li>
+                             <li className="flex items-start gap-3">
+                                <CheckCircle className="h-6 w-6 text-accent mt-1 shrink-0"/>
+                                <span>Boost your preparation and score higher in exams.</span>
+                            </li>
+                        </ul>
+                        <Button asChild size="lg">
+                            <Link href="/login-student">Explore Free Content <ArrowRight className="ml-2" /></Link>
+                        </Button>
+                    </div>
+                    <Illustration />
+                </div>
+            </div>
+        </section>
+
+        {/* Top Teachers Section */}
+        <section id="top-teachers" className="w-full py-20 md:py-28">
             <div className="container px-4 md:px-6">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
-                       <span className="animation-multi-color-blink">Getting Started is Easy</span>
-                    </h2>
-                    <p className="max-w-2xl mx-auto mt-4 text-muted-foreground md:text-lg">
-                        Follow these simple steps to join our learning community.
-                    </p>
+                  <h2 className="text-3xl md:text-4xl font-bold font-headline tracking-tighter">Meet Our Top Educators</h2>
+                  <p className="max-w-2xl mx-auto mt-4 text-muted-foreground md:text-lg">
+                    Learn from the best. Our tutors are experienced, verified, and passionate about teaching.
+                  </p>
                 </div>
-                
-                <Tabs defaultValue="student" className="w-full max-w-4xl mx-auto">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="student">For Students</TabsTrigger>
-                        <TabsTrigger value="teacher">For Teachers</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="student">
-                        <div className="relative mt-12">
-                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>
-                            {howItWorksStudent.map((step, index) => (
-                                <div key={step.title} className={cn("relative flex items-center mb-12", index % 2 === 0 ? "justify-start" : "justify-end")}>
-                                     <div className="absolute left-1/2 top-8 -translate-x-1/2 h-16 w-16 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
-                                        <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                                            <div className="absolute inset-0 aurora-viz" />
-                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-primary">
-                                                {index + 1}
-                                            </div>
-                                        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {topTeachers.map(tutor => (
+                        <Card key={tutor.name} className="overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2">
+                             <CardContent className="p-6 text-center flex flex-col items-center">
+                                <Image src={tutor.avatar} alt={tutor.name} width={96} height={96} className="rounded-full mb-4 border-4 border-muted" />
+                                <h3 className="font-bold text-xl font-headline">{tutor.name}</h3>
+                                <p className="text-muted-foreground text-sm">{tutor.subject}</p>
+                                <div className="flex items-center gap-4 mt-4">
+                                     <div className="flex items-center gap-1">
+                                        <Star className="w-5 h-5 text-yellow-400 fill-yellow-400"/>
+                                        <span className="font-bold">{tutor.rating}</span>
                                     </div>
-                                    <AnimatedCard index={index} className={cn("w-1/2", index % 2 === 0 ? "pr-12" : "pl-12")}>
-                                        <CardHeader>
-                                            <div className="flex items-center gap-4">
-                                                {step.icon}
-                                                <CardTitle className="font-headline">{step.title}</CardTitle>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-muted-foreground">{step.description}</p>
-                                        </CardContent>
-                                    </AnimatedCard>
+                                    <Button variant="outline" size="sm" className="h-8">
+                                        <MessageSquare className="mr-2 h-4 w-4"/> Connect
+                                    </Button>
                                 </div>
-                            ))}
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="teacher">
-                        <div className="relative mt-12">
-                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>
-                             {howItWorksTeacher.map((step, index) => (
-                                <div key={step.title} className={cn("relative flex items-center mb-12", index % 2 === 0 ? "justify-start" : "justify-end")}>
-                                    <div className="absolute left-1/2 top-8 -translate-x-1/2 h-16 w-16 rounded-full flex items-center justify-center ring-8 ring-muted/20 bg-background z-10">
-                                        <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                                            <div className="absolute inset-0 aurora-viz" />
-                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-primary">
-                                                {index + 1}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <AnimatedCard index={index} className={cn("w-1/2", index % 2 === 0 ? "pr-12" : "pl-12")}>
-                                        <CardHeader>
-                                            <div className="flex items-center gap-4">
-                                                {step.icon}
-                                                <CardTitle className="font-headline">{step.title}</CardTitle>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-muted-foreground">{step.description}</p>
-                                        </CardContent>
-                                    </AnimatedCard>
-                                </div>
-                            ))}
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </div>
-        </section>
-
-        {/* Study and Make Money Section */}
-        <section id="make-money" className="w-full py-16 md:py-24 bg-background">
-          <div className="container">
-            <div className="relative rounded-2xl overflow-hidden p-8 md:p-12 text-center text-foreground border">
-                <AnimatedGradient />
-                <div className="relative z-10 flex flex-col items-center gap-6">
-                    <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
-                         <DollarSign className="h-10 w-10 text-primary" />
-                    </div>
-                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Study, Sell, and Succeed</h2>
-                     <p className="max-w-2xl mx-auto text-lg text-foreground/80">
-                        Give your old books and notes a new life. Sell your used study materials on our student marketplace and earn money while helping fellow students. It's smart, simple, and sustainable.
-                     </p>
-                     <Button asChild size="lg">
-                        <Link href="/login-student">Start Selling Now <ArrowRight className="ml-2" /></Link>
-                    </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
             </div>
-          </div>
         </section>
 
-        {/* Teacher Selling Section */}
-        <section id="teacher-sell" className="w-full py-16 md:py-24 bg-muted/20">
-          <div className="container">
-            <div className="relative rounded-2xl overflow-hidden p-8 md:p-12 text-center text-foreground border">
-                <AnimatedGradient />
-                <div className="relative z-10 flex flex-col items-center gap-6">
-                    <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
-                         <GraduationCap className="h-10 w-10 text-primary" />
+         {/* Stats Section */}
+        <section id="stats" className="w-full py-20 md:py-28">
+            <div className="container px-4 md:px-6">
+                <div className="bg-muted/50 border rounded-2xl p-12">
+                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                        {stats.map(stat => (
+                            <div key={stat.label} className="text-center">
+                                <p className="text-4xl lg:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-primary to-secondary">{stat.value}</p>
+                                <p className="text-muted-foreground mt-2">{stat.label}</p>
+                            </div>
+                        ))}
                     </div>
-                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Share Your Knowledge, Earn Your Worth</h2>
-                     <p className="max-w-2xl mx-auto text-lg text-foreground/80">
-                        Monetize your expertise by selling premium study materials. Create high-quality notes, question banks, and practice papers to reach a broader audience and generate additional income.
-                     </p>
-                     <Button asChild size="lg" variant="secondary">
-                        <Link href="/signup">Become a Verified Tutor <ArrowRight className="ml-2" /></Link>
-                    </Button>
                 </div>
             </div>
-          </div>
         </section>
 
-
-        {/* Free Resources Section */}
-        <section id="free-resources" className="w-full py-16 md:py-24 bg-background">
-          <div className="container px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
-                <Library className="h-8 w-8 text-primary" /> Empowering Every Student
-              </h2>
-              <p className="max-w-3xl mx-auto mt-4 text-muted-foreground md:text-lg">
-                We believe in accessible education for all. That's why we offer a rich library of free notes, past papers, and practice problems to help you succeed.
-              </p>
-            </div>
-            <div className="mx-auto grid items-stretch gap-6 sm:max-w-4xl sm:grid-cols-2 lg:max-w-5xl lg:grid-cols-4">
-                {freeResourceItems.map((item, index) => (
-                     <AnimatedCard index={index} key={item.title} className="flex">
-                        <Card className="text-center p-6 flex flex-col items-center gap-4 h-full w-full">
-                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
-                                {item.icon}
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="font-bold text-lg font-headline">{item.title}</h3>
-                                <p className="text-sm text-muted-foreground">{item.description}</p>
-                            </div>
-                        </Card>
-                     </AnimatedCard>
-                ))}
-            </div>
-            <div className="text-center mt-12">
-                <Button asChild size="lg">
-                    <Link href="/login-student">Explore Free Materials <ArrowRight className="ml-2" /></Link>
-                </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Marketplace Section */}
-        <section id="marketplace" className="w-full py-16 md:py-24 bg-muted/20">
-          <div className="container px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-headline tracking-tighter sm:text-4xl flex items-center justify-center gap-3">
-                <ShoppingCart className="h-8 w-8 text-primary" /> A Marketplace for Every Learner
-              </h2>
-              <p className="max-w-3xl mx-auto mt-4 text-muted-foreground md:text-lg">
-                Explore a rich ecosystem of educational content. Purchase premium materials from top educators or buy and sell second-hand books with fellow students.
-              </p>
-            </div>
-            <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
-                {marketplaceItems.map((item, index) => (
-                     <AnimatedCard index={index} key={item.title}>
-                        <Card className="text-center p-8 flex flex-col items-center gap-4 h-full">
-                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
-                                {item.icon}
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="font-bold text-xl font-headline">{item.title}</h3>
-                                <p className="text-muted-foreground">{item.description}</p>
-                            </div>
-                        </Card>
-                     </AnimatedCard>
-                ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Call to Action Section */}
-        <section className="w-full py-16 md:py-24">
+        {/* Final CTA Section */}
+        <section id="cta" className="w-full py-20 md:py-28">
             <div className="container">
-                <div className="relative rounded-2xl overflow-hidden p-8 md:p-12 text-center text-foreground">
-                    <AnimatedGradient />
-                    <div className="relative z-10 space-y-6">
-                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Join the Revolution?</h2>
-                         <p className="max-w-2xl mx-auto text-lg text-foreground/80">
-                            Whether you're a student eager to learn or a tutor ready to inspire, your journey starts here.
+                <div className="relative rounded-2xl overflow-hidden p-8 md:p-12 text-center text-foreground border border-border">
+                    <div className="absolute -inset-1/2 aurora-viz z-0 opacity-50"></div>
+                    <div className="absolute inset-0 bg-background/70 backdrop-blur-sm z-10"></div>
+                    <div className="relative z-10 space-y-6 max-w-2xl mx-auto">
+                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Start Learning with Confidence Today</h2>
+                         <p className="text-lg text-foreground/80">
+                            Whether you're a student eager to learn or a tutor ready to inspire, your journey begins here.
                          </p>
                          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button asChild size="lg">
-                                <Link href="/login-student">Start Learning Today <ArrowRight className="ml-2" /></Link>
+                            <Button asChild size="lg" className="shadow-lg shadow-primary/20">
+                                <Link href="/login-student">Join as a Student</Link>
                             </Button>
-                            <Button asChild size="lg" variant="secondary">
-                                <Link href="/signup">Become a Tutor</Link>
+                            <Button asChild size="lg" variant="secondary" className="shadow-lg shadow-secondary/20">
+                                <Link href="/signup">Register as a Tutor</Link>
                             </Button>
                         </div>
                     </div>
@@ -377,16 +280,22 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 EduConnect Pro. All rights reserved.</p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link href="#" className="text-xs hover:underline underline-offset-4">
-            Terms of Service
-          </Link>
-          <Link href="#" className="text-xs hover:underline underline-offset-4">
-            Privacy
-          </Link>
-        </nav>
+      <footer className="w-full border-t bg-background">
+          <div className="container flex flex-col sm:flex-row gap-4 py-6 items-center justify-between">
+            <div className="flex items-center gap-2">
+                <Icons.logo className="h-6 w-6 text-primary" />
+                <span className="font-bold">EduConnect Pro</span>
+            </div>
+            <p className="text-xs text-muted-foreground">&copy; 2024 EduConnect Pro. All rights reserved.</p>
+            <nav className="flex gap-4 sm:gap-6">
+              <Link href="#" className="text-xs hover:underline underline-offset-4">
+                Terms of Service
+              </Link>
+              <Link href="#" className="text-xs hover:underline underline-offset-4">
+                Privacy Policy
+              </Link>
+            </nav>
+          </div>
       </footer>
     </div>
   );

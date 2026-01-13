@@ -10,7 +10,7 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",
       screens: {
         "2xl": "1400px",
       },
@@ -18,7 +18,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['"Inter"', 'sans-serif'],
-        headline: ['"Lora"', 'serif'],
+        headline: ['"Poppins"', 'serif'],
         code: ['monospace'],
       },
       colors: {
@@ -58,8 +58,8 @@ export default {
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 8px)',
       },
       boxShadow: {
         'soft-shadow': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
@@ -85,7 +85,7 @@ export default {
           '0%, 100%': { color: 'hsl(var(--foreground) / 0.8)' },
           '15%': { color: 'hsl(var(--primary))' },
           '30%': { color: 'hsl(var(--accent))' },
-          '45%': { color: 'hsl(48, 95%, 75%)' },
+          '45%': { color: 'hsl(var(--secondary))' },
           '60%': { color: 'hsl(0, 0%, 98% / 0.9)' },
           '75%': { color: 'hsl(var(--accent))' },
           '90%': { color: 'hsl(var(--primary))' },
@@ -121,7 +121,7 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'multi-color-blink': 'multi-color-blink 4s ease-in-out infinite',
         aurora: 'aurora 8s ease infinite',
-        'logo-glow': 'logo-glow 1.5s ease-in-out',
+        'logo-glow': 'logo-glow 2.5s ease-in-out infinite',
         'spin-slow': 'spin-slow 10s linear infinite',
       },
     },
