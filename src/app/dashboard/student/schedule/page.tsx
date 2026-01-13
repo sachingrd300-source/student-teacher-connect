@@ -29,10 +29,12 @@ type ScheduleItem = {
     locationOrLink: string;
     status: 'Scheduled' | 'Canceled';
     teacherId: string;
+    classId?: string;
 };
 
 type Enrollment = {
     classId: string;
+    teacherId: string;
 };
 
 export default function StudentSchedulePage() {
@@ -63,9 +65,15 @@ export default function StudentSchedulePage() {
             }
             setIsLoading(true);
 
-            const teacherIds = [...new Set(enrollments.map(e => e.classId))];
+            const teacherIds = [...new Set(enrollments.map(e => e.teacherId))];
+            if (teacherIds.length === 0) {
+                 setSchedules([]);
+                 setIsLoading(false);
+                 return;
+            }
             
             try {
+                // Query schedules from all teachers the student is enrolled with
                 const scheduleQuery = query(
                     collection(firestore, 'classSchedules'),
                     where('teacherId', 'in', teacherIds),
@@ -76,13 +84,11 @@ export default function StudentSchedulePage() {
                 const querySnapshot = await getDocs(scheduleQuery);
                 const fetchedSchedules = querySnapshot.docs.map(doc => ({...doc.data(), id: doc.id } as ScheduleItem));
                 
-                // Filter schedules for classes the student is actually enrolled in
-                const enrolledClassIds = enrollments.map(e => e.classId);
-                const studentSchedules = fetchedSchedules.filter(schedule => {
-                    // This logic is simplified. A real app might need a schedule to be linked to a classId
-                    // For now, we assume any schedule from an enrolled teacher is relevant.
-                    return true;
-                });
+                // Further filter schedules to only those for classes the student is enrolled in
+                const enrolledClassIds = new Set(enrollments.map(e => e.classId));
+                const studentSchedules = fetchedSchedules.filter(schedule => 
+                    schedule.classId && enrolledClassIds.has(schedule.classId)
+                );
                 
                 setSchedules(studentSchedules);
             } catch (error) {

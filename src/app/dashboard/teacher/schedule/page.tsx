@@ -53,10 +53,17 @@ type ScheduleItem = {
     status: 'Scheduled' | 'Canceled';
     teacherId: string;
     createdAt: Timestamp;
+    classId?: string;
 };
 
 type UserProfile = {
     subjects?: string[];
+}
+
+type Class = {
+    id: string;
+    subject: string;
+    classLevel: string;
 }
 
 export default function SchedulePage() {
@@ -73,6 +80,7 @@ export default function SchedulePage() {
     const [time, setTime] = useState('');
     const [classType, setClassType] = useState<'Online' | 'Offline' | ''>('');
     const [locationOrLink, setLocationOrLink] = useState('');
+    const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
     const userProfileQuery = useMemo(() => {
         if (!firestore || !user) return null;
@@ -80,6 +88,12 @@ export default function SchedulePage() {
     }, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
+
+    const classesQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: classes } = useCollection<Class>(classesQuery);
 
     const scheduleQuery = useMemoFirebase(() => {
       if (!firestore || !user) return null;
@@ -107,6 +121,7 @@ export default function SchedulePage() {
             time,
             type: classType,
             locationOrLink,
+            classId: selectedClassId,
             status: 'Scheduled' as const,
             teacherId: user.uid,
             createdAt: serverTimestamp(),
@@ -123,6 +138,7 @@ export default function SchedulePage() {
         setTime('');
         setClassType('');
         setLocationOrLink('');
+        setSelectedClassId(null);
         setAddClassOpen(false);
     }
 
@@ -154,19 +170,29 @@ export default function SchedulePage() {
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="class" className="text-right">Class*</Label>
+                                <Select onValueChange={(val) => {
+                                    const selectedClass = classes?.find(c => c.id === val);
+                                    if(selectedClass) {
+                                        setSelectedClassId(val);
+                                        setSubject(selectedClass.subject);
+                                    }
+                                }}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select a class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="topic" className="text-right">Topic*</Label>
                                 <Input id="topic" value={topic} onChange={e => setTopic(e.target.value)} className="col-span-3" placeholder="e.g., Quantum Physics" />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="subject" className="text-right">Subject*</Label>
-                                <Select onValueChange={setSubject} value={subject}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Select a subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="subject" className="text-right">Subject</Label>
+                                <Input id="subject" value={subject} className="col-span-3" disabled />
                             </div>
                              <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="date" className="text-right">Date*</Label>
