@@ -276,6 +276,7 @@
         "itemType": { "type": "string", "enum": ["Book", "Notes", "Equipment", "Other"] },
         "imageUrl": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "available", "sold"], "default": "available" },
+        "isActive": { "type": "boolean", "description": "Controls if the item is visible in the marketplace." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sellerId", "sellerName", "title", "price", "itemType", "status", "createdAt"]
