@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   collection,
   query,
   where,
-  onSnapshot,
-  serverTimestamp,
 } from "firebase/firestore";
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { createClass } from "@/firebase/class";
-import { uploadMaterial } from "@/firebase/material";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,13 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
@@ -47,10 +37,6 @@ export default function TeacherPage() {
   const [classLevel, setClassLevel] = useState("");
   const [isCreatingClass, setIsCreatingClass] = useState(false);
 
-  const [classes, setClasses] = useState<ClassType[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
-
-  // Real-time classes list, now correctly filtered by teacherId
   const classesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -58,36 +44,8 @@ export default function TeacherPage() {
       where("teacherId", "==", user.uid)
     );
   }, [firestore, user]);
-
-  useEffect(() => {
-    if (!classesQuery) {
-      setIsLoadingClasses(false);
-      return;
-    }
-
-    const unsub = onSnapshot(
-      classesQuery,
-      (snap) => {
-        setClasses(
-          snap.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as Omit<ClassType, "id">),
-          }))
-        );
-        setIsLoadingClasses(false);
-      },
-      (error) => {
-        console.error("Class list error:", error);
-        toast({
-          variant: "destructive",
-          title: "Error fetching classes",
-          description: error.message,
-        });
-        setIsLoadingClasses(false);
-      }
-    );
-    return () => unsub();
-  }, [classesQuery, toast]);
+  
+  const { data: classes, isLoading: isLoadingClasses } = useCollection<ClassType>(classesQuery);
 
   const handleCreateClass = async () => {
     if (!classSubject || !classLevel) {
@@ -164,12 +122,12 @@ export default function TeacherPage() {
                     <Skeleton className="h-16 w-full" />
                 </div>
             )}
-            {!isLoading && classes.length === 0 && (
+            {!isLoading && classes && classes.length === 0 && (
               <p className="text-muted-foreground text-sm text-center py-8">
                 You haven't created any classes yet.
               </p>
             )}
-            {!isLoading && classes.length > 0 && (
+            {!isLoading && classes && classes.length > 0 && (
               <div className="space-y-3">
                 {classes.map((c) => (
                   <div
