@@ -69,6 +69,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
+import { AnimatedCard } from '@/components/ui/animated-card';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowRight, Star } from 'lucide-react';
+
 
 type UserProfile = {
   id: string;
