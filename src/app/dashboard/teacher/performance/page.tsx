@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -115,7 +116,7 @@ export default function PerformancePage() {
             return;
         }
         
-        const student = students?.find(s => s.id === selectedStudentId);
+        const student = students?.find(s => s.studentId === selectedStudentId);
 
         const newResult = {
             studentId: student?.studentId,
@@ -145,7 +146,7 @@ export default function PerformancePage() {
         if (!testResults) return [];
         if (!selectedClassId) return testResults;
         if (!selectedStudentId) return testResults.filter(r => r.classId === selectedClassId);
-        const student = students?.find(s => s.id === selectedStudentId);
+        const student = students?.find(s => s.studentId === selectedStudentId);
         return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedClassId);
     }, [testResults, selectedStudentId, selectedClassId, students]);
 
@@ -186,7 +187,7 @@ export default function PerformancePage() {
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
                                     {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
-                                    {students?.map(s => <SelectItem key={s.id} value={s.id}>{s.studentName}</SelectItem>)}
+                                    {students?.map(s => <SelectItem key={s.studentId} value={s.studentId}>{s.studentName}</SelectItem>)}
                                      {!isLoadingStudents && students?.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
                                 </SelectContent>
                             </Select>
@@ -218,7 +219,7 @@ export default function PerformancePage() {
                  <Card className="lg:col-span-2 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Test History</CardTitle>
-                        <CardDescription>Showing results for {students?.find(s => s.id === selectedStudentId)?.studentName || classes?.find(c => c.id === selectedClassId)?.subject || 'all students'}.</CardDescription>
+                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || classes?.find(c => c.id === selectedClassId)?.subject || 'all students'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     {isLoadingResults && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
