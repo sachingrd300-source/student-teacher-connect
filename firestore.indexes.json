@@ -10,6 +10,14 @@
       ]
     },
     {
+      "collectionGroup": "studyMaterials",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
@@ -29,14 +37,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "isFree", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "studyMaterials",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
