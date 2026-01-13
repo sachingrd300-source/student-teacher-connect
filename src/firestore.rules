@@ -20,10 +20,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // In a real app, this should be a custom claim or a role in a separate document.
-      // For now, we will hardcode a specific UID as the admin.
-      // The app creator should replace this with their actual Firebase User ID (UID).
-      return request.auth.uid == 'YOUR_ADMIN_USER_ID_HERE';
+      // User is an admin if their document's role field is 'admin'
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isApprovedSeller() {
@@ -62,18 +60,19 @@ service cloud.firestore {
     match /users/{userId} {
       // A user can get their own document.
       // An approved tutor's profile can be read by any signed-in user.
-      allow get: if isOwner(userId) || (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'tutor' && get(/databases/$(database)/documents/users/$(userId)).data.status == 'approved');
+      // An admin can get any user document.
+      allow get: if isOwner(userId) || isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'tutor' && get(/databases/$(database)/documents/users/$(userId)).data.status == 'approved');
       // A user can update their own document. An admin can also update any user document (e.g. for verification).
       allow update: if isOwner(userId) || isAdmin();
       // A user can create their own profile document.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
-      // Allow any signed in user to list approved tutors
-      allow list: if isSignedIn() 
+      // Admins can list all users. Tutors can be listed by any signed-in user.
+      allow list: if isAdmin() || (isSignedIn() 
                   && request.query.where[0][0] == 'role' 
                   && request.query.where[0][2] == 'tutor'
                   && request.query.where[1][0] == 'status' 
-                  && request.query.where[1][2] == 'approved';
+                  && request.query.where[1][2] == 'approved');
       allow delete: if false;
     }
 
@@ -154,7 +153,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       
       // Allow listing available items, or a user listing their own items
-      allow list: if isSignedIn() && ((request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid));
+      allow list: if isAdmin() || (isSignedIn() && ((request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid)));
 
       // An approved student seller can create a listing for themselves.
       allow create: if isApprovedSeller() && request.resource.data.sellerId == request.auth.uid;
@@ -162,8 +161,8 @@ service cloud.firestore {
       // The seller can update the status between 'available' and 'sold'.
       // An admin can update the status from 'pending' to 'available'.
       // The seller can delete their own item.
-      allow update: if isExistingDoc() && resource.data.sellerId == request.auth.uid &&
-                        (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold']) ||
+      allow update: if (isExistingDoc() && resource.data.sellerId == request.auth.uid &&
+                        (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold'])) ||
                      (isAdmin() && request.resource.data.status == 'available' && resource.data.status == 'pending');
       allow delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
     }

@@ -19,6 +19,7 @@ import {
   UserPlus,
   ShoppingCart,
   Store,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -33,7 +34,7 @@ import { collection, query, where } from 'firebase/firestore';
 // Auth functionality is temporarily removed
 // import { logout } from '@/firebase/auth';
 
-type Role = 'teacher' | 'student';
+type Role = 'teacher' | 'student' | 'admin';
 
 const navItems = {
   teacher: [
@@ -56,11 +57,15 @@ const navItems = {
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
     { href: '/dashboard/student/my-store', label: 'My Store', icon: Store },
   ],
+  admin: [
+    { href: '/dashboard/admin', label: 'Admin Dashboard', icon: ShieldCheck },
+  ],
 };
 
 const roleIcons = {
   teacher: <User className="h-5 w-5" />,
   student: <BookOpenCheck className="h-5 w-5" />,
+  admin: <ShieldCheck className="h-5 w-5" />,
 };
 
 type Enrollment = {
