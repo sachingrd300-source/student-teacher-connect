@@ -130,8 +130,11 @@ service cloud.firestore {
                   || (isExistingDoc() && resource.data.teacherId != null && isTeacherOwner(resource.data))
                   || (isExistingDoc() && resource.data.classId != null && isEnrolledInClass(resource.data.classId));
       
-      // Allow listing materials under certain conditions
-      allow list: if isSignedIn(); // Allow browsing the shop and public materials
+      // Allow listing free materials, or materials for a specific teacher.
+      allow list: if isSignedIn() &&
+                  ( (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true) ||
+                    (request.query.where[0][0] == 'teacherId')
+                  );
 
       // Only approved teachers can create materials for themselves.
       allow create: if isApprovedTeacher()
