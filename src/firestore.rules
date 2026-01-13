@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -82,14 +83,14 @@ service cloud.firestore {
     match /classes/{classId} {
       // An enrolled student or the teacher can get class details
       allow get: if isSignedIn() && (isTeacherOwner(get(/databases/$(database)/documents/classes/$(classId)).data) || isEnrolledInClass(classId));
-      // A teacher can list their own classes, requires teacherId in query
-      allow list: if isSignedIn() 
-                  && request.query.where[0][0] == 'teacherId' 
-                  && request.query.where[0][2] == request.auth.uid;
+      // A teacher can list their own classes.
+      // A student can query for a class by its code.
+      allow list: if (isSignedIn() && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+                     (isStudent() && request.query.where[0][0] == 'classCode' && request.query.where[0][2] is string);
       allow create: if isApprovedTeacher()
                     && request.resource.data.teacherId == request.auth.uid;
-      allow update, delete: if isExistingDoc()
-                            && isTeacherOwner(resource.data);
+      // Only the teacher who created the class can update or delete it.
+      allow update, delete: if isExistingDoc() && isTeacherOwner(resource.data);
     }
     
     /* ===============================
@@ -109,7 +110,7 @@ service cloud.firestore {
           );
 
         // A student can create their own enrollment request with a predictable ID
-        allow create: if isSignedIn() 
+        allow create: if isStudent()
                       && isStudentOwner(request.resource.data)
                       && enrollmentId == request.auth.uid + '_' + request.resource.data.classId;
 
@@ -133,8 +134,15 @@ service cloud.firestore {
                   || (isExistingDoc() && resource.data.teacherId != null && isTeacherOwner(resource.data))
                   || (isExistingDoc() && resource.data.classId != null && isEnrolledInClass(resource.data.classId));
       
-      // Allow listing materials under certain conditions
-      allow list: if isSignedIn(); // Allow browsing the shop and public materials
+      // Allow listing materials under specific, secure conditions.
+      allow list: if isSignedIn() && (
+          // Allow listing all public, free materials
+          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true) ||
+          // Allow a teacher to list their own materials
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          // Allow listing materials for a specific class, if the user is enrolled in it
+          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2]))
+      );
 
       // Only approved teachers can create materials for themselves.
       allow create: if isApprovedTeacher()
@@ -167,23 +175,6 @@ service cloud.firestore {
     }
 
     /* ===============================
-       ATTENDANCES
-    =============================== */
-
-    match /attendances/{attendanceId} {
-      allow get: if isExistingDoc()
-                 && (isTeacherOwner(resource.data)
-                     || isStudentOwner(resource.data));
-      allow list: if isSignedIn()
-                  && request.query.where[0][0] == 'teacherId'
-                  && request.query.where[0][2] == request.auth.uid;
-      allow create: if isSignedIn()
-                    && isTeacherOwner(request.resource.data);
-      allow update, delete: if isExistingDoc()
-                            && isTeacherOwner(resource.data);
-    }
-
-    /* ===============================
        PERFORMANCES
        (Schema MUST contain: studentId, teacherId)
     =============================== */
@@ -201,25 +192,6 @@ service cloud.firestore {
       allow create: if isSignedIn()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if false;
-    }
-
-
-    /* ===============================
-       CLASS SCHEDULES
-    =============================== */
-
-    match /classSchedules/{classScheduleId} {
-       // A teacher can get their own schedule. A student can see schedules for classes they are enrolled in.
-      allow get: if isExistingDoc() && (isTeacherOwner(resource.data) || isEnrolledInClass(resource.data.classId));
-      // A teacher can list their own schedules. Students can list schedules from teachers they are enrolled with.
-      allow list: if isSignedIn()
-                  && ( (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) || 
-                       (request.query.where[0][0] == 'teacherId' && request.query.where[0][1] == 'in')
-                     );
-      allow create: if isSignedIn()
-                    && isTeacherOwner(request.resource.data);
-      allow update, delete: if isExistingDoc()
-                            && isTeacherOwner(resource.data);
     }
 
   }
