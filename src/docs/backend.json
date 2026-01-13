@@ -176,6 +176,10 @@
           "type": "string",
           "description": "The ID of the teacher who owns this schedule."
         },
+        "classId": {
+            "type": "string",
+            "description": "The ID of the class this schedule belongs to."
+        },
         "topic": {
           "type": "string",
           "description": "The topic to be covered in the class."
@@ -329,5 +333,3 @@
     }
   }
 }
-
-    

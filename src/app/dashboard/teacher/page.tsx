@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -159,8 +158,7 @@ export default function TeacherDashboardPage() {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'enrollments'),
-      where('teacherId', '==', user.uid),
-      where('status', '==', 'approved')
+      where('teacherId', '==', user.uid)
     );
   }, [firestore, user]);
   const { data: enrollments, isLoading: isLoadingEnrollments } =
@@ -198,7 +196,7 @@ export default function TeacherDashboardPage() {
     };
 
     const classesCollection = collection(firestore, 'classes');
-    await addDocumentNonBlocking(classesCollection, classData);
+    addDocumentNonBlocking(classesCollection, classData);
 
     toast({
       title: 'Class Created!',

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -110,7 +109,7 @@ export default function PerformancePage() {
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 
 
-    const handleAddResult = async () => {
+    const handleAddResult = () => {
         if (!selectedStudentId || !testName || !subject || marks === '' || maxMarks === '' || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
             return;
