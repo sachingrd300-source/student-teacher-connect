@@ -58,7 +58,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, MoreVertical, BookOpenCheck, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -158,7 +158,7 @@ export default function MaterialsPage() {
         return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
 
-    const classesQuery = useMemo(() => {
+    const classesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
@@ -432,6 +432,3 @@ export default function MaterialsPage() {
         </div>
     );
 }
-
-    
-    
