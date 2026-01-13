@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -193,6 +194,7 @@ export default function TeacherDashboardPage() {
       teacherId: user.uid,
       classCode,
       createdAt: serverTimestamp(),
+      isActive: true,
     };
 
     const classesCollection = collection(firestore, 'classes');
