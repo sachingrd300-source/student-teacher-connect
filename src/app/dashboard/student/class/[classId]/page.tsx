@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/table';
 
 import { FileText, AlertTriangle, BookOpenCheck } from 'lucide-react';
+import Link from 'next/link';
 
 /* =======================
    TYPES
@@ -52,6 +53,10 @@ type StudyMaterial = {
   createdAt: { toDate: () => Date };
   fileUrl: string;
 };
+
+type Enrollment = {
+    status: 'approved' | 'pending' | 'denied';
+}
 
 /* =======================
    ICONS
@@ -121,23 +126,16 @@ export default function ClassRoomPage() {
     useDoc<TeacherInfo>(teacherRef);
 
   /* ---------- ENROLLMENT (MOST IMPORTANT) ---------- */
-  const enrollmentQuery = useMemoFirebase(() => {
+   const enrollmentRef = useMemoFirebase(() => {
     if (!firestore || !user || !classId) return null;
-
-    return query(
-      collection(firestore, 'enrollments'),
-      where('studentId', '==', user.uid),
-      where('classId', '==', classId),
-      where('status', '==', 'approved')
-    );
+    // Use the predictable enrollment ID for a direct document read
+    const enrollmentId = `${user.uid}_${classId}`;
+    return doc(firestore, 'enrollments', enrollmentId);
   }, [firestore, user, classId]);
 
-  const {
-    data: enrollments,
-    isLoading: loadingEnrollment,
-  } = useCollection(enrollmentQuery);
+  const { data: enrollment, isLoading: loadingEnrollment } = useDoc<Enrollment>(enrollmentRef);
 
-  const isEnrolled = !!enrollments && enrollments.length > 0;
+  const isEnrolled = enrollment?.status === 'approved';
 
   /* ---------- MATERIALS (ONLY IF ENROLLED) ---------- */
   const materialsQuery = useMemo(() => {
@@ -176,7 +174,7 @@ export default function ClassRoomPage() {
           You are not enrolled in this class or your request is not approved.
         </p>
         <Button asChild>
-          <a href="/dashboard/student">Go to Dashboard</a>
+          <Link href="/dashboard/student">Go to Dashboard</Link>
         </Button>
       </div>
     );
