@@ -95,34 +95,6 @@ const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", 
 const classLevelOptions = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Undergraduate", "Postgraduate"];
 
 
-function MaterialsPageSkeleton() {
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <Skeleton className="h-9 w-64" />
-                    <Skeleton className="h-5 w-80 mt-2" />
-                </div>
-                <Skeleton className="h-10 w-36" />
-            </div>
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-7 w-48" />
-                    <Skeleton className="h-5 w-72" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-
 export default function MaterialsPage() {
     const { toast } = useToast();
     const [isAddMaterialOpen, setAddMaterialOpen] = useState(false);
@@ -244,10 +216,6 @@ export default function MaterialsPage() {
             });
     };
 
-    if (isLoading) {
-        return <MaterialsPageSkeleton />;
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -366,22 +334,28 @@ export default function MaterialsPage() {
                     <CardDescription>A list of all the resources you have uploaded.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading && <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
-                    {materials && materials.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Level</TableHead>
-                                    <TableHead>Access</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {materials.map((material) => (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Title</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>Level</TableHead>
+                                <TableHead>Access</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading && (
+                                <>
+                                    <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
+                                </>
+                            )}
+                            {!isLoading && materials && materials.length > 0 ? (
+                                materials.map((material) => (
                                     <TableRow key={material.id}>
                                         <TableCell className="font-medium">{material.title}</TableCell>
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
@@ -398,7 +372,7 @@ export default function MaterialsPage() {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem disabled>Edit</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
-                                                         <AlertDialogTrigger asChild>
+                                                            <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 !cursor-pointer">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                                 Delete
@@ -406,7 +380,7 @@ export default function MaterialsPage() {
                                                         </AlertDialogTrigger>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                                 <AlertDialogContent>
+                                                    <AlertDialogContent>
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
@@ -421,16 +395,18 @@ export default function MaterialsPage() {
                                             </AlertDialog>
                                         </TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-sm text-center text-muted-foreground py-8">You haven't uploaded any materials yet.</p>
-                    )}
+                                ))
+                            ) : !isLoading && (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        You haven't uploaded any materials yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>
     );
 }
-
-    
