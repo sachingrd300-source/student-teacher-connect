@@ -127,7 +127,11 @@ export default function MaterialsPage() {
 
     const materialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+        return query(
+            collection(firestore, 'studyMaterials'), 
+            where('teacherId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore, user]);
 
     const classesQuery = useMemoFirebase(() => {
@@ -408,6 +412,8 @@ export default function MaterialsPage() {
             </Card>
         </div>
     );
+
+    
 
     
 
