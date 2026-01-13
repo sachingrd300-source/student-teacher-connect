@@ -54,6 +54,9 @@ service cloud.firestore {
     
      // Check if the requesting user is enrolled with any of the teachers in a list
     function isEnrolledWithTeachers(teacherIdList) {
+        // This is complex for rules. A better approach is to fetch schedules for classes the student is in.
+        // However, if needed, you might use this, but it can be slow and hit read limits.
+        // For this app, we will rely on client-side logic to fetch schedules based on enrolled classes' teacherIds.
         return isSignedIn() && exists(/databases/$(database)/documents/enrollments?query=studentId_eq_$(request.auth.uid)_and_teacherId_in_$(teacherIdList)_and_status_eq_approved);
     }
 
@@ -141,11 +144,15 @@ service cloud.firestore {
                   || (isExistingDoc() && resource.data.teacherId != null && isTeacherOwner(resource.data))
                   || (isExistingDoc() && resource.data.classId != null && isEnrolledInClass(resource.data.classId));
       
-      // Allow listing free materials, or materials for a specific teacher.
-      allow list: if isSignedIn() &&
-                  ( (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true) ||
-                    (request.query.where[0][0] == 'teacherId')
-                  );
+      // Allow listing materials under specific, secure conditions.
+      allow list: if isSignedIn() && (
+          // Allow listing all public, free materials
+          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true) ||
+          // Allow listing materials for a specific teacher
+          (request.query.where[0][0] == 'teacherId') ||
+          // Allow listing materials for a specific class, if the user is enrolled in it
+          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2]))
+      );
 
       // Only approved teachers can create materials for themselves.
       allow create: if isApprovedTeacher()

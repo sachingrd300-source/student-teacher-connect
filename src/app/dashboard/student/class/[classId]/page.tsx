@@ -141,6 +141,8 @@ export default function ClassRoomPage() {
   const materialsQuery = useMemo(() => {
     if (!firestore || !classId || !isEnrolled) return null;
 
+    // This query is designed to work with the security rules.
+    // The rules check that if you query by classId, you must be enrolled.
     return query(
       collection(firestore, 'studyMaterials'),
       where('classId', '==', classId),
