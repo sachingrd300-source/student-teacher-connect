@@ -37,7 +37,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, orderBy, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -55,7 +55,7 @@ export default function BatchesPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const batchesQuery = useMemo(() => {
+    const batchesQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
