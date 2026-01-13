@@ -37,19 +37,21 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
 /**
  * Initiates an addDoc operation for a collection reference.
  * Does NOT await the write operation internally.
+ * Uses try/catch as addDoc doesn't have a chainable .catch in the same way.
  */
-export function addDocumentNonBlocking(colRef: CollectionReference, data: WithFieldValue<DocumentData>) {
-  addDoc(colRef, data)
-    .catch(error => {
-      errorEmitter.emit(
-        'permission-error',
-        new FirestorePermissionError({
-          path: colRef.path,
-          operation: 'create',
-          requestResourceData: data,
-        })
-      )
-    });
+export async function addDocumentNonBlocking(colRef: CollectionReference, data: WithFieldValue<DocumentData>) {
+  try {
+    await addDoc(colRef, data);
+  } catch (error) {
+    errorEmitter.emit(
+      'permission-error',
+      new FirestorePermissionError({
+        path: colRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      })
+    );
+  }
 }
 
 
