@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, PlusCircle, Info } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -58,13 +58,13 @@ export default function TeacherShopPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const userProfileQuery = useMemo(() => {
+    const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
-    const premiumMaterialsQuery = useMemo(() => {
+    const premiumMaterialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
             collection(firestore, 'studyMaterials'),
