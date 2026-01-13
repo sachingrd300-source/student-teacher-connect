@@ -114,8 +114,7 @@ service cloud.firestore {
 
         // Only the teacher can approve/deny the request.
         allow update: if isExistingDoc() 
-                      && isTeacherOwner(resource.data)
-                      && request.resource.data.status != resource.data.status; // Ensure status is the only thing changing for this rule
+                      && isTeacherOwner(resource.data);
                       
         allow delete: if false;
     }
@@ -162,7 +161,7 @@ service cloud.firestore {
       // The seller can delete their own item.
       allow update: if (isExistingDoc() && resource.data.sellerId == request.auth.uid &&
                         (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold'])) ||
-                     (isAdmin() && request.resource.data.status in ['available', 'sold'] && resource.data.status == 'pending');
+                     (isAdmin() && request.resource.data.status == 'available' && resource.data.status == 'pending');
       allow delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
     }
 
@@ -209,7 +208,7 @@ service cloud.firestore {
     =============================== */
 
     match /classSchedules/{classScheduleId} {
-       // A teacher can get their own schedule. A student can see schedules from their teachers.
+       // A teacher can get their own schedule. A student can see schedules for classes they are enrolled in.
       allow get: if isExistingDoc() && (isTeacherOwner(resource.data) || isEnrolledInClass(resource.data.classId));
       // A teacher can list their own schedules. Students can list schedules from teachers they are enrolled with.
       allow list: if isSignedIn()

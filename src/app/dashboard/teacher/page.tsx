@@ -156,7 +156,11 @@ export default function TeacherDashboardPage() {
 
   const enrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'approved'));
+    return query(
+      collection(firestore, 'enrollments'),
+      where('teacherId', '==', user.uid),
+      where('status', '==', 'approved')
+    );
   }, [firestore, user]);
   const { data: enrollments, isLoading: isLoadingEnrollments } =
     useCollection<Enrollment>(enrollmentsQuery);
