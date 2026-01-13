@@ -51,6 +51,7 @@ const navItems = {
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/find-tutor', label: 'Find a Tutor', icon: Search },
+    { href: '/dashboard/student/schedule', label: 'My Schedule', icon: CalendarDays, conditional: true },
     { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },
     { href: '/dashboard/student/daily-practice', label: 'Daily Practice', icon: ClipboardList },
     { href: '/dashboard/student/performance', label: 'My Performance', icon: BarChart3, conditional: true },
