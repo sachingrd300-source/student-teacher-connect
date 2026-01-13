@@ -1,200 +1,238 @@
-
 "use client";
 
-import { useState, useMemo } from 'react';
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { createClass } from '@/firebase/class';
-import { Home, PlusCircle, Copy, Users } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useEffect, useState } from "react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { createClass } from "@/firebase/class";
+import { uploadMaterial } from "@/firebase/material";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
-type ClassInfo = {
+type ClassType = {
   id: string;
   subject: string;
   classLevel: string;
-  classCode: string;
+  isActive: boolean;
 };
 
-const classLevels = ["9-10", "11-12", "Undergraduate", "Postgraduate"];
+type MaterialType = {
+  id: string;
+  title: string;
+  classId: string;
+};
 
-
-export default function TeacherDashboardPage() {
-  const { user, isLoading: isUserLoading } = useUser();
-  const firestore = useFirestore();
+export default function TeacherPage() {
   const { toast } = useToast();
-  
-  const [isCreateClassOpen, setCreateClassOpen] = useState(false);
-  const [subject, setSubject] = useState('');
-  const [classLevel, setClassLevel] = useState('');
+  const { user } = useUser();
+  const firestore = useFirestore();
 
+  const [classSubject, setClassSubject] = useState("");
+  const [classLevel, setClassLevel] = useState("");
+
+  const [materialTitle, setMaterialTitle] = useState("");
+  const [selectedClass, setSelectedClass] = useState("");
+
+  const [classes, setClasses] = useState<ClassType[]>([]);
+  const [materials, setMaterials] = useState<MaterialType[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Real-time classes list
   const classesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'classes'), 
-      where('teacherId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    return query(collection(firestore, "classes"), where("teacherId", "==", user.uid));
   }, [firestore, user]);
 
-  const { data: classes, isLoading: isLoadingClasses } = useCollection<ClassInfo>(classesQuery);
+  useEffect(() => {
+    if (!classesQuery) {
+        setClasses([]);
+        return;
+    };
+    
+    const unsub = onSnapshot(classesQuery, (snap) => {
+      setClasses(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<ClassType, "id">),
+        }))
+      );
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Class list error:", error);
+      toast({ variant: "destructive", title: "Error fetching classes", description: error.message });
+      setIsLoading(false);
+    });
+    return () => unsub();
+  }, [classesQuery, toast]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
-
-  const handleCreateClass = async () => {
-    if (!subject || !classLevel) {
-        toast({ variant: 'destructive', title: 'Missing fields', description: 'Please provide a subject and class level.' });
+  // Real-time materials list
+   const materialsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, "studyMaterials"), where("teacherId", "==", user.uid));
+  }, [firestore, user]);
+  
+  useEffect(() => {
+    if (!materialsQuery) {
+        setMaterials([]);
         return;
     }
-    if (!user || !firestore) {
-        toast({ variant: 'destructive', title: 'Error', description: 'User not logged in.' });
+    const unsub = onSnapshot(materialsQuery, (snap) => {
+      setMaterials(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<MaterialType, "id">),
+        }))
+      );
+    }, (error) => {
+        console.error("Material list error:", error);
+        toast({ variant: "destructive", title: "Error fetching materials", description: error.message });
+    });
+    return () => unsub();
+  }, [materialsQuery, toast]);
+
+  const handleCreateClass = async () => {
+    if(!classSubject || !classLevel) {
+        toast({variant: 'destructive', title: 'Missing fields', description: 'Please provide subject and level.'});
         return;
     }
     try {
-        await createClass(firestore, user.uid, subject, classLevel);
-        toast({ title: 'Class Created!', description: `${subject} - ${classLevel} has been created.` });
-        setSubject('');
+        await createClass(classSubject, classLevel);
+        toast({title: 'Success!', description: 'Class created successfully.'});
+        setClassSubject('');
         setClassLevel('');
-        setCreateClassOpen(false);
-    } catch (error) {
-        console.error("Error creating class:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not create class.' });
+    } catch (e: any) {
+        toast({variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: 'Copied!', description: 'Class code copied to clipboard.' });
+  }
+  
+  const handleUploadMaterial = async () => {
+      if(!materialTitle || !selectedClass) {
+          toast({variant: 'destructive', title: 'Missing fields', description: 'Please provide a title and select a class.'});
+          return;
+      }
+      try {
+          await uploadMaterial(materialTitle, selectedClass);
+          toast({title: 'Success!', description: 'Material uploaded.'});
+          setMaterialTitle('');
+          setSelectedClass('');
+      } catch (e: any) {
+          toast({variant: 'destructive', title: 'Error', description: e.message});
+      }
   }
 
-  const isLoading = isUserLoading || isLoadingClasses;
 
   if (isLoading) {
-    return (
-        <div className="space-y-6">
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-6 w-3/4" />
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-            </div>
-        </div>
-    )
+    return <p>Loading dashboard...</p>
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">
-          {user ? `${getGreeting()}, ${user.displayName || 'Teacher'}!` : 'Teacher Dashboard'}
-        </h1>
-        <p className="text-muted-foreground">
-          Here's an overview of your classes. Create a new one to get started.
-        </p>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
+
+      <div className="grid md:grid-cols-2 gap-6">
+         {/* CREATE CLASS */}
+        <Card>
+            <CardHeader>
+                <CardTitle>Create Class</CardTitle>
+                <CardDescription>Create a new class for students to join.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <Input
+                    placeholder="Class Subject (e.g. Physics)"
+                    value={classSubject}
+                    onChange={(e) => setClassSubject(e.target.value)}
+                />
+                <Input
+                    placeholder="Class Level (e.g. 11-12)"
+                    value={classLevel}
+                    onChange={(e) => setClassLevel(e.target.value)}
+                />
+                <Button onClick={handleCreateClass} className="w-full">
+                    Create Class
+                </Button>
+            </CardContent>
+        </Card>
+
+        {/* UPLOAD MATERIAL */}
+        <Card>
+            <CardHeader>
+                <CardTitle>Upload Study Material</CardTitle>
+                <CardDescription>Share a new resource with your students.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Input
+                    placeholder="Material title"
+                    value={materialTitle}
+                    onChange={(e) => setMaterialTitle(e.target.value)}
+                />
+
+                <Select
+                    value={selectedClass}
+                    onValueChange={(e) => setSelectedClass(e)}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a class"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        {classes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                            {c.subject} - {c.classLevel}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Button
+                    onClick={handleUploadMaterial}
+                    disabled={!selectedClass}
+                    className="w-full"
+                >
+                    Upload Material
+                </Button>
+            </CardContent>
+        </Card>
       </div>
 
-        <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold font-headline">My Classes</h2>
-            <Dialog open={isCreateClassOpen} onOpenChange={setCreateClassOpen}>
-                <DialogTrigger asChild>
-                    <Button><PlusCircle className="mr-2 h-4 w-4" />Create New Class</Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Create a New Class</DialogTitle>
-                        <DialogDescription>
-                            This will create a new class (or batch) that students can join using a unique code.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="subject">Subject</Label>
-                            <Input id="subject" placeholder="e.g. Physics" value={subject} onChange={(e) => setSubject(e.target.value)} />
+      <div className="grid md:grid-cols-2 gap-6">
+          {/* CLASS LIST */}
+        <Card>
+            <CardHeader>
+                <CardTitle>Your Classes</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {classes.length === 0 && <p className="text-muted-foreground text-sm">No classes found.</p>}
+                <div className="space-y-2">
+                    {classes.map((c) => (
+                        <div key={c.id} className="border p-3 rounded-md">
+                        <p className="font-semibold">{c.subject} - {c.classLevel}</p>
+                        <p className="text-xs text-muted-foreground">Active: {c.isActive ? "Yes" : "No"}</p>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="classLevel">Class Level</Label>
-                            <Select onValueChange={setClassLevel} value={classLevel}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a level" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {classLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+
+         {/* MATERIAL LIST */}
+         <Card>
+            <CardHeader>
+                <CardTitle>Uploaded Materials</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {materials.length === 0 && <p className="text-muted-foreground text-sm">No materials uploaded yet.</p>}
+                <div className="space-y-2">
+                     {materials.map((m) => (
+                        <div key={m.id} className="border p-3 rounded-md">
+                            <p className="font-semibold">{m.title}</p>
+                            <p className="text-xs text-muted-foreground">Class ID: {m.classId}</p>
                         </div>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={handleCreateClass}>Create Class</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-      
-        {classes && classes.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {classes.map(cls => (
-                    <Card key={cls.id} className="shadow-soft-shadow">
-                        <CardHeader>
-                            <CardTitle>{cls.subject}</CardTitle>
-                            <CardDescription>{cls.classLevel}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Share this code with your students to let them join:</p>
-                            <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-muted p-3">
-                                <span className="font-mono text-lg">{cls.classCode}</span>
-                                <Button variant="ghost" size="icon" onClick={() => copyToClipboard(cls.classCode)}>
-                                    <Copy className="h-5 w-5" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                         <CardFooter>
-                            <Button variant="outline" className="w-full" disabled>
-                                <Users className="mr-2 h-4 w-4"/>
-                                View Students (Coming soon)
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </div>
-        ) : (
-             <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                <Home className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No Classes Yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Click "Create New Class" to set up your first class.</p>
-            </div>
-        )}
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

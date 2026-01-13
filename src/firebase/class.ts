@@ -1,33 +1,20 @@
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { auth, firestore } from "./firebase";
 
-import { addDoc, collection, serverTimestamp, Firestore } from "firebase/firestore";
-import { v4 as uuidv4 } from 'uuid';
-
-/**
- * Creates a new class document in Firestore.
- * @param firestore - The Firestore instance.
- * @param teacherId - The UID of the teacher creating the class.
- * @param subject - The subject of the class.
- * @param classLevel - The level of the class (e.g., "9-10").
- */
-export async function createClass(
-  firestore: Firestore,
-  teacherId: string,
-  subject: string,
-  classLevel: string
-) {
-  if (!teacherId) {
+export async function createClass(subject: string, classLevel: string) {
+  if (!auth.currentUser) {
     throw new Error("User not logged in");
   }
 
   // Generate a unique, human-readable-ish class code
-  const classCode = uuidv4().slice(0, 6).toUpperCase();
+  const classCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   await addDoc(collection(firestore, "classes"), {
-    teacherId,
     subject,
     classLevel,
+    teacherId: auth.currentUser.uid,
     classCode,
     isActive: true,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
   });
 }
