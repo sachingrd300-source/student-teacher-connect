@@ -5,10 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star } from 'lucide-react';
 import { Icons } from '@/components/icons';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AnimatedCard } from '@/components/ui/animated-card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
+import React from 'react';
 
 const features = [
   {
@@ -33,8 +37,33 @@ const features = [
   },
 ];
 
+const ads = [
+    {
+        title: "Boost Your Exam Prep",
+        description: "Get exclusive access to premium question banks and mock tests.",
+        imageUrl: "https://picsum.photos/seed/ad1/600/400",
+        imageHint: "studying books",
+    },
+    {
+        title: "IIT-JEE Masterclass",
+        description: "Join our intensive masterclass series with top-ranked educators.",
+        imageUrl: "https://picsum.photos/seed/ad2/600/400",
+        imageHint: "classroom lecture",
+    },
+    {
+        title: "Sell Your Old Books",
+        description: "Make money from your used textbooks. List them on our marketplace now!",
+        imageUrl: "https://picsum.photos/seed/ad3/600/400",
+        imageHint: "stack of books",
+    }
+];
+
 export default function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-2');
+  
+  const autoplayPlugin = React.useRef(
+    Autoplay({ delay: 3000, stopOnInteraction: true, stopOnMouseEnter: true })
+  );
 
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
@@ -113,6 +142,50 @@ export default function LandingPage() {
         </section>
 
         <section className="w-full py-12 md:py-24 lg:py-32">
+            <div className="container px-4 md:px-6">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Featured Opportunities</h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                            Don't miss out on these exclusive offers and masterclasses.
+                        </p>
+                    </div>
+                </div>
+                <Carousel 
+                    opts={{ align: "start", loop: true }} 
+                    plugins={[autoplayPlugin.current]}
+                    className="w-full max-w-4xl mx-auto"
+                >
+                    <CarouselContent>
+                        {ads.map((ad, index) => (
+                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                            <Card className="overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105">
+                                <CardContent className="flex flex-col aspect-square items-start justify-end p-0">
+                                    <Image 
+                                        src={ad.imageUrl} 
+                                        alt={ad.title} 
+                                        width={600} 
+                                        height={400} 
+                                        className="absolute inset-0 w-full h-full object-cover -z-10"
+                                        data-ai-hint={ad.imageHint}
+                                    />
+                                    <div className="flex flex-col p-6 bg-gradient-to-t from-black/80 to-transparent w-full">
+                                        <h3 className="text-xl font-bold text-white font-headline">{ad.title}</h3>
+                                        <p className="text-sm text-gray-300 mt-1">{ad.description}</p>
+                                        <Button size="sm" className="mt-4 w-fit">Learn More</Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            </div>
+                        </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                </Carousel>
+            </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">
