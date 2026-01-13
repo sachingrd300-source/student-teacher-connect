@@ -87,8 +87,7 @@ export default function TeacherPage() {
     if (!firestore || !user) return null;
     return query(
         collection(firestore, "studyMaterials"),
-        where("teacherId", "==", user.uid),
-        orderBy('createdAt', 'desc')
+        where("teacherId", "==", user.uid)
     );
   }, [firestore, user]);
   
