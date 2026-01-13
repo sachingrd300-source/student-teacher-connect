@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -9,14 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CalendarDays, Video, MapPin, XCircle } from 'lucide-react';
+import { CalendarDays, Video, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, doc, Timestamp, getDocs } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 
 
 type ScheduleItem = {
@@ -38,12 +37,8 @@ type Enrollment = {
 };
 
 export default function StudentSchedulePage() {
-    const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
-
-    const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -56,56 +51,32 @@ export default function StudentSchedulePage() {
 
     const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
 
-    useEffect(() => {
-        const fetchSchedules = async () => {
-            if (!enrollments || enrollments.length === 0 || !firestore) {
-                setSchedules([]);
-                setIsLoading(false);
-                return;
-            }
-            setIsLoading(true);
+    const teacherIds = useMemo(() => {
+        if (!enrollments) return [];
+        return [...new Set(enrollments.map(e => e.teacherId))];
+    }, [enrollments]);
 
-            const teacherIds = [...new Set(enrollments.map(e => e.teacherId))];
-            if (teacherIds.length === 0) {
-                 setSchedules([]);
-                 setIsLoading(false);
-                 return;
-            }
-            
-            try {
-                // Query schedules from all teachers the student is enrolled with
-                const scheduleQuery = query(
-                    collection(firestore, 'classSchedules'),
-                    where('teacherId', 'in', teacherIds),
-                    where('status', '==', 'Scheduled'),
-                    orderBy('date', 'asc')
-                );
+    const schedulesQuery = useMemoFirebase(() => {
+        if (!firestore || teacherIds.length === 0) return null;
+        return query(
+            collection(firestore, 'classSchedules'),
+            where('teacherId', 'in', teacherIds),
+            where('status', '==', 'Scheduled'),
+            orderBy('date', 'asc')
+        );
+    }, [firestore, teacherIds]);
 
-                const querySnapshot = await getDocs(scheduleQuery);
-                const fetchedSchedules = querySnapshot.docs.map(doc => ({...doc.data(), id: doc.id } as ScheduleItem));
-                
-                // Further filter schedules to only those for classes the student is enrolled in
-                const enrolledClassIds = new Set(enrollments.map(e => e.classId));
-                const studentSchedules = fetchedSchedules.filter(schedule => 
-                    schedule.classId && enrolledClassIds.has(schedule.classId)
-                );
-                
-                setSchedules(studentSchedules);
-            } catch (error) {
-                console.error("Error fetching schedules:", error);
-                toast({ variant: "destructive", title: "Failed to load schedule" });
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const { data: allSchedules, isLoading: isLoadingSchedules } = useCollection<ScheduleItem>(schedulesQuery);
+    
+    const studentSchedules = useMemo(() => {
+        if (!allSchedules || !enrollments) return [];
+        const enrolledClassIds = new Set(enrollments.map(e => e.classId));
+        return allSchedules.filter(schedule => 
+            schedule.classId && enrolledClassIds.has(schedule.classId)
+        );
+    }, [allSchedules, enrollments]);
 
-        if (!isLoadingEnrollments) {
-            fetchSchedules();
-        }
-
-    }, [enrollments, isLoadingEnrollments, firestore, toast]);
-
-    const finalIsLoading = isLoading || isLoadingEnrollments;
+    const finalIsLoading = isLoadingEnrollments || isLoadingSchedules;
 
     return (
         <div className="space-y-6">
@@ -132,8 +103,8 @@ export default function StudentSchedulePage() {
                            <Skeleton className="h-16 w-full" />
                         </div>
                      )}
-                     {schedules && schedules.length > 0 ? (
-                        schedules.map(item => (
+                     {studentSchedules && studentSchedules.length > 0 ? (
+                        studentSchedules.map(item => (
                             <div key={item.id} className={cn("flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors")}>
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center justify-center p-3 text-sm font-semibold text-center rounded-md w-20 bg-primary/10 text-primary">
