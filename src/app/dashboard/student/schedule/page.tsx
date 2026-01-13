@@ -33,6 +33,7 @@ type ScheduleItem = {
 type Enrollment = {
     classId: string;
     teacherId: string;
+    status: 'approved' | 'pending' | 'denied';
 };
 
 export default function StudentSchedulePage() {
@@ -52,11 +53,12 @@ export default function StudentSchedulePage() {
 
     const teacherIds = useMemo(() => {
         if (!enrollments) return [];
+        // Use a Set to ensure unique teacher IDs
         return [...new Set(enrollments.map(e => e.teacherId))];
     }, [enrollments]);
 
     const schedulesQuery = useMemoFirebase(() => {
-        // We need at least one teacherId to query, otherwise 'in' queries fail.
+        // Firestore 'in' queries fail if the array is empty.
         if (!firestore || teacherIds.length === 0) return null;
         return query(
             collection(firestore, 'classSchedules'),
