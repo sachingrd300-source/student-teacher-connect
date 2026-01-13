@@ -16,6 +16,16 @@
       ]
     },
     {
+      "collectionGroup": "marketplaceItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "studyMaterials",
       "queryScope": "COLLECTION",
       "fields": [
@@ -70,6 +80,15 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+        "collectionGroup": "enrollments",
+        "queryScope": "COLLECTION",
+        "fields": [
+            { "fieldPath": "teacherId", "order": "ASCENDING" },
+            { "fieldPath": "classId", "order": "ASCENDING" },
+            { "fieldPath": "status", "order": "ASCENDING" }
+        ]
     },
     {
       "collectionGroup": "enrollments",

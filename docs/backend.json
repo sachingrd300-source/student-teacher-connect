@@ -31,6 +31,11 @@
           "type": "string",
           "description": "The verification status of the user (e.g., pending_verification, approved)."
         },
+        "marketplaceStatus": {
+            "type": "string",
+            "enum": ["unverified", "pending", "approved"],
+            "description": "The verification status for a student to sell in the marketplace."
+        },
         "subjectCategory": {
           "type": "string",
           "description": "For tutors, the main category of subjects they teach."
@@ -96,6 +101,10 @@
         "classLevel": {
           "type": "string",
           "description": "The level of the class (e.g., 9-10, 11-12)."
+        },
+        "batchTime": {
+            "type": "string",
+            "description": "The time of the class batch (e.g. 10:00 AM)."
         },
         "classCode": {
           "type": "string",
@@ -167,6 +176,10 @@
           "type": "string",
           "description": "The ID of the teacher who owns this schedule."
         },
+        "classId": {
+            "type": "string",
+            "description": "The ID of the class this schedule belongs to."
+        },
         "topic": {
           "type": "string",
           "description": "The topic to be covered in the class."
@@ -232,9 +245,9 @@
         "description": "Represents a study material resource uploaded by a teacher or admin.",
         "properties": {
             "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
+            "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material." },
             "classId": { "type": "string", "description": "The ID of the class this material belongs to. Null if not class-specific." },
             "classLevel": { "type": "string", "description": "The class level this material is for (e.g., Class 9, Class 12)." },
-            "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material." },
             "title": { "type": "string" },
             "description": { "type": "string" },
             "subject": { "type": "string" },
@@ -246,7 +259,7 @@
             "fileUrl": { "type": "string" },
             "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["teacherId", "title", "subject", "type", "isFree", "fileUrl", "createdAt"]
+        "required": ["teacherId", "teacherName", "title", "subject", "type", "isFree", "fileUrl", "createdAt"]
     },
     "MarketplaceItem": {
       "title": "Marketplace Item",
@@ -262,7 +275,7 @@
         "condition": { "type": "string", "enum": ["New", "Like New", "Used", "Acceptable"] },
         "itemType": { "type": "string", "enum": ["Book", "Notes", "Equipment", "Other"] },
         "imageUrl": { "type": "string" },
-        "status": { "type": "string", "enum": ["available", "sold"], "default": "available" },
+        "status": { "type": "string", "enum": ["pending", "available", "sold"], "default": "available" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sellerId", "sellerName", "title", "price", "itemType", "status", "createdAt"]
