@@ -13,6 +13,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const features = [
   {
@@ -57,6 +59,45 @@ const ads = [
         imageHint: "stack of books",
     }
 ];
+
+const topTutors = [
+    {
+        name: "Dr. Ananya Sharma",
+        subject: "Physics, IIT-JEE",
+        rating: 5,
+        imageUrl: "https://picsum.photos/seed/tutor1/200/200",
+        imageHint: "female teacher portrait"
+    },
+    {
+        name: "Rohan Verma",
+        subject: "Mathematics, Class 12",
+        rating: 5,
+        imageUrl: "https://picsum.photos/seed/tutor2/200/200",
+        imageHint: "male teacher portrait"
+    },
+    {
+        name: "Priya Singh",
+        subject: "Chemistry, NEET",
+        rating: 4.9,
+        imageUrl: "https://picsum.photos/seed/tutor3/200/200",
+        imageHint: "female educator smiling"
+    },
+     {
+        name: "Amit Kumar",
+        subject: "Biology, Class 10",
+        rating: 4.9,
+        imageUrl: "https://picsum.photos/seed/tutor4/200/200",
+        imageHint: "male educator glasses"
+    },
+]
+
+const stats = [
+    { number: "10,000+", label: "Happy Students" },
+    { number: "1,200+", label: "Verified Tutors" },
+    { number: "5,000+", label: "Free Resources" },
+    { number: "24/7", label: "Fast Support" },
+]
+
 
 export default function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-2');
@@ -139,6 +180,64 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32">
+            <div className="container px-4 md:px-6">
+                 <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Meet Our Top Tutors</h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                            Learn from the best. Our educators are experienced, verified, and ready to help you succeed.
+                        </p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {topTutors.map((tutor, index) => (
+                         <AnimatedCard 
+                            key={tutor.name} 
+                            index={index}
+                            className="text-center bg-card rounded-lg p-6 shadow-soft-shadow hover:shadow-lg hover:-translate-y-2 transition-all duration-300"
+                         >
+                            <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-primary/20">
+                                <AvatarImage src={tutor.imageUrl} alt={tutor.name} data-ai-hint={tutor.imageHint}/>
+                                <AvatarFallback className="text-3xl">{tutor.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <h3 className="text-xl font-bold font-headline">{tutor.name}</h3>
+                            <p className="text-sm text-muted-foreground">{tutor.subject}</p>
+                            <div className="flex items-center justify-center gap-4 mt-4">
+                                <div className="flex items-center gap-1">
+                                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                    <span className="font-semibold">{tutor.rating}</span>
+                                </div>
+                                <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" /> Verified</Badge>
+                            </div>
+                         </AnimatedCard>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+            <div className="container px-4 md:px-6">
+                <div className="grid gap-10 lg:grid-cols-2">
+                     <div className="space-y-4">
+                        <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm shadow-sm">Join Our Community</div>
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Trusted by Thousands</h2>
+                        <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                            Our platform is built on trust and quality. See the numbers that make us a leading choice for education.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-8">
+                        {stats.map(stat => (
+                             <div key={stat.label} className="text-center">
+                                <h3 className="text-4xl lg:text-5xl font-bold text-primary font-headline">{stat.number}</h3>
+                                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section className="w-full py-12 md:py-24 lg:py-32">

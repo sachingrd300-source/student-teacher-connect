@@ -17,6 +17,48 @@
       "description": "A vibrant image of a modern, collaborative learning environment with technology.",
       "imageUrl": "https://images.unsplash.com/photo-1501504905252-473c47e087f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZWR1Y2F0aW9uJTIwdGVjaG5vbG9neXxlbnwwfHx8fDE3NjgxMTY1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "education technology"
+    },
+    {
+      "id": "tutor-1",
+      "description": "Portrait of a confident female teacher.",
+      "imageUrl": "https://images.unsplash.com/photo-1752317591547-745de02a572e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmZW1hbGUlMjB0ZWFjaGVyJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY4MzAzMDg4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "female teacher portrait"
+    },
+    {
+      "id": "tutor-2",
+      "description": "Portrait of a friendly male teacher.",
+      "imageUrl": "https://images.unsplash.com/photo-1748288166888-f1bd5d6ef9ed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYWxlJTIwdGVhY2hlciUyMHBvcnRyYWl0fGVufDB8fHx8MTc2ODMwMzA4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male teacher portrait"
+    },
+    {
+      "id": "tutor-3",
+      "description": "Portrait of a smiling female educator.",
+      "imageUrl": "https://images.unsplash.com/photo-1622632405663-f43782a098b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZmVtYWxlJTIwZWR1Y2F0b3IlMjBzbWlsaW5nfGVufDB8fHx8MTc2ODMwMzA4OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "female educator smiling"
+    },
+    {
+      "id": "tutor-4",
+      "description": "Portrait of a male educator with glasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1722926323079-0836a07d2340?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtYWxlJTIwZWR1Y2F0b3IlMjBnbGFzc2VzfGVufDB8fHx8MTc2ODMwMzA4OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male educator glasses"
+    },
+    {
+      "id": "ad-1",
+      "description": "A person studying with books.",
+      "imageUrl": "https://images.unsplash.com/photo-1761319114926-ef932912fa37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzdHVkeWluZyUyMGJvb2tzfGVufDB8fHx8MTc2ODMwMzA4OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "studying books"
+    },
+    {
+      "id": "ad-2",
+      "description": "A lecture happening in a classroom.",
+      "imageUrl": "https://images.unsplash.com/photo-1638957835514-224c57ffe617?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjbGFzc3Jvb20lMjBsZWN0dXJlfGVufDB8fHx8MTc2ODMwMzA4OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "classroom lecture"
+    },
+    {
+      "id": "ad-3",
+      "description": "A stack of old books.",
+      "imageUrl": "https://images.unsplash.com/photo-1516979187457-637abb4f9353?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzdGFjayUyMG9mJTIwYm9va3N8ZW58MHx8fHwxNzY4MjA5MzM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stack of books"
     }
   ]
 }
