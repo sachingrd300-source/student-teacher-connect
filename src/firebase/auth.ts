@@ -13,6 +13,8 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
   type ConfirmationResult,
+  signInWithRedirect,
+  getRedirectResult,
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -24,8 +26,15 @@ export const loginWithEmail = (email: string, password: string): Promise<UserCre
 export const signupWithEmail = (email: string, password: string): Promise<UserCredential> =>
   createUserWithEmailAndPassword(auth, email, password);
 
-export const loginWithGoogle = (): Promise<UserCredential> =>
-  signInWithPopup(auth, googleProvider);
+export const loginWithGoogle = (isMobile: boolean): Promise<UserCredential | void> => {
+    if (isMobile) {
+        return signInWithRedirect(auth, googleProvider);
+    }
+    return signInWithPopup(auth, googleProvider);
+}
+
+export const getGoogleRedirectResult = (): Promise<UserCredential | null> => getRedirectResult(auth);
+
 
 export const logout = (): Promise<void> => signOut(auth);
 

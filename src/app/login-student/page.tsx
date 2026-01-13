@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -17,9 +17,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { loginWithGoogle, loginWithEmail } from '@/firebase/auth';
+import { loginWithGoogle, loginWithEmail, getGoogleRedirectResult } from '@/firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Loader2 } from 'lucide-react';
+
 
 export default function StudentLoginPage() {
   const router = useRouter();
@@ -27,6 +30,50 @@ export default function StudentLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setGoogleLoading] = useState(true); // Start true to handle redirect
+  const isMobile = useIsMobile();
+  
+  useEffect(() => {
+    const handleRedirect = async () => {
+        try {
+            const result = await getGoogleRedirectResult();
+            if (result) {
+                const { user } = result;
+                 const userDocRef = doc(firestore, 'users', user.uid);
+                 const userDoc = await getDoc(userDocRef);
+        
+                if (!userDoc.exists()) {
+                    await setDoc(userDocRef, {
+                        id: user.uid,
+                        name: user.displayName,
+                        email: user.email,
+                        role: 'student',
+                        status: 'approved',
+                        marketplaceStatus: 'unverified',
+                        createdAt: serverTimestamp(),
+                    });
+                }
+
+                toast({
+                    title: 'Login Successful!',
+                    description: 'Welcome to EduConnect Pro.',
+                });
+                router.push('/dashboard/student');
+            }
+        } catch(error: any) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description: 'There was a problem with Google Sign-In.',
+            });
+        } finally {
+            setGoogleLoading(false);
+        }
+    }
+    handleRedirect();
+  }, [router, toast]);
+
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -60,10 +107,12 @@ export default function StudentLoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
     try {
-      const { user } = await loginWithGoogle();
+      const result = await loginWithGoogle(!!isMobile);
+      if (result) { // This will only be true for desktop popup
+        const { user } = result;
 
-      if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         
@@ -78,13 +127,13 @@ export default function StudentLoginPage() {
                 createdAt: serverTimestamp(),
             });
         }
-      }
 
-      toast({
-        title: 'Login Successful!',
-        description: 'Welcome to EduConnect Pro.',
-      });
-      router.push('/dashboard/student');
+        toast({
+          title: 'Login Successful!',
+          description: 'Welcome to EduConnect Pro.',
+        });
+        router.push('/dashboard/student');
+      }
     } catch (error: any) {
       console.error(error);
       toast({
@@ -92,8 +141,27 @@ export default function StudentLoginPage() {
         title: 'Uh oh! Something went wrong.',
         description: 'There was a problem with Google Sign-In.',
       });
+      setGoogleLoading(false);
     }
   };
+  
+    if (isGoogleLoading) {
+      return (
+        <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+            <Image
+                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0ZWFjaGVyJTIwc3R1ZGVudHN8ZW58MHx8fHwxNzE4NzUyMzMxfDA&ixlib=rb-4.0.3&q=80&w=1080"
+                alt="Students learning in a classroom"
+                fill
+                className="object-cover"
+                data-ai-hint="teacher students"
+            />
+            <div className="absolute inset-0 bg-black/60 z-10"></div>
+            <div className="z-20">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+        </div>
+      )
+  }
 
   return (
      <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
@@ -157,8 +225,9 @@ export default function StudentLoginPage() {
                 </div>
             </div>
             <div className="grid grid-cols-1">
-                <Button variant="outline" onClick={handleGoogleSignIn}>
-                Google
+                <Button variant="outline" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                    {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Google
                 </Button>
             </div>
 

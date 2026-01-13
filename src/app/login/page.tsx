@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -15,7 +15,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { loginWithEmail, loginWithGoogle } from '@/firebase/auth';
+import { loginWithEmail, loginWithGoogle, getGoogleRedirectResult } from '@/firebase/auth';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +25,34 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setGoogleLoading] = useState(true); // Start true to handle redirect
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const handleRedirect = async () => {
+        try {
+            const result = await getGoogleRedirectResult();
+            if (result) {
+                toast({
+                    title: 'Login Successful!',
+                    description: 'Welcome to EduConnect Pro.',
+                });
+                router.push('/dashboard/teacher');
+            }
+        } catch(error: any) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description: 'There was a problem with Google Sign-In.',
+            });
+        } finally {
+            setGoogleLoading(false);
+        }
+    }
+    handleRedirect();
+  }, [router, toast]);
+
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -56,15 +86,18 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
     try {
-      await loginWithGoogle();
-      toast({
-        title: 'Login Successful!',
-        description: 'Welcome to EduConnect Pro.',
-      });
-      // This assumes a Google sign-in user might not have a tutor profile yet.
-      // They will be redirected to the teacher dashboard where they can complete their profile.
-      router.push('/dashboard/teacher');
+      const result = await loginWithGoogle(!!isMobile);
+      // If signInWithPopup returns a result, it means we are on desktop
+      if (result) {
+        toast({
+            title: 'Login Successful!',
+            description: 'Welcome to EduConnect Pro.',
+        });
+        router.push('/dashboard/teacher');
+      }
+      // If on mobile, signInWithRedirect was called, and the useEffect will handle the result.
     } catch (error: any) {
       console.error(error);
       toast({
@@ -72,8 +105,17 @@ export default function LoginPage() {
         title: 'Uh oh! Something went wrong.',
         description: 'There was a problem with Google Sign-In.',
       });
+      setGoogleLoading(false);
     }
   };
+
+  if (isGoogleLoading) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      )
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -124,7 +166,8 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="grid grid-cols-1">
-            <Button variant="outline" onClick={handleGoogleSignIn}>
+            <Button variant="outline" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Google
             </Button>
           </div>
