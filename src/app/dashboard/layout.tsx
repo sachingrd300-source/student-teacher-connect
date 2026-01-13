@@ -20,6 +20,7 @@ import { Bell, User } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BottomNav } from '@/components/bottom-nav';
 
 type Role = 'teacher' | 'student' | 'admin';
 
@@ -104,7 +105,7 @@ export default function DashboardLayout({
           <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b">
             <div className="container mx-auto flex h-16 items-center justify-between px-6">
               <div className="flex items-center gap-4">
-                <SidebarTrigger className="md:hidden" />
+                <SidebarTrigger className="hidden md:flex" />
                 <h2 className="text-2xl font-semibold font-headline hidden sm:block">
                   Dashboard
                 </h2>
@@ -131,7 +132,8 @@ export default function DashboardLayout({
               </div>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+          <main className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8">{children}</main>
+           <BottomNav role={role} />
         </SidebarInset>
       </div>
     </SidebarProvider>
