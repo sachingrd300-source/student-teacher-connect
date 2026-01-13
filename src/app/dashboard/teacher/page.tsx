@@ -24,6 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
 import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2 } from "lucide-react";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 type ClassType = {
   id: string;
@@ -66,7 +68,8 @@ export default function TeacherPage() {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, "classes"),
-      where("teacherId", "==", user.uid)
+      where("teacherId", "==", user.uid),
+      orderBy("createdAt", "desc")
     );
   }, [firestore, user]);
 
@@ -83,7 +86,8 @@ export default function TeacherPage() {
     if (!firestore || !user) return null;
     return query(
         collection(firestore, "studyMaterials"),
-        where("teacherId", "==", user.uid)
+        where("teacherId", "==", user.uid),
+        orderBy('createdAt', 'desc')
     );
   }, [firestore, user]);
   
@@ -109,24 +113,31 @@ export default function TeacherPage() {
     }
     setIsCreatingClass(true);
     
-    try {
-        const classCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        await addDoc(collection(firestore, "classes"), {
-            subject: classSubject,
-            classLevel,
-            classCode,
-            teacherId: user.uid,
-            createdAt: serverTimestamp(),
-        });
-
+    const newClassData = {
+        subject: classSubject,
+        classLevel,
+        classCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        teacherId: user.uid,
+        createdAt: serverTimestamp(),
+    };
+    
+    const classesCollection = collection(firestore, "classes");
+    addDoc(classesCollection, newClassData)
+    .then(() => {
         toast({ title: "Success!", description: "Class created successfully." });
         setClassSubject("");
         setClassLevel("");
-    } catch (e: any) {
-        toast({ variant: "destructive", title: "Error", description: e.message });
-    } finally {
+    })
+    .catch((error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: classesCollection.path,
+            operation: 'create',
+            requestResourceData: newClassData,
+        }));
+    })
+    .finally(() => {
         setIsCreatingClass(false);
-    }
+    });
   };
 
   const handleCopyCode = (code: string) => {
@@ -208,7 +219,7 @@ export default function TeacherPage() {
                 {classes?.slice(0, 5).map((c) => (
                   <div
                     key={c.id}
-                    className="border p-3 rounded-lg bg-muted/30 flex justify-between items-center"
+                    className="border p-3 rounded-lg bg-muted/30 flex justify-between items-center transition-colors"
                   >
                     <div>
                         <p className="font-semibold text-base">
