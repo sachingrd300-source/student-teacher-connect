@@ -1,11 +1,23 @@
 
 'use client';
 
-import { auth, firestore } from './firebase';
+import { useMemo } from 'react';
+
+import { auth, firestore, initializeFirebase } from './firebase';
+
 import { useUser } from './auth';
 import { useCollection } from './firestore/use-collection';
 import { useDoc } from './firestore/use-doc';
-import { useMemo } from 'react';
+
+import {
+  FirebaseProvider,
+  useFirebase,
+  useFirebaseApp,
+  useFirestore,
+  useAuth,
+} from './provider';
+import { FirebaseClientProvider } from './client-provider';
+
 
 // A simple wrapper around React's useMemo to make it more explicit for Firebase queries.
 // This helps prevent re-renders by ensuring the query object is stable.
@@ -14,18 +26,18 @@ const useMemoFirebase = <T>(factory: () => T | null, deps: React.DependencyList)
     return useMemo(factory, deps);
 }
 
-const useFirestore = () => firestore;
-const useAuth = () => auth;
-
 export {
     auth,
     firestore,
-    useAuth,
-    useFirestore,
+    initializeFirebase,
+    FirebaseProvider,
+    FirebaseClientProvider,
     useUser,
     useCollection,
     useDoc,
     useMemoFirebase,
+    useFirebase,
+    useFirebaseApp,
+    useFirestore,
+    useAuth,
 };
-
-    
