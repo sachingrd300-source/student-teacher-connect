@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -106,7 +106,7 @@ export default function EnrollmentsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const enrollmentsQuery = useMemo(() => {
+    const enrollmentsQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
