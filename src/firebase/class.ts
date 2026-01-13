@@ -1,48 +1,33 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { auth, firestore } from './firebase';
 
-type ClassData = {
-  subject: string;
-  classLevel: string;
-  batchTime: string;
-};
+import { addDoc, collection, serverTimestamp, Firestore } from "firebase/firestore";
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Creates a new class document in Firestore for the currently logged-in teacher.
- * @param classData - The data for the new class.
- * @returns The unique class code for the newly created class.
- * @throws An error if the user is not authenticated.
+ * Creates a new class document in Firestore.
+ * @param firestore - The Firestore instance.
+ * @param teacherId - The UID of the teacher creating the class.
+ * @param subject - The subject of the class.
+ * @param classLevel - The level of the class (e.g., "9-10").
  */
-export async function createClass(classData: ClassData): Promise<string> {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error('User not authenticated. Cannot create class.');
+export async function createClass(
+  firestore: Firestore,
+  teacherId: string,
+  subject: string,
+  classLevel: string
+) {
+  if (!teacherId) {
+    throw new Error("User not logged in");
   }
 
-  const { subject, classLevel, batchTime } = classData;
+  // Generate a unique, human-readable-ish class code
+  const classCode = uuidv4().slice(0, 6).toUpperCase();
 
-  if (!subject || !classLevel) {
-    throw new Error('Subject and class level are required to create a class.');
-  }
-
-  // Generate a unique, human-readable class code
-  const classCode = `${subject
-    .substring(0, 4)
-    .toUpperCase()}${classLevel.replace(/\s/g, '')}-${Math.floor(
-    1000 + Math.random() * 9000
-  )}`;
-
-  const newClassDoc = {
-    teacherId: user.uid,
+  await addDoc(collection(firestore, "classes"), {
+    teacherId,
     subject,
     classLevel,
-    batchTime,
     classCode,
-    createdAt: serverTimestamp(),
     isActive: true,
-  };
-
-  await addDoc(collection(firestore, 'classes'), newClassDoc);
-
-  return classCode;
+    createdAt: serverTimestamp()
+  });
 }
