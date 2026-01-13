@@ -125,7 +125,7 @@ export default function MaterialsPage() {
     const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
-    const materialsQuery = useMemo(() => {
+    const materialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
@@ -347,14 +347,13 @@ export default function MaterialsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading && (
+                            {isLoading ? (
                                 <>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
                                 </>
-                            )}
-                            {!isLoading && materials && materials.length > 0 ? (
+                            ) : materials && materials.length > 0 ? (
                                 materials.map((material) => (
                                     <TableRow key={material.id}>
                                         <TableCell className="font-medium">{material.title}</TableCell>
@@ -396,7 +395,7 @@ export default function MaterialsPage() {
                                         </TableCell>
                                     </TableRow>
                                 ))
-                            ) : !isLoading && (
+                            ) : (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-24 text-center">
                                         You haven't uploaded any materials yet.
@@ -410,3 +409,5 @@ export default function MaterialsPage() {
         </div>
     );
 }
+
+    
