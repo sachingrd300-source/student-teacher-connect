@@ -31,8 +31,7 @@ import { BarChart3, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, orderBy, serverTimestamp, doc, Timestamp, addDoc } from 'firebase/firestore';
 
 
 type StudentEnrollment = { id: string; studentName: string; studentId: string; };
@@ -110,7 +109,7 @@ export default function PerformancePage() {
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 
 
-    const handleAddResult = () => {
+    const handleAddResult = async () => {
         if (!selectedStudentId || !testName || !subject || marks === '' || maxMarks === '' || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
             return;
@@ -134,16 +133,19 @@ export default function PerformancePage() {
             date: serverTimestamp(),
         };
         
-        const performanceCollection = collection(firestore, 'performances');
-        addDocumentNonBlocking(performanceCollection, newResult);
-
-        toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
-        
-        // Reset form but keep class and subject
-        setSelectedStudentId('');
-        setTestName('');
-        setMarks('');
-        setMaxMarks('');
+        try {
+            await addDoc(collection(firestore, 'performances'), newResult);
+            toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
+            
+            // Reset form but keep class and subject
+            setSelectedStudentId('');
+            setTestName('');
+            setMarks('');
+            setMaxMarks('');
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not add result.' });
+            console.error("Error adding performance result: ", error);
+        }
     }
     
     const displayedResults = useMemo(() => {
@@ -256,4 +258,5 @@ export default function PerformancePage() {
             </div>
         </div>
     );
-}
+
+    
