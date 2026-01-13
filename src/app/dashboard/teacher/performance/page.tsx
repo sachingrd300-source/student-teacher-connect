@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -68,7 +67,7 @@ export default function PerformancePage() {
     const [marks, setMarks] = useState<number | ''>('');
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
     
-    const userProfileQuery = useMemo(() => {
+    const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
@@ -117,10 +116,14 @@ export default function PerformancePage() {
         }
         
         const student = students?.find(s => s.studentId === selectedStudentId);
+        if (!student) {
+            toast({ variant: 'destructive', title: 'Student not found', description: 'Could not find the selected student.' });
+            return;
+        }
 
         const newResult = {
-            studentId: student?.studentId,
-            studentName: student?.studentName,
+            studentId: student.studentId,
+            studentName: student.studentName,
             teacherId: user.uid,
             classId: selectedClassId,
             testName,
@@ -187,7 +190,7 @@ export default function PerformancePage() {
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
                                     {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
-                                    {students?.map(s => <SelectItem key={s.studentId} value={s.studentId}>{s.studentName}</SelectItem>)}
+                                    {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
                                      {!isLoadingStudents && students?.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
                                 </SelectContent>
                             </Select>

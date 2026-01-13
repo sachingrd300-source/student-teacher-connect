@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -152,7 +151,7 @@ service cloud.firestore {
       // Anyone signed in can view individual marketplace items
       allow get: if isSignedIn();
       
-      // Allow listing available items, or a user listing their own items
+      // Allow listing available items, or a user listing their own items, or admin listing pending items
       allow list: if isAdmin() || (isSignedIn() && ((request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid) || (request.query.where[0][0] == 'status' && request.query.where[0][2] == 'pending')));
 
       // An approved student seller can create a listing for themselves.
@@ -163,7 +162,7 @@ service cloud.firestore {
       // The seller can delete their own item.
       allow update: if (isExistingDoc() && resource.data.sellerId == request.auth.uid &&
                         (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold'])) ||
-                     (isAdmin() && request.resource.data.status == 'available' && resource.data.status == 'pending');
+                     (isAdmin() && request.resource.data.status in ['available', 'sold'] && resource.data.status == 'pending');
       allow delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
     }
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -21,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, UserCheck, Check, X, PackageCheck, Clock, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,7 +28,7 @@ type UserProfile = {
     id: string;
     name: string;
     email: string;
-    status: 'pending_verification' | 'approved';
+    status: 'pending_verification' | 'approved' | 'denied';
     createdAt: { toDate: () => Date };
 };
 
@@ -46,7 +45,7 @@ export default function AdminDashboardPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    const pendingTutorsQuery = useMemo(() => {
+    const pendingTutorsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
             collection(firestore, 'users'),
@@ -55,7 +54,7 @@ export default function AdminDashboardPage() {
         );
     }, [firestore]);
 
-    const pendingItemsQuery = useMemo(() => {
+    const pendingItemsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
             collection(firestore, 'marketplaceItems'),
@@ -81,18 +80,20 @@ export default function AdminDashboardPage() {
         }
     };
     
-    const handleItemApproval = async (itemId: string) => {
+    const handleItemApproval = async (itemId: string, approve: boolean) => {
         if (!firestore) return;
         const itemRef = doc(firestore, 'marketplaceItems', itemId);
         try {
-            await updateDoc(itemRef, { status: 'available' });
+            // Setting to 'denied' or another status could be an option for rejection
+            const newStatus = approve ? 'available' : 'sold'; 
+            await updateDoc(itemRef, { status: newStatus });
             toast({
-                title: `Item Approved`,
-                description: `The item is now available in the marketplace.`
+                title: `Item ${approve ? 'Approved' : 'Rejected'}`,
+                description: `The item is now ${approve ? 'available in the marketplace' : 'removed'}.`
             });
         } catch (error) {
             console.error("Error approving item:", error);
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not approve the item.' });
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update the item status.' });
         }
     };
 
@@ -163,9 +164,14 @@ export default function AdminDashboardPage() {
                                         <TableCell className="font-medium">{item.title}</TableCell>
                                         <TableCell>{item.sellerName}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button size="sm" variant="outline" onClick={() => handleItemApproval(item.id)}>
-                                                <PackageCheck className="mr-2 h-4 w-4" /> Approve Item
-                                            </Button>
+                                            <div className="flex gap-2 justify-end">
+                                                <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleItemApproval(item.id, true)}>
+                                                    <Check className="mr-2 h-4 w-4" /> Approve
+                                                </Button>
+                                                 <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleItemApproval(item.id, false)}>
+                                                   <X className="mr-2 h-4 w-4" /> Deny
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}

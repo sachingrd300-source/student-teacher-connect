@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -10,7 +9,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { CalendarDays, Video, MapPin } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +55,7 @@ export default function StudentSchedulePage() {
     }, [enrollments]);
 
     const schedulesQuery = useMemoFirebase(() => {
+        // We need at least one teacherId to query, otherwise 'in' queries fail.
         if (!firestore || teacherIds.length === 0) return null;
         return query(
             collection(firestore, 'classSchedules'),
@@ -68,6 +67,7 @@ export default function StudentSchedulePage() {
 
     const { data: allSchedules, isLoading: isLoadingSchedules } = useCollection<ScheduleItem>(schedulesQuery);
     
+    // Once all schedules from their teachers are loaded, we filter them down to only the classes the student is enrolled in.
     const studentSchedules = useMemo(() => {
         if (!allSchedules || !enrollments) return [];
         const enrolledClassIds = new Set(enrollments.map(e => e.classId));
@@ -76,7 +76,7 @@ export default function StudentSchedulePage() {
         );
     }, [allSchedules, enrollments]);
 
-    const finalIsLoading = isLoadingEnrollments || isLoadingSchedules;
+    const finalIsLoading = isLoadingEnrollments || (teacherIds.length > 0 && isLoadingSchedules);
 
     return (
         <div className="space-y-6">
