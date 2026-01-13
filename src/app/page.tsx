@@ -1,9 +1,11 @@
+
 'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
 import { User, GraduationCap, CheckCircle, ArrowRight } from 'lucide-react';
+import { Icons } from '@/components/icons';
 
 export default function LandingPage() {
   return (
@@ -20,6 +22,9 @@ export default function LandingPage() {
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
                     EduConnect Pro provides seamless tools for teachers to manage classes and for students to find the best tutors.
+                  </p>
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl pt-2">
+                    Earn by selling your notes, books, and other materials. Both students and teachers can become sellers in our marketplace.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
