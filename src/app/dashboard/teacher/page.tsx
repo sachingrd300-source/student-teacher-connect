@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -466,9 +465,9 @@ export default function TeacherDashboardPage() {
                 </TableBody>
               </Table>
             ) : !isLoading && (
-              <p className="text-sm text-center text-muted-foreground py-8">
+              <div className="text-sm text-center text-muted-foreground py-8">
                 You haven't created any classes yet.
-              </p>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -38,8 +38,7 @@ import { Button } from '@/components/ui/button';
 import { MoreVertical, Users2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, doc, orderBy } from 'firebase/firestore';
-import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, where, doc, orderBy, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
@@ -66,8 +65,13 @@ export default function BatchesPage() {
     const handleDeleteBatch = (batchId: string) => {
         if(!firestore) return;
         const batchRef = doc(firestore, 'classes', batchId);
-        deleteDocumentNonBlocking(batchRef);
-        toast({ title: 'Class Deleted', description: 'The selected class has been removed.' });
+        deleteDoc(batchRef)
+            .then(() => {
+                toast({ title: 'Class Deleted', description: 'The selected class has been removed.' });
+            })
+            .catch(error => {
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not delete class.' });
+            });
     };
 
     return (
@@ -88,7 +92,7 @@ export default function BatchesPage() {
             <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Your Classes</CardTitle>
-                    <CardDescription>A list of all the student classes you have created.</CardDescription>
+                    <CardDescription>A list of all the student classes (batches) you have created.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-12 mb-2 w-full" />)}
@@ -113,8 +117,8 @@ export default function BatchesPage() {
                                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem disabled>View Students</DropdownMenuItem>
                                                         <DropdownMenuItem disabled>Edit Name</DropdownMenuItem>
-                                                        <DropdownMenuItem disabled>Assign Students</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 !cursor-pointer">
@@ -128,7 +132,7 @@ export default function BatchesPage() {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the class.
+                                                            This action cannot be undone. This will permanently delete the class. Any enrolled students will be removed.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>

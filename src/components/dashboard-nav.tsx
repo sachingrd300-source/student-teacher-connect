@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -31,8 +30,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-// Auth functionality is temporarily removed
-// import { logout } from '@/firebase/auth';
+import { auth } from '@/firebase/firebase';
 
 type Role = 'teacher' | 'student' | 'admin';
 
@@ -112,8 +110,7 @@ export function DashboardNav({ role }: { role: Role }) {
   }, []);
 
   const handleLogout = async () => {
-    // Auth functionality is temporarily removed
-    // await logout();
+    await auth.signOut();
     router.push('/');
   };
 

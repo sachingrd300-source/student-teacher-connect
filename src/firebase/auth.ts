@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -91,7 +90,3 @@ export const setupRecaptcha = (containerId: string) => {
 export const sendOtp = (phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {
     return signInWithPhoneNumber(auth, phoneNumber, appVerifier);
 };
-
-
-// Re-exporting auth for convenience if needed elsewhere, though direct use is discouraged.
-export { auth };
