@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
 import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star } from 'lucide-react';
-import { Icons } from '@/components/icons';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { Card, CardContent } from '@/components/ui/card';
@@ -260,7 +259,7 @@ export default function LandingPage() {
                         <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
                             <div className="p-1">
                             <Card className="overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105">
-                                <CardContent className="flex flex-col aspect-square items-start justify-end p-0">
+                                <CardContent className="flex flex-col aspect-[4/3] items-start justify-end p-0">
                                     <Image 
                                         src={ad.imageUrl} 
                                         alt={ad.title} 
