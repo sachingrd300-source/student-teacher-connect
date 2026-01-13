@@ -1,51 +1,68 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
-    --background: 222 47% 6%; /* Dark Navy */
+    --background: 222 47% 11.0%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
+ 
+    --card: 222 47% 11.0%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 6%;
+ 
+    --popover: 222 47% 11.0%;
     --popover-foreground: 210 40% 98%;
-    --primary: 243 95% 68%; /* Indigo Blue */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 262 83% 64%; /* Soft Purple */
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11.0%;
+ 
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 222 47% 11%;
-    --muted-foreground: 222 47% 65%;
-    --accent: 142 71% 45%; /* Fresh Green */
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 63% 40%;
+ 
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 222 47% 11%;
-    --input: 222 47% 11%;
-    --ring: 243 95% 68%;
-    --radius: 1rem;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 210 40% 98%;
+ 
+    --radius: 0.5rem;
   }
  
   .dark {
-    --background: 222 47% 6%; /* Dark Navy */
+    --background: 222 47% 11.0%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
+ 
+    --card: 222 47% 11.0%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 6%;
+ 
+    --popover: 222 47% 11.0%;
     --popover-foreground: 210 40% 98%;
-    --primary: 243 95% 68%; /* Indigo Blue */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 262 83% 64%; /* Soft Purple */
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11.0%;
+ 
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 222 47% 11%;
-    --muted-foreground: 222 47% 65%;
-    --accent: 142 71% 45%; /* Fresh Green */
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 63% 40%;
+ 
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 222 47% 11%;
-    --input: 222 47% 11%;
-    --ring: 243 95% 68%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 210 40% 98%;
   }
 }
  
@@ -55,85 +72,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer utilities {
-  .bg-grid-pattern {
-    background-image:
-      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
-    background-size: 2rem 2rem;
+  .shadow-soft-shadow {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
-  
-  .text-shadow-lg {
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-  }
-
-  @keyframes aurora {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  .aurora-viz {
-    background: radial-gradient(ellipse at 20% 20%, hsl(var(--primary) / 0.5) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 30%, hsl(var(--secondary) / 0.5) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, hsl(var(--primary) / 0.3) 0%, transparent 50%);
-    background-size: 400% 400%;
-    animation: aurora 8s ease infinite;
-  }
-
-  @keyframes multi-color-blink {
-    0%, 100% { color: hsl(var(--foreground) / 0.8); }
-    15% { color: hsl(var(--primary)); }
-    30% { color: hsl(var(--accent)); }
-    45% { color: hsl(var(--secondary)); }
-    60% { color: hsl(0, 0%, 98% / 0.9); }
-    75% { color: hsl(var(--accent)); }
-    90% { color: hsl(var(--primary)); }
-  }
-
-  .animation-multi-color-blink {
-    animation: multi-color-blink 4s ease-in-out infinite;
-  }
-
-  .floating-icon {
-      position: absolute;
-      bottom: -50px;
-      color: hsl(var(--foreground) / 0.1);
-      font-size: 2rem;
-      animation: rise-and-fade linear infinite;
-  }
-
-  .floating-icon svg {
-      width: 2rem;
-      height: 2rem;
-  }
-
-  @keyframes rise-and-fade {
-      0% {
-          transform: translateY(0);
-          opacity: 0;
-      }
-      10% {
-          opacity: 1;
-      }
-      90% {
-          opacity: 1;
-      }
-      100% {
-          transform: translateY(-100vh);
-          opacity: 0;
-      }
-  }
-
 }
