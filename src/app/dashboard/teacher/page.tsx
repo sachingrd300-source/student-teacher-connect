@@ -8,9 +8,10 @@ import {
   where,
   addDoc,
   serverTimestamp,
-  orderBy
+  orderBy,
+  doc
 } from "firebase/firestore";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,7 +34,12 @@ type ClassType = {
   subject: string;
   classLevel: string;
   classCode: string;
+  title: string;
 };
+
+type UserProfile = {
+    name: string;
+}
 
 type Enrollment = {
   studentId: string;
@@ -63,6 +69,14 @@ export default function TeacherPage() {
   const [classSubject, setClassSubject] = useState("");
   const [classLevel, setClassLevel] = useState("");
   const [isCreatingClass, setIsCreatingClass] = useState(false);
+
+  // Get teacher's profile to access name
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+
 
   // Queries for stats
   const classesQuery = useMemoFirebase(() => {
@@ -103,21 +117,24 @@ export default function TeacherPage() {
 
 
   const handleCreateClass = async () => {
-    if (!classSubject || !classLevel || !firestore || !user) {
+    if (!classSubject || !classLevel || !firestore || !user || !userProfile) {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Please provide subject and level.",
+        description: "Please provide subject, level, and ensure you are logged in.",
       });
       return;
     }
     setIsCreatingClass(true);
     
     const newClassData = {
+        title: `${classSubject} - ${classLevel}`,
         subject: classSubject,
         classLevel,
         classCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         teacherId: user.uid,
+        teacherName: userProfile.name || "Unnamed Teacher",
+        isActive: true,
         createdAt: serverTimestamp(),
     };
     
@@ -223,7 +240,7 @@ export default function TeacherPage() {
                   >
                     <div>
                         <p className="font-semibold text-base">
-                        {c.subject} - {c.classLevel}
+                        {c.title}
                         </p>
                          <p className="text-xs text-muted-foreground">ID: {c.id}</p>
                     </div>

@@ -91,16 +91,13 @@
       ]
     },
     {
-      "collectionGroup": "classSchedules",
+      "collectionGroup": "classes",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "teacherId", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "date", "order": "ASCENDING" }
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ],
   "fieldOverrides": []
 }
-
-    

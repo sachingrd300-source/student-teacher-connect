@@ -94,6 +94,10 @@
           "type": "string",
           "description": "The ID of the teacher who created the class."
         },
+        "teacherName": {
+            "type": "string",
+            "description": "The name of the teacher who created the class."
+        },
         "subject": {
           "type": "string",
           "description": "The subject of the class."
@@ -101,6 +105,10 @@
         "classLevel": {
           "type": "string",
           "description": "The level of the class (e.g., 9-10, 11-12)."
+        },
+        "title": {
+            "type": "string",
+            "description": "The title of the class, e.g. 'Math Class 8'"
         },
         "batchTime": {
             "type": "string",
@@ -110,6 +118,10 @@
           "type": "string",
           "description": "A unique, shareable code for students to join the class."
         },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether the class is active and visible to students."
+        },
         "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -117,9 +129,12 @@
       },
       "required": [
         "teacherId",
+        "teacherName",
+        "title",
         "subject",
         "classLevel",
         "classCode",
+        "isActive",
         "createdAt"
       ]
     },
