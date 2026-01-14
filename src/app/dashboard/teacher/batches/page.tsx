@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -51,15 +51,9 @@ type Batch = {
 };
 
 export default function BatchesPage() {
-  const [batches, setBatches] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-useEffect(() => {
-  console.log("user:",user);
-  console.log("UID:", user?.uid);
-
-} ,[user]); 
-  
-
+  const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   // 📌 Firestore query
   const batchesQuery = useMemoFirebase(() => {
@@ -67,7 +61,8 @@ useEffect(() => {
 
     return query(
       collection(firestore, 'classes'),
-      where('teacherId', '==', user.uid)
+      where('teacherId', '==', user.uid),
+      orderBy('createdAt', 'desc')
     );
   }, [firestore, user?.uid]);
 
