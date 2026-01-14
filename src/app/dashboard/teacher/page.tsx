@@ -177,9 +177,9 @@ export default function TeacherPage() {
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatCard title="Total Classes" value={classes?.length ?? 0} icon={<Users2 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoading} />
-          <StatCard title="Total Students" value={totalStudents} icon={<BarChart3 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoading} />
-          <StatCard title="Materials Uploaded" value={materials?.length ?? 0} icon={<BookOpenCheck className="h-5 w-5 text-muted-foreground" />} isLoading={isLoading} />
+          <StatCard title="Total Classes" value={classes?.length ?? 0} icon={<Users2 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingClasses} />
+          <StatCard title="Total Students" value={totalStudents} icon={<BarChart3 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingEnrollments} />
+          <StatCard title="Materials Uploaded" value={materials?.length ?? 0} icon={<BookOpenCheck className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingMaterials} />
        </div>
 
 
