@@ -1,206 +1,114 @@
-
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+} from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Users2, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, orderBy, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
+import { Copy, Users2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type Batch = {
   id: string;
-  subject: string;
-  classLevel: string;
-  createdAt?: { toDate: () => Date };
+  title?: string;
+  subject?: string;
+  classLevel?: string;
+  classCode?: string;
+  batchTime?: string;
 };
 
 export default function BatchesPage() {
-  const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
-  // 📌 Firestore query
   const batchesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-
+    if (!firestore || !user?.uid) {
+      return null;
+    }
+    // This query now includes the required 'where' clause to satisfy security rules.
     return query(
       collection(firestore, 'classes'),
       where('teacherId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user]);
 
   const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
-
-  // 🗑 Delete class
-  const handleDeleteBatch = async (batchId: string) => {
-    if (!firestore) return;
-
-    try {
-      await deleteDoc(doc(firestore, 'classes', batchId));
-      toast({
-        title: 'Class Deleted',
-        description: 'The selected class has been removed.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not delete class.',
-      });
-    }
+  
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: 'Copied!', description: 'Class code copied to clipboard.' });
   };
+
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-            <Users2 className="h-8 w-8" />
-            Manage Classes
-          </h1>
-          <p className="text-muted-foreground">
-            View and manage your student classes.
-          </p>
+       <div>
+            <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
+                <Users2 className="h-8 w-8"/>
+                Manage Classes
+            </h1>
+            <p className="text-muted-foreground">View and manage all your created classes.</p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/teacher">Create Class</Link>
-        </Button>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Classes</CardTitle>
-          <CardDescription>
-            A list of all the student classes you have created.
-          </CardDescription>
-        </CardHeader>
+        {isLoading && (
+            <div className="grid md:grid-cols-2 gap-6">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+        )}
 
-        <CardContent>
-          {isLoading &&
-            Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 mb-2 w-full" />
+      {!isLoading && batches && batches.length === 0 && (
+         <Card className="shadow-soft-shadow">
+            <CardContent className="py-12 text-center text-muted-foreground">
+                <p className="font-semibold text-lg">No Classes Found</p>
+                <p>You haven't created any classes yet.</p>
+            </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && batches && batches.length > 0 && (
+         <div className="grid md:grid-cols-2 gap-6">
+            {batches.map((b) => (
+            <Card
+                key={b.id}
+                className="shadow-soft-shadow"
+            >
+                <CardHeader>
+                    <CardTitle>{b.title || 'Untitled Class'}</CardTitle>
+                    <CardDescription>{b.batchTime ? `Batch time: ${b.batchTime}` : `Subject: ${b.subject}`}</CardDescription>
+                </CardHeader>
+                <CardFooter className="flex justify-between items-center">
+                   <div className="text-right">
+                        <p className="text-sm font-medium text-muted-foreground">Join Code:</p>
+                        <div className="flex items-center gap-2">
+                             <p className="font-mono text-lg text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{b.classCode}</p>
+                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => b.classCode && handleCopyCode(b.classCode)}>
+                                <Copy className="h-4 w-4"/>
+                             </Button>
+                        </div>
+                    </div>
+                </CardFooter>
+            </Card>
             ))}
-
-          {!isLoading && batches && batches.length === 0 && (
-            <p className="text-sm text-center text-muted-foreground py-8">
-              You haven't created any classes yet.
-            </p>
-          )}
-
-          {batches && batches.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Class Name</TableHead>
-                  <TableHead>Created On</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {batches.map((batch) => (
-                  <TableRow key={batch.id}>
-                    <TableCell className="font-medium">
-                      {batch.subject} - {batch.classLevel}
-                    </TableCell>
-
-                    <TableCell>
-                      {batch.createdAt
-                        ? batch.createdAt.toDate().toLocaleDateString()
-                        : '—'}
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      <AlertDialog>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem disabled>
-                              View Students
-                            </DropdownMenuItem>
-                            <DropdownMenuItem disabled>
-                              Edit Name
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Class
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Are you sure?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteBatch(batch.id)}
-                              className="bg-destructive"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }
