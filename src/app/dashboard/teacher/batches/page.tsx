@@ -51,9 +51,15 @@ type Batch = {
 };
 
 export default function BatchesPage() {
-  const { toast } = useToast();
-  const { user } = useUser();
-  const firestore = useFirestore();
+  const [batches, setBatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+useEffect(() => {
+  console.log("user:",user);
+  console.log("UID:", user?.uid);
+
+} ,[user]); 
+  
+
 
   // 📌 Firestore query
   const batchesQuery = useMemoFirebase(() => {
