@@ -68,6 +68,7 @@ export default function TeacherPage() {
 
   const [classSubject, setClassSubject] = useState("");
   const [classLevel, setClassLevel] = useState("");
+  const [batchTime, setBatchTime] = useState("");
   const [isCreatingClass, setIsCreatingClass] = useState(false);
 
   // Get teacher's profile to access name
@@ -131,6 +132,7 @@ export default function TeacherPage() {
         title: `${classSubject} - ${classLevel}`,
         subject: classSubject,
         classLevel,
+        batchTime: batchTime,
         classCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         teacherId: user.uid,
         teacherName: userProfile.name || "Unnamed Teacher",
@@ -144,6 +146,7 @@ export default function TeacherPage() {
         toast({ title: "Success!", description: "Class created successfully." });
         setClassSubject("");
         setClassLevel("");
+        setBatchTime("");
     })
     .catch((error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -200,6 +203,12 @@ export default function TeacherPage() {
               placeholder="Class Level (e.g. 11-12)"
               value={classLevel}
               onChange={(e) => setClassLevel(e.target.value)}
+              disabled={isCreatingClass}
+            />
+            <Input
+              placeholder="Batch Time (e.g. 7:00 AM)"
+              value={batchTime}
+              onChange={(e) => setBatchTime(e.target.value)}
               disabled={isCreatingClass}
             />
             <Button
