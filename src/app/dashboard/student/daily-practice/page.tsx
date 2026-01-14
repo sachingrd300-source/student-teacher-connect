@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, ClipboardList, CheckBadge } from 'lucide-react';
-import { useFirestore, useCollection, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
@@ -62,7 +62,7 @@ function MaterialRow({ paper }: { paper: StudyMaterial}) {
 export default function DailyPracticePage() {
   const firestore = useFirestore();
 
-  const dppQuery = useMemo(() => {
+  const dppQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     // Query for all public DPPs
     return query(
