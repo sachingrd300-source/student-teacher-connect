@@ -135,7 +135,7 @@ export default function TeacherPage() {
         batchTime: batchTime,
         classCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         teacherId: user.uid,
-        teacherName: userProfile.name || "Unnamed Teacher",
+        teacherName: userProfile.name,
         isActive: true,
         createdAt: serverTimestamp(),
     };
