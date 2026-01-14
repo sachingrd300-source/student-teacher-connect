@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -54,19 +55,13 @@ export default function BatchesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  // 🔍 DEBUG – Console check
-  useEffect(() => {
-    console.log('USER UID:', user?.uid);
-  }, [user]);
-
   // 📌 Firestore query
   const batchesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
 
     return query(
       collection(firestore, 'classes'),
-      where('teacherId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('teacherId', '==', user.uid)
     );
   }, [firestore, user?.uid]);
 
