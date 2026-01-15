@@ -24,6 +24,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type Enrollment = {
     id: string;
@@ -49,22 +51,24 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
     }, [firestore, enrollment.classId]);
     const { data: classInfo, isLoading: isLoadingClass } = useDoc<ClassInfo>(classQuery);
 
-    const handleUpdateStatus = async (status: 'approved' | 'denied') => {
+    const handleUpdateStatus = (status: 'approved' | 'denied') => {
         if (!firestore) return;
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        try {
-            await updateDoc(enrollmentRef, { status });
-            toast({
-                title: `Request ${status}`,
-                description: `The enrollment request from ${enrollment.studentName} has been ${status}.`
+        const updateData = { status };
+        updateDoc(enrollmentRef, updateData)
+            .then(() => {
+                toast({
+                    title: `Request ${status}`,
+                    description: `The enrollment request from ${enrollment.studentName} has been ${status}.`
+                });
+            })
+            .catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: enrollmentRef.path,
+                    operation: 'update',
+                    requestResourceData: updateData,
+                }));
             });
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Update Failed',
-                description: 'Could not update the enrollment status.'
-            });
-        }
     };
 
     if (isLoadingClass) {
@@ -78,7 +82,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
     return (
         <TableRow>
             <TableCell className="font-medium">{enrollment.studentName || 'Loading...'}</TableCell>
-            <TableCell>{classInfo?.subject} - {classInfo?.classLevel}</TableCell>
+            <TableCell>{classInfo ? `${classInfo.subject} - ${classInfo.classLevel}`: 'Loading class...'}</TableCell>
             <TableCell>{enrollment.createdAt.toDate().toLocaleDateString()}</TableCell>
             <TableCell>
                  <Badge variant={
@@ -129,7 +133,12 @@ export default function EnrollmentsPage() {
                     <CardDescription>Review and respond to student enrollment requests.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {isLoading && <p>Loading requests...</p>}
+                     {isLoading && (
+                        <div className="space-y-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                     )}
                      {!isLoading && enrollments && enrollments.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -148,7 +157,9 @@ export default function EnrollmentsPage() {
                             </TableBody>
                         </Table>
                      ) : !isLoading && (
-                        <p className="text-center text-muted-foreground py-8">No enrollment requests found.</p>
+                        <div className="text-center py-12 text-muted-foreground">
+                            <p>No enrollment requests found.</p>
+                        </div>
                      )}
                 </CardContent>
             </Card>
