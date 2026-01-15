@@ -89,6 +89,7 @@ export default function TeacherProfilePage() {
         setIsSaving(true);
         const userRef = doc(firestore, 'users', user.uid);
         
+        // Only include fields that are editable in the form
         const updatedData = {
             name: formData.name,
             coachingName: formData.coachingName,
