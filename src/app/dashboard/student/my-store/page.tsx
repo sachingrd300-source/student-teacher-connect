@@ -142,7 +142,11 @@ export default function MyStorePage() {
 
     const userListingsQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
-        return query(collection(firestore, 'marketplaceItems'), where('sellerId', '==', user.uid), orderBy('createdAt', 'desc'));
+        return query(
+            collection(firestore, 'marketplaceItems'), 
+            where('sellerId', '==', user.uid), 
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore, user]);
 
     const { data: listings, isLoading: isLoadingListings } = useCollection<MarketplaceItem>(userListingsQuery);
@@ -426,5 +430,6 @@ export default function MyStorePage() {
         </div>
     );
 }
+
 
     
