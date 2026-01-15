@@ -118,7 +118,7 @@ export default function MaterialsPage() {
     const [price, setPrice] = useState<number | ''>('');
 
 
-    const userProfileQuery = useMemo(() => {
+    const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
@@ -376,7 +376,7 @@ export default function MaterialsPage() {
                                                         <DropdownMenuItem disabled>Edit</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                             <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700 !cursor-pointer">
+                                                            <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-600 !cursor-pointer">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                                 Delete
                                                             </DropdownMenuItem>
@@ -412,13 +412,4 @@ export default function MaterialsPage() {
             </Card>
         </div>
     );
-
-    
-
-    
-
-    
-
-    
-
-    
+}
