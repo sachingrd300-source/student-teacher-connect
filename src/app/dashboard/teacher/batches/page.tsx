@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -42,9 +41,12 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, doc, orderBy, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type Batch = {
   id: string;
+  title: string;
   subject: string;
   classLevel: string;
   createdAt?: { toDate: () => Date };
@@ -69,22 +71,23 @@ export default function BatchesPage() {
   const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 
   // 🗑 Delete class
-  const handleDeleteBatch = async (batchId: string) => {
+  const handleDeleteBatch = (batchId: string) => {
     if (!firestore) return;
 
-    try {
-      await deleteDoc(doc(firestore, 'classes', batchId));
-      toast({
-        title: 'Class Deleted',
-        description: 'The selected class has been removed.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not delete class.',
-      });
-    }
+    const batchRef = doc(firestore, 'classes', batchId);
+    deleteDoc(batchRef)
+        .then(() => {
+            toast({
+                title: 'Class Deleted',
+                description: 'The selected class has been removed.',
+            });
+        })
+        .catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: batchRef.path,
+                operation: 'delete',
+            }));
+        });
   };
 
   return (
@@ -124,7 +127,7 @@ export default function BatchesPage() {
             </p>
           )}
 
-          {batches && batches.length > 0 && (
+          {!isLoading && batches && batches.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -138,7 +141,7 @@ export default function BatchesPage() {
                 {batches.map((batch) => (
                   <TableRow key={batch.id}>
                     <TableCell className="font-medium">
-                      {batch.subject} - {batch.classLevel}
+                      {batch.title || `${batch.subject} - ${batch.classLevel}`}
                     </TableCell>
 
                     <TableCell>
@@ -165,7 +168,7 @@ export default function BatchesPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <AlertDialogTrigger asChild>
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 !cursor-pointer">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Class
                               </DropdownMenuItem>
@@ -179,14 +182,14 @@ export default function BatchesPage() {
                               Are you sure?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone.
+                              This action cannot be undone and will permanently delete this class.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDeleteBatch(batch.id)}
-                              className="bg-destructive"
+                              className="bg-destructive hover:bg-destructive/90"
                             >
                               Delete
                             </AlertDialogAction>

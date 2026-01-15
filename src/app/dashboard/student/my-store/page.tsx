@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -68,7 +67,7 @@ type MarketplaceItem = {
 };
 
 type UserProfile = {
-    marketplaceStatus?: 'unverified' | 'pending' | 'approved';
+    marketplaceStatus?: 'unverified' | 'pending' | 'approved' | 'denied';
 }
 
 function BecomeSellerCard() {
@@ -81,7 +80,7 @@ function BecomeSellerCard() {
     const [address, setAddress] = useState('');
     const [aadharNo, setAadharNo] = useState('');
     
-    const handleApplyToSell = async () => {
+    const handleApplyToSell = () => {
         if (!firestore || !user || !address || !aadharNo) {
              toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
             return;
@@ -98,20 +97,21 @@ function BecomeSellerCard() {
             sellerPhotoUrl: `https://picsum.photos/seed/${user.uid}-seller/400/400`,
         };
 
-        try {
-            await updateDoc(userRef, verificationData);
+        updateDoc(userRef, verificationData)
+        .then(() => {
             toast({ title: 'Application Submitted!', description: 'Your request to become a seller has been sent for review.' });
             setIsOpen(false);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not submit your application. Please try again.'});
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
+        })
+        .catch(error => {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: userRef.path,
                 operation: 'update',
                 requestResourceData: verificationData
             }));
-        } finally {
+        })
+        .finally(() => {
             setIsApplying(false);
-        }
+        });
     }
 
 
@@ -179,6 +179,22 @@ function PendingVerificationCard() {
                     <CardTitle className="text-xl text-amber-800">Application Pending</CardTitle>
                     <CardDescription className="text-amber-700">
                         Your request to become a seller is under review. We'll notify you once it's approved.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
+
+function DeniedVerificationCard() {
+     return (
+        <Card className="bg-destructive/10 border-destructive/20 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <Info className="h-8 w-8 text-destructive"/>
+                <div>
+                    <CardTitle className="text-xl text-destructive">Application Not Approved</CardTitle>
+                    <CardDescription className="text-destructive/80">
+                        Unfortunately, your application was not approved. Please contact support if you have questions.
                     </CardDescription>
                 </div>
             </CardHeader>
@@ -280,7 +296,8 @@ export default function MyStorePage() {
     const handleUpdateStatus = (itemId: string, status: 'available' | 'sold') => {
         if(!firestore) return;
         const itemRef = doc(firestore, 'marketplaceItems', itemId);
-        updateDoc(itemRef, { status })
+        const updateData = { status };
+        updateDoc(itemRef, updateData)
             .then(() => {
                 toast({ title: 'Status Updated', description: `Item status changed to ${status}.` });
             })
@@ -290,7 +307,7 @@ export default function MyStorePage() {
                     new FirestorePermissionError({
                         path: itemRef.path,
                         operation: 'update',
-                        requestResourceData: { status },
+                        requestResourceData: updateData,
                     })
                 )
             });
@@ -476,6 +493,10 @@ export default function MyStorePage() {
 
         if (userProfile?.marketplaceStatus === 'pending') {
             return <PendingVerificationCard />;
+        }
+
+        if (userProfile?.marketplaceStatus === 'denied') {
+            return <DeniedVerificationCard />;
         }
         
         return <BecomeSellerCard />;

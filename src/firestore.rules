@@ -100,11 +100,9 @@ service cloud.firestore {
       // A teacher can list their own classes.
       // A student can query for a class by its code.
       // Any signed-in user can list active classes.
-      // A student can list the classes they are enrolled in.
       allow list: if (isSignedIn() && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
                      (isSignedIn() && request.query.where[0][0] == 'classCode' && request.query.where[0][2] is string) ||
-                     (isSignedIn() && request.query.where[0][0] == 'isActive' && request.query.where[0][2] == true) ||
-                     (isStudent() && request.query.where[0][0] == '__name__' && request.query.where[0][2] in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.enrolledClassIds);
+                     (isSignedIn() && request.query.where[0][0] == 'isActive' && request.query.where[0][2] == true);
                      
       allow create: if isApprovedTeacher()
                     && request.resource.data.teacherId == request.auth.uid;
@@ -128,8 +126,8 @@ service cloud.firestore {
             (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
           );
 
-        // A student can create their own enrollment request with a predictable ID
-        allow create: if isStudent()
+        // An authenticated user can create their own enrollment request with a predictable ID
+        allow create: if isSignedIn() 
                       && isStudentOwner(request.resource.data)
                       && enrollmentId == request.auth.uid + '_' + request.resource.data.classId;
 
