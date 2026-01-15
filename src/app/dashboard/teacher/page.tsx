@@ -31,10 +31,12 @@ import { FirestorePermissionError } from "@/firebase/errors";
 
 type ClassType = {
   id: string;
+  title: string;
   subject: string;
   classLevel: string;
+  batchTime: string;
   classCode: string;
-  title: string;
+  createdAt: { toDate: () => Date };
 };
 
 type UserProfile = {
@@ -284,7 +286,7 @@ function TeacherDashboardContent() {
                         <p className="font-semibold text-base">
                         {c.title}
                         </p>
-                         <p className="text-xs text-muted-foreground">ID: {c.id}</p>
+                         <p className="text-xs text-muted-foreground">{c.batchTime ? c.batchTime : "No time set"}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-sm font-medium text-muted-foreground">Join Code:</p>
@@ -300,7 +302,7 @@ function TeacherDashboardContent() {
               </div>
             )}
           </CardContent>
-          {classes && classes.length > 0 && (
+          {classes && classes.length > 5 && (
              <CardFooter>
                  <Button variant="outline" asChild className="w-full mt-4">
                     <Link href="/dashboard/teacher/batches">Manage All Classes</Link>
@@ -357,4 +359,3 @@ export default function TeacherPage() {
     );
 }
 
-    
