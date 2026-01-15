@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { User, Book, Briefcase, Mail, Phone, Edit, Info, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -56,7 +56,7 @@ export default function TeacherProfilePage() {
     const [isEditOpen, setEditOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const userProfileQuery = useMemo(() => {
+    const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
@@ -104,7 +104,6 @@ export default function TeacherProfilePage() {
             setEditOpen(false);
         })
         .catch(error => {
-            console.error("Failed to update profile:", error);
             errorEmitter.emit(
                 'permission-error',
                 new FirestorePermissionError({
@@ -113,7 +112,6 @@ export default function TeacherProfilePage() {
                     requestResourceData: updatedData,
                 })
             );
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save your changes. Check permissions.' });
         })
         .finally(() => {
             setIsSaving(false);
