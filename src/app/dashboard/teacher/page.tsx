@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
-import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2 } from "lucide-react";
+import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCircle, Info } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -39,6 +39,7 @@ type ClassType = {
 
 type UserProfile = {
     name: string;
+    status: 'pending_verification' | 'approved' | 'denied';
 }
 
 type Enrollment = {
@@ -61,7 +62,39 @@ const StatCard = ({ title, value, icon, isLoading }: { title: string, value: str
     </Card>
 );
 
-export default function TeacherPage() {
+function PendingVerificationCard() {
+    return (
+        <Card className="bg-amber-50 border-amber-200 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <Clock className="h-8 w-8 text-amber-600"/>
+                <div>
+                    <CardTitle className="text-xl text-amber-800">Application Pending Review</CardTitle>
+                    <CardDescription className="text-amber-700">
+                        Your profile has been submitted for verification. An administrator will review it shortly. You will be able to access the dashboard once your profile is approved.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
+
+function DeniedVerificationCard() {
+     return (
+        <Card className="bg-destructive/10 border-destructive/20 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <XCircle className="h-8 w-8 text-destructive"/>
+                <div>
+                    <CardTitle className="text-xl text-destructive">Application Not Approved</CardTitle>
+                    <CardDescription className="text-destructive/80">
+                        Unfortunately, your application to become a tutor was not approved at this time. Please contact support if you believe this is an error.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
+
+function TeacherDashboardContent() {
   const { toast } = useToast();
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -279,3 +312,48 @@ export default function TeacherPage() {
     </div>
   );
 }
+
+
+export default function TeacherPage() {
+    const { user, isLoading: isUserLoading } = useUser();
+    const firestore = useFirestore();
+
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+
+    const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
+    
+    const isLoading = isUserLoading || isLoadingProfile;
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+        );
+    }
+
+    if (userProfile?.status === 'pending_verification') {
+        return <PendingVerificationCard />;
+    }
+
+    if (userProfile?.status === 'denied') {
+        return <DeniedVerificationCard />;
+    }
+    
+    if (userProfile?.status === 'approved') {
+        return <TeacherDashboardContent />;
+    }
+
+    // Fallback case, though it shouldn't be reached if user profile is loaded
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+}
+
