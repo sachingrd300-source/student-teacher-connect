@@ -29,6 +29,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type TeacherProfileData = {
     id: string;
@@ -82,27 +84,40 @@ export default function TeacherProfilePage() {
         setFormData(prev => ({...prev, [id]: value}));
     }
 
-    const handleProfileUpdate = async () => {
+    const handleProfileUpdate = () => {
         if (!user || !firestore) return;
         setIsSaving(true);
         const userRef = doc(firestore, 'users', user.uid);
-        try {
-            await updateDoc(userRef, {
-                name: formData.name,
-                coachingName: formData.coachingName,
-                qualification: formData.qualification,
-                experience: formData.experience,
-                address: formData.address,
-                whatsappNumber: formData.whatsappNumber,
-            });
+        
+        const updatedData = {
+            name: formData.name,
+            coachingName: formData.coachingName,
+            qualification: formData.qualification,
+            experience: formData.experience,
+            address: formData.address,
+            whatsappNumber: formData.whatsappNumber,
+        };
+
+        updateDoc(userRef, updatedData)
+        .then(() => {
             toast({ title: 'Profile Updated', description: 'Your information has been successfully saved.' });
             setEditOpen(false);
-        } catch (error) {
+        })
+        .catch(error => {
             console.error("Failed to update profile:", error);
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save your changes.' });
-        } finally {
+            errorEmitter.emit(
+                'permission-error',
+                new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'update',
+                    requestResourceData: updatedData,
+                })
+            );
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save your changes. Check permissions.' });
+        })
+        .finally(() => {
             setIsSaving(false);
-        }
+        });
     };
     
     const isProfileIncomplete = !teacherProfile?.experience || !teacherProfile?.address || !teacherProfile?.qualification || !teacherProfile.whatsappNumber;
