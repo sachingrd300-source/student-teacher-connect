@@ -13,6 +13,7 @@ import {
   UserPlus,
   BookOpenCheck,
   ShieldCheck,
+  BookCopy,
 } from 'lucide-react';
 
 type Role = 'teacher' | 'student' | 'admin';
@@ -41,7 +42,7 @@ export function BottomNav({ role }: { role: Role }) {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
-      <div className="grid h-full max-w-lg grid-cols-4 mx-auto font-medium">
+      <div className={cn("grid h-full max-w-lg mx-auto font-medium", `grid-cols-${items.length}`)}>
         {items.map((item) => (
           <Link
             key={item.href}
