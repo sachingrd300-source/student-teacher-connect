@@ -27,10 +27,11 @@ export default function SignUpStudentPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!email || !password || !name) {
+    if (!email || !password || !name || !mobileNumber) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
@@ -46,6 +47,7 @@ export default function SignUpStudentPage() {
         id: user.uid,
         name: name,
         email: email,
+        mobileNumber: mobileNumber,
         role: 'student',
         status: 'approved', // Students are auto-approved
         marketplaceStatus: 'unverified',
@@ -103,6 +105,17 @@ export default function SignUpStudentPage() {
                 placeholder="Enter your full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mobileNumber">Mobile Number</Label>
+              <Input
+                id="mobileNumber"
+                type="tel"
+                placeholder="Enter your mobile number"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
                 disabled={isLoading}
               />
             </div>
