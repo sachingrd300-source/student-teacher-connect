@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -29,6 +30,10 @@ type UserProfile = {
     name: string;
     email: string;
     status: 'pending_verification' | 'approved' | 'denied';
+    role: 'tutor' | 'student';
+    marketplaceStatus?: 'pending' | 'approved';
+    aadharNumber?: string;
+    address?: string;
     createdAt: { toDate: () => Date };
 };
 
@@ -54,6 +59,15 @@ export default function AdminDashboardPage() {
         );
     }, [firestore]);
 
+    const pendingSellersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'users'),
+            where('role', '==', 'student'),
+            where('marketplaceStatus', '==', 'pending')
+        );
+    }, [firestore]);
+
     const pendingItemsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
@@ -63,20 +77,23 @@ export default function AdminDashboardPage() {
     }, [firestore]);
 
     const { data: pendingTutors, isLoading: isLoadingTutors } = useCollection<UserProfile>(pendingTutorsQuery);
+    const { data: pendingSellers, isLoading: isLoadingSellers } = useCollection<UserProfile>(pendingSellersQuery);
     const { data: pendingItems, isLoading: isLoadingItems } = useCollection<MarketplaceItem>(pendingItemsQuery);
     
-    const handleTutorVerification = async (tutorId: string, newStatus: 'approved' | 'denied') => {
+    const handleUserVerification = async (userId: string, newStatus: 'approved' | 'denied', type: 'tutor' | 'seller') => {
         if (!firestore) return;
-        const tutorRef = doc(firestore, 'users', tutorId);
+        const userRef = doc(firestore, 'users', userId);
+        const fieldToUpdate = type === 'tutor' ? 'status' : 'marketplaceStatus';
+
         try {
-            await updateDoc(tutorRef, { status: newStatus });
+            await updateDoc(userRef, { [fieldToUpdate]: newStatus });
             toast({
-                title: `Tutor ${newStatus === 'approved' ? 'Approved' : 'Denied'}`,
-                description: `The tutor's status has been updated.`
+                title: `${type === 'tutor' ? 'Tutor' : 'Seller'} ${newStatus === 'approved' ? 'Approved' : 'Denied'}`,
+                description: `The user's status has been updated.`
             });
         } catch (error) {
-            console.error("Error updating tutor status:", error);
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update tutor status.' });
+            console.error(`Error updating ${type} status:`, error);
+            toast({ variant: 'destructive', title: 'Update Failed', description: `Could not update ${type} status.` });
         }
     };
     
@@ -104,7 +121,7 @@ export default function AdminDashboardPage() {
                 Admin Control Panel
             </h1>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                 <Card className="shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><UserCheck className="h-6 w-6"/>Tutor Approvals</CardTitle>
@@ -127,10 +144,10 @@ export default function AdminDashboardPage() {
                                         <TableCell>{tutor.email}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex gap-2 justify-end">
-                                                <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleTutorVerification(tutor.id, 'approved')}>
+                                                <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleUserVerification(tutor.id, 'approved', 'tutor')}>
                                                     <Check className="mr-2 h-4 w-4" /> Approve
                                                 </Button>
-                                                <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleTutorVerification(tutor.id, 'denied')}>
+                                                <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleUserVerification(tutor.id, 'denied', 'tutor')}>
                                                    <X className="mr-2 h-4 w-4" /> Deny
                                                 </Button>
                                             </div>
@@ -145,7 +162,47 @@ export default function AdminDashboardPage() {
 
                  <Card className="shadow-soft-shadow">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Store className="h-6 w-6"/>Marketplace Approvals</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Store className="h-6 w-6"/>Seller Approvals</CardTitle>
+                        <CardDescription>Review student requests to become marketplace sellers.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Aadhaar</TableHead>
+                                    <TableHead>Address</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoadingSellers && <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
+                                {pendingSellers?.map(seller => (
+                                    <TableRow key={seller.id}>
+                                        <TableCell className="font-medium">{seller.name}</TableCell>
+                                        <TableCell>{seller.aadharNumber || 'N/A'}</TableCell>
+                                        <TableCell className="text-xs">{seller.address || 'N/A'}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex gap-2 justify-end">
+                                                <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleUserVerification(seller.id, 'approved', 'seller')}>
+                                                    <Check className="mr-2 h-4 w-4" /> Approve
+                                                </Button>
+                                                 <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleUserVerification(seller.id, 'denied', 'seller')}>
+                                                   <X className="mr-2 h-4 w-4" /> Deny
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        {!isLoadingSellers && pendingSellers?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending seller requests.</p>}
+                    </CardContent>
+                </Card>
+
+                 <Card className="shadow-soft-shadow lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><PackageCheck className="h-6 w-6"/>Marketplace Item Approvals</CardTitle>
                         <CardDescription>Review and approve new items listed by students.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -154,15 +211,17 @@ export default function AdminDashboardPage() {
                                 <TableRow>
                                     <TableHead>Item</TableHead>
                                     <TableHead>Seller</TableHead>
+                                    <TableHead>Price</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoadingItems && <TableRow><TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
+                                {isLoadingItems && <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
                                 {pendingItems?.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.title}</TableCell>
                                         <TableCell>{item.sellerName}</TableCell>
+                                        <TableCell>₹{item.price}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex gap-2 justify-end">
                                                 <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleItemApproval(item.id, true)}>

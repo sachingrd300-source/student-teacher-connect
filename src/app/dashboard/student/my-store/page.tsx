@@ -71,8 +71,52 @@ type UserProfile = {
     marketplaceStatus?: 'unverified' | 'pending' | 'approved';
 }
 
-function BecomeSellerCard({ onApply }: { onApply: () => void }) {
+function BecomeSellerCard() {
+    const { toast } = useToast();
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const [isOpen, setIsOpen] = useState(false);
+    const [isApplying, setIsApplying] = useState(false);
+
+    const [address, setAddress] = useState('');
+    const [aadharNo, setAadharNo] = useState('');
+    
+    const handleApplyToSell = async () => {
+        if (!firestore || !user || !address || !aadharNo) {
+             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
+            return;
+        }
+        setIsApplying(true);
+        const userRef = doc(firestore, 'users', user.uid);
+        
+        const verificationData = {
+            marketplaceStatus: 'pending' as const,
+            address: address,
+            aadharNumber: aadharNo,
+            // In a real app, you'd get these URLs from a file upload service
+            aadharPhotoUrl: `https://picsum.photos/seed/${user.uid}-aadhar/400/250`,
+            sellerPhotoUrl: `https://picsum.photos/seed/${user.uid}-seller/400/400`,
+        };
+
+        try {
+            await updateDoc(userRef, verificationData);
+            toast({ title: 'Application Submitted!', description: 'Your request to become a seller has been sent for review.' });
+            setIsOpen(false);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not submit your application. Please try again.'});
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'update',
+                requestResourceData: verificationData
+            }));
+        } finally {
+            setIsApplying(false);
+        }
+    }
+
+
     return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <Card className="shadow-soft-shadow">
             <CardHeader className="items-center text-center">
                  <ShieldCheck className="h-12 w-12 text-primary mb-2" />
@@ -85,9 +129,44 @@ function BecomeSellerCard({ onApply }: { onApply: () => void }) {
                 </p>
             </CardContent>
             <CardFooter className="justify-center">
-                <Button onClick={onApply}>Apply to Sell</Button>
+                <DialogTrigger asChild>
+                    <Button>Apply to Sell</Button>
+                </DialogTrigger>
             </CardFooter>
         </Card>
+
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Seller Verification</DialogTitle>
+                <DialogDescription>Please provide the following details for verification.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="aadharNo">Aadhaar Number</Label>
+                    <Input id="aadharNo" value={aadharNo} onChange={e => setAadharNo(e.target.value)} placeholder="Enter your 12-digit Aadhaar number" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="address">Full Address</Label>
+                    <Textarea id="address" value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter your full residential address" />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="aadharPhoto">Aadhaar Photo</Label>
+                    <Input id="aadharPhoto" type="file" />
+                    <p className="text-xs text-muted-foreground">Image upload is coming soon.</p>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="sellerPhoto">Your Photo</Label>
+                    <Input id="sellerPhoto" type="file" />
+                    <p className="text-xs text-muted-foreground">Image upload is coming soon.</p>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button onClick={handleApplyToSell} disabled={isApplying}>
+                    {isApplying ? 'Submitting...' : 'Submit Application'}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+        </Dialog>
     )
 }
 
@@ -120,7 +199,6 @@ function MyStoreSkeleton() {
 export default function MyStorePage() {
     const { toast } = useToast();
     const [isAddItemOpen, setAddItemOpen] = useState(false);
-    const [isApplying, setIsApplying] = useState(false);
     
     const { user } = useUser();
     const firestore = useFirestore();
@@ -160,26 +238,6 @@ export default function MyStorePage() {
         setItemType('');
         setAddItemOpen(false);
     }
-
-    const handleApplyToSell = async () => {
-        if (!firestore || !user) return;
-        setIsApplying(true);
-        const userRef = doc(firestore, 'users', user.uid);
-        try {
-            await updateDoc(userRef, { marketplaceStatus: 'pending' });
-            toast({ title: 'Application Submitted!', description: 'Your request to become a seller has been sent for review.' });
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not submit your application. Please try again.'});
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'update',
-                requestResourceData: { marketplaceStatus: 'pending' }
-            }));
-        } finally {
-            setIsApplying(false);
-        }
-    }
-
 
     const handleAddItem = async () => {
         if(!title || price === '' || !itemType || !firestore || !user) {
@@ -420,7 +478,7 @@ export default function MyStorePage() {
             return <PendingVerificationCard />;
         }
         
-        return <BecomeSellerCard onApply={handleApplyToSell} />;
+        return <BecomeSellerCard />;
     }
 
 
@@ -430,6 +488,3 @@ export default function MyStorePage() {
         </div>
     );
 }
-
-
-    
