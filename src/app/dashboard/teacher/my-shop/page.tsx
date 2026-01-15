@@ -81,11 +81,17 @@ export default function TeacherShopPage() {
     const renderContent = () => {
         if (isLoading) {
              return (
-                <div className="space-y-2">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
+                 <Card className="shadow-soft-shadow">
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-4 w-72" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </CardContent>
+                </Card>
             );
         }
 
@@ -121,7 +127,7 @@ export default function TeacherShopPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                    ) : !isLoading && (
+                    ) : (
                         <div className="text-center py-12 text-muted-foreground">
                             <p className="font-semibold">You haven't listed any premium items for sale yet.</p>
                             <p className="text-sm mt-1">Click "Add Premium Item" to get started.</p>
@@ -142,7 +148,7 @@ export default function TeacherShopPage() {
                     </h1>
                     <p className="text-muted-foreground">Manage the premium materials you're selling in the marketplace.</p>
                 </div>
-                 {userProfile?.status === 'approved' && (
+                 {!isLoading && userProfile?.status === 'approved' && (
                     <Button asChild>
                         <Link href="/dashboard/teacher/materials">
                             <PlusCircle className="mr-2 h-4 w-4"/> Add Premium Item
@@ -155,5 +161,3 @@ export default function TeacherShopPage() {
         </div>
     );
 }
-
-    
