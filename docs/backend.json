@@ -33,7 +33,7 @@
         },
         "marketplaceStatus": {
             "type": "string",
-            "enum": ["unverified", "pending", "approved"],
+            "enum": ["unverified", "pending", "approved", "denied"],
             "description": "The verification status for a student to sell in the marketplace."
         },
         "subjectCategory": {
@@ -68,7 +68,7 @@
         },
         "address": {
           "type": "string",
-          "description": "For tutors, their address or city for location-based search."
+          "description": "The user's general address. Used for tutor location or seller verification."
         },
         "coachingName": {
             "type": "string",
@@ -77,6 +77,18 @@
         "whatsappNumber": {
             "type": "string",
             "description": "The tutor's WhatsApp number for student communication."
+        },
+        "aadharNumber": {
+            "type": "string",
+            "description": "The user's Aadhaar number for verification purposes."
+        },
+        "aadharPhotoUrl": {
+            "type": "string",
+            "description": "URL of the user's uploaded Aadhaar card photo."
+        },
+        "sellerPhotoUrl": {
+            "type": "string",
+            "description": "URL of the user's uploaded profile photo for selling."
         }
       },
       "required": [
@@ -349,3 +361,5 @@
     }
   }
 }
+
+    
