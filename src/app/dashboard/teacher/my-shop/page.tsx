@@ -64,14 +64,14 @@ export default function TeacherShopPage() {
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
     const premiumMaterialsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(
             collection(firestore, 'studyMaterials'),
             where('teacherId', '==', user.uid),
             where('isFree', '==', false),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user]);
+    }, [firestore, isUserLoading, user]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<PremiumMaterial>(premiumMaterialsQuery);
     

@@ -88,6 +88,7 @@ type Batch = {
     id: string;
     subject: string;
     classLevel: string;
+    title: string;
 }
 
 const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", "Test Paper", "Solution"];
@@ -125,18 +126,18 @@ export default function MaterialsPage() {
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(
             collection(firestore, 'studyMaterials'), 
             where('teacherId', '==', user.uid),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user?.uid]);
+    }, [firestore, isUserLoading, user]);
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user?.uid]);
+    }, [firestore, isUserLoading, user]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
@@ -260,7 +261,7 @@ export default function MaterialsPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="subject">Subject*</Label>
-                                    <Select onValueChange={setSubject} value={subject} disabled={!!batchId}>
+                                    <Select onValueChange={setSubject} value={subject}>
                                         <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
                                         <SelectContent>
                                             {isLoadingProfile && <SelectItem value="loading" disabled>Loading...</SelectItem>}
@@ -311,7 +312,7 @@ export default function MaterialsPage() {
                                                 {isLoadingBatches ? <SelectItem value="loading" disabled>Loading batches...</SelectItem> :
                                                     <>
                                                         <SelectItem value="none">None (General Material)</SelectItem>
-                                                        {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                                        {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                                                     </>
                                                 }
                                             </SelectContent>

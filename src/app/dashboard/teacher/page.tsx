@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCircle, Info, CalendarDays } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import type { User } from "firebase/auth";
 
 type BatchType = {
   id: string;
@@ -93,9 +94,8 @@ function DeniedVerificationCard() {
     );
 }
 
-function TeacherDashboardContent({ userProfile }: { userProfile: UserProfile }) {
+function TeacherDashboardContent({ user, userProfile }: { user: User, userProfile: UserProfile }) {
   const { toast } = useToast();
-  const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const [classSubject, setClassSubject] = useState("");
@@ -105,29 +105,29 @@ function TeacherDashboardContent({ userProfile }: { userProfile: UserProfile }) 
 
   // Queries for stats
   const batchesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user.uid) return null;
     return query(
       collection(firestore, "classes"),
       where("teacherId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user.uid]);
 
   const enrollmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user.uid) return null;
     return query(
         collection(firestore, "enrollments"),
         where("teacherId", "==", user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user.uid]);
 
   const materialsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user.uid) return null;
     return query(
         collection(firestore, "studyMaterials"),
         where("teacherId", "==", user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user.uid]);
   
   const { data: batches, isLoading: isLoadingBatches } = useCollection<BatchType>(batchesQuery);
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
@@ -192,7 +192,7 @@ function TeacherDashboardContent({ userProfile }: { userProfile: UserProfile }) 
     toast({ title: "Copied!", description: `Batch code ${code} copied to clipboard.` });
   }
   
-  const isLoading = isUserLoading || isLoadingBatches || isLoadingEnrollments || isLoadingMaterials;
+  const isLoading = isLoadingBatches || isLoadingEnrollments || isLoadingMaterials;
 
   return (
     <div className="space-y-6">
@@ -349,8 +349,8 @@ export default function TeacherPage() {
         return <DeniedVerificationCard />;
     }
     
-    if (userProfile?.status === 'approved') {
-        return <TeacherDashboardContent userProfile={userProfile} />;
+    if (userProfile?.status === 'approved' && user) {
+        return <TeacherDashboardContent user={user} userProfile={userProfile} />;
     }
 
     // Fallback case, though it shouldn't be reached if user profile is loaded
