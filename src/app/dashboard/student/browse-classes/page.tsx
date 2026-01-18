@@ -6,6 +6,7 @@ import {
   useFirestore,
   useCollection,
   useMemoFirebase,
+  useUser,
 } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import {
@@ -64,15 +65,16 @@ function ClassCard({ classInfo }: { classInfo: ClassInfo }) {
 
 export default function BrowseClassesPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const classesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(
       collection(firestore, 'classes'),
       where('isActive', '==', true),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: classes, isLoading } = useCollection<ClassInfo>(classesQuery);
 
