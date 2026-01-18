@@ -151,25 +151,25 @@ export default function MaterialsPage() {
 
 
     const userProfileQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
+    }, [firestore, user, isUserLoading]);
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(
             collection(firestore, 'studyMaterials'), 
             where('teacherId', '==', user.uid),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user]);
+    }, [firestore, user, isUserLoading]);
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user]);
+    }, [firestore, user, isUserLoading]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
@@ -295,7 +295,9 @@ export default function MaterialsPage() {
             {userProfile?.status === 'approved' && (
                  <Dialog open={isAddMaterialOpen} onOpenChange={setAddMaterialOpen}>
                     <DialogTrigger asChild>
-                        <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Material</Button>
+                        <Button disabled={isLoading}><PlusCircle className="mr-2 h-4 w-4"/> 
+                            {isLoading ? 'Loading...' : 'Add Material'}
+                        </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
                         <DialogHeader>

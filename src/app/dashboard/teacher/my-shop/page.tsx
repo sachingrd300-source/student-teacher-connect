@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -74,20 +75,20 @@ export default function TeacherShopPage() {
     const firestore = useFirestore();
 
     const userProfileQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
+    }, [firestore, user, isUserLoading]);
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
     const premiumMaterialsQuery = useMemoFirebase(() => {
-        if (!firestore || !user || userProfile?.status !== 'approved') return null;
+        if (!firestore || isUserLoading || !user || userProfile?.status !== 'approved') return null;
         return query(
             collection(firestore, 'studyMaterials'),
             where('teacherId', '==', user.uid),
             where('isFree', '==', false),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user, userProfile]);
+    }, [firestore, user, userProfile, isUserLoading]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<PremiumMaterial>(premiumMaterialsQuery);
     
