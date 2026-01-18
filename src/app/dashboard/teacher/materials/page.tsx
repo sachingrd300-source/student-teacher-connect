@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -55,7 +56,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, MoreVertical, BookOpenCheck, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreVertical, BookOpenCheck, Trash2, Info, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, addDoc, deleteDoc } from 'firebase/firestore';
@@ -82,6 +83,7 @@ type UserProfile = {
   name: string;
   subjects?: string[];
   classLevels?: string[];
+  status: 'pending_verification' | 'approved' | 'denied';
 }
 
 type Batch = {
@@ -94,6 +96,37 @@ type Batch = {
 const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", "Test Paper", "Solution"];
 const classLevelOptions = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Undergraduate", "Postgraduate"];
 
+function PendingVerificationCard() {
+    return (
+        <Card className="bg-amber-50 border-amber-200 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <Info className="h-8 w-8 text-amber-600"/>
+                <div>
+                    <CardTitle className="text-xl text-amber-800">Profile Approval Required</CardTitle>
+                    <CardDescription className="text-amber-700">
+                        Your tutor profile must be approved by an admin before you can upload materials.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    )
+}
+
+function DeniedVerificationCard() {
+     return (
+        <Card className="bg-destructive/10 border-destructive/20 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <XCircle className="h-8 w-8 text-destructive"/>
+                <div>
+                    <CardTitle className="text-xl text-destructive">Application Not Approved</CardTitle>
+                    <CardDescription className="text-destructive/80">
+                        Unfortunately, your tutor application was not approved. You cannot upload materials.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
 
 export default function MaterialsPage() {
     const { toast } = useToast();
@@ -102,7 +135,6 @@ export default function MaterialsPage() {
     const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    // The app creator should replace this with their actual Firebase User ID (UID)
     const ADMIN_USER_ID = 'YOUR_ADMIN_USER_ID_HERE';
 
     // Form state
@@ -187,7 +219,6 @@ export default function MaterialsPage() {
             isOfficial: user.uid === ADMIN_USER_ID ? isOfficial : false, // Only admin can set official status
             price: isFree ? 0 : Number(price),
             createdAt: serverTimestamp(),
-            // In a real app, you would handle file uploads and store a URL
             fileUrl: 'https://example.com/placeholder.pdf'
         };
         
@@ -227,17 +258,42 @@ export default function MaterialsPage() {
             });
     };
 
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-                        <BookOpenCheck className="h-8 w-8"/>
-                        Study Materials
-                    </h1>
-                    <p className="text-muted-foreground">Manage and upload learning resources for your students.</p>
+    const isLoading = isUserLoading || isLoadingProfile || isLoadingMaterials || isLoadingBatches;
+
+    if (isLoading) {
+        return (
+             <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Skeleton className="h-9 w-64" />
+                        <Skeleton className="h-5 w-96 mt-2" />
+                    </div>
+                    <Skeleton className="h-10 w-36" />
                 </div>
-                <Dialog open={isAddMaterialOpen} onOpenChange={setAddMaterialOpen}>
+                <Card className="shadow-soft-shadow">
+                    <CardHeader>
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-5 w-72" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+    
+    const PageHeader = () => (
+        <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
+                    <BookOpenCheck className="h-8 w-8"/>
+                    Study Materials
+                </h1>
+                <p className="text-muted-foreground">Manage and upload learning resources for your students.</p>
+            </div>
+            {userProfile?.status === 'approved' && (
+                 <Dialog open={isAddMaterialOpen} onOpenChange={setAddMaterialOpen}>
                     <DialogTrigger asChild>
                         <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Material</Button>
                     </DialogTrigger>
@@ -317,7 +373,7 @@ export default function MaterialsPage() {
                                                 }
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-xs text-muted-foreground">If assigned, only students enrolled in this batch can access it.</p>
+                                        <p className="text-xs text-muted-foreground">If assigned, only students in this batch can access it.</p>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Access Level</Label>
@@ -349,14 +405,29 @@ export default function MaterialsPage() {
                             )}
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !userProfile || !title || !subject || !materialType || (!isFree && !price)}>
+                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !userProfile || !title || !subject || !materialType || (!isFree && (price === '' || price <= 0))}>
                                 {isLoadingProfile || !userProfile ? 'Loading...' : 'Upload Material'}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+            )}
+        </div>
+    );
+    
+    if (userProfile?.status !== 'approved') {
+        return (
+            <div className="space-y-6">
+                <PageHeader />
+                {userProfile?.status === 'pending_verification' && <PendingVerificationCard />}
+                {userProfile?.status === 'denied' && <DeniedVerificationCard />}
             </div>
+        )
+    }
 
+    return (
+        <div className="space-y-6">
+           <PageHeader />
             <Card className="shadow-soft-shadow">
                 <CardHeader>
                     <CardTitle>Uploaded Materials</CardTitle>
@@ -438,3 +509,5 @@ export default function MaterialsPage() {
         </div>
     );
 }
+
+    
