@@ -34,7 +34,7 @@ import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@
 import { collection, query, where, orderBy, serverTimestamp, doc, Timestamp, addDoc } from 'firebase/firestore';
 
 
-type StudentEnrollment = { id: string; studentName: string; studentId: string; };
+type StudentEnrollment = { id: string; studentName: string; studentId: string; classId: string; status: 'pending' | 'approved' | 'denied'; };
 type TestResult = { 
     id: string; 
     studentId: string;
@@ -81,15 +81,18 @@ export default function PerformancePage() {
     const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user || !selectedClassId) return null;
+        if (!firestore || !user) return null;
         return query(
             collection(firestore, 'enrollments'), 
-            where('teacherId', '==', user.uid), 
-            where('classId', '==', selectedClassId), 
-            where('status', '==', 'approved')
+            where('teacherId', '==', user.uid)
         );
-    }, [firestore, user, selectedClassId]);
-    const { data: students, isLoading: isLoadingStudents } = useCollection<StudentEnrollment>(enrollmentsQuery);
+    }, [firestore, user]);
+    const { data: allEnrollments, isLoading: isLoadingEnrollments } = useCollection<StudentEnrollment>(enrollmentsQuery);
+
+    const students = useMemo(() => {
+        if (!allEnrollments || !selectedClassId) return [];
+        return allEnrollments.filter(e => e.classId === selectedClassId && e.status === 'approved');
+    }, [allEnrollments, selectedClassId]);
 
      useEffect(() => {
         const selectedClass = classes?.find(c => c.id === selectedClassId);
@@ -156,7 +159,7 @@ export default function PerformancePage() {
         return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedClassId);
     }, [testResults, selectedStudentId, selectedClassId, students]);
 
-    const isLoading = isLoadingClasses || isLoadingResults;
+    const isLoading = isLoadingClasses || isLoadingResults || isLoadingEnrollments;
 
     return (
         <div className="space-y-6">
@@ -189,12 +192,12 @@ export default function PerformancePage() {
                         </div>
                         <div>
                             <Label htmlFor="student">Student*</Label>
-                            <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedClassId || isLoadingStudents}>
+                            <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedClassId || isLoadingEnrollments}>
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
-                                    {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
+                                    {isLoadingEnrollments && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
                                     {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
-                                     {!isLoadingStudents && students?.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
+                                     {!isLoadingEnrollments && students?.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -258,12 +261,4 @@ export default function PerformancePage() {
             </div>
         </div>
     );
-
-    
-
-
-
-
-    
-
-    
+}
