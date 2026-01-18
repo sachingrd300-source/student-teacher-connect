@@ -46,10 +46,7 @@ type UserProfile = {
 
 type Enrollment = {
   studentId: string;
-};
-
-type StudyMaterial = {
-  id: string;
+  status: 'approved' | 'pending' | 'denied';
 };
 
 const StatCard = ({ title, value, icon, isLoading }: { title: string, value: string | number, icon: React.ReactNode, isLoading: boolean }) => (
@@ -128,8 +125,7 @@ function TeacherDashboardContent() {
     if (!firestore || !user) return null;
     return query(
         collection(firestore, "enrollments"),
-        where("teacherId", "==", user.uid),
-        where("status", "==", "approved")
+        where("teacherId", "==", user.uid)
     );
   }, [firestore, user]);
 
@@ -147,7 +143,8 @@ function TeacherDashboardContent() {
   
   const totalStudents = useMemo(() => {
     if (!enrollments) return 0;
-    const uniqueStudentIds = new Set(enrollments.map(e => e.studentId));
+    const approvedEnrollments = enrollments.filter(e => e.status === 'approved');
+    const uniqueStudentIds = new Set(approvedEnrollments.map(e => e.studentId));
     return uniqueStudentIds.size;
   }, [enrollments]);
 
