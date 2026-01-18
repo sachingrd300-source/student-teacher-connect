@@ -35,7 +35,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Users2, Trash2 } from 'lucide-react';
+import { MoreVertical, Users2, Trash2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, orderBy, deleteDoc } from 'firebase/firestore';
@@ -49,6 +49,7 @@ type Batch = {
   title: string;
   subject: string;
   classLevel: string;
+  classCode: string;
   createdAt?: { toDate: () => Date };
 };
 
@@ -88,6 +89,14 @@ export default function BatchesPage() {
                 operation: 'delete',
             }));
         });
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: 'Code Copied!',
+      description: `The batch code ${code} has been copied to your clipboard.`,
+    });
   };
 
   return (
@@ -133,6 +142,7 @@ export default function BatchesPage() {
                 <TableRow>
                   <TableHead>Batch Name</TableHead>
                   <TableHead>Created On</TableHead>
+                  <TableHead>Batch Code</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -148,6 +158,15 @@ export default function BatchesPage() {
                       {batch.createdAt
                         ? batch.createdAt.toDate().toLocaleDateString()
                         : '—'}
+                    </TableCell>
+
+                    <TableCell>
+                        <div className="flex items-center justify-start gap-2">
+                            <span className="font-mono text-sm bg-muted px-2 py-1 rounded-md">{batch.classCode}</span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopyCode(batch.classCode)}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </TableCell>
 
                     <TableCell className="text-right">

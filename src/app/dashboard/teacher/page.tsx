@@ -175,7 +175,10 @@ function TeacherDashboardContent() {
     const classesCollection = collection(firestore, "classes");
     addDoc(classesCollection, newBatchData)
     .then(() => {
-        toast({ title: "Success!", description: "Batch created successfully." });
+        toast({
+            title: "Batch Created!",
+            description: `The code for your new batch is: ${newBatchData.classCode}`,
+        });
         setClassSubject("");
         setClassLevel("");
         setBatchTime("");
@@ -194,7 +197,7 @@ function TeacherDashboardContent() {
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Copied!", description: "Class code copied to clipboard." });
+    toast({ title: "Copied!", description: `Batch code ${code} copied to clipboard.` });
   }
   
   const isLoading = isUserLoading || isLoadingBatches || isLoadingEnrollments || isLoadingMaterials;
