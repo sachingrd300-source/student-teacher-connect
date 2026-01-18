@@ -299,10 +299,6 @@ export default function TeacherProfilePage() {
                             <span className="font-semibold w-28 shrink-0">Experience:</span>
                             <span className="text-muted-foreground">{teacherProfile?.experience || 'N/A'}</span>
                         </div>
-                        <div className="flex items-start">
-                            <span className="font-semibold w-28 shrink-0">Type:</span>
-                            <span className="text-muted-foreground">{teacherProfile?.experienceType || 'N/A'}</span>
-                        </div>
                          <div className="flex items-start">
                             <span className="font-semibold w-28 shrink-0">Location:</span>
                             <span className="text-muted-foreground">{teacherProfile?.address || 'N/A'}</span>
