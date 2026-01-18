@@ -24,7 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
-import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCircle, Info } from "lucide-react";
+import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCircle, Info, CalendarDays } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -45,6 +45,7 @@ type UserProfile = {
 
 type Enrollment = {
   studentId: string;
+  classId: string;
   status: 'approved' | 'pending' | 'denied';
 };
 
@@ -138,7 +139,7 @@ function TeacherDashboardContent() {
   
   const { data: batches, isLoading: isLoadingBatches } = useCollection<BatchType>(batchesQuery);
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
-  const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
+  const { data: materials, isLoading: isLoadingMaterials } = useCollection<any>(materialsQuery);
   
   const totalStudents = useMemo(() => {
     if (!enrollments) return 0;
@@ -262,39 +263,49 @@ function TeacherDashboardContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingBatches ? (
+            {isLoadingBatches || isLoadingEnrollments ? (
                  <div className="space-y-2">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
                 </div>
             ) : batches && batches.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-8">
                 You haven't created any batches yet.
               </p>
             ) : (
-              <div className="space-y-3">
-                {batches?.slice(0, 5).map((c) => (
-                  <div
-                    key={c.id}
-                    className="border p-3 rounded-lg bg-muted/30 flex justify-between items-center transition-colors"
-                  >
-                    <div>
-                        <p className="font-semibold text-base">
-                        {c.title}
-                        </p>
-                         <p className="text-xs text-muted-foreground">{c.batchTime ? c.batchTime : "No time set"}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-sm font-medium text-muted-foreground">Join Code:</p>
-                        <div className="flex items-center gap-2">
-                             <p className="font-mono text-lg text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{c.classCode}</p>
-                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopyCode(c.classCode)}>
-                                <Copy className="h-4 w-4"/>
-                             </Button>
+              <div className="space-y-4">
+                {batches?.slice(0, 5).map((batch) => {
+                    const studentCount = enrollments?.filter(e => e.classId === batch.id && e.status === 'approved').length ?? 0;
+                    return (
+                        <div
+                            key={batch.id}
+                            className="border p-4 rounded-lg bg-muted/30 flex flex-col gap-3 transition-colors"
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold text-lg">{batch.title}</p>
+                                    <p className="text-sm text-muted-foreground">{batch.batchTime || "No time set"}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-mono text-sm text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{batch.classCode}</p>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopyCode(batch.classCode)}>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-3 mt-2">
+                                <div className="flex items-center gap-2">
+                                    <CalendarDays className="h-4 w-4" />
+                                    <span>Created: {batch.createdAt ? batch.createdAt.toDate().toLocaleDateString() : 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users2 className="h-4 w-4" />
+                                    <span>{studentCount} {studentCount === 1 ? 'Student' : 'Students'}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                })}
               </div>
             )}
           </CardContent>
