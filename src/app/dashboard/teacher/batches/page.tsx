@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -34,15 +34,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+  } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Users2, Trash2, Copy } from 'lucide-react';
+import { MoreVertical, Users2, Trash2, Copy, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, orderBy, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type Batch = {
   id: string;
@@ -50,6 +60,7 @@ type Batch = {
   subject: string;
   classLevel: string;
   classCode: string;
+  batchTime?: string;
   createdAt?: { toDate: () => Date };
 };
 
@@ -57,6 +68,11 @@ export default function BatchesPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [editingBatch, setEditingBatch] = React.useState<Batch | null>(null);
+  const [editedData, setEditedData] = React.useState({ title: '', batchTime: '' });
+
 
   // 📌 Firestore query
   const batchesQuery = useMemoFirebase(() => {
@@ -87,6 +103,32 @@ export default function BatchesPage() {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: batchRef.path,
                 operation: 'delete',
+            }));
+        });
+  };
+
+  const handleUpdateBatch = async () => {
+    if (!firestore || !editingBatch) return;
+
+    const batchRef = doc(firestore, 'classes', editingBatch.id);
+    const updatedData = {
+        title: editedData.title,
+        batchTime: editedData.batchTime,
+    };
+
+    updateDoc(batchRef, updatedData)
+        .then(() => {
+            toast({
+                title: 'Batch Updated',
+                description: 'The batch details have been successfully updated.',
+            });
+            setIsEditDialogOpen(false);
+        })
+        .catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: batchRef.path,
+                operation: 'update',
+                requestResourceData: updatedData,
             }));
         });
   };
@@ -141,6 +183,7 @@ export default function BatchesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Batch Name</TableHead>
+                  <TableHead>Time</TableHead>
                   <TableHead>Created On</TableHead>
                   <TableHead>Batch Code</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -152,6 +195,10 @@ export default function BatchesPage() {
                   <TableRow key={batch.id}>
                     <TableCell className="font-medium">
                       {batch.title || `${batch.subject} - ${batch.classLevel}`}
+                    </TableCell>
+
+                     <TableCell>
+                      {batch.batchTime || 'N/A'}
                     </TableCell>
 
                     <TableCell>
@@ -182,8 +229,13 @@ export default function BatchesPage() {
                             <DropdownMenuItem disabled>
                               View Students
                             </DropdownMenuItem>
-                            <DropdownMenuItem disabled>
-                              Edit Name
+                            <DropdownMenuItem onSelect={() => {
+                                setEditingBatch(batch);
+                                setEditedData({ title: batch.title, batchTime: batch.batchTime || '' });
+                                setIsEditDialogOpen(true);
+                            }}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Batch
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <AlertDialogTrigger asChild>
@@ -223,6 +275,39 @@ export default function BatchesPage() {
           )}
         </CardContent>
       </Card>
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Batch</DialogTitle>
+                    <DialogDescription>
+                        Make changes to your batch details here. Click save when you're done.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Batch Name</Label>
+                        <Input
+                            id="title"
+                            value={editedData.title}
+                            onChange={(e) => setEditedData(prev => ({...prev, title: e.target.value}))}
+                            placeholder="e.g. Physics - 11-12"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="batchTime">Batch Time</Label>
+                        <Input
+                            id="batchTime"
+                            value={editedData.batchTime}
+                            onChange={(e) => setEditedData(prev => ({...prev, batchTime: e.target.value}))}
+                            placeholder="e.g. 7:00 AM"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleUpdateBatch}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
