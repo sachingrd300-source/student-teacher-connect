@@ -49,6 +49,17 @@ type TeacherProfileData = {
     whatsappNumber?: string;
 };
 
+type ProfileFormData = {
+    name: string;
+    coachingName: string;
+    subjects: string;
+    qualification: string;
+    experience: string;
+    address: string;
+    whatsappNumber: string;
+};
+
+
 function ProfileSkeleton() {
     return (
         <div className="space-y-6">
@@ -116,14 +127,22 @@ export default function TeacherProfilePage() {
     
     const { data: teacherProfile, isLoading: isLoadingProfile } = useDoc<TeacherProfileData>(userProfileQuery);
     
-    const [formData, setFormData] = useState<Partial<TeacherProfileData>>({});
+    const [formData, setFormData] = useState<ProfileFormData>({
+        name: '',
+        coachingName: '',
+        subjects: '',
+        qualification: '',
+        experience: '',
+        address: '',
+        whatsappNumber: '',
+    });
 
     useEffect(() => {
         if (teacherProfile) {
             setFormData({
                 name: teacherProfile.name || '',
                 coachingName: teacherProfile.coachingName || '',
-                subjects: teacherProfile.subjects || [],
+                subjects: teacherProfile.subjects?.join(', ') || '',
                 qualification: teacherProfile.qualification || '',
                 experience: teacherProfile.experience || '',
                 address: teacherProfile.address || '',
@@ -142,6 +161,8 @@ export default function TeacherProfilePage() {
         setIsSaving(true);
         const userRef = doc(firestore, 'users', user.uid);
         
+        const subjectsArray = formData.subjects.split(',').map(s => s.trim()).filter(Boolean);
+
         const updatedData = {
             name: formData.name,
             coachingName: formData.coachingName,
@@ -149,6 +170,7 @@ export default function TeacherProfilePage() {
             experience: formData.experience,
             address: formData.address,
             whatsappNumber: formData.whatsappNumber,
+            subjects: subjectsArray,
         };
 
         updateDoc(userRef, updatedData)
@@ -205,8 +227,8 @@ export default function TeacherProfilePage() {
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="subjects">Subjects</Label>
-                            <Input id="subjects" value={formData.subjects?.join(', ')} disabled placeholder="e.g. Physics, Chemistry" />
-                             <p className="text-xs text-muted-foreground">Subjects can only be changed during sign up.</p>
+                            <Input id="subjects" value={formData.subjects} onChange={handleInputChange} placeholder="e.g. Physics, Chemistry" />
+                            <p className="text-xs text-muted-foreground">Separate subjects with a comma.</p>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="qualification">Highest Qualification</Label>
