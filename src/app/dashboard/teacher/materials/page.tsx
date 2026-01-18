@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -121,7 +121,7 @@ export default function MaterialsPage() {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
-    const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+    const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
@@ -140,6 +140,13 @@ export default function MaterialsPage() {
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
     const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
+
+    useEffect(() => {
+        const selectedClass = classes?.find(c => c.id === classId);
+        if (selectedClass) {
+            setSubject(selectedClass.subject);
+        }
+    }, [classId, classes]);
 
     const resetForm = () => {
         setTitle('');
@@ -285,6 +292,7 @@ export default function MaterialsPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        {teacherSubjects.length === 0 && !isLoadingProfile && <SelectItem value="no-subjects" disabled>No subjects in profile</SelectItem>}
                                     </SelectContent>
                                 </Select>
                             </div>
