@@ -32,11 +32,6 @@ service cloud.firestore {
       let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       return isSignedIn() && user.role == 'tutor' && user.status == 'approved';
     }
-    
-    function isDeniedTutor() {
-      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return isSignedIn() && user.role == 'tutor' && user.status == 'denied';
-    }
 
     function isExistingDoc() {
       return resource != null;

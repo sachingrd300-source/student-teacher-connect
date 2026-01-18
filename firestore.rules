@@ -121,7 +121,7 @@ service cloud.firestore {
             (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
           );
 
-        // A student can create their own enrollment request with a predictable ID
+        // An authenticated user can create their own enrollment request with a predictable ID
         allow create: if isSignedIn() 
                       && isStudentOwner(request.resource.data)
                       && enrollmentId == request.auth.uid + '_' + request.resource.data.classId;
@@ -248,5 +248,3 @@ service cloud.firestore {
 
   }
 }
-
-    
