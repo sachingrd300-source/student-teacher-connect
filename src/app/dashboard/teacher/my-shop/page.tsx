@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -55,7 +54,7 @@ function PendingVerificationCard() {
 }
 
 export default function TeacherShopPage() {
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
 
     const userProfileQuery = useMemoFirebase(() => {
@@ -76,7 +75,7 @@ export default function TeacherShopPage() {
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<PremiumMaterial>(premiumMaterialsQuery);
     
-    const isLoading = isLoadingProfile || isLoadingMaterials;
+    const isLoading = isUserLoading || isLoadingProfile || isLoadingMaterials;
 
     const renderContent = () => {
         if (isLoading) {
