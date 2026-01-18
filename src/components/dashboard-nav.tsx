@@ -44,7 +44,6 @@ const navItems = {
     { href: '/dashboard/teacher/batches', label: 'Classes', icon: Users2 },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
     { href: '/dashboard/teacher/my-shop', label: 'My Shop', icon: ShoppingCart },
-    { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: FileText },
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
   ],
   student: [
@@ -80,18 +79,23 @@ export function DashboardNav({ role }: { role: Role }) {
 
   const [isClient, setIsClient] = useState(false);
 
-  const approvedEnrollmentsQuery = useMemoFirebase(() => {
+  // Query for ALL enrollments for the student, not just approved ones, to comply with security rules.
+  const studentEnrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user || role !== 'student') return null;
     return query(
       collection(firestore, 'enrollments'), 
-      where('studentId', '==', user.uid), 
-      where('status', '==', 'approved')
+      where('studentId', '==', user.uid)
     );
   }, [firestore, user, role]);
 
-  const { data: approvedEnrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(approvedEnrollmentsQuery);
+  const { data: studentEnrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(studentEnrollmentsQuery);
 
-  const hasApprovedEnrollments = (approvedEnrollments?.length || 0) > 0;
+  // Filter for approved enrollments on the client side.
+  const hasApprovedEnrollments = useMemo(() => {
+    if (!studentEnrollments) return false;
+    return studentEnrollments.some(e => e.status === 'approved');
+  }, [studentEnrollments]);
+
   
   const items = useMemo(() => {
     const roleItems = navItems[role] || [];
