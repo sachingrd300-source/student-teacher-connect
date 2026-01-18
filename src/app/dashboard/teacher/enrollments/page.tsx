@@ -110,9 +110,9 @@ export default function EnrollmentsPage() {
     const firestore = useFirestore();
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if(!firestore || !user) return null;
+        if(!firestore || !user?.uid) return null;
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
     
     const { data: enrollments, isLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
