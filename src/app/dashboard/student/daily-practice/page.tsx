@@ -63,7 +63,7 @@ export default function DailyPracticePage() {
   const { user, isLoading: isUserLoading } = useUser();
 
   const dppQuery = useMemoFirebase(() => {
-    if (!firestore || isUserLoading || !user) return null;
+    if (!firestore || !user?.uid) return null;
     // Query for all public DPPs, ensuring 'isFree' is the first filter
     return query(
       collection(firestore, 'studyMaterials'), 
@@ -71,7 +71,7 @@ export default function DailyPracticePage() {
       where('type', '==', 'DPP'), 
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user?.uid]);
   
   const { data: dailyPracticePapers, isLoading: isLoadingPapers } = useCollection<StudyMaterial>(dppQuery);
   const isLoading = isUserLoading || isLoadingPapers;

@@ -115,22 +115,22 @@ export default function ShopPage() {
   const { user, isLoading: isUserLoading } = useUser();
 
   const premiumMaterialsQuery = useMemo(() => {
-    if (!firestore || isUserLoading || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'studyMaterials'),
       where('isFree', '==', false),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user?.uid]);
 
   const studentItemsQuery = useMemo(() => {
-    if (!firestore || isUserLoading || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(
         collection(firestore, 'marketplaceItems'),
         where('status', '==', 'available'),
         orderBy('createdAt', 'desc')
     );
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user?.uid]);
 
   const { data: premiumMaterials, isLoading: isLoadingPremium } = useCollection<StudyMaterial>(premiumMaterialsQuery);
   const { data: studentItems, isLoading: isLoadingStudentItems } = useCollection<MarketplaceItem>(studentItemsQuery);

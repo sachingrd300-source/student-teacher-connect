@@ -74,13 +74,13 @@ export default function StudyMaterialPage() {
   const [selectedType, setSelectedType] = useState('all');
 
   const freeMaterialsQuery = useMemo(() => {
-    if(!firestore || isUserLoading || !user) return null;
+    if(!firestore || !user?.uid) return null;
     return query(
         collection(firestore, 'studyMaterials'), 
         where('isFree', '==', true), 
         orderBy('createdAt', 'desc')
     );
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user?.uid]);
 
   const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(freeMaterialsQuery);
   const isLoading = isUserLoading || isLoadingMaterials;
