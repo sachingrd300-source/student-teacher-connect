@@ -24,13 +24,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Book, Briefcase, Mail, Phone, Edit, Info, MessageSquare } from 'lucide-react';
+import { User, BookOpenCheck, Mail, Phone, Edit, Info, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import Link from 'next/link';
 
 type TeacherProfileData = {
     id: string;
@@ -47,6 +48,58 @@ type TeacherProfileData = {
     coachingName?: string;
     whatsappNumber?: string;
 };
+
+function ProfileSkeleton() {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-start justify-between">
+                <div>
+                    <Skeleton className="h-9 w-48" />
+                    <Skeleton className="h-5 w-72 mt-2" />
+                </div>
+                <Skeleton className="h-10 w-32" />
+            </div>
+            <Card className="shadow-soft-shadow overflow-hidden">
+                <CardHeader className="p-0">
+                    <div className="bg-muted/30 p-8 flex flex-col md:flex-row items-center gap-6">
+                        <Skeleton className="h-28 w-28 rounded-full" />
+                        <div className="space-y-3 text-center md:text-left">
+                            <Skeleton className="h-8 w-48" />
+                            <Skeleton className="h-6 w-32" />
+                            <Skeleton className="h-5 w-40" />
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <Card>
+                        <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-5/6" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                         <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-5/6" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                         <CardHeader><Skeleton className="h-6 w-36" /></CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                        </CardContent>
+                    </Card>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 
 export default function TeacherProfilePage() {
     const { toast } = useToast();
@@ -89,7 +142,6 @@ export default function TeacherProfilePage() {
         setIsSaving(true);
         const userRef = doc(firestore, 'users', user.uid);
         
-        // Only include fields that are editable in the form
         const updatedData = {
             name: formData.name,
             coachingName: formData.coachingName,
@@ -123,31 +175,7 @@ export default function TeacherProfilePage() {
     const isLoading = isUserLoading || isLoadingProfile;
 
     if (isLoading || !teacherProfile) {
-        return (
-            <div className="space-y-6">
-                 <Skeleton className="h-9 w-64" />
-                 <Skeleton className="h-5 w-80 mt-2" />
-                 <Card>
-                    <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
-                        <Skeleton className="h-24 w-24 rounded-full" />
-                        <Skeleton className="h-8 w-48 mt-4" />
-                        <Skeleton className="h-5 w-32 mt-2" />
-                    </CardHeader>
-                    <CardContent className="p-6 grid gap-4 md:grid-cols-2">
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-3/4" />
-                            <Skeleton className="h-6 w-full" />
-                            <Skeleton className="h-6 w-5/6" />
-                        </div>
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-3/4" />
-                            <Skeleton className="h-6 w-full" />
-                            <Skeleton className="h-6 w-5/6" />
-                        </div>
-                    </CardContent>
-                 </Card>
-            </div>
-        )
+        return <ProfileSkeleton />;
     }
 
   return (
@@ -166,7 +194,7 @@ export default function TeacherProfilePage() {
                         <DialogTitle>Edit Your Profile</DialogTitle>
                         <DialogDescription>Update your details below. Click save when you're done.</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Full Name</Label>
                             <Input id="name" value={formData.name} onChange={handleInputChange} />
@@ -181,7 +209,7 @@ export default function TeacherProfilePage() {
                              <p className="text-xs text-muted-foreground">Subjects can only be changed during sign up.</p>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="qualification">Qualification</Label>
+                            <Label htmlFor="qualification">Highest Qualification</Label>
                             <Input id="qualification" value={formData.qualification} onChange={handleInputChange} placeholder="e.g. B.Sc. Physics" />
                         </div>
                          <div className="space-y-2">
@@ -222,49 +250,87 @@ export default function TeacherProfilePage() {
             </Card>
         )}
 
-        <Card className="shadow-soft-shadow">
-            <CardHeader className="flex flex-col items-center text-center p-6 bg-muted/20">
-                <Avatar className="h-24 w-24 mb-4 border-4 border-background">
-                    <AvatarImage src={teacherProfile?.avatarUrl} alt={teacherProfile?.name} />
-                    <AvatarFallback className="text-3xl">{teacherProfile?.name?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <CardTitle className="text-3xl font-headline">{teacherProfile?.name}</CardTitle>
-                <CardDescription className="text-base">{teacherProfile?.coachingName || 'Coaching Center'}</CardDescription>
-                <div className="flex gap-2 mt-2">
-                    {teacherProfile?.subjects?.map(sub => <Badge key={sub} variant="secondary">{sub.trim()}</Badge>)}
+        <Card className="shadow-soft-shadow overflow-hidden">
+            <CardHeader className="p-0">
+                <div className="bg-muted/30 p-8 flex flex-col md:flex-row items-center gap-6">
+                    <Avatar className="h-28 w-28 border-4 border-background shadow-lg">
+                        <AvatarImage src={teacherProfile?.avatarUrl} alt={teacherProfile?.name} />
+                        <AvatarFallback className="text-4xl">{teacherProfile?.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-center md:text-left">
+                        <h2 className="text-3xl font-bold font-headline">{teacherProfile?.name}</h2>
+                        <p className="text-lg text-muted-foreground">{teacherProfile?.coachingName || 'Independent Tutor'}</p>
+                    </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-6 grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-primary">Professional Details</h3>
-                     <div className="flex items-start gap-3">
-                        <User className="h-5 w-5 text-muted-foreground mt-1" />
-                        <span>Qualification: <span className="font-medium">{teacherProfile?.qualification || 'N/A'}</span></span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Briefcase className="h-5 w-5 text-muted-foreground" />
-                        <span>Experience: <span className="font-medium">{teacherProfile?.experience || 'N/A'}</span></span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                         <Book className="h-5 w-5 text-muted-foreground mt-1" />
-                        <span>Address: <span className="font-medium">{teacherProfile?.address || 'N/A'}</span></span>
-                    </div>
-                </div>
-                 <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-primary">Contact Information</h3>
-                     <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-muted-foreground" />
-                        <span>Email: <span className="font-medium">{teacherProfile?.email}</span></span>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-muted-foreground" />
-                        <span>Mobile: <span className="font-medium">{teacherProfile?.mobileNumber || 'N/A'}</span></span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                        <span>WhatsApp: <span className="font-medium">{teacherProfile?.whatsappNumber || 'N/A'}</span></span>
-                    </div>
-                 </div>
+            <CardContent className="p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Professional Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                        <div className="flex items-start">
+                            <span className="font-semibold w-28 shrink-0">Qualification:</span>
+                            <span className="text-muted-foreground">{teacherProfile?.qualification || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-start">
+                            <span className="font-semibold w-28 shrink-0">Experience:</span>
+                            <span className="text-muted-foreground">{teacherProfile?.experience || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-start">
+                            <span className="font-semibold w-28 shrink-0">Type:</span>
+                            <span className="text-muted-foreground">{teacherProfile?.experienceType || 'N/A'}</span>
+                        </div>
+                         <div className="flex items-start">
+                            <span className="font-semibold w-28 shrink-0">Location:</span>
+                            <span className="text-muted-foreground">{teacherProfile?.address || 'N/A'}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><Phone className="h-5 w-5 text-primary"/>Contact Info</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                         <div className="flex items-center">
+                            <span className="font-semibold w-24 shrink-0">Email:</span>
+                            <span className="text-muted-foreground truncate">{teacherProfile?.email}</span>
+                        </div>
+                         <div className="flex items-center">
+                            <span className="font-semibold w-24 shrink-0">Mobile:</span>
+                            <span className="text-muted-foreground">{teacherProfile?.mobileNumber || 'N/A'}</span>
+                        </div>
+                         <div className="flex items-center">
+                            <span className="font-semibold w-24 shrink-0">WhatsApp:</span>
+                            {teacherProfile.whatsappNumber ? (
+                                <Link href={`https://wa.me/${teacherProfile.whatsappNumber.replace(/\\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                    {teacherProfile.whatsappNumber}
+                                </Link>
+                            ) : (
+                                <span className="text-muted-foreground">N/A</span>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="md:col-span-2 lg:col-span-1">
+                     <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><BookOpenCheck className="h-5 w-5 text-primary"/>Teaching Focus</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <h4 className="font-semibold mb-2 text-sm">Subjects Taught</h4>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                             {teacherProfile?.subjects && teacherProfile.subjects.length > 0 ? teacherProfile.subjects.map(sub => (
+                                <Badge key={sub}>{sub.trim()}</Badge>
+                             )) : <p className="text-sm text-muted-foreground">No subjects listed.</p>}
+                        </div>
+                         <h4 className="font-semibold mb-2 text-sm">Class Levels</h4>
+                        <div className="flex flex-wrap gap-2">
+                             {teacherProfile?.classLevels && teacherProfile.classLevels.length > 0 ? teacherProfile.classLevels.map(level => (
+                                <Badge key={level} variant="outline">{level.trim()}</Badge>
+                             )) : <p className="text-sm text-muted-foreground">No class levels listed.</p>}
+                        </div>
+                    </CardContent>
+                </Card>
             </CardContent>
         </Card>
     </div>
