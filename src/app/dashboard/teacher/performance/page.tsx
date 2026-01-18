@@ -73,7 +73,7 @@ export default function PerformancePage() {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
-    const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+    const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const classesQuery = useMemoFirebase(() => {
@@ -98,13 +98,15 @@ export default function PerformancePage() {
 
      useEffect(() => {
         const selectedClass = classes?.find(c => c.id === selectedClassId);
-        if (selectedClass) {
+        // If the selected class's subject is one of the teacher's main subjects, pre-select it.
+        // Otherwise, clear the selection, forcing the teacher to choose.
+        if (selectedClass && teacherSubjects.includes(selectedClass.subject)) {
             setSubject(selectedClass.subject);
         } else {
             setSubject('');
         }
         setSelectedStudentId('');
-    }, [selectedClassId, classes]);
+    }, [selectedClassId, classes, teacherSubjects]);
 
 
     const performanceQuery = useMemoFirebase(() => {
@@ -168,7 +170,7 @@ export default function PerformancePage() {
         return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedClassId);
     }, [testResults, selectedStudentId, selectedClassId, students]);
 
-    const isLoading = isLoadingClasses || isLoadingResults || isLoadingEnrollments;
+    const isLoading = isLoadingClasses || isLoadingResults || isLoadingEnrollments || isLoadingProfile;
 
     return (
         <div className="space-y-6">
@@ -215,8 +217,16 @@ export default function PerformancePage() {
                             <Input id="testName" value={testName} onChange={e => setTestName(e.target.value)} placeholder="e.g. Unit Test 1" />
                         </div>
                         <div>
-                            <Label htmlFor="subject">Subject</Label>
-                             <Input id="subject" value={subject} disabled placeholder="Select a class to auto-fill" />
+                            <Label htmlFor="subject">Subject*</Label>
+                            <Select onValueChange={setSubject} value={subject} disabled={!selectedClassId}>
+                                <SelectTrigger id="subject">
+                                    <SelectValue placeholder="Select a subject" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {teacherSubjects.length === 0 && !isLoadingProfile && <SelectItem value="no-subjects" disabled>No subjects in profile</SelectItem>}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex gap-4">
                             <div className="flex-1">
