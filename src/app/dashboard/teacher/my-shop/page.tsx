@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, PlusCircle, Info } from 'lucide-react';
+import { ShoppingCart, PlusCircle, Info, XCircle } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,7 +34,7 @@ type PremiumMaterial = {
 };
 
 type UserProfile = {
-    status: 'pending_verification' | 'approved';
+    status: 'pending_verification' | 'approved' | 'denied';
 }
 
 function PendingVerificationCard() {
@@ -53,6 +53,22 @@ function PendingVerificationCard() {
     )
 }
 
+function DeniedVerificationCard() {
+     return (
+        <Card className="bg-destructive/10 border-destructive/20 shadow-soft-shadow">
+            <CardHeader className="flex-row items-center gap-4">
+                <XCircle className="h-8 w-8 text-destructive"/>
+                <div>
+                    <CardTitle className="text-xl text-destructive">Application Not Approved</CardTitle>
+                    <CardDescription className="text-destructive/80">
+                        Unfortunately, your tutor application was not approved. You cannot list items for sale.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
+
 export default function TeacherShopPage() {
     const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -64,18 +80,18 @@ export default function TeacherShopPage() {
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
 
     const premiumMaterialsQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user) return null;
+        if (!firestore || isUserLoading || !user || userProfile?.status !== 'approved') return null;
         return query(
             collection(firestore, 'studyMaterials'),
             where('teacherId', '==', user.uid),
             where('isFree', '==', false),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, isUserLoading, user]);
+    }, [firestore, isUserLoading, user, userProfile]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<PremiumMaterial>(premiumMaterialsQuery);
     
-    const isLoading = isUserLoading || isLoadingProfile || isLoadingMaterials;
+    const isLoading = isUserLoading || isLoadingProfile;
 
     const renderContent = () => {
         if (isLoading) {
@@ -94,47 +110,60 @@ export default function TeacherShopPage() {
             );
         }
 
-        if (userProfile?.status !== 'approved') {
+        if (userProfile?.status === 'pending_verification') {
             return <PendingVerificationCard />;
         }
+        
+        if (userProfile?.status === 'denied') {
+            return <DeniedVerificationCard />;
+        }
 
-        return (
-             <Card className="shadow-soft-shadow">
-                <CardHeader>
-                    <CardTitle>Your Premium Listings</CardTitle>
-                    <CardDescription>All materials you have listed for sale in the student marketplace.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {materials && materials.length > 0 ? (
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead className="text-right">Price</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {materials.map(item => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.title}</TableCell>
-                                        <TableCell><Badge variant="outline">{item.type}</Badge></TableCell>
-                                        <TableCell>{item.subject}</TableCell>
-                                        <TableCell className="text-right font-semibold">₹{item.price}</TableCell>
+        if (userProfile?.status === 'approved') {
+            return (
+                 <Card className="shadow-soft-shadow">
+                    <CardHeader>
+                        <CardTitle>Your Premium Listings</CardTitle>
+                        <CardDescription>All materials you have listed for sale in the student marketplace.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingMaterials ? (
+                            <div className="space-y-2">
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                            </div>
+                        ) : materials && materials.length > 0 ? (
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Subject</TableHead>
+                                        <TableHead className="text-right">Price</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="text-center py-12 text-muted-foreground">
-                            <p className="font-semibold">You haven't listed any premium items for sale yet.</p>
-                            <p className="text-sm mt-1">Click "Add Premium Item" to get started.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        )
+                                </TableHeader>
+                                <TableBody>
+                                    {materials.map(item => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.title}</TableCell>
+                                            <TableCell><Badge variant="outline">{item.type}</Badge></TableCell>
+                                            <TableCell>{item.subject}</TableCell>
+                                            <TableCell className="text-right font-semibold">₹{item.price}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <p className="font-semibold">You haven't listed any premium items for sale yet.</p>
+                                <p className="text-sm mt-1">Click "Add Premium Item" to get started.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        return <PendingVerificationCard />;
     }
     
     return (
