@@ -64,11 +64,11 @@ export default function DailyPracticePage() {
 
   const dppQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // Query for all public DPPs
+    // Query for all public DPPs, ensuring 'isFree' is the first filter
     return query(
       collection(firestore, 'studyMaterials'), 
-      where('type', '==', 'DPP'), 
       where('isFree', '==', true),
+      where('type', '==', 'DPP'), 
       orderBy('createdAt', 'desc')
     );
   }, [firestore]);

@@ -140,9 +140,11 @@ service cloud.firestore {
 
     match /studyMaterials/{studyMaterialId} {
       // Anyone can get a free document.
+      // A signed-in user can get a paid document's metadata (for the shop).
       // The teacher owner can get their own private documents.
       // An enrolled student can get private documents for their class.
       allow get: if (isExistingDoc() && resource.data.isFree == true)
+                  || (isExistingDoc() && resource.data.isFree == false && isSignedIn())
                   || (isExistingDoc() && resource.data.teacherId != null && isTeacherOwner(resource.data))
                   || (isExistingDoc() && resource.data.classId != null && isEnrolledInClass(resource.data.classId));
       
@@ -150,6 +152,8 @@ service cloud.firestore {
       allow list: if isSignedIn() && (
           // Allow listing all public, free materials
           (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true) ||
+           // Allow listing all public, paid materials for the shop
+          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == false) ||
           // Allow listing materials for a specific teacher
           (request.query.where[0][0] == 'teacherId') ||
           // Allow listing materials for a specific class, if the user is enrolled in it
@@ -184,23 +188,6 @@ service cloud.firestore {
                         (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold'])) ||
                      (isAdmin() && request.resource.data.status == 'available' && resource.data.status == 'pending');
       allow delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
-    }
-
-    /* ===============================
-       ATTENDANCES
-    =============================== */
-
-    match /attendances/{attendanceId} {
-      allow get: if isExistingDoc()
-                 && (isTeacherOwner(resource.data)
-                     || isStudentOwner(resource.data));
-      allow list: if isSignedIn()
-                  && request.query.where[0][0] == 'teacherId'
-                  && request.query.where[0][2] == request.auth.uid;
-      allow create: if isSignedIn()
-                    && isTeacherOwner(request.resource.data);
-      allow update, delete: if isExistingDoc()
-                            && isTeacherOwner(resource.data);
     }
 
     /* ===============================
