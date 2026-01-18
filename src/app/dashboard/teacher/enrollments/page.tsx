@@ -106,15 +106,17 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
 }
 
 export default function EnrollmentsPage() {
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if(!firestore || !user?.uid) return null;
+        if(!firestore || isUserLoading || !user?.uid) return null;
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-    }, [firestore, user?.uid]);
+    }, [firestore, user?.uid, isUserLoading]);
     
-    const { data: enrollments, isLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const isLoading = isUserLoading || isLoadingEnrollments;
 
     return (
         <div className="space-y-6">
