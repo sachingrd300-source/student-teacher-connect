@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -57,7 +58,7 @@ type Batch = { id: string; subject: string; classLevel: string; };
 export default function PerformancePage() {
     const { toast } = useToast();
     
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
 
     // Form state
@@ -69,25 +70,25 @@ export default function PerformancePage() {
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
     
     const userProfileQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user?.uid]);
+    }, [firestore, user?.uid, isUserLoading]);
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user?.uid) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user?.uid]);
+    }, [firestore, user?.uid, isUserLoading]);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user?.uid) return null;
         return query(
             collection(firestore, 'enrollments'), 
             where('teacherId', '==', user.uid)
         );
-    }, [firestore, user?.uid]);
+    }, [firestore, user?.uid, isUserLoading]);
     const { data: allEnrollments, isLoading: isLoadingEnrollments } = useCollection<StudentEnrollment>(enrollmentsQuery);
 
     const students = useMemo(() => {
@@ -109,9 +110,9 @@ export default function PerformancePage() {
 
 
     const performanceQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user?.uid) return null;
         return query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
-    }, [firestore, user?.uid]);
+    }, [firestore, user?.uid, isUserLoading]);
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 
 
@@ -169,7 +170,7 @@ export default function PerformancePage() {
         return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedBatchId);
     }, [testResults, selectedStudentId, selectedBatchId, students]);
 
-    const isLoading = isLoadingBatches || isLoadingResults || isLoadingEnrollments || isLoadingProfile;
+    const isLoading = isUserLoading || isLoadingBatches || isLoadingResults || isLoadingEnrollments || isLoadingProfile;
 
     return (
         <div className="space-y-6">
@@ -280,3 +281,5 @@ export default function PerformancePage() {
         </div>
     );
 }
+
+    
