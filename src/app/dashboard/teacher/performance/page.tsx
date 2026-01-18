@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -70,25 +69,25 @@ export default function PerformancePage() {
     const [maxMarks, setMaxMarks] = useState<number | ''>('');
     
     const userProfileQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user?.uid, isUserLoading]);
+    }, [firestore, user, isUserLoading]);
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user?.uid, isUserLoading]);
+    }, [firestore, user, isUserLoading]);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(
             collection(firestore, 'enrollments'), 
             where('teacherId', '==', user.uid)
         );
-    }, [firestore, user?.uid, isUserLoading]);
+    }, [firestore, user, isUserLoading]);
     const { data: allEnrollments, isLoading: isLoadingEnrollments } = useCollection<StudentEnrollment>(enrollmentsQuery);
 
     const students = useMemo(() => {
@@ -110,9 +109,9 @@ export default function PerformancePage() {
 
 
     const performanceQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user?.uid) return null;
+        if (!firestore || isUserLoading || !user) return null;
         return query(collection(firestore, 'performances'), where('teacherId', '==', user.uid), orderBy('date', 'desc'));
-    }, [firestore, user?.uid, isUserLoading]);
+    }, [firestore, user, isUserLoading]);
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 
 
@@ -281,5 +280,3 @@ export default function PerformancePage() {
         </div>
     );
 }
-
-    

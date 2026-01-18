@@ -105,29 +105,29 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
 
   // Queries for stats
   const batchesQuery = useMemoFirebase(() => {
-    if (!firestore || !user.uid) return null;
+    if (!firestore || !user) return null;
     return query(
       collection(firestore, "classes"),
       where("teacherId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
-  }, [firestore, user.uid]);
+  }, [firestore, user]);
 
   const enrollmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user.uid) return null;
+    if (!firestore || !user) return null;
     return query(
         collection(firestore, "enrollments"),
         where("teacherId", "==", user.uid)
     );
-  }, [firestore, user.uid]);
+  }, [firestore, user]);
 
   const materialsQuery = useMemoFirebase(() => {
-    if (!firestore || !user.uid) return null;
+    if (!firestore || !user) return null;
     return query(
         collection(firestore, "studyMaterials"),
         where("teacherId", "==", user.uid)
     );
-  }, [firestore, user.uid]);
+  }, [firestore, user]);
   
   const { data: batches, isLoading: isLoadingBatches } = useCollection<BatchType>(batchesQuery);
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);

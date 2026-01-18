@@ -64,14 +64,14 @@ export default function AttendancePage() {
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
 
     const studentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid || !selectedBatchId) return null;
+        if (!firestore || !user || !selectedBatchId) return null;
         return query(
             collection(firestore, 'enrollments'),
             where('teacherId', '==', user.uid),
             where('classId', '==', selectedBatchId),
             where('status', '==', 'approved')
         );
-    }, [firestore, user?.uid, selectedBatchId]);
+    }, [firestore, user, selectedBatchId]);
     const { data: students, isLoading: isLoadingStudents } = useCollection<Enrollment>(studentsQuery);
     
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
