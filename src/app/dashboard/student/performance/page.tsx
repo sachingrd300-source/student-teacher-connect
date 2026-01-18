@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { BarChart3, BookCopy, Filter } from 'lucide-react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -59,20 +60,22 @@ const getPerformanceEmoji = (percentage: number): string => {
 }
 
 export default function StudentPerformancePage() {
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
   const [subjectFilter, setSubjectFilter] = useState('all');
 
-  const performanceQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+  const performanceQuery = useMemoFirebase(() => {
+    if (!firestore || isUserLoading || !user) return null;
     return query(
       collection(firestore, 'performances'),
       where('studentId', '==', user.uid),
       orderBy('date', 'desc')
     );
-  }, [firestore, user]);
+  }, [firestore, user, isUserLoading]);
 
-  const { data: performanceData, isLoading } = useCollection<PerformanceRecord>(performanceQuery);
+  const { data: performanceData, isLoading: isLoadingPerformances } = useCollection<PerformanceRecord>(performanceQuery);
+
+  const isLoading = isUserLoading || isLoadingPerformances;
 
   const subjects = useMemo(() => {
     if (!performanceData) return [];
