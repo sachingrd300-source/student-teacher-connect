@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -53,6 +54,7 @@ type ProfileFormData = {
     name: string;
     coachingName: string;
     subjects: string;
+    classLevels: string;
     qualification: string;
     experience: string;
     address: string;
@@ -131,6 +133,7 @@ export default function TeacherProfilePage() {
         name: '',
         coachingName: '',
         subjects: '',
+        classLevels: '',
         qualification: '',
         experience: '',
         address: '',
@@ -143,6 +146,7 @@ export default function TeacherProfilePage() {
                 name: teacherProfile.name || '',
                 coachingName: teacherProfile.coachingName || '',
                 subjects: teacherProfile.subjects?.join(', ') || '',
+                classLevels: teacherProfile.classLevels?.join(', ') || '',
                 qualification: teacherProfile.qualification || '',
                 experience: teacherProfile.experience || '',
                 address: teacherProfile.address || '',
@@ -162,6 +166,7 @@ export default function TeacherProfilePage() {
         const userRef = doc(firestore, 'users', user.uid);
         
         const subjectsArray = formData.subjects.split(',').map(s => s.trim()).filter(Boolean);
+        const classLevelsArray = formData.classLevels.split(',').map(s => s.trim()).filter(Boolean);
 
         const updatedData = {
             name: formData.name,
@@ -171,6 +176,7 @@ export default function TeacherProfilePage() {
             address: formData.address,
             whatsappNumber: formData.whatsappNumber,
             subjects: subjectsArray,
+            classLevels: classLevelsArray,
         };
 
         updateDoc(userRef, updatedData)
@@ -229,6 +235,11 @@ export default function TeacherProfilePage() {
                             <Label htmlFor="subjects">Subjects</Label>
                             <Input id="subjects" value={formData.subjects} onChange={handleInputChange} placeholder="e.g. Physics, Chemistry" />
                             <p className="text-xs text-muted-foreground">Separate subjects with a comma.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="classLevels">Class Levels</Label>
+                            <Input id="classLevels" value={formData.classLevels} onChange={handleInputChange} placeholder="e.g. 9-10, 11-12, Undergraduate" />
+                            <p className="text-xs text-muted-foreground">Separate class levels with a comma.</p>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="qualification">Highest Qualification</Label>
