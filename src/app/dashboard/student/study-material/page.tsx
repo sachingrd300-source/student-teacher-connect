@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -35,7 +34,7 @@ import {
   Book,
   Calculator,
 } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -69,20 +68,22 @@ const materialTypes = ["Notes", "Books", "PYQs", "Formulas", "DPP", "Homework", 
 
 export default function StudyMaterialPage() {
   const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
   const freeMaterialsQuery = useMemo(() => {
-    if(!firestore) return null;
+    if(!firestore || isUserLoading || !user) return null;
     return query(
         collection(firestore, 'studyMaterials'), 
         where('isFree', '==', true), 
         orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, user, isUserLoading]);
 
-  const { data: studyMaterials, isLoading } = useCollection<StudyMaterial>(freeMaterialsQuery);
+  const { data: studyMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(freeMaterialsQuery);
+  const isLoading = isUserLoading || isLoadingMaterials;
   
   const subjects = useMemo(() => {
     if (!studyMaterials) return [];

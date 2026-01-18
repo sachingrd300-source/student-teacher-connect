@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -13,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, ShoppingBag, BookOpen } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -113,29 +112,30 @@ const StudentItemCard = ({ item }: { item: MarketplaceItem }) => {
 
 export default function ShopPage() {
   const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
 
   const premiumMaterialsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || isUserLoading || !user) return null;
     return query(
       collection(firestore, 'studyMaterials'),
       where('isFree', '==', false),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, user, isUserLoading]);
 
   const studentItemsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || isUserLoading || !user) return null;
     return query(
         collection(firestore, 'marketplaceItems'),
         where('status', '==', 'available'),
         orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, user, isUserLoading]);
 
   const { data: premiumMaterials, isLoading: isLoadingPremium } = useCollection<StudyMaterial>(premiumMaterialsQuery);
   const { data: studentItems, isLoading: isLoadingStudentItems } = useCollection<MarketplaceItem>(studentItemsQuery);
   
-  const isLoading = isLoadingPremium || isLoadingStudentItems;
+  const isLoading = isUserLoading || isLoadingPremium || isLoadingStudentItems;
   const allItems = useMemo(() => {
     const combined = [
         ...(premiumMaterials || []).map(item => ({...item, itemCategory: 'premium'})),
