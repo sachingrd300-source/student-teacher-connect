@@ -32,6 +32,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, Timestamp, addDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 type StudentEnrollment = { id: string; studentName: string; studentId: string; classId: string; status: 'pending' | 'approved' | 'denied'; };
@@ -112,7 +114,7 @@ export default function PerformancePage() {
     const { data: testResults, isLoading: isLoadingResults } = useCollection<TestResult>(performanceQuery);
 
 
-    const handleAddResult = async () => {
+    const handleAddResult = () => {
         if (!selectedStudentId || !testName || !subject || marks === '' || maxMarks === '' || !firestore || !user) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields.' });
             return;
@@ -136,19 +138,26 @@ export default function PerformancePage() {
             date: serverTimestamp(),
         };
         
-        try {
-            await addDoc(collection(firestore, 'performances'), newResult);
-            toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
-            
-            // Reset form but keep class and subject
-            setSelectedStudentId('');
-            setTestName('');
-            setMarks('');
-            setMaxMarks('');
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not add result.' });
-            console.error("Error adding performance result: ", error);
-        }
+        const performancesCollection = collection(firestore, 'performances');
+        addDoc(performancesCollection, newResult)
+            .then(() => {
+                toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
+                // Reset form but keep class and subject
+                setSelectedStudentId('');
+                setTestName('');
+                setMarks('');
+                setMaxMarks('');
+            })
+            .catch(error => {
+                errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: performancesCollection.path,
+                        operation: 'create',
+                        requestResourceData: newResult,
+                    })
+                );
+            });
     }
     
     const displayedResults = useMemo(() => {
