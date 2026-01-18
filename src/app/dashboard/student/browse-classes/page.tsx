@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -65,18 +64,20 @@ function ClassCard({ classInfo }: { classInfo: ClassInfo }) {
 
 export default function BrowseClassesPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
 
   const classesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || isUserLoading || !user) return null;
     return query(
       collection(firestore, 'classes'),
       where('isActive', '==', true),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user]);
+  }, [firestore, user, isUserLoading]);
 
-  const { data: classes, isLoading } = useCollection<ClassInfo>(classesQuery);
+  const { data: classes, isLoading: isClassesLoading } = useCollection<ClassInfo>(classesQuery);
+
+  const isLoading = isUserLoading || isClassesLoading;
 
   return (
     <div className="space-y-6">
