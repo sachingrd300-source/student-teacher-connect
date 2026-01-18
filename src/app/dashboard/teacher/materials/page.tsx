@@ -240,106 +240,117 @@ export default function MaterialsPage() {
                     <DialogTrigger asChild>
                         <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Material</Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[480px]">
+                    <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
                             <DialogTitle>Add New Study Material</DialogTitle>
-                            <DialogDescription>Fill in the details below to upload a new resource.</DialogDescription>
+                            <DialogDescription>Fill in the details for your new resource. Fields marked with * are required.</DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="title" className="text-right">Title*</Label>
-                                <Input id="title" value={title} onChange={e => setTitle(e.target.value)} className="col-span-3" placeholder="e.g. Chapter 1 Notes" />
+                        <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                            
+                            <div className="space-y-2">
+                                <Label htmlFor="title">Title*</Label>
+                                <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Chapter 1: Motion in a Straight Line" />
                             </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="description" className="text-right">Description</Label>
-                                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" placeholder="A brief summary of the material." />
+
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief summary of the material. What topics does it cover?" />
                             </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="class" className="text-right">Private Class</Label>
-                                <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'} disabled={isLoadingClasses}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Assign to a class (optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {isLoadingClasses ? (
-                                            <SelectItem value="loading" disabled>Loading classes...</SelectItem>
-                                        ) : (
-                                            <>
-                                                <SelectItem value="none">None (General Material)</SelectItem>
-                                                {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
-                                            </>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="classLevel" className="text-right">Public Class Level</Label>
-                                <Select onValueChange={(val) => setClassLevel(val === 'none' ? null : val)} value={classLevel || 'none'}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="For public filtering (optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                         <SelectItem value="none">None</SelectItem>
-                                        {classLevelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="subject" className="text-right">Subject*</Label>
-                                <Select onValueChange={setSubject} value={subject}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Select a subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                        {teacherSubjects.length === 0 && !isLoadingProfile && <SelectItem value="no-subjects" disabled>No subjects in profile</SelectItem>}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="chapter" className="text-right">Chapter</Label>
-                                <Input id="chapter" value={chapter} onChange={e => setChapter(e.target.value)} className="col-span-3" placeholder="e.g. Chapter 5" />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="type" className="text-right">Type*</Label>
-                                <Select onValueChange={setMaterialType} value={materialType}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Select material type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {materialTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="file" className="text-right">File*</Label>
-                                <Input id="file" type="file" className="col-span-3" />
-                                <p className="col-start-2 col-span-3 text-xs text-muted-foreground">File upload coming soon.</p>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Access</Label>
-                                <div className="col-span-3 space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                        <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
-                                        <Label htmlFor="isFree">Free (Public)</Label>
-                                    </div>
-                                    {user?.uid === ADMIN_USER_ID && (
-                                     <div className="flex items-center space-x-2">
-                                        <Switch id="isOfficial" checked={isOfficial} onCheckedChange={setIsOfficial} />
-                                        <Label htmlFor="isOfficial">Official (App Creator)</Label>
-                                    </div>
-                                    )}
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="subject">Subject*</Label>
+                                    <Select onValueChange={setSubject} value={subject}>
+                                        <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                                        <SelectContent>
+                                            {isLoadingProfile && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                                            {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                            {teacherSubjects.length === 0 && !isLoadingProfile && <SelectItem value="no-subjects" disabled>No subjects in profile</SelectItem>}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="chapter">Chapter</Label>
+                                    <Input id="chapter" value={chapter} onChange={e => setChapter(e.target.value)} placeholder="e.g. Chapter 5" />
                                 </div>
                             </div>
-                            {!isFree && (
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="price" className="text-right">Price (INR)*</Label>
-                                    <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} className="col-span-3" placeholder="e.g. 199" />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="type">Type*</Label>
+                                    <Select onValueChange={setMaterialType} value={materialType}>
+                                        <SelectTrigger><SelectValue placeholder="Select material type" /></SelectTrigger>
+                                        <SelectContent>
+                                            {materialTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="classLevel">Public Class Level</Label>
+                                    <Select onValueChange={(val) => setClassLevel(val === 'none' ? null : val)} value={classLevel || 'none'}>
+                                        <SelectTrigger><SelectValue placeholder="Select a level" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None</SelectItem>
+                                            {classLevelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">For public filtering. Optional.</p>
+                                </div>
+                            </div>
+
+                            <Card className="bg-muted/50">
+                                <CardHeader className="p-4">
+                                    <CardTitle className="text-base">Audience & Access</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0 space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="class">Assign to Private Class (Optional)</Label>
+                                        <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'} disabled={isLoadingClasses}>
+                                            <SelectTrigger><SelectValue placeholder="Assign to a specific class..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {isLoadingClasses ? <SelectItem value="loading" disabled>Loading classes...</SelectItem> :
+                                                    <>
+                                                        <SelectItem value="none">None (General Material)</SelectItem>
+                                                        {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                                    </>
+                                                }
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">If assigned, only students enrolled in this class can access it.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Access Level</Label>
+                                        <div className="flex items-center space-x-2 pt-1">
+                                            <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
+                                            <Label htmlFor="isFree">{isFree ? 'Free (Public)' : 'Paid (Premium)'}</Label>
+                                        </div>
+                                    </div>
+                                    {!isFree && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="price">Price (INR)*</Label>
+                                            <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="e.g. 199" />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="file">Upload File*</Label>
+                                <Input id="file" type="file" />
+                                <p className="text-xs text-muted-foreground">File upload is for demonstration and not yet functional.</p>
+                            </div>
+
+                            {user?.uid === ADMIN_USER_ID && (
+                                <div className="flex items-center space-x-2 rounded-md border p-4 bg-amber-500/10 border-amber-500/20">
+                                    <Switch id="isOfficial" checked={isOfficial} onCheckedChange={setIsOfficial} />
+                                    <Label htmlFor="isOfficial">Mark as Official Content (Admin Only)</Label>
                                 </div>
                             )}
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddMaterial}>Upload Material</Button>
+                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !title || !subject || !materialType || (!isFree && !price)}>
+                                {isLoadingProfile ? 'Loading...' : 'Upload Material'}
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
