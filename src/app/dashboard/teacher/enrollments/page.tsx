@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -36,7 +35,7 @@ type Enrollment = {
     createdAt: { toDate: () => Date };
 };
 
-type ClassInfo = {
+type BatchInfo = {
     subject: string;
     classLevel: string;
 }
@@ -45,11 +44,11 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     
-    const classQuery = useMemo(() => {
+    const batchQuery = useMemo(() => {
         if(!firestore) return null;
         return doc(firestore, 'classes', enrollment.classId);
     }, [firestore, enrollment.classId]);
-    const { data: classInfo, isLoading: isLoadingClass } = useDoc<ClassInfo>(classQuery);
+    const { data: batchInfo, isLoading: isLoadingBatch } = useDoc<BatchInfo>(batchQuery);
 
     const handleUpdateStatus = (status: 'approved' | 'denied') => {
         if (!firestore) return;
@@ -71,7 +70,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
             });
     };
 
-    if (isLoadingClass) {
+    if (isLoadingBatch) {
         return (
             <TableRow>
                 <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
@@ -82,7 +81,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
     return (
         <TableRow>
             <TableCell className="font-medium">{enrollment.studentName || 'Loading...'}</TableCell>
-            <TableCell>{classInfo ? `${classInfo.subject} - ${classInfo.classLevel}`: 'Loading class...'}</TableCell>
+            <TableCell>{batchInfo ? `${batchInfo.subject} - ${batchInfo.classLevel}`: 'Loading batch...'}</TableCell>
             <TableCell>{enrollment.createdAt.toDate().toLocaleDateString()}</TableCell>
             <TableCell>
                  <Badge variant={
@@ -144,7 +143,7 @@ export default function EnrollmentsPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Student Name</TableHead>
-                                    <TableHead>Class</TableHead>
+                                    <TableHead>Batch</TableHead>
                                     <TableHead>Request Date</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -52,7 +51,7 @@ type UserProfile = {
   name: string;
   subjects?: string[];
 }
-type Class = { id: string; subject: string; classLevel: string; };
+type Batch = { id: string; subject: string; classLevel: string; };
 
 
 export default function PerformancePage() {
@@ -62,7 +61,7 @@ export default function PerformancePage() {
     const firestore = useFirestore();
 
     // Form state
-    const [selectedClassId, setSelectedClassId] = useState('');
+    const [selectedBatchId, setSelectedBatchId] = useState('');
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const [testName, setTestName] = useState('');
     const [subject, setSubject] = useState('');
@@ -76,11 +75,11 @@ export default function PerformancePage() {
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
-    const classesQuery = useMemoFirebase(() => {
+    const batchesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user]);
-    const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
+    const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -92,21 +91,21 @@ export default function PerformancePage() {
     const { data: allEnrollments, isLoading: isLoadingEnrollments } = useCollection<StudentEnrollment>(enrollmentsQuery);
 
     const students = useMemo(() => {
-        if (!allEnrollments || !selectedClassId) return [];
-        return allEnrollments.filter(e => e.classId === selectedClassId && e.status === 'approved');
-    }, [allEnrollments, selectedClassId]);
+        if (!allEnrollments || !selectedBatchId) return [];
+        return allEnrollments.filter(e => e.classId === selectedBatchId && e.status === 'approved');
+    }, [allEnrollments, selectedBatchId]);
 
      useEffect(() => {
-        const selectedClass = classes?.find(c => c.id === selectedClassId);
-        // If the selected class's subject is one of the teacher's main subjects, pre-select it.
+        const selectedBatch = batches?.find(c => c.id === selectedBatchId);
+        // If the selected batch's subject is one of the teacher's main subjects, pre-select it.
         // Otherwise, clear the selection, forcing the teacher to choose.
-        if (selectedClass && teacherSubjects.includes(selectedClass.subject)) {
-            setSubject(selectedClass.subject);
+        if (selectedBatch && teacherSubjects.includes(selectedBatch.subject)) {
+            setSubject(selectedBatch.subject);
         } else {
             setSubject('');
         }
         setSelectedStudentId('');
-    }, [selectedClassId, classes, teacherSubjects]);
+    }, [selectedBatchId, batches, teacherSubjects]);
 
 
     const performanceQuery = useMemoFirebase(() => {
@@ -132,7 +131,7 @@ export default function PerformancePage() {
             studentId: student.studentId,
             studentName: student.studentName,
             teacherId: user.uid,
-            classId: selectedClassId,
+            classId: selectedBatchId,
             testName,
             subject,
             marks: Number(marks),
@@ -144,7 +143,7 @@ export default function PerformancePage() {
         addDoc(performancesCollection, newResult)
             .then(() => {
                 toast({ title: 'Result Added', description: `Marks for ${testName} have been recorded.`});
-                // Reset form but keep class and subject
+                // Reset form but keep batch and subject
                 setSelectedStudentId('');
                 setTestName('');
                 setMarks('');
@@ -164,13 +163,13 @@ export default function PerformancePage() {
     
     const displayedResults = useMemo(() => {
         if (!testResults) return [];
-        if (!selectedClassId) return testResults;
-        if (!selectedStudentId) return testResults.filter(r => r.classId === selectedClassId);
+        if (!selectedBatchId) return testResults;
+        if (!selectedStudentId) return testResults.filter(r => r.classId === selectedBatchId);
         const student = students?.find(s => s.studentId === selectedStudentId);
-        return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedClassId);
-    }, [testResults, selectedStudentId, selectedClassId, students]);
+        return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedBatchId);
+    }, [testResults, selectedStudentId, selectedBatchId, students]);
 
-    const isLoading = isLoadingClasses || isLoadingResults || isLoadingEnrollments || isLoadingProfile;
+    const isLoading = isLoadingBatches || isLoadingResults || isLoadingEnrollments || isLoadingProfile;
 
     return (
         <div className="space-y-6">
@@ -188,27 +187,27 @@ export default function PerformancePage() {
                 <Card className="lg:col-span-1 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Enter Test Marks</CardTitle>
-                        <CardDescription>Select a class and student to enter their score.</CardDescription>
+                        <CardDescription>Select a batch and student to enter their score.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
-                            <Label htmlFor="class">Class*</Label>
-                            <Select onValueChange={setSelectedClassId} value={selectedClassId}>
-                                <SelectTrigger id="class"><SelectValue placeholder="Select a class" /></SelectTrigger>
+                            <Label htmlFor="batch">Batch*</Label>
+                            <Select onValueChange={setSelectedBatchId} value={selectedBatchId}>
+                                <SelectTrigger id="batch"><SelectValue placeholder="Select a batch" /></SelectTrigger>
                                 <SelectContent>
-                                    {isLoadingClasses && <SelectItem value="loading" disabled>Loading...</SelectItem>}
-                                    {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                    {isLoadingBatches && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                                    {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div>
                             <Label htmlFor="student">Student*</Label>
-                            <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedClassId || isLoadingEnrollments}>
+                            <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedBatchId || isLoadingEnrollments}>
                                 <SelectTrigger id="student"><SelectValue placeholder="Select a student" /></SelectTrigger>
                                 <SelectContent>
                                     {isLoadingEnrollments && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
                                     {students?.map(s => <SelectItem key={s.id} value={s.studentId}>{s.studentName}</SelectItem>)}
-                                     {!isLoadingEnrollments && students?.length === 0 && selectedClassId && <SelectItem value="no-students" disabled>No approved students in this class.</SelectItem>}
+                                     {!isLoadingEnrollments && students?.length === 0 && selectedBatchId && <SelectItem value="no-students" disabled>No approved students in this batch.</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -218,7 +217,7 @@ export default function PerformancePage() {
                         </div>
                         <div>
                             <Label htmlFor="subject">Subject*</Label>
-                            <Select onValueChange={setSubject} value={subject} disabled={!selectedClassId}>
+                            <Select onValueChange={setSubject} value={subject} disabled={!selectedBatchId}>
                                 <SelectTrigger id="subject">
                                     <SelectValue placeholder="Select a subject" />
                                 </SelectTrigger>
@@ -247,7 +246,7 @@ export default function PerformancePage() {
                  <Card className="lg:col-span-2 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Test History</CardTitle>
-                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || classes?.find(c => c.id === selectedClassId)?.subject || 'all students'}.</CardDescription>
+                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || batches?.find(c => c.id === selectedBatchId)?.subject || 'all students'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     {isLoadingResults && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}

@@ -84,7 +84,7 @@ type UserProfile = {
   classLevels?: string[];
 }
 
-type Class = {
+type Batch = {
     id: string;
     subject: string;
     classLevel: string;
@@ -98,7 +98,7 @@ export default function MaterialsPage() {
     const { toast } = useToast();
     const [isAddMaterialOpen, setAddMaterialOpen] = useState(false);
     
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
 
     // The app creator should replace this with their actual Firebase User ID (UID)
@@ -110,7 +110,7 @@ export default function MaterialsPage() {
     const [subject, setSubject] = useState('');
     const [chapter, setChapter] = useState('');
     const [materialType, setMaterialType] = useState('');
-    const [classId, setClassId] = useState<string | null>(null);
+    const [batchId, setBatchId] = useState<string | null>(null);
     const [classLevel, setClassLevel] = useState<string | null>(null);
     const [isFree, setIsFree] = useState(true);
     const [isOfficial, setIsOfficial] = useState(false);
@@ -133,20 +133,20 @@ export default function MaterialsPage() {
         );
     }, [firestore, user?.uid]);
 
-    const classesQuery = useMemoFirebase(() => {
+    const batchesQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
-    const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
+    const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
 
     useEffect(() => {
-        const selectedClass = classes?.find(c => c.id === classId);
-        if (selectedClass) {
-            setSubject(selectedClass.subject);
+        const selectedBatch = batches?.find(c => c.id === batchId);
+        if (selectedBatch) {
+            setSubject(selectedBatch.subject);
         }
-    }, [classId, classes]);
+    }, [batchId, batches]);
 
     const resetForm = () => {
         setTitle('');
@@ -154,7 +154,7 @@ export default function MaterialsPage() {
         setSubject('');
         setChapter('');
         setMaterialType('');
-        setClassId(null);
+        setBatchId(null);
         setClassLevel(null);
         setIsFree(true);
         setIsOfficial(false);
@@ -178,7 +178,7 @@ export default function MaterialsPage() {
             subject,
             chapter,
             type: materialType,
-            classId,
+            classId: batchId,
             classLevel,
             teacherId: user.uid,
             teacherName: userProfile.name,
@@ -260,7 +260,7 @@ export default function MaterialsPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="subject">Subject*</Label>
-                                    <Select onValueChange={setSubject} value={subject}>
+                                    <Select onValueChange={setSubject} value={subject} disabled={!!batchId}>
                                         <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
                                         <SelectContent>
                                             {isLoadingProfile && <SelectItem value="loading" disabled>Loading...</SelectItem>}
@@ -304,19 +304,19 @@ export default function MaterialsPage() {
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="class">Assign to Private Class (Optional)</Label>
-                                        <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'} disabled={isLoadingClasses}>
-                                            <SelectTrigger><SelectValue placeholder="Assign to a specific class..." /></SelectTrigger>
+                                        <Label htmlFor="class">Assign to Private Batch (Optional)</Label>
+                                        <Select onValueChange={(val) => setBatchId(val === 'none' ? null : val)} value={batchId || 'none'} disabled={isLoadingBatches || isUserLoading}>
+                                            <SelectTrigger><SelectValue placeholder="Assign to a specific batch..." /></SelectTrigger>
                                             <SelectContent>
-                                                {isLoadingClasses ? <SelectItem value="loading" disabled>Loading classes...</SelectItem> :
+                                                {isLoadingBatches ? <SelectItem value="loading" disabled>Loading batches...</SelectItem> :
                                                     <>
                                                         <SelectItem value="none">None (General Material)</SelectItem>
-                                                        {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                                        {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
                                                     </>
                                                 }
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-xs text-muted-foreground">If assigned, only students enrolled in this class can access it.</p>
+                                        <p className="text-xs text-muted-foreground">If assigned, only students enrolled in this batch can access it.</p>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Access Level</Label>

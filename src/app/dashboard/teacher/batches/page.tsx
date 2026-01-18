@@ -70,7 +70,7 @@ export default function BatchesPage() {
 
   const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 
-  // 🗑 Delete class
+  // 🗑 Delete batch
   const handleDeleteBatch = (batchId: string) => {
     if (!firestore) return;
 
@@ -78,8 +78,8 @@ export default function BatchesPage() {
     deleteDoc(batchRef)
         .then(() => {
             toast({
-                title: 'Class Deleted',
-                description: 'The selected class has been removed.',
+                title: 'Batch Deleted',
+                description: 'The selected batch has been removed.',
             });
         })
         .catch(error => {
@@ -96,22 +96,22 @@ export default function BatchesPage() {
         <div>
           <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
             <Users2 className="h-8 w-8" />
-            Manage Classes
+            Manage Batches
           </h1>
           <p className="text-muted-foreground">
-            View and manage your student classes.
+            View and manage your student batches.
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/teacher">Create Class</Link>
+          <Link href="/dashboard/teacher">Create Batch</Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Classes</CardTitle>
+          <CardTitle>Your Batches</CardTitle>
           <CardDescription>
-            A list of all the student classes you have created.
+            A list of all the student batches you have created.
           </CardDescription>
         </CardHeader>
 
@@ -123,7 +123,7 @@ export default function BatchesPage() {
 
           {!isLoading && batches && batches.length === 0 && (
             <p className="text-sm text-center text-muted-foreground py-8">
-              You haven't created any classes yet.
+              You haven't created any batches yet.
             </p>
           )}
 
@@ -131,7 +131,7 @@ export default function BatchesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Class Name</TableHead>
+                  <TableHead>Batch Name</TableHead>
                   <TableHead>Created On</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -170,7 +170,7 @@ export default function BatchesPage() {
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 !cursor-pointer">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Class
+                                Delete Batch
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
                           </DropdownMenuContent>
@@ -182,7 +182,7 @@ export default function BatchesPage() {
                               Are you sure?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone and will permanently delete this class.
+                              This action cannot be undone and will permanently delete this batch.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

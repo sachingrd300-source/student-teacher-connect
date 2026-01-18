@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -29,7 +28,7 @@ import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCi
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
-type ClassType = {
+type BatchType = {
   id: string;
   title: string;
   subject: string;
@@ -101,7 +100,7 @@ function TeacherDashboardContent() {
   const [classSubject, setClassSubject] = useState("");
   const [classLevel, setClassLevel] = useState("");
   const [batchTime, setBatchTime] = useState("");
-  const [isCreatingClass, setIsCreatingClass] = useState(false);
+  const [isCreatingBatch, setIsCreatingBatch] = useState(false);
 
   // Get teacher's profile to access name
   const userProfileQuery = useMemoFirebase(() => {
@@ -112,7 +111,7 @@ function TeacherDashboardContent() {
 
 
   // Queries for stats
-  const classesQuery = useMemoFirebase(() => {
+  const batchesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, "classes"),
@@ -137,7 +136,7 @@ function TeacherDashboardContent() {
     );
   }, [firestore, user]);
   
-  const { data: classes, isLoading: isLoadingClasses } = useCollection<ClassType>(classesQuery);
+  const { data: batches, isLoading: isLoadingBatches } = useCollection<BatchType>(batchesQuery);
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
   const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
   
@@ -149,7 +148,7 @@ function TeacherDashboardContent() {
   }, [enrollments]);
 
 
-  const handleCreateClass = async () => {
+  const handleCreateBatch = async () => {
     if (!classSubject || !classLevel || !firestore || !user || !userProfile) {
       toast({
         variant: "destructive",
@@ -158,9 +157,9 @@ function TeacherDashboardContent() {
       });
       return;
     }
-    setIsCreatingClass(true);
+    setIsCreatingBatch(true);
     
-    const newClassData = {
+    const newBatchData = {
         title: `${classSubject} - ${classLevel}`,
         subject: classSubject,
         classLevel,
@@ -173,9 +172,9 @@ function TeacherDashboardContent() {
     };
     
     const classesCollection = collection(firestore, "classes");
-    addDoc(classesCollection, newClassData)
+    addDoc(classesCollection, newBatchData)
     .then(() => {
-        toast({ title: "Success!", description: "Class created successfully." });
+        toast({ title: "Success!", description: "Batch created successfully." });
         setClassSubject("");
         setClassLevel("");
         setBatchTime("");
@@ -184,11 +183,11 @@ function TeacherDashboardContent() {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: classesCollection.path,
             operation: 'create',
-            requestResourceData: newClassData,
+            requestResourceData: newBatchData,
         }));
     })
     .finally(() => {
-        setIsCreatingClass(false);
+        setIsCreatingBatch(false);
     });
   };
 
@@ -197,7 +196,7 @@ function TeacherDashboardContent() {
     toast({ title: "Copied!", description: "Class code copied to clipboard." });
   }
   
-  const isLoading = isUserLoading || isLoadingClasses || isLoadingEnrollments || isLoadingMaterials;
+  const isLoading = isUserLoading || isLoadingBatches || isLoadingEnrollments || isLoadingMaterials;
 
   return (
     <div className="space-y-6">
@@ -209,72 +208,72 @@ function TeacherDashboardContent() {
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatCard title="Total Classes" value={classes?.length ?? 0} icon={<Users2 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingClasses} />
+          <StatCard title="Total Batches" value={batches?.length ?? 0} icon={<Users2 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingBatches} />
           <StatCard title="Total Students" value={totalStudents} icon={<BarChart3 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingEnrollments} />
           <StatCard title="Materials Uploaded" value={materials?.length ?? 0} icon={<BookOpenCheck className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingMaterials} />
        </div>
 
 
       <div className="grid md:grid-cols-2 gap-6 items-start">
-        {/* CREATE CLASS */}
+        {/* CREATE BATCH */}
         <Card className="shadow-soft-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><PlusCircle className="h-6 w-6 text-primary"/>Create a New Class</CardTitle>
+            <CardTitle className="flex items-center gap-2"><PlusCircle className="h-6 w-6 text-primary"/>Create a New Batch</CardTitle>
             <CardDescription>
-              Create a new class for students to join with a unique code.
+              Create a new batch for students to join with a unique code.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
-              placeholder="Class Subject (e.g. Physics)"
+              placeholder="Batch Subject (e.g. Physics)"
               value={classSubject}
               onChange={(e) => setClassSubject(e.target.value)}
-              disabled={isCreatingClass}
+              disabled={isCreatingBatch}
             />
             <Input
-              placeholder="Class Level (e.g. 11-12)"
+              placeholder="Batch Level (e.g. 11-12)"
               value={classLevel}
               onChange={(e) => setClassLevel(e.target.value)}
-              disabled={isCreatingClass}
+              disabled={isCreatingBatch}
             />
             <Input
               placeholder="Batch Time (e.g. 7:00 AM)"
               value={batchTime}
               onChange={(e) => setBatchTime(e.target.value)}
-              disabled={isCreatingClass}
+              disabled={isCreatingBatch}
             />
             <Button
-              onClick={handleCreateClass}
+              onClick={handleCreateBatch}
               className="w-full"
-              disabled={isCreatingClass || !classLevel || !classSubject}
+              disabled={isCreatingBatch || !classLevel || !classSubject}
             >
-              {isCreatingClass && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isCreatingClass ? "Creating..." : "Create Class"}
+              {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isCreatingBatch ? "Creating..." : "Create Batch"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* CLASS LIST */}
+        {/* BATCH LIST */}
         <Card className="shadow-soft-shadow">
           <CardHeader>
-            <CardTitle>Your Classes</CardTitle>
+            <CardTitle>Your Batches</CardTitle>
             <CardDescription>
               Share the code with students to let them enroll.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingClasses ? (
+            {isLoadingBatches ? (
                  <div className="space-y-2">
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
                 </div>
-            ) : classes && classes.length === 0 ? (
+            ) : batches && batches.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-8">
-                You haven't created any classes yet.
+                You haven't created any batches yet.
               </p>
             ) : (
               <div className="space-y-3">
-                {classes?.slice(0, 5).map((c) => (
+                {batches?.slice(0, 5).map((c) => (
                   <div
                     key={c.id}
                     className="border p-3 rounded-lg bg-muted/30 flex justify-between items-center transition-colors"
@@ -299,10 +298,10 @@ function TeacherDashboardContent() {
               </div>
             )}
           </CardContent>
-          {classes && classes.length > 5 && (
+          {batches && batches.length > 5 && (
              <CardFooter>
                  <Button variant="outline" asChild className="w-full mt-4">
-                    <Link href="/dashboard/teacher/batches">Manage All Classes</Link>
+                    <Link href="/dashboard/teacher/batches">Manage All Batches</Link>
                 </Button>
               </CardFooter>
           )}
@@ -355,5 +354,3 @@ export default function TeacherPage() {
       </div>
     );
 }
-
-    
