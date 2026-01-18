@@ -126,18 +126,18 @@ export default function MaterialsPage() {
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user) return null;
+        if (!firestore || !user) return null;
         return query(
             collection(firestore, 'studyMaterials'), 
             where('teacherId', '==', user.uid),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, isUserLoading, user]);
+    }, [firestore, user]);
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user) return null;
+        if (!firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, isUserLoading, user]);
+    }, [firestore, user]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
@@ -349,8 +349,8 @@ export default function MaterialsPage() {
                             )}
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !title || !subject || !materialType || (!isFree && !price)}>
-                                {isLoadingProfile ? 'Loading...' : 'Upload Material'}
+                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !userProfile || !title || !subject || !materialType || (!isFree && !price)}>
+                                {isLoadingProfile || !userProfile ? 'Loading...' : 'Upload Material'}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
