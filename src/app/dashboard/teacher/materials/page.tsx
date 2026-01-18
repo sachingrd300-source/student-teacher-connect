@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -126,21 +125,21 @@ export default function MaterialsPage() {
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user?.uid) return null;
         return query(
             collection(firestore, 'studyMaterials'), 
             where('teacherId', '==', user.uid),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
 
     const classesQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user?.uid) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
     
-    const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
-    const { data: classes } = useCollection<Class>(classesQuery);
+    const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
+    const { data: classes, isLoading: isLoadingClasses } = useCollection<Class>(classesQuery);
 
     const resetForm = () => {
         setTitle('');
@@ -250,13 +249,19 @@ export default function MaterialsPage() {
                             </div>
                              <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="class" className="text-right">Private Class</Label>
-                                <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'}>
+                                <Select onValueChange={(val) => setClassId(val === 'none' ? null : val)} value={classId || 'none'} disabled={isLoadingClasses}>
                                     <SelectTrigger className="col-span-3">
                                         <SelectValue placeholder="Assign to a class (optional)" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">None (General Material)</SelectItem>
-                                        {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                        {isLoadingClasses ? (
+                                            <SelectItem value="loading" disabled>Loading classes...</SelectItem>
+                                        ) : (
+                                            <>
+                                                <SelectItem value="none">None (General Material)</SelectItem>
+                                                {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                            </>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -351,7 +356,7 @@ export default function MaterialsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
+                            {isLoadingMaterials ? (
                                 <>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
