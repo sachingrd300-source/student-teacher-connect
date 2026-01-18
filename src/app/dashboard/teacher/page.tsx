@@ -93,7 +93,7 @@ function DeniedVerificationCard() {
     );
 }
 
-function TeacherDashboardContent() {
+function TeacherDashboardContent({ userProfile }: { userProfile: UserProfile }) {
   const { toast } = useToast();
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -102,14 +102,6 @@ function TeacherDashboardContent() {
   const [classLevel, setClassLevel] = useState("");
   const [batchTime, setBatchTime] = useState("");
   const [isCreatingBatch, setIsCreatingBatch] = useState(false);
-
-  // Get teacher's profile to access name
-  const userProfileQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
-
 
   // Queries for stats
   const batchesQuery = useMemoFirebase(() => {
@@ -358,7 +350,7 @@ export default function TeacherPage() {
     }
     
     if (userProfile?.status === 'approved') {
-        return <TeacherDashboardContent />;
+        return <TeacherDashboardContent userProfile={userProfile} />;
     }
 
     // Fallback case, though it shouldn't be reached if user profile is loaded
