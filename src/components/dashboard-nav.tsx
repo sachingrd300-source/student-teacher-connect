@@ -63,6 +63,7 @@ const navItems = {
   ],
   admin: [
     { href: '/dashboard/admin', label: 'Admin Dashboard', icon: ShieldCheck },
+    { href: '/dashboard/admin/content', label: 'Content Mgmt', icon: BookOpenCheck },
   ],
 };
 
