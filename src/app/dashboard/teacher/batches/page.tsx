@@ -76,14 +76,14 @@ export default function BatchesPage() {
 
   // 📌 Firestore query
   const batchesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user) return null;
 
     return query(
       collection(firestore, 'classes'),
       where('teacherId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user]);
 
   const { data: batches, isLoading } = useCollection<Batch>(batchesQuery);
 

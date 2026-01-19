@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -13,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, User, Briefcase, MapPin, MessageSquare } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -82,18 +81,20 @@ const TutorCard = ({ tutor }: { tutor: TutorProfile }) => {
 
 export default function FindTutorPage() {
   const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const tutorsQuery = useMemo(() => {
-    if (!firestore) return null;
+  const tutorsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
     return query(
       collection(firestore, 'users'),
       where('role', '==', 'tutor'),
       where('status', '==', 'approved')
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
-  const { data: tutors, isLoading } = useCollection<TutorProfile>(tutorsQuery);
+  const { data: tutors, isLoading: isLoadingTutors } = useCollection<TutorProfile>(tutorsQuery);
+  const isLoading = isUserLoading || isLoadingTutors;
 
   const filteredTutors = useMemo(() => {
     if (!tutors) return [];

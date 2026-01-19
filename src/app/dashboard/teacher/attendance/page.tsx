@@ -58,9 +58,9 @@ export default function AttendancePage() {
     const [attendance, setAttendance] = useState<AttendanceRecord>({});
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
+        if (!firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user?.uid]);
+    }, [firestore, user]);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
 
     const studentsQuery = useMemoFirebase(() => {
