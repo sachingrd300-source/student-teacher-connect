@@ -79,20 +79,39 @@ export default function DailyPracticePage() {
     );
   }, [firestore, user]);
   
-  const { data: dailyPracticePapers, isLoading: isLoadingPapers } = useCollection<StudyMaterial>(dppQuery);
-  const isLoading = isUserLoading || isLoadingPapers;
+  const homeworkQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'studyMaterials'),
+      where('isFree', '==', true),
+      where('type', '==', 'Homework'),
+      where('classId', '==', null),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: dailyPracticePapers, isLoading: isLoadingDpps } = useCollection<StudyMaterial>(dppQuery);
+  const { data: homework, isLoading: isLoadingHomework } = useCollection<StudyMaterial>(homeworkQuery);
+
+  const allPracticeMaterials = useMemo(() => {
+    const combined = [...(dailyPracticePapers || []), ...(homework || [])];
+    combined.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+    return combined;
+  }, [dailyPracticePapers, homework]);
+
+  const isLoading = isUserLoading || isLoadingDpps || isLoadingHomework;
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
         <ClipboardList className="w-8 h-8"/>
-        Daily Practice
+        Daily Practice & Homework
       </h1>
 
       <Card className="shadow-soft-shadow">
         <CardHeader>
-          <CardTitle>Daily Practice Papers (DPPs)</CardTitle>
-          <CardDescription>Stay sharp with these daily exercises from our tutors.</CardDescription>
+          <CardTitle>Practice Materials</CardTitle>
+          <CardDescription>Stay sharp with these daily exercises and homework assignments from our tutors.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -110,12 +129,12 @@ export default function DailyPracticePage() {
                         <TableCell colSpan={4}><Skeleton className="h-12 w-full"/></TableCell>
                     </TableRow>
                 ))}
-                {!isLoading && dailyPracticePapers?.map((paper) => (
+                {!isLoading && allPracticeMaterials?.map((paper) => (
                     <MaterialRow key={paper.id} paper={paper} />
                 ))}
               </TableBody>
             </Table>
-            {!isLoading && dailyPracticePapers?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice papers available yet.</p>}
+            {!isLoading && allPracticeMaterials?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice materials available yet.</p>}
         </CardContent>
       </Card>
     </div>
