@@ -151,25 +151,25 @@ export default function MaterialsPage() {
 
 
     const userProfileQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user) return null;
+        if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user, isUserLoading]);
+    }, [firestore, user]);
     const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
     const teacherSubjects = useMemo(() => userProfile?.subjects || [], [userProfile]);
 
     const materialsQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user) return null;
+        if (!firestore || !user) return null;
         return query(
             collection(firestore, 'studyMaterials'), 
             where('teacherId', '==', user.uid),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user, isUserLoading]);
+    }, [firestore, user]);
 
     const batchesQuery = useMemoFirebase(() => {
-        if (!firestore || isUserLoading || !user) return null;
+        if (!firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user, isUserLoading]);
+    }, [firestore, user]);
     
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
     const { data: batches, isLoading: isLoadingBatches } = useCollection<Batch>(batchesQuery);
@@ -265,29 +265,6 @@ export default function MaterialsPage() {
 
     const isLoading = isUserLoading || isLoadingProfile || isLoadingMaterials || isLoadingBatches;
 
-    if (isLoading) {
-        return (
-             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <Skeleton className="h-9 w-64" />
-                        <Skeleton className="h-5 w-96 mt-2" />
-                    </div>
-                    <Skeleton className="h-10 w-36" />
-                </div>
-                <Card className="shadow-soft-shadow">
-                    <CardHeader>
-                        <Skeleton className="h-8 w-48" />
-                        <Skeleton className="h-5 w-72" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-40 w-full" />
-                    </CardContent>
-                </Card>
-            </div>
-        )
-    }
-    
     const PageHeader = () => (
         <div className="flex items-center justify-between">
             <div>
@@ -300,8 +277,8 @@ export default function MaterialsPage() {
             {userProfile?.status === 'approved' && (
                  <Dialog open={isAddMaterialOpen} onOpenChange={setAddMaterialOpen}>
                     <DialogTrigger asChild>
-                        <Button disabled={isLoading}><PlusCircle className="mr-2 h-4 w-4"/> 
-                            {isLoading ? 'Loading...' : 'Add Material'}
+                        <Button disabled={isLoading}>
+                            {isLoading ? 'Loading...' : <><PlusCircle className="mr-2 h-4 w-4"/> Add Material</>}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
@@ -319,7 +296,7 @@ export default function MaterialsPage() {
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="subject">Subject*</Label>
-                                    <Select onValueChange={setSubject} value={subject}>
+                                    <Select onValueChange={setSubject} value={subject} disabled={visibility === 'private' && !!batchId}>
                                         <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
                                         <SelectContent>
                                             {isLoadingProfile && <SelectItem value="loading" disabled>Loading...</SelectItem>}
@@ -349,11 +326,11 @@ export default function MaterialsPage() {
                                         <RadioGroup defaultValue="public" value={visibility} onValueChange={(v) => setVisibility(v as 'public' | 'private')}>
                                             <div className="flex items-center space-x-2">
                                                 <RadioGroupItem value="public" id="public" />
-                                                <Label htmlFor="public">Public</Label>
+                                                <Label htmlFor="public">Public (For all students)</Label>
                                             </div>
                                             <div className="flex items-center space-x-2">
                                                 <RadioGroupItem value="private" id="private" />
-                                                <Label htmlFor="private">Private</Label>
+                                                <Label htmlFor="private">Private (For a specific batch)</Label>
                                             </div>
                                         </RadioGroup>
                                     </div>
@@ -363,7 +340,7 @@ export default function MaterialsPage() {
                                                 <Label>Access Level</Label>
                                                 <div className="flex items-center space-x-2 pt-1">
                                                     <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
-                                                    <Label htmlFor="isFree">{isFree ? 'Free for Everyone' : 'Paid (Premium)'}</Label>
+                                                    <Label htmlFor="isFree">{isFree ? 'Free for Everyone' : 'Paid (Premium Listing)'}</Label>
                                                 </div>
                                             </div>
                                             {!isFree && (
@@ -372,13 +349,23 @@ export default function MaterialsPage() {
                                                     <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="e.g. 199" />
                                                 </div>
                                             )}
+                                             <div className="space-y-2">
+                                                <Label htmlFor="classLevel">Target Class Level (Optional)</Label>
+                                                <Select onValueChange={(val) => setClassLevel(val === 'none' ? null : val)} value={classLevel || 'none'}>
+                                                    <SelectTrigger><SelectValue placeholder="For filtering..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">None</SelectItem>
+                                                        {classLevelOptions.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
                                     )}
                                     {visibility === 'private' && (
                                          <div className="space-y-2 pt-2 pl-6 border-l">
-                                            <Label htmlFor="class">Assign to Private Batch*</Label>
-                                            <Select onValueChange={(val) => setBatchId(val === 'none' ? null : val)} value={batchId || 'none'} disabled={isLoadingBatches || isUserLoading}>
-                                                <SelectTrigger><SelectValue placeholder="Assign to a specific batch..." /></SelectTrigger>
+                                            <Label htmlFor="class">Assign to Batch*</Label>
+                                            <Select onValueChange={(val) => setBatchId(val === 'none' ? null : val)} value={batchId || 'none'} disabled={isLoadingBatches}>
+                                                <SelectTrigger><SelectValue placeholder="Select a private batch..." /></SelectTrigger>
                                                 <SelectContent>
                                                     {isLoadingBatches ? <SelectItem value="loading" disabled>Loading batches...</SelectItem> :
                                                         <>
@@ -401,8 +388,8 @@ export default function MaterialsPage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !userProfile || !title || !subject || !materialType}>
-                                {isLoadingProfile || !userProfile ? 'Loading...' : 'Upload Material'}
+                            <Button onClick={handleAddMaterial} disabled={isLoading}>
+                                {isLoading ? 'Loading...' : 'Upload Material'}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -411,6 +398,29 @@ export default function MaterialsPage() {
         </div>
     );
     
+    if (isLoading) {
+        return (
+             <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Skeleton className="h-9 w-64" />
+                        <Skeleton className="h-5 w-96 mt-2" />
+                    </div>
+                    <Skeleton className="h-10 w-36" />
+                </div>
+                <Card className="shadow-soft-shadow">
+                    <CardHeader>
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-5 w-72" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
     if (userProfile?.status !== 'approved') {
         return (
             <div className="space-y-6">
@@ -504,3 +514,5 @@ export default function MaterialsPage() {
         </div>
     );
 }
+
+    
