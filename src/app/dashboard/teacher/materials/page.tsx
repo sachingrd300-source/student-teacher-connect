@@ -55,7 +55,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PlusCircle, MoreVertical, BookOpenCheck, Trash2, Info, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -140,9 +139,8 @@ export default function MaterialsPage() {
     // Form state
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
     const [subject, setSubject] = useState('');
-    const [chapter, setChapter] = useState('');
+    const [fileUrl, setFileUrl] = useState('');
     const [materialType, setMaterialType] = useState('');
     const [batchId, setBatchId] = useState<string | null>(null);
     const [classLevel, setClassLevel] = useState<string | null>(null);
@@ -184,9 +182,8 @@ export default function MaterialsPage() {
     const resetForm = () => {
         setVisibility('public');
         setTitle('');
-        setDescription('');
+        setFileUrl('');
         setSubject('');
-        setChapter('');
         setMaterialType('');
         setBatchId(null);
         setClassLevel(null);
@@ -196,7 +193,7 @@ export default function MaterialsPage() {
     }
 
     const handleAddMaterial = async () => {
-        if (!title || !subject || !materialType || !firestore || !user || !userProfile) {
+        if (!title || !subject || !materialType || !fileUrl || !firestore || !user || !userProfile) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
             return;
         }
@@ -213,9 +210,7 @@ export default function MaterialsPage() {
 
         const newMaterial = {
             title,
-            description,
             subject,
-            chapter,
             type: materialType,
             classId: visibility === 'private' ? batchId : null,
             classLevel: visibility === 'public' ? classLevel : null,
@@ -224,7 +219,7 @@ export default function MaterialsPage() {
             isFree: visibility === 'private' ? true : isFree,
             price: visibility === 'public' && !isFree ? Number(price) : 0,
             createdAt: serverTimestamp(),
-            fileUrl: 'https://example.com/placeholder.pdf'
+            fileUrl,
         };
         
         const materialsCollection = collection(firestore, 'studyMaterials');
@@ -382,9 +377,9 @@ export default function MaterialsPage() {
                             </Card>
 
                             <div className="space-y-2">
-                                <Label htmlFor="file">Upload File*</Label>
-                                <Input id="file" type="file" />
-                                <p className="text-xs text-muted-foreground">File upload is for demonstration and not yet functional.</p>
+                                <Label htmlFor="fileUrl">File URL*</Label>
+                                <Input id="fileUrl" value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="https://example.com/document.pdf" />
+                                <p className="text-xs text-muted-foreground">Link to your file (e.g., Google Drive, Dropbox).</p>
                             </div>
                         </div>
                         <DialogFooter>
@@ -514,5 +509,3 @@ export default function MaterialsPage() {
         </div>
     );
 }
-
-    
