@@ -9,7 +9,7 @@ import {
   useCollection,
   useMemoFirebase,
 } from '@/firebase';
-import { doc, collection, query, where, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 
 import {
   Card,
@@ -28,8 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
-import { FileText, AlertTriangle, BookOpenCheck } from 'lucide-react';
+import { FileText, AlertTriangle, BookOpenCheck, Calendar, Users, Video, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
 /* =======================
@@ -40,6 +44,7 @@ type ClassInfo = {
   subject: string;
   classLevel: string;
   teacherId: string;
+  title: string;
 };
 
 type TeacherInfo = {
@@ -54,9 +59,20 @@ type StudyMaterial = {
   fileUrl: string;
 };
 
+type Schedule = {
+    id: string;
+    topic: string;
+    date: Timestamp;
+    time: string;
+    type: 'Online' | 'Offline';
+    locationOrLink: string;
+};
+
 type Enrollment = {
+    id: string;
     status: 'approved' | 'pending' | 'denied';
-}
+    studentName: string;
+};
 
 /* =======================
    ICONS
@@ -108,7 +124,7 @@ export default function ClassRoomPage() {
   const firestore = useFirestore();
 
   /* ---------- CLASS ---------- */
-  const classRef = useMemo(() => {
+  const classRef = useMemoFirebase(() => {
     if (!firestore || !classId) return null;
     return doc(firestore, 'classes', classId);
   }, [firestore, classId]);
@@ -117,7 +133,7 @@ export default function ClassRoomPage() {
     useDoc<ClassInfo>(classRef);
 
   /* ---------- TEACHER ---------- */
-  const teacherRef = useMemo(() => {
+  const teacherRef = useMemoFirebase(() => {
     if (!firestore || !classInfo) return null;
     return doc(firestore, 'users', classInfo.teacherId);
   }, [firestore, classInfo]);
@@ -125,42 +141,56 @@ export default function ClassRoomPage() {
   const { data: teacherInfo, isLoading: loadingTeacher } =
     useDoc<TeacherInfo>(teacherRef);
 
-  /* ---------- ENROLLMENT (MOST IMPORTANT) ---------- */
+  /* ---------- ENROLLMENT (ACCESS CHECK) ---------- */
    const enrollmentRef = useMemoFirebase(() => {
     if (!firestore || !user || !classId) return null;
-    // Use the predictable enrollment ID for a direct document read
     const enrollmentId = `${user.uid}_${classId}`;
     return doc(firestore, 'enrollments', enrollmentId);
   }, [firestore, user, classId]);
 
-  const { data: enrollment, isLoading: loadingEnrollment } = useDoc<Enrollment>(enrollmentRef);
+  const { data: enrollment, isLoading: loadingEnrollment } = useDoc<{status: 'approved' | 'pending' | 'denied'}>(enrollmentRef);
 
   const isEnrolled = enrollment?.status === 'approved';
 
-  /* ---------- MATERIALS (ONLY IF ENROLLED) ---------- */
-  const materialsQuery = useMemo(() => {
+  /* ---------- DATA (ONLY IF ENROLLED) ---------- */
+  const materialsQuery = useMemoFirebase(() => {
     if (!firestore || !classId || !isEnrolled) return null;
-
-    // This query is designed to work with the security rules.
-    // The rules check that if you query by classId, you must be enrolled.
     return query(
       collection(firestore, 'studyMaterials'),
       where('classId', '==', classId),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, classId, isEnrolled]);
+  const { data: materials, isLoading: loadingMaterials } = useCollection<StudyMaterial>(materialsQuery);
 
-  const {
-    data: materials,
-    isLoading: loadingMaterials,
-  } = useCollection<StudyMaterial>(materialsQuery);
+  const schedulesQuery = useMemoFirebase(() => {
+      if (!firestore || !classId || !isEnrolled) return null;
+      return query(
+          collection(firestore, 'classSchedules'),
+          where('classId', '==', classId),
+          where('date', '>=', new Date()),
+          orderBy('date', 'asc')
+      );
+  }, [firestore, classId, isEnrolled]);
+  const { data: schedules, isLoading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
+
+  const classmatesQuery = useMemoFirebase(() => {
+      if (!firestore || !classId || !isEnrolled) return null;
+      return query(
+          collection(firestore, 'enrollments'),
+          where('classId', '==', classId),
+          where('status', '==', 'approved')
+      );
+  }, [firestore, classId, isEnrolled]);
+  const { data: classmates, isLoading: loadingClassmates } = useCollection<Enrollment>(classmatesQuery);
+
 
   /* ---------- GLOBAL LOADING ---------- */
   const isLoading =
     loadingClass ||
     loadingTeacher ||
     loadingEnrollment ||
-    (isEnrolled && loadingMaterials);
+    (isEnrolled && (loadingMaterials || loadingSchedules || loadingClassmates));
 
   if (isLoading) {
     return <ClassRoomSkeleton />;
@@ -193,63 +223,107 @@ export default function ClassRoomPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">
-          {classInfo.subject} – {classInfo.classLevel}
+        <h1 className="text-3xl font-bold font-headline">
+          {classInfo.title}
         </h1>
         <p className="text-muted-foreground">
           Tutor: {teacherInfo?.name || '—'}
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpenCheck className="w-6 h-6" />
-            Class Materials
-          </CardTitle>
-          <CardDescription>
-            All materials shared by your teacher for this class
-          </CardDescription>
-        </CardHeader>
+       <Tabs defaultValue="materials" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="materials"><BookOpenCheck className="w-4 h-4 mr-2"/>Materials</TabsTrigger>
+          <TabsTrigger value="schedule"><Calendar className="w-4 h-4 mr-2"/>Schedule</TabsTrigger>
+          <TabsTrigger value="students"><Users className="w-4 h-4 mr-2"/>Students</TabsTrigger>
+        </TabsList>
+        <TabsContent value="materials">
+            <Card>
+                <CardHeader>
+                <CardTitle>Class Materials</CardTitle>
+                <CardDescription>All resources shared by your teacher for this class.</CardDescription>
+                </CardHeader>
 
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
+                <CardContent>
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[50px]">Type</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Date</TableHead>
+                    </TableRow>
+                    </TableHeader>
 
-            <TableBody>
-              {materials?.map((material) => (
-                <TableRow key={material.id}>
-                  <TableCell>
-                    {materialIcons[material.type] || (
-                      <FileText className="h-5 w-5" />
+                    <TableBody>
+                    {materials?.map((material) => (
+                        <TableRow key={material.id}>
+                        <TableCell>
+                            {materialIcons[material.type] || <FileText className="h-5 w-5" />}
+                        </TableCell>
+                        <TableCell className="font-medium">{material.title}</TableCell>
+                        <TableCell>{material.createdAt.toDate().toLocaleDateString()}</TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                {materials?.length === 0 && (
+                    <p className="text-center text-muted-foreground py-10">No materials uploaded yet.</p>
+                )}
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="schedule">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Upcoming Class Schedule</CardTitle>
+                    <CardDescription>Your schedule for this specific class.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {schedules && schedules.length > 0 ? schedules.map(schedule => (
+                         <Card key={schedule.id} className="shadow-soft-shadow bg-muted/50">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">{format(schedule.date.toDate(), 'EEEE, PPP')}</p>
+                                        <CardTitle className="text-xl">{schedule.topic}</CardTitle>
+                                    </div>
+                                    <Badge variant="secondary">{schedule.time}</Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    {schedule.type === 'Online' ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
+                                    <span className="truncate">{schedule.locationOrLink}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )) : (
+                        <p className="text-center text-muted-foreground py-10">No upcoming classes scheduled for this batch.</p>
                     )}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {material.title}
-                  </TableCell>
-                  <TableCell>
-                    {material.createdAt
-                      .toDate()
-                      .toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {materials?.length === 0 && (
-            <p className="text-center text-muted-foreground py-10">
-              No materials uploaded yet.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="students">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Classmates</CardTitle>
+                    <CardDescription>Students enrolled in this batch.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {classmates && classmates.length > 0 ? classmates.map(student => (
+                        <div key={student.id} className="flex flex-col items-center text-center gap-2">
+                            <Avatar>
+                                <AvatarFallback>{student.studentName?.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <p className="text-sm font-medium leading-none truncate w-full">{student.studentName}</p>
+                        </div>
+                    )) : (
+                         <p className="text-center text-muted-foreground py-10 col-span-full">You're the first one here!</p>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

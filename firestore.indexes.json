@@ -94,6 +94,14 @@
       ]
     },
     {
+      "collectionGroup": "enrollments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "classId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "performances",
       "queryScope": "COLLECTION",
       "fields": [
@@ -168,5 +176,3 @@
   ],
   "fieldOverrides": []
 }
-
-    

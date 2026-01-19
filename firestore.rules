@@ -105,13 +105,13 @@ service cloud.firestore {
         // The student or teacher involved can get the document.
         allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
         
-        // A user can list their own enrollments, either as a student or a teacher.
-        // The query MUST include a where clause on studentId or teacherId.
-        allow list: if isSignedIn() && 
-          (
-            (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
-            (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid)
-          );
+        // A user can list their own enrollments (as student or teacher).
+        // An enrolled student can list other approved students in the same class.
+        allow list: if isSignedIn() && (
+            (request.query.size() >= 1 && request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
+            (request.query.size() >= 1 && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+            (request.query.size() == 2 && request.query.where[0][0] == 'classId' && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'approved' && isEnrolledInClass(request.query.where[0][2]))
+        );
 
         // An authenticated user can create their own enrollment request with a predictable ID
         allow create: if isSignedIn() 
