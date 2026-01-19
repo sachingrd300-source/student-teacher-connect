@@ -51,14 +51,6 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId))
              && get(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId)).data.status == 'approved';
     }
-    
-     // Check if the requesting user is enrolled with any of the teachers in a list
-    function isEnrolledWithTeachers(teacherIdList) {
-        // This is complex for rules. A better approach is to fetch schedules for classes the student is in.
-        // However, if needed, you might use this, but it can be slow and hit read limits.
-        // For this app, we will rely on client-side logic to fetch schedules based on enrolled classes' teacherIds.
-        return isSignedIn() && exists(/databases/$(database)/documents/enrollments?query=studentId_eq_$(request.auth.uid)_and_teacherId_in_$(teacherIdList)_and_status_eq_approved);
-    }
 
 
     /* ===============================
@@ -219,15 +211,13 @@ service cloud.firestore {
        // A teacher can get their own schedule. A student can see schedules for classes they are enrolled in.
       allow get: if isExistingDoc() && (isTeacherOwner(resource.data) || isEnrolledInClass(resource.data.classId));
       
-      // A teacher can list their own schedules. 
-      // A student can list schedules from teachers they are enrolled with.
-      allow list: if isSignedIn() && 
-                  ( 
-                    (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
-                    (request.query.where[0][0] == 'teacherId' && request.query.where[0][1] == 'in' && isEnrolledWithTeachers(request.query.where[0][2]))
-                  );
+      // A teacher can list their own schedules. A student can list schedules for a class they are enrolled in.
+      allow list: if isSignedIn() && (
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2]))
+      );
 
-      allow create: if isSignedIn()
+      allow create: if isApprovedTeacher()
                     && isTeacherOwner(request.resource.data);
       allow update, delete: if isExistingDoc()
                             && isTeacherOwner(resource.data);

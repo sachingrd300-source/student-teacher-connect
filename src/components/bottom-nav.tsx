@@ -14,6 +14,7 @@ import {
   BookOpenCheck,
   ShieldCheck,
   BookCopy,
+  CalendarDays,
 } from 'lucide-react';
 
 type Role = 'teacher' | 'student' | 'admin';
@@ -21,6 +22,7 @@ type Role = 'teacher' | 'student' | 'admin';
 const navItems = {
   student: [
     { href: '/dashboard/student', label: 'Home', icon: Home },
+    { href: '/dashboard/student/my-schedule', label: 'Schedule', icon: CalendarDays },
     { href: '/dashboard/student/find-tutor', label: 'Find Tutor', icon: Search },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
     { href: '/dashboard/student/my-store', label: 'My Store', icon: Store },
@@ -29,7 +31,7 @@ const navItems = {
     { href: '/dashboard/teacher', label: 'Home', icon: Home },
     { href: '/dashboard/teacher/batches', label: 'Classes', icon: Users2 },
     { href: '/dashboard/teacher/enrollments', label: 'Requests', icon: UserPlus },
-    { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
+    { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
   ],
   admin: [
     { href: '/dashboard/admin', label: 'Admin', icon: ShieldCheck },
@@ -42,7 +44,9 @@ export function BottomNav({ role }: { role: Role }) {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
-      <div className={cn("grid h-full max-w-lg mx-auto font-medium", `grid-cols-${items.length}`)}>
+      <div className={cn("grid h-full max-w-lg mx-auto font-medium", 
+        `grid-cols-${items.length}`
+      )}>
         {items.map((item) => (
           <Link
             key={item.href}

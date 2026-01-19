@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -41,12 +42,15 @@ const navItems = {
     { href: '/dashboard/teacher/profile', label: 'My Profile', icon: User },
     { href: '/dashboard/teacher/enrollments', label: 'Enrollments', icon: UserPlus },
     { href: '/dashboard/teacher/batches', label: 'Batches', icon: Users2 },
+    { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
     { href: '/dashboard/teacher/materials', label: 'Materials', icon: BookOpenCheck },
     { href: '/dashboard/teacher/my-shop', label: 'My Shop', icon: ShoppingCart },
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
+    { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: ClipboardList },
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
+    { href: '/dashboard/student/my-schedule', label: 'My Schedule', icon: CalendarDays },
     { href: '/dashboard/student/browse-classes', label: 'Browse Classes', icon: BookCopy },
     { href: '/dashboard/student/find-tutor', label: 'Find a Tutor', icon: Search },
     { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },
