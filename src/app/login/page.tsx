@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -18,6 +19,9 @@ import { useToast } from '@/hooks/use-toast';
 import { loginWithEmail, loginWithGoogle, getGoogleRedirectResult } from '@/firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { firestore } from '@/firebase/firebase';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,20 +31,40 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(true); // Start true to handle redirect
   const isMobile = useIsMobile();
+  const tutorBgImage = PlaceHolderImages.find(img => img.id === 'tutor-bg');
 
   useEffect(() => {
     const handleRedirect = async () => {
         try {
             const result = await getGoogleRedirectResult();
             if (result) {
-                // This means the user is coming back from a redirect
-                toast({
-                    title: 'Login Successful!',
-                    description: 'Welcome to EduConnect Pro.',
-                });
+                const { user } = result;
+                const userDocRef = doc(firestore, 'users', user.uid);
+                const userDoc = await getDoc(userDocRef);
+        
+                if (!userDoc.exists()) {
+                    // Create a pending tutor profile for a new Google user
+                    await setDoc(userDocRef, {
+                        id: user.uid,
+                        name: user.displayName,
+                        email: user.email,
+                        role: 'tutor',
+                        status: 'pending_verification', // Tutors must be verified
+                        createdAt: serverTimestamp(),
+                    });
+                     toast({
+                        title: 'Account Created!',
+                        description: "Your profile has been submitted for verification. We'll notify you upon approval.",
+                    });
+                } else {
+                     toast({
+                        title: 'Login Successful!',
+                        description: 'Welcome back to EduConnect Pro.',
+                    });
+                }
+
                 router.push('/dashboard/teacher');
             } else {
-                // This means the page loaded without a redirect result
                 setGoogleLoading(false);
             }
         } catch(error: any) {
@@ -92,12 +116,30 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle(!!isMobile);
-      // If signInWithPopup returns a result, it means we are on desktop
       if (result) {
-        toast({
-            title: 'Login Successful!',
-            description: 'Welcome to EduConnect Pro.',
-        });
+         const { user } = result;
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+             await setDoc(userDocRef, {
+                id: user.uid,
+                name: user.displayName,
+                email: user.email,
+                role: 'tutor',
+                status: 'pending_verification',
+                createdAt: serverTimestamp(),
+            });
+             toast({
+                title: 'Account Created!',
+                description: "Your profile has been submitted for verification.",
+            });
+        } else {
+            toast({
+                title: 'Login Successful!',
+                description: 'Welcome to EduConnect Pro.',
+            });
+        }
         router.push('/dashboard/teacher');
       }
       // If on mobile, signInWithRedirect was called, and the useEffect will handle the result.
@@ -122,70 +164,80 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center">
-          <div className="mb-4 flex justify-center">
-            <Icons.logo className="h-10 w-10 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-headline">Tutor Login</CardTitle>
-          <CardDescription>Access your teacher dashboard.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="tutor@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading || isGoogleLoading}
-              />
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+        {tutorBgImage && (
+             <Image
+                src={tutorBgImage.imageUrl}
+                alt={tutorBgImage.description}
+                data-ai-hint={tutorBgImage.imageHint}
+                fill
+                className="object-cover"
+            />
+        )}
+        <div className="absolute inset-0 bg-black/60 z-10"></div>
+        <Card className="w-full max-w-md shadow-2xl z-20">
+            <CardHeader className="text-center">
+            <div className="mb-4 flex justify-center">
+                <Icons.logo className="h-10 w-10 text-primary" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading || isGoogleLoading}
-              />
+            <CardTitle className="text-2xl font-headline">Tutor Login</CardTitle>
+            <CardDescription>Access your teacher dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <div className="space-y-4">
+                <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                    id="email"
+                    type="email"
+                    placeholder="tutor@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                />
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                />
+                </div>
             </div>
-          </div>
-          <Button onClick={handleEmailLogin} className="mt-6 w-full" disabled={isLoading || isGoogleLoading}>
-            {isLoading ? 'Signing In...' : 'Sign In'}
-          </Button>
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-          <div className="grid grid-cols-1">
-            <Button variant="outline" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Google
+            <Button onClick={handleEmailLogin} className="mt-6 w-full" disabled={isLoading || isGoogleLoading}>
+                {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
-          </div>
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Want to become a tutor?{' '}
-            <Link
-              href="/signup"
-              className="font-semibold text-primary hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                    Or continue with
+                </span>
+                </div>
+            </div>
+            <div className="grid grid-cols-1">
+                <Button variant="outline" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                    {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Google
+                </Button>
+            </div>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+                Want to become a tutor?{' '}
+                <Link
+                href="/signup"
+                className="font-semibold text-primary hover:underline"
+                >
+                Sign up
+                </Link>
+            </p>
+            </CardContent>
+        </Card>
     </div>
   );
 }

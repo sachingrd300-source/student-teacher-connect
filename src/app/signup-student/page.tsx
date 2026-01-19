@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -17,9 +16,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { signupWithEmail } from '@/firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signupWithEmail, loginWithGoogle, getGoogleRedirectResult } from '@/firebase/auth';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Loader2 } from 'lucide-react';
 
 export default function SignUpStudentPage() {
   const router = useRouter();
@@ -29,6 +30,50 @@ export default function SignUpStudentPage() {
   const [password, setPassword] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setGoogleLoading] = useState(true);
+  const isMobile = useIsMobile();
+  
+  useEffect(() => {
+    const handleRedirect = async () => {
+        try {
+            const result = await getGoogleRedirectResult();
+            if (result) {
+                const { user } = result;
+                 const userDocRef = doc(firestore, 'users', user.uid);
+                 const userDoc = await getDoc(userDocRef);
+        
+                if (!userDoc.exists()) {
+                    await setDoc(userDocRef, {
+                        id: user.uid,
+                        name: user.displayName,
+                        email: user.email,
+                        role: 'student',
+                        status: 'approved',
+                        marketplaceStatus: 'unverified',
+                        createdAt: serverTimestamp(),
+                    });
+                }
+
+                toast({
+                    title: 'Login Successful!',
+                    description: 'Welcome to EduConnect Pro.',
+                });
+                router.push('/dashboard/student');
+            } else {
+                setGoogleLoading(false);
+            }
+        } catch(error: any) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Uh oh! Something went wrong.',
+                description: 'There was a problem with Google Sign-In.',
+            });
+            setGoogleLoading(false);
+        }
+    }
+    handleRedirect();
+  }, [router, toast]);
 
   const handleSignup = async () => {
     if (!email || !password || !name || !mobileNumber) {
@@ -72,6 +117,63 @@ export default function SignUpStudentPage() {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await loginWithGoogle(!!isMobile);
+      if (result) { // This will only be true for desktop popup
+        const { user } = result;
+
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                id: user.uid,
+                name: user.displayName,
+                email: user.email,
+                role: 'student',
+                status: 'approved',
+                marketplaceStatus: 'unverified',
+                createdAt: serverTimestamp(),
+            });
+        }
+
+        toast({
+          title: 'Signup Successful!',
+          description: 'Welcome to EduConnect Pro.',
+        });
+        router.push('/dashboard/student');
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: 'There was a problem with Google Sign-In.',
+      });
+      setGoogleLoading(false);
+    }
+  };
+  
+  if (isGoogleLoading) {
+      return (
+        <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+            <Image
+                src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwbGVhcm5pbmd8ZW58MHx8fHwxNzE4NzUyMjg2fDA&ixlib=rb-4.0.3&q=80&w=1080"
+                alt="Student learning"
+                fill
+                className="object-cover"
+                data-ai-hint="student learning"
+            />
+            <div className="absolute inset-0 bg-black/60 z-10"></div>
+            <div className="z-20">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+        </div>
+      )
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
@@ -142,9 +244,26 @@ export default function SignUpStudentPage() {
               />
             </div>
           </div>
-          <Button onClick={handleSignup} className="mt-6 w-full" disabled={isLoading}>
+          <Button onClick={handleSignup} className="mt-6 w-full" disabled={isLoading || isGoogleLoading}>
             {isLoading ? 'Creating Account...' : 'Sign Up'}
           </Button>
+
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                    Or continue with
+                </span>
+                </div>
+            </div>
+            <div className="grid grid-cols-1">
+                <Button variant="outline" onClick={handleGoogleSignIn} disabled={isGoogleLoading || isLoading}>
+                    {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Google
+                </Button>
+            </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
