@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, BookOpenCheck, Mail, Phone, Edit, Info, MessageSquare, Clock } from 'lucide-react';
+import { User, BookOpenCheck, Mail, Phone, Edit, Info, MessageSquare, Clock, ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -33,6 +33,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 type TeacherProfileData = {
     id: string;
@@ -84,7 +85,7 @@ function ProfileSkeleton() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CardContent className="p-6 grid md:grid-cols-2 gap-6">
                     <Card>
                         <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
                         <CardContent className="space-y-3">
@@ -108,12 +109,31 @@ function ProfileSkeleton() {
                             <Skeleton className="h-4 w-full" />
                         </CardContent>
                     </Card>
+                     <Card>
+                         <CardHeader><Skeleton className="h-6 w-28" /></CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-8 w-24" />
+                            <Skeleton className="h-4 w-full" />
+                        </CardContent>
+                    </Card>
                 </CardContent>
             </Card>
         </div>
     );
 }
 
+const getStatusBadge = (status: 'pending_verification' | 'approved' | 'denied') => {
+    switch (status) {
+        case 'approved':
+            return <Badge variant="default" className="border-transparent bg-green-600 hover:bg-green-700"><CheckCircle className="mr-2 h-4 w-4" /> Approved</Badge>;
+        case 'pending_verification':
+            return <Badge variant="secondary" className="border-transparent bg-amber-500 text-white hover:bg-amber-600"><Clock className="mr-2 h-4 w-4" /> Pending</Badge>;
+        case 'denied':
+            return <Badge variant="destructive"><XCircle className="mr-2 h-4 w-4" /> Denied</Badge>;
+        default:
+            return null;
+    }
+}
 
 export default function TeacherProfilePage() {
     const { toast } = useToast();
@@ -305,13 +325,16 @@ export default function TeacherProfilePage() {
                         <AvatarImage src={teacherProfile?.avatarUrl} alt={teacherProfile?.name} />
                         <AvatarFallback className="text-4xl">{teacherProfile?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="text-center md:text-left">
-                        <h2 className="text-3xl font-bold font-headline">{teacherProfile?.name}</h2>
+                    <div className="text-center md:text-left space-y-1">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-3xl font-bold font-headline">{teacherProfile?.name}</h2>
+                            {getStatusBadge(teacherProfile.status)}
+                        </div>
                         <p className="text-lg text-muted-foreground">{teacherProfile?.coachingName || 'Independent Tutor'}</p>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <CardContent className="p-6 grid md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Professional Details</CardTitle>
@@ -356,7 +379,7 @@ export default function TeacherProfilePage() {
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="md:col-span-2 lg:col-span-1">
+                <Card>
                      <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2"><BookOpenCheck className="h-5 w-5 text-primary"/>Teaching Focus</CardTitle>
                     </CardHeader>
@@ -373,6 +396,19 @@ export default function TeacherProfilePage() {
                                 <Badge key={level} variant="outline">{level.trim()}</Badge>
                              )) : <p className="text-sm text-muted-foreground">No class levels listed.</p>}
                         </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/>Account Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {getStatusBadge(teacherProfile.status)}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {teacherProfile.status === 'approved' && 'Your profile is live and visible to students.'}
+                            {teacherProfile.status === 'pending_verification' && 'Your profile is under review by an admin.'}
+                            {teacherProfile.status === 'denied' && 'Your profile was not approved.'}
+                        </p>
                     </CardContent>
                 </Card>
             </CardContent>
