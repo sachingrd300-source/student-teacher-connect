@@ -33,14 +33,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClipboardCheck, UserCheck, CalendarIcon, User, X } from 'lucide-react';
+import { BarChart, ClipboardCheck, UserCheck, CalendarIcon, User, X } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, setDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, doc, setDoc, serverTimestamp, getDocs, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { format } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 type Batch = {
   id: string;
@@ -61,6 +63,7 @@ type AttendanceDoc = {
     id: string;
     records: AttendanceRecordMap;
     date: string;
+    classId: string;
 };
 
 function MarkAttendanceTab({ selectedBatchId, students, isLoadingStudents }: { selectedBatchId: string, students: Enrollment[] | null, isLoadingStudents: boolean }) {
@@ -306,6 +309,133 @@ function ViewRecordsTab({ selectedBatchId, students, isLoadingStudents }: { sele
     );
 }
 
+function StudentReportTab({ selectedBatchId, students, isLoadingStudents, allAttendance, isLoadingAttendance }: { selectedBatchId: string, students: Enrollment[] | null, isLoadingStudents: boolean, allAttendance: AttendanceDoc[] | null, isLoadingAttendance: boolean }) {
+    const [selectedStudentId, setSelectedStudentId] = useState('');
+
+    const studentReport = useMemo(() => {
+        if (!selectedStudentId || !allAttendance || !students) return null;
+
+        const batchAttendance = allAttendance.filter(rec => rec.classId === selectedBatchId);
+        if (batchAttendance.length === 0) return { total: 0, present: 0, percentage: 0, history: [] };
+
+        let presentCount = 0;
+        const history: {date: string; isPresent: boolean}[] = [];
+
+        batchAttendance.forEach(record => {
+            if (record.records.hasOwnProperty(selectedStudentId)) {
+                const isPresent = record.records[selectedStudentId];
+                if (isPresent) {
+                    presentCount++;
+                }
+                history.push({ date: record.date, isPresent });
+            }
+        });
+
+        const total = history.length;
+        const percentage = total > 0 ? (presentCount / total) * 100 : 0;
+        
+        // sort history chronologically
+        history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        return {
+            total,
+            present: presentCount,
+            percentage,
+            history
+        };
+    }, [selectedStudentId, allAttendance, selectedBatchId, students]);
+
+    return (
+        <CardContent>
+            <div className="space-y-4">
+                <div>
+                    <Label htmlFor="student-select">Select a Student</Label>
+                    <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={isLoadingStudents || !students || students.length === 0}>
+                        <SelectTrigger id="student-select">
+                            <SelectValue placeholder="Select a student to view their report..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                             {isLoadingStudents && <SelectItem value="loading" disabled>Loading students...</SelectItem>}
+                             {students?.map(s => <SelectItem key={s.studentId} value={s.studentId}>{s.studentName}</SelectItem>)}
+                             {!isLoadingStudents && students?.length === 0 && <SelectItem value="no-students" disabled>No approved students in this batch.</SelectItem>}
+                        </SelectContent>
+                    </Select>
+                </div>
+                
+                {(isLoadingStudents || isLoadingAttendance) && selectedStudentId && (
+                    <div className="space-y-2 pt-4">
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-32 w-full" />
+                    </div>
+                )}
+
+                {studentReport && selectedStudentId && (
+                     <div className="space-y-4 pt-4">
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Attendance Summary</CardTitle>
+                                <CardDescription>
+                                    For {students?.find(s => s.studentId === selectedStudentId)?.studentName}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                 <div className="grid grid-cols-2 gap-4 text-center">
+                                    <div>
+                                        <p className="text-2xl font-bold">{studentReport.present} / {studentReport.total}</p>
+                                        <p className="text-xs text-muted-foreground">Days Present</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold">{studentReport.percentage.toFixed(0)}%</p>
+                                        <p className="text-xs text-muted-foreground">Attendance</p>
+                                    </div>
+                                </div>
+                                <Progress value={studentReport.percentage} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Detailed History</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">Status</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {studentReport.history.map(rec => (
+                                            <TableRow key={rec.date}>
+                                                <TableCell>{format(new Date(rec.date), "PPP")}</TableCell>
+                                                <TableCell className="text-right">
+                                                    {rec.isPresent ? (
+                                                        <Badge variant="default">Present</Badge>
+                                                    ) : (
+                                                        <Badge variant="destructive">Absent</Badge>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                                {studentReport.history.length === 0 && <p className="text-center text-muted-foreground py-8">No attendance records for this student in this batch.</p>}
+                            </CardContent>
+                        </Card>
+                     </div>
+                )}
+
+                {!selectedStudentId && !isLoadingStudents && (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <p>Please select a student to see their attendance report.</p>
+                    </div>
+                )}
+            </div>
+        </CardContent>
+    );
+}
+
+
 export default function AttendancePage() {
     const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -326,6 +456,17 @@ export default function AttendancePage() {
         );
     }, [firestore, user, selectedBatchId]);
     const { data: students, isLoading: isLoadingStudents } = useCollection<Enrollment>(studentsQuery);
+    
+    const teacherAttendanceQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'attendance'),
+            where('teacherId', '==', user.uid),
+            orderBy('date', 'desc')
+        );
+    }, [firestore, user]);
+    const { data: allAttendance, isLoading: isLoadingAttendance } = useCollection<AttendanceDoc>(teacherAttendanceQuery);
+
 
     const isLoading = isUserLoading || isLoadingBatches;
 
@@ -359,15 +500,25 @@ export default function AttendancePage() {
                 </CardHeader>
                 {selectedBatchId && (
                      <Tabs defaultValue="mark" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="mark">Mark Today's Attendance</TabsTrigger>
                             <TabsTrigger value="view">View Records</TabsTrigger>
+                            <TabsTrigger value="report"><BarChart className="mr-2 h-4 w-4"/>Student Report</TabsTrigger>
                         </TabsList>
                         <TabsContent value="mark">
                             <MarkAttendanceTab selectedBatchId={selectedBatchId} students={students} isLoadingStudents={isLoadingStudents} />
                         </TabsContent>
                         <TabsContent value="view">
                             <ViewRecordsTab selectedBatchId={selectedBatchId} students={students} isLoadingStudents={isLoadingStudents} />
+                        </TabsContent>
+                         <TabsContent value="report">
+                            <StudentReportTab
+                                selectedBatchId={selectedBatchId}
+                                students={students}
+                                isLoadingStudents={isLoadingStudents}
+                                allAttendance={allAttendance}
+                                isLoadingAttendance={isLoadingAttendance}
+                            />
                         </TabsContent>
                     </Tabs>
                 )}
