@@ -22,8 +22,10 @@ import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, UserCheck, Check, X, PackageCheck, Clock, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type UserProfile = {
     id: string;
@@ -80,37 +82,63 @@ export default function AdminDashboardPage() {
     const { data: pendingSellers, isLoading: isLoadingSellers } = useCollection<UserProfile>(pendingSellersQuery);
     const { data: pendingItems, isLoading: isLoadingItems } = useCollection<MarketplaceItem>(pendingItemsQuery);
     
-    const handleUserVerification = async (userId: string, newStatus: 'approved' | 'denied', type: 'tutor' | 'seller') => {
+    const handleUserVerification = (userId: string, newStatus: 'approved' | 'denied', type: 'tutor' | 'seller') => {
         if (!firestore) return;
         const userRef = doc(firestore, 'users', userId);
         const fieldToUpdate = type === 'tutor' ? 'status' : 'marketplaceStatus';
+        const updateData = { [fieldToUpdate]: newStatus };
 
-        try {
-            await updateDoc(userRef, { [fieldToUpdate]: newStatus });
-            toast({
-                title: `${type === 'tutor' ? 'Tutor' : 'Seller'} ${newStatus === 'approved' ? 'Approved' : 'Denied'}`,
-                description: `The user's status has been updated.`
+        updateDoc(userRef, updateData)
+            .then(() => {
+                toast({
+                    title: `${type === 'tutor' ? 'Tutor' : 'Seller'} ${newStatus === 'approved' ? 'Approved' : 'Denied'}`,
+                    description: `The user's status has been updated.`
+                });
+            })
+            .catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'update',
+                    requestResourceData: updateData
+                }));
             });
-        } catch (error) {
-            console.error(`Error updating ${type} status:`, error);
-            toast({ variant: 'destructive', title: 'Update Failed', description: `Could not update ${type} status.` });
-        }
     };
     
-    const handleItemApproval = async (itemId: string, approve: boolean) => {
+    const handleItemApproval = (itemId: string, approve: boolean) => {
         if (!firestore) return;
         const itemRef = doc(firestore, 'marketplaceItems', itemId);
-        try {
-            // Setting to 'denied' or another status could be an option for rejection
-            const newStatus = approve ? 'available' : 'sold'; 
-            await updateDoc(itemRef, { status: newStatus });
-            toast({
-                title: `Item ${approve ? 'Approved' : 'Rejected'}`,
-                description: `The item is now ${approve ? 'available in the marketplace' : 'removed'}.`
+        
+        if (approve) {
+            const updateData = { status: 'available' as const };
+            updateDoc(itemRef, updateData)
+            .then(() => {
+                toast({
+                    title: `Item Approved`,
+                    description: `The item is now available in the marketplace.`
+                });
+            })
+            .catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: itemRef.path,
+                    operation: 'update',
+                    requestResourceData: updateData
+                }));
             });
-        } catch (error) {
-            console.error("Error approving item:", error);
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update the item status.' });
+        } else {
+            // Denying an item means deleting it
+            deleteDoc(itemRef)
+            .then(() => {
+                 toast({
+                    title: `Item Denied`,
+                    description: `The pending item has been removed.`
+                });
+            })
+            .catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: itemRef.path,
+                    operation: 'delete'
+                }));
+            });
         }
     };
 

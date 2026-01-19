@@ -183,11 +183,11 @@ service cloud.firestore {
       
       // The seller can update the status between 'available' and 'sold'.
       // An admin can update the status from 'pending' to 'available'.
-      // The seller can delete their own item.
       allow update: if (isExistingDoc() && resource.data.sellerId == request.auth.uid &&
                         (request.resource.data.status in ['available', 'sold']) && (resource.data.status in ['available', 'sold'])) ||
                      (isAdmin() && request.resource.data.status == 'available' && resource.data.status == 'pending');
-      allow delete: if isExistingDoc() && resource.data.sellerId == request.auth.uid;
+      // The seller can delete their own item. An admin can also delete any item.
+      allow delete: if isExistingDoc() && (resource.data.sellerId == request.auth.uid || isAdmin());
     }
 
     /* ===============================
