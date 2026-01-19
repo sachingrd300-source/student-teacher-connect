@@ -25,11 +25,7 @@ export function LandingHeader() {
         </nav>
         
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {user ? (
-            <Button asChild>
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-          ) : (
+          {!user && (
             <>
                 <div className="hidden md:flex gap-2">
                     <Button variant="ghost" asChild>
@@ -59,9 +55,13 @@ export function LandingHeader() {
                  <div className="flex flex-col gap-4 text-lg">
                     <Link href="#features" className="font-medium">Features</Link>
                     <hr className="my-2"/>
-                    <Link href="/login-student" className="font-medium">Student Login</Link>
-                    <Link href="/login" className="font-medium">Tutor Login</Link>
-                    <Link href="/signup" className="font-medium">Become a Tutor</Link>
+                    {!user && (
+                        <>
+                            <Link href="/login-student" className="font-medium">Student Login</Link>
+                            <Link href="/login" className="font-medium">Tutor Login</Link>
+                            <Link href="/signup" className="font-medium">Become a Tutor</Link>
+                        </>
+                    )}
                 </div>
               </div>
             </SheetContent>
