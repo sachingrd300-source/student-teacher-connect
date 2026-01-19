@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,6 +21,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 
 export default function StudentLoginPage() {
@@ -32,6 +32,7 @@ export default function StudentLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(true); // Start true to handle redirect
   const isMobile = useIsMobile();
+  const studentLoginBg = PlaceHolderImages.find(img => img.id === 'hero-2');
   
   useEffect(() => {
     const handleRedirect = async () => {
@@ -153,13 +154,15 @@ export default function StudentLoginPage() {
     if (isGoogleLoading) {
       return (
         <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
-            <Image
-                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0ZWFjaGVyJTIwc3R1ZGVudHN8ZW58MHx8fHwxNzE4NzUyMzMxfDA&ixlib=rb-4.0.3&q=80&w=1080"
-                alt="Students learning in a classroom"
-                fill
-                className="object-cover"
-                data-ai-hint="teacher students"
-            />
+            {studentLoginBg && (
+                <Image
+                    src={studentLoginBg.imageUrl}
+                    alt={studentLoginBg.description}
+                    data-ai-hint={studentLoginBg.imageHint}
+                    fill
+                    className="object-cover"
+                />
+            )}
             <div className="absolute inset-0 bg-black/60 z-10"></div>
             <div className="z-20">
                 <Loader2 className="h-8 w-8 animate-spin text-white" />
@@ -170,13 +173,15 @@ export default function StudentLoginPage() {
 
   return (
      <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
-        <Image
-            src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0ZWFjaGVyJTIwc3R1ZGVudHN8ZW58MHx8fHwxNzE4NzUyMzMxfDA&ixlib=rb-4.0.3&q=80&w=1080"
-            alt="Students learning in a classroom"
-            fill
-            className="object-cover"
-            data-ai-hint="teacher students"
-        />
+        {studentLoginBg && (
+            <Image
+                src={studentLoginBg.imageUrl}
+                alt={studentLoginBg.description}
+                data-ai-hint={studentLoginBg.imageHint}
+                fill
+                className="object-cover"
+            />
+        )}
         <div className="absolute inset-0 bg-black/60 z-10"></div>
 
         <Card className="w-full max-w-md shadow-2xl z-20">

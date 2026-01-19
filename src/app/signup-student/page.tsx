@@ -21,6 +21,7 @@ import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function SignUpStudentPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function SignUpStudentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(true);
   const isMobile = useIsMobile();
+  const studentSignupBg = PlaceHolderImages.find(img => img.id === 'hero-1');
   
   useEffect(() => {
     const handleRedirect = async () => {
@@ -160,13 +162,15 @@ export default function SignUpStudentPage() {
   if (isGoogleLoading) {
       return (
         <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
-            <Image
-                src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwbGVhcm5pbmd8ZW58MHx8fHwxNzE4NzUyMjg2fDA&ixlib=rb-4.0.3&q=80&w=1080"
-                alt="Student learning"
-                fill
-                className="object-cover"
-                data-ai-hint="student learning"
-            />
+            {studentSignupBg && (
+                <Image
+                    src={studentSignupBg.imageUrl}
+                    alt={studentSignupBg.description}
+                    fill
+                    className="object-cover"
+                    data-ai-hint={studentSignupBg.imageHint}
+                />
+            )}
             <div className="absolute inset-0 bg-black/60 z-10"></div>
             <div className="z-20">
                 <Loader2 className="h-8 w-8 animate-spin text-white" />
@@ -177,13 +181,15 @@ export default function SignUpStudentPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
-      <Image
-        src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwbGVhcm5pbmd8ZW58MHx8fHwxNzE4NzUyMjg2fDA&ixlib=rb-4.0.3&q=80&w=1080"
-        alt="Student learning"
-        fill
-        className="object-cover"
-        data-ai-hint="student learning"
-      />
+      {studentSignupBg && (
+        <Image
+            src={studentSignupBg.imageUrl}
+            alt={studentSignupBg.description}
+            fill
+            className="object-cover"
+            data-ai-hint={studentSignupBg.imageHint}
+        />
+      )}
       <div className="absolute inset-0 bg-black/60 z-10"></div>
 
       <Card className="w-full max-w-md shadow-2xl z-20">
