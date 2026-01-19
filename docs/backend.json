@@ -307,6 +307,23 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sellerId", "sellerName", "title", "price", "itemType", "status", "createdAt"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents a daily attendance record for a specific class.",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "classId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "records": {
+          "type": "object",
+          "description": "A map of student UIDs to their attendance status (true for present).",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "classId", "date", "records", "createdAt"]
     }
   },
   "auth": {
@@ -358,8 +375,12 @@
             "$ref": "#/entities/MarketplaceItem"
         },
         "description": "Stores items listed for sale by students."
+    },
+    "/attendance/{attendanceId}": {
+        "schema": {
+            "$ref": "#/entities/Attendance"
+        },
+        "description": "Stores daily attendance records for classes."
     }
   }
 }
-
-    

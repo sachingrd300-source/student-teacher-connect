@@ -223,5 +223,26 @@ service cloud.firestore {
                             && isTeacherOwner(resource.data);
     }
 
+    /* ===============================
+       ATTENDANCE
+    =============================== */
+    match /attendance/{attendanceId} {
+      // Teacher can create a record for their class.
+      allow create: if isApprovedTeacher() && isTeacherOwner(request.resource.data);
+
+      // Teacher and enrolled students can view attendance for their class.
+      allow get: if isSignedIn() && (
+        (isTeacherOwner(get(/databases/$(database)/documents/attendance/$(attendanceId)).data)) ||
+        (isEnrolledInClass(get(/databases/$(database)/documents/attendance/$(attendanceId)).data.classId))
+      );
+      
+      // Teacher can list their records. Students can list records for their class.
+      allow list: if isSignedIn() &&
+        ( (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2])) );
+
+      // No updates or deletes for now to preserve records.
+      allow update, delete: if false;
+    }
   }
 }

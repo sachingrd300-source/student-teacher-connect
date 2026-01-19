@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -28,9 +29,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ClipboardCheck, UserCheck } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type Batch = {
   id: string;
@@ -73,6 +76,18 @@ export default function AttendancePage() {
         );
     }, [firestore, user, selectedBatchId]);
     const { data: students, isLoading: isLoadingStudents } = useCollection<Enrollment>(studentsQuery);
+
+    useEffect(() => {
+        if (students) {
+            const initialAttendance: AttendanceRecord = {};
+            students.forEach(student => {
+                initialAttendance[student.studentId] = false; // Default all to absent
+            });
+            setAttendance(initialAttendance);
+        } else {
+            setAttendance({});
+        }
+    }, [students]);
     
     const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
         setAttendance(prev => ({ ...prev, [studentId]: isPresent }));
@@ -88,12 +103,45 @@ export default function AttendancePage() {
     };
 
     const handleSubmitAttendance = () => {
-        // In a real app, this would write to a 'attendance' collection in Firestore.
-        console.log('Submitting Attendance:', attendance);
-        toast({
-            title: 'Attendance Submitted',
-            description: 'The attendance has been recorded.',
-        });
+        if (!firestore || !user || !selectedBatchId) {
+            return;
+        }
+
+        if (!students || students.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No Students',
+                description: 'This batch has no students to mark attendance for.',
+            });
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const attendanceId = `${selectedBatchId}_${today}`;
+        const attendanceRef = doc(firestore, 'attendance', attendanceId);
+
+        const attendanceRecord = {
+            teacherId: user.uid,
+            classId: selectedBatchId,
+            date: today,
+            records: attendance,
+            createdAt: serverTimestamp(),
+        };
+
+        setDoc(attendanceRef, attendanceRecord, { merge: true }) // using merge is good practice
+            .then(() => {
+                toast({
+                    title: 'Attendance Submitted',
+                    description: `Attendance for ${today} has been successfully recorded.`,
+                });
+            })
+            .catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: attendanceRef.path,
+                    operation: 'write', // Set/merge is a write operation
+                    requestResourceData: attendanceRecord,
+                }));
+            });
     };
 
     const isLoading = isUserLoading || isLoadingBatches;
