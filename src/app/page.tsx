@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
 import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
@@ -38,58 +38,6 @@ const features = [
   },
 ];
 
-const ads = [
-    {
-        title: "Boost Your Exam Prep",
-        description: "Get exclusive access to premium question banks and mock tests.",
-        imageUrl: "https://picsum.photos/seed/ad1/600/400",
-        imageHint: "studying books",
-    },
-    {
-        title: "IIT-JEE Masterclass",
-        description: "Join our intensive masterclass series with top-ranked educators.",
-        imageUrl: "https://picsum.photos/seed/ad2/600/400",
-        imageHint: "classroom lecture",
-    },
-    {
-        title: "Sell Your Old Books",
-        description: "Make money from your used textbooks. List them on our marketplace now!",
-        imageUrl: "https://picsum.photos/seed/ad3/600/400",
-        imageHint: "stack of books",
-    }
-];
-
-const topTutors = [
-    {
-        name: "Dr. Ananya Sharma",
-        subject: "Physics, IIT-JEE",
-        rating: 5,
-        imageUrl: "https://picsum.photos/seed/tutor1/200/200",
-        imageHint: "female teacher portrait"
-    },
-    {
-        name: "Rohan Verma",
-        subject: "Mathematics, Class 12",
-        rating: 5,
-        imageUrl: "https://picsum.photos/seed/tutor2/200/200",
-        imageHint: "male teacher portrait"
-    },
-    {
-        name: "Priya Singh",
-        subject: "Chemistry, NEET",
-        rating: 4.9,
-        imageUrl: "https://picsum.photos/seed/tutor3/200/200",
-        imageHint: "female educator smiling"
-    },
-     {
-        name: "Amit Kumar",
-        subject: "Biology, Class 10",
-        rating: 4.9,
-        imageUrl: "https://picsum.photos/seed/tutor4/200/200",
-        imageHint: "male educator glasses"
-    },
-]
-
 const stats = [
     { number: "10,000+", label: "Happy Students" },
     { number: "1,200+", label: "Verified Tutors" },
@@ -104,6 +52,52 @@ export default function LandingPage() {
   const autoplayPlugin = React.useRef(
     Autoplay({ delay: 3000, stopOnInteraction: true, stopOnMouseEnter: true })
   );
+
+  const ads = React.useMemo(() => [
+    {
+      title: "Boost Your Exam Prep",
+      description: "Get exclusive access to premium question banks and mock tests.",
+      image: PlaceHolderImages.find(img => img.id === 'ad-1'),
+    },
+    {
+      title: "IIT-JEE Masterclass",
+      description: "Join our intensive masterclass series with top-ranked educators.",
+      image: PlaceHolderImages.find(img => img.id === 'ad-2'),
+    },
+    {
+      title: "Sell Your Old Books",
+      description: "Make money from your used textbooks. List them on our marketplace now!",
+      image: PlaceHolderImages.find(img => img.id === 'ad-3'),
+    }
+  ], []);
+
+  const topTutors = React.useMemo(() => [
+    {
+        name: "Dr. Ananya Sharma",
+        subject: "Physics, IIT-JEE",
+        rating: 5,
+        image: PlaceHolderImages.find(img => img.id === 'landing-tutor-1'),
+    },
+    {
+        name: "Rohan Verma",
+        subject: "Mathematics, Class 12",
+        rating: 5,
+        image: PlaceHolderImages.find(img => img.id === 'landing-tutor-2'),
+    },
+    {
+        name: "Priya Singh",
+        subject: "Chemistry, NEET",
+        rating: 4.9,
+        image: PlaceHolderImages.find(img => img.id === 'landing-tutor-3'),
+    },
+     {
+        name: "Amit Kumar",
+        subject: "Biology, Class 10",
+        rating: 4.9,
+        image: PlaceHolderImages.find(img => img.id === 'landing-tutor-4'),
+    },
+  ], []);
+
 
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
@@ -199,7 +193,7 @@ export default function LandingPage() {
                             className="text-center bg-card rounded-lg p-6 shadow-soft-shadow hover:shadow-lg hover:-translate-y-2 transition-all duration-300"
                          >
                             <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-primary/20">
-                                <AvatarImage src={tutor.imageUrl} alt={tutor.name} data-ai-hint={tutor.imageHint}/>
+                                {tutor.image && <AvatarImage src={tutor.image.imageUrl} alt={tutor.name} data-ai-hint={tutor.image.imageHint}/>}
                                 <AvatarFallback className="text-3xl">{tutor.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <h3 className="text-xl font-bold font-headline">{tutor.name}</h3>
@@ -260,14 +254,14 @@ export default function LandingPage() {
                             <div className="p-1">
                             <Card className="overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105">
                                 <CardContent className="flex flex-col aspect-[4/3] items-start justify-end p-0">
-                                    <Image 
-                                        src={ad.imageUrl} 
+                                    {ad.image && <Image 
+                                        src={ad.image.imageUrl} 
                                         alt={ad.title} 
                                         width={600} 
                                         height={400} 
                                         className="absolute inset-0 w-full h-full object-cover -z-10"
-                                        data-ai-hint={ad.imageHint}
-                                    />
+                                        data-ai-hint={ad.image.imageHint}
+                                    />}
                                     <div className="flex flex-col p-6 bg-gradient-to-t from-black/80 to-transparent w-full">
                                         <h3 className="text-xl font-bold text-white font-headline">{ad.title}</h3>
                                         <p className="text-sm text-gray-300 mt-1">{ad.description}</p>

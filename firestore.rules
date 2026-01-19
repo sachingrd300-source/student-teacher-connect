@@ -67,12 +67,13 @@ service cloud.firestore {
       // A user can create their own profile document.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
-      // Admins can list all users. Tutors can be listed by any signed-in user.
-      allow list: if isAdmin() || (isSignedIn() 
-                  && request.query.where[0][0] == 'role' 
-                  && request.query.where[0][2] == 'tutor'
-                  && request.query.where[1][0] == 'status' 
-                  && request.query.where[1][2] == 'approved');
+      // Admins can list pending users. Tutors can be listed by any signed-in user.
+      allow list: if (isAdmin() && (
+                      (request.query.where[0][0] == 'role' && request.query.where[0][2] == 'tutor' && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'pending_verification') ||
+                      (request.query.where[0][0] == 'role' && request.query.where[0][2] == 'student' && request.query.where[1][0] == 'marketplaceStatus' && request.query.where[1][2] == 'pending')
+                    )) || 
+                    (isSignedIn() && 
+                      request.query.where[0][0] == 'role' && request.query.where[0][2] == 'tutor' && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'approved');
       allow delete: if false;
     }
 
@@ -167,8 +168,12 @@ service cloud.firestore {
       // Anyone signed in can view individual marketplace items
       allow get: if isSignedIn();
       
-      // Allow listing available items, or a user listing their own items, or admin listing pending items
-      allow list: if isAdmin() || (isSignedIn() && ((request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid) || (request.query.where[0][0] == 'status' && request.query.where[0][2] == 'pending')));
+      // Admins can list pending items. Signed-in users can list available items, or their own items.
+      allow list: if (isAdmin() && request.query.where[0][0] == 'status' && request.query.where[0][2] == 'pending') || 
+                   (isSignedIn() && (
+                      (request.query.where[0][0] == 'status' && request.query.where[0][2] == 'available') || 
+                      (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid)
+                   ));
 
       // An approved student seller can create a listing for themselves.
       allow create: if isApprovedSeller() && request.resource.data.sellerId == request.auth.uid;
