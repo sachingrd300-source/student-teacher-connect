@@ -12,7 +12,7 @@ import {
 import { CalendarDays, Clock, MapPin, Video } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
@@ -26,8 +26,6 @@ type Schedule = {
     type: 'Online' | 'Offline';
     locationOrLink: string;
     classId: string;
-};
-type ScheduleWithClassInfo = Schedule & {
     classTitle: string;
 };
 
@@ -35,7 +33,7 @@ export default function MySchedulePage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const [schedules, setSchedules] = useState<ScheduleWithClassInfo[]>([]);
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const enrollmentsQuery = useMemoFirebase(() => {
@@ -81,26 +79,9 @@ export default function MySchedulePage() {
                 const fetchedSchedules = scheduleSnapshots.flatMap(snapshot => 
                     snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Schedule))
                 );
-
-                // Fetch class info to get titles
-                const uniqueClassIds = [...new Set(fetchedSchedules.map(s => s.classId))];
-                const classPromises = uniqueClassIds.map(id => getDoc(doc(firestore, 'classes', id)));
-                const classSnapshots = await Promise.all(classPromises);
                 
-                const classInfoMap = new Map<string, { title: string }>();
-                classSnapshots.forEach(docSnap => {
-                    if (docSnap.exists()) {
-                        classInfoMap.set(docSnap.id, docSnap.data() as { title: string });
-                    }
-                });
-                
-                const schedulesWithClassInfo: ScheduleWithClassInfo[] = fetchedSchedules.map(schedule => ({
-                    ...schedule,
-                    classTitle: classInfoMap.get(schedule.classId)?.title || schedule.subject
-                }));
-                
-                schedulesWithClassInfo.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
-                setSchedules(schedulesWithClassInfo);
+                fetchedSchedules.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
+                setSchedules(fetchedSchedules);
 
             } catch (e) {
                 console.error("Error fetching schedules:", e);
@@ -121,7 +102,7 @@ export default function MySchedulePage() {
             }
             acc[dateStr].push(schedule);
             return acc;
-        }, {} as Record<string, ScheduleWithClassInfo[]>);
+        }, {} as Record<string, Schedule[]>);
     }, [schedules]);
 
     return (

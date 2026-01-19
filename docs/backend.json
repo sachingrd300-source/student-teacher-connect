@@ -215,6 +215,10 @@
             "type": "string",
             "description": "The ID of the class this schedule belongs to."
         },
+        "classTitle": {
+            "type": "string",
+            "description": "The title of the class this schedule belongs to. Denormalized for performance."
+        },
         "topic": {
           "type": "string",
           "description": "The topic to be covered in the class."
@@ -249,6 +253,8 @@
       },
       "required": [
         "teacherId",
+        "classId",
+        "classTitle",
         "topic",
         "subject",
         "date",

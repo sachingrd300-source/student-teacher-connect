@@ -116,6 +116,7 @@ export default function SchedulePage() {
         const newSchedule = {
             teacherId: user.uid,
             classId: selectedBatchId,
+            classTitle: selectedBatch.title,
             subject: selectedBatch.subject,
             topic,
             date: new Date(date),
