@@ -309,13 +309,18 @@ function ViewRecordsTab({ selectedBatchId, students, isLoadingStudents }: { sele
     );
 }
 
-function StudentReportTab({ selectedBatchId, students, isLoadingStudents, allAttendance, isLoadingAttendance }: { selectedBatchId: string, students: Enrollment[] | null, isLoadingStudents: boolean, allAttendance: AttendanceDoc[] | null, isLoadingAttendance: boolean }) {
+function StudentReportTab({ selectedBatchId, students, isLoadingStudents, attendanceForBatch, isLoadingAttendance }: { selectedBatchId: string, students: Enrollment[] | null, isLoadingStudents: boolean, attendanceForBatch: AttendanceDoc[] | null, isLoadingAttendance: boolean }) {
     const [selectedStudentId, setSelectedStudentId] = useState('');
 
-    const studentReport = useMemo(() => {
-        if (!selectedStudentId || !allAttendance || !students) return null;
+    useEffect(() => {
+        // Reset selected student when batch changes
+        setSelectedStudentId('');
+    }, [selectedBatchId]);
 
-        const batchAttendance = allAttendance.filter(rec => rec.classId === selectedBatchId);
+    const studentReport = useMemo(() => {
+        if (!selectedStudentId || !attendanceForBatch || !students) return null;
+
+        const batchAttendance = attendanceForBatch; // Already filtered by query
         if (batchAttendance.length === 0) return { total: 0, present: 0, percentage: 0, history: [] };
 
         let presentCount = 0;
@@ -343,7 +348,7 @@ function StudentReportTab({ selectedBatchId, students, isLoadingStudents, allAtt
             percentage,
             history
         };
-    }, [selectedStudentId, allAttendance, selectedBatchId, students]);
+    }, [selectedStudentId, attendanceForBatch, students]);
 
     return (
         <CardContent>
@@ -457,15 +462,15 @@ export default function AttendancePage() {
     }, [firestore, user, selectedBatchId]);
     const { data: students, isLoading: isLoadingStudents } = useCollection<Enrollment>(studentsQuery);
     
-    const teacherAttendanceQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+    const batchAttendanceQuery = useMemoFirebase(() => {
+        if (!firestore || !user || !selectedBatchId) return null;
         return query(
             collection(firestore, 'attendance'),
-            where('teacherId', '==', user.uid),
+            where('classId', '==', selectedBatchId),
             orderBy('date', 'desc')
         );
-    }, [firestore, user]);
-    const { data: allAttendance, isLoading: isLoadingAttendance } = useCollection<AttendanceDoc>(teacherAttendanceQuery);
+    }, [firestore, user, selectedBatchId]);
+    const { data: attendanceForBatch, isLoading: isLoadingAttendance } = useCollection<AttendanceDoc>(batchAttendanceQuery);
 
 
     const isLoading = isUserLoading || isLoadingBatches;
@@ -516,7 +521,7 @@ export default function AttendancePage() {
                                 selectedBatchId={selectedBatchId}
                                 students={students}
                                 isLoadingStudents={isLoadingStudents}
-                                allAttendance={allAttendance}
+                                attendanceForBatch={attendanceForBatch}
                                 isLoadingAttendance={isLoadingAttendance}
                             />
                         </TabsContent>

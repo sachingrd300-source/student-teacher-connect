@@ -252,12 +252,14 @@ service cloud.firestore {
         (isEnrolledInClass(get(/databases/$(database)/documents/attendance/$(attendanceId)).data.classId))
       );
       
-      // Teacher can list their records. Students can list records for their class.
-      // A teacher can list records for a specific class they own by querying on classId and date.
+      // Teacher can list records for a specific class they own. Students can list records for a class they're enrolled in.
       allow list: if isSignedIn() && (
-          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          // Student can list records for their class
           (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2])) ||
-          (request.query.where.size() == 2 && request.query.where[0][0] == 'classId' && request.query.where[1][0] == 'date' && get(/databases/$(database)/documents/classes/$(request.query.where[0][2])).data.teacherId == request.auth.uid)
+          // Teacher can list records for a specific class they own by querying on classId and date (for ViewRecordsTab)
+          (request.query.where.size() == 2 && request.query.where[0][0] == 'classId' && request.query.where[1][0] == 'date' && get(/databases/$(database)/documents/classes/$(request.query.where[0][2])).data.teacherId == request.auth.uid) ||
+          // Teacher can list all records for a class they own (for StudentReportTab)
+          (request.query.where.size() == 1 && request.query.where[0][0] == 'classId' && get(/databases/$(database)/documents/classes/$(request.query.where[0][2])).data.teacherId == request.auth.uid)
       );
 
       // No updates or deletes for now to preserve records.
