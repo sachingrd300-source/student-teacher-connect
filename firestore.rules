@@ -147,6 +147,8 @@ service cloud.firestore {
       allow list: if isSignedIn() && (
           // Teacher can list their own materials
           (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid && request.query.size > 0) ||
+          // Teacher can list their own premium materials for the "My Shop" page
+          (request.query.where.size() == 2 && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid && request.query.where[1][0] == 'isFree' && request.query.where[1][2] == false) ||
           // Student can list materials for a class they are enrolled in
           (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2]) && request.query.size > 0) ||
           // Student can list PUBLIC materials (free or paid) which must not have a classId
