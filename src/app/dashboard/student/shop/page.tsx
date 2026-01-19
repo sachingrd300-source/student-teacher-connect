@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, ShoppingBag, BookOpen } from 'lucide-react';
-import { useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { ShoppingCart, ShoppingBag, BookOpen, MessageSquare } from 'lucide-react';
+import { useFirestore, useCollection, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 
@@ -33,13 +33,18 @@ type MarketplaceItem = {
   id: string;
   title: string;
   description: string;
-  subject: string;
+  subject?: string;
   price: number;
+  sellerId: string;
   sellerName: string;
   condition?: string;
   itemType: string;
   imageUrl?: string;
   createdAt: { toDate: () => Date };
+}
+
+type SellerProfile = {
+    whatsappNumber?: string;
 }
 
 const MaterialCard = ({ material }: { material: StudyMaterial }) => {
@@ -72,6 +77,19 @@ const MaterialCard = ({ material }: { material: StudyMaterial }) => {
 };
 
 const StudentItemCard = ({ item }: { item: MarketplaceItem }) => {
+    const firestore = useFirestore();
+
+    const sellerQuery = useMemoFirebase(() => {
+        if (!firestore || !item.sellerId) return null;
+        return doc(firestore, 'users', item.sellerId);
+    }, [firestore, item.sellerId]);
+    
+    const { data: seller, isLoading: isLoadingSeller } = useDoc<SellerProfile>(sellerQuery);
+
+    const whatsappLink = seller?.whatsappNumber
+    ? `https://wa.me/${seller.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello, I saw your item "${item.title}" on EduConnect Pro.`)}`
+    : '#';
+
     return (
     <Card className="flex flex-col shadow-soft-shadow transition-transform duration-200 active:scale-95 overflow-hidden">
         {item.imageUrl ? (
@@ -91,7 +109,7 @@ const StudentItemCard = ({ item }: { item: MarketplaceItem }) => {
                     Sold by {item.sellerName}
                 </CardDescription>
             </div>
-            <Badge variant="outline">{item.subject}</Badge>
+            {item.subject && <Badge variant="outline">{item.subject}</Badge>}
         </div>
       </CardHeader>
       <CardContent className="flex-1 space-y-2">
@@ -100,9 +118,11 @@ const StudentItemCard = ({ item }: { item: MarketplaceItem }) => {
         <p className="text-2xl font-bold pt-2">₹{item.price}</p>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" disabled>
-          <ShoppingBag className="mr-2 h-4 w-4" />
-          Contact Seller
+        <Button asChild className="w-full" disabled={isLoadingSeller || !seller?.whatsappNumber}>
+          <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Contact Seller
+          </a>
         </Button>
       </CardFooter>
     </Card>

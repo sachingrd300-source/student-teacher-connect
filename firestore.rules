@@ -60,8 +60,11 @@ service cloud.firestore {
     match /users/{userId} {
       // A user can get their own document.
       // An approved tutor's profile can be read by any signed-in user.
+      // An approved seller's profile can be read by any signed-in user.
       // An admin can get any user document.
-      allow get: if isOwner(userId) || isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'tutor' && get(/databases/$(database)/documents/users/$(userId)).data.status == 'approved');
+      allow get: if isOwner(userId) || isAdmin() || 
+                    (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'tutor' && get(/databases/$(database)/documents/users/$(userId)).data.status == 'approved') ||
+                    (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.marketplaceStatus == 'approved');
       // A user can update their own document. An admin can also update any user document (e.g. for verification).
       allow update: if isOwner(userId) || isAdmin();
       // A user can create their own profile document.
@@ -89,9 +92,9 @@ service cloud.firestore {
       // A student can query for a class by its code.
       // Any signed-in user can list active classes, but the query must be specific.
       allow list: if isSignedIn() && (
-          (request.query.limit > 0 && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
           (request.query.limit == 1 && request.query.where[0][0] == 'classCode' && request.query.where[0][2] is string) ||
-          (request.query.limit > 0 && request.query.where[0][0] == 'isActive' && request.query.where[0][2] == true)
+          (request.query.where[0][0] == 'isActive' && request.query.where[0][2] == true)
       );
                      
       allow create: if isApprovedTeacher()
@@ -109,13 +112,13 @@ service cloud.firestore {
         allow get: if isExistingDoc() && (isStudentOwner(resource.data) || isTeacherOwner(resource.data));
         
         // A user can list their own enrollments (as student or teacher).
-        // An enrolled student can list other approved students in the same class.
-        // A teacher can list students for a class they own.
+        // A teacher or an enrolled student can list students in a class.
         allow list: if isSignedIn() && (
-            (request.query.limit >= 1 && request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
-            (request.query.limit >= 1 && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+            (request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) || 
+            (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
             (
-                request.query.limit > 0 && request.query.where[0][0] == 'classId' && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'approved' &&
+                request.query.where.size() == 2 &&
+                request.query.where[0][0] == 'classId' && request.query.where[1][0] == 'status' && request.query.where[1][2] == 'approved' &&
                 (isEnrolledInClass(request.query.where[0][2]) || get(/databases/$(database)/documents/classes/$(request.query.where[0][2])).data.teacherId == request.auth.uid)
             )
         );
@@ -150,15 +153,15 @@ service cloud.firestore {
       // Allow listing materials under specific, secure conditions.
       allow list: if isSignedIn() && (
           // Teacher can list their own materials
-          (request.query.limit > 0 && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
           // Teacher can list their own premium materials for the "My Shop" page
-          (request.query.limit > 0 && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid && request.query.where[1][0] == 'isFree' && request.query.where[1][2] == false) ||
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid && request.query.where[1][0] == 'isFree' && request.query.where[1][2] == false) ||
           // Student can list materials for a class they are enrolled in
-          (request.query.limit > 0 && request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2])) ||
+          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2])) ||
           // Student can list PUBLIC materials (free or paid) which must not have a classId
-          (request.query.limit > 0 && request.query.where[0][0] == 'isFree' && request.query.where[1][0] == 'classId' && request.query.where[1][2] == null) ||
+          (request.query.where[0][0] == 'isFree' && request.query.where[1][0] == 'classId' && request.query.where[1][2] == null) ||
           // Student can list PUBLIC DPPs or Homework which must not have a classId
-          (request.query.limit > 0 && request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true && request.query.where[1][0] == 'type' && (request.query.where[1][2] == 'DPP' || request.query.where[1][2] == 'Homework') && request.query.where[2][0] == 'classId' && request.query.where[2][2] == null)
+          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true && request.query.where[1][0] == 'type' && (request.query.where[1][2] == 'DPP' || request.query.where[1][2] == 'Homework') && request.query.where[2][0] == 'classId' && request.query.where[2][2] == null)
       );
 
       // Only approved teachers can create materials for themselves.
