@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -22,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, UserCheck, Check, X, PackageCheck, Clock, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -74,7 +73,8 @@ export default function AdminDashboardPage() {
         if (!firestore) return null;
         return query(
             collection(firestore, 'marketplaceItems'),
-            where('status', '==', 'pending')
+            where('status', '==', 'pending'),
+            orderBy('createdAt', 'desc')
         );
     }, [firestore]);
 
