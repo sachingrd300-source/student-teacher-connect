@@ -17,11 +17,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, ClipboardList, CheckBadge } from 'lucide-react';
-import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, orderBy, doc } from 'firebase/firestore';
+import { Download, ClipboardList } from 'lucide-react';
+import { useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
+import Link from 'next/link';
+
 
 type StudyMaterial = {
     id: string;
@@ -31,6 +33,7 @@ type StudyMaterial = {
     teacherId: string;
     teacherName?: string;
     isOfficial?: boolean;
+    fileUrl: string;
     createdAt: { toDate: () => Date };
 }
 
@@ -49,10 +52,12 @@ function MaterialRow({ paper }: { paper: StudyMaterial}) {
             </TableCell>
             <TableCell>{paper.createdAt.toDate().toLocaleDateString()}</TableCell>
             <TableCell className="text-right">
-                <Button variant="outline" size="sm" disabled>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={paper.fileUrl} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Link>
+                </Button>
             </TableCell>
           </TableRow>
     )
