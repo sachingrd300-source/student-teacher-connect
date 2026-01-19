@@ -51,7 +51,7 @@ type UserProfile = {
   name: string;
   subjects?: string[];
 }
-type Batch = { id: string; subject: string; classLevel: string; };
+type Batch = { id: string; title: string; subject: string; classLevel: string; };
 
 
 export default function PerformancePage() {
@@ -85,27 +85,26 @@ export default function PerformancePage() {
         if (!firestore || isUserLoading || !user) return null;
         return query(
             collection(firestore, 'enrollments'), 
-            where('teacherId', '==', user.uid)
+            where('teacherId', '==', user.uid),
+            where('status', '==', 'approved')
         );
     }, [firestore, user, isUserLoading]);
     const { data: allEnrollments, isLoading: isLoadingEnrollments } = useCollection<StudentEnrollment>(enrollmentsQuery);
 
     const students = useMemo(() => {
         if (!allEnrollments || !selectedBatchId) return [];
-        return allEnrollments.filter(e => e.classId === selectedBatchId && e.status === 'approved');
+        return allEnrollments.filter(e => e.classId === selectedBatchId);
     }, [allEnrollments, selectedBatchId]);
 
      useEffect(() => {
         const selectedBatch = batches?.find(c => c.id === selectedBatchId);
-        // If the selected batch's subject is one of the teacher's main subjects, pre-select it.
-        // Otherwise, clear the selection, forcing the teacher to choose.
-        if (selectedBatch && teacherSubjects.includes(selectedBatch.subject)) {
+        if (selectedBatch) {
             setSubject(selectedBatch.subject);
         } else {
             setSubject('');
         }
         setSelectedStudentId('');
-    }, [selectedBatchId, batches, teacherSubjects]);
+    }, [selectedBatchId, batches]);
 
 
     const performanceQuery = useMemoFirebase(() => {
@@ -165,11 +164,13 @@ export default function PerformancePage() {
         if (!testResults) return [];
         if (!selectedBatchId) return testResults;
         if (!selectedStudentId) return testResults.filter(r => r.classId === selectedBatchId);
-        const student = students?.find(s => s.studentId === selectedStudentId);
-        return testResults.filter(r => r.studentId === student?.studentId && r.classId === selectedBatchId);
-    }, [testResults, selectedStudentId, selectedBatchId, students]);
+        return testResults.filter(r => r.studentId === selectedStudentId && r.classId === selectedBatchId);
+    }, [testResults, selectedStudentId, selectedBatchId]);
 
     const isLoading = isUserLoading || isLoadingBatches || isLoadingResults || isLoadingEnrollments || isLoadingProfile;
+    
+    const currentBatchName = batches?.find(b => b.id === selectedBatchId)?.title;
+    const currentStudentName = students?.find(s => s.studentId === selectedStudentId)?.studentName;
 
     return (
         <div className="space-y-6">
@@ -184,7 +185,7 @@ export default function PerformancePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-1 shadow-soft-shadow">
+                <Card className="lg:col-span-1 shadow-soft-shadow h-fit">
                     <CardHeader>
                         <CardTitle>Enter Test Marks</CardTitle>
                         <CardDescription>Select a batch and student to enter their score.</CardDescription>
@@ -196,7 +197,7 @@ export default function PerformancePage() {
                                 <SelectTrigger id="batch"><SelectValue placeholder="Select a batch" /></SelectTrigger>
                                 <SelectContent>
                                     {isLoadingBatches && <SelectItem value="loading" disabled>Loading...</SelectItem>}
-                                    {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} - {c.classLevel}</SelectItem>)}
+                                    {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -217,15 +218,7 @@ export default function PerformancePage() {
                         </div>
                         <div>
                             <Label htmlFor="subject">Subject*</Label>
-                            <Select onValueChange={setSubject} value={subject} disabled={!selectedBatchId}>
-                                <SelectTrigger id="subject">
-                                    <SelectValue placeholder="Select a subject" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {teacherSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    {teacherSubjects.length === 0 && !isLoadingProfile && <SelectItem value="no-subjects" disabled>No subjects in profile</SelectItem>}
-                                </SelectContent>
-                            </Select>
+                            <Input id="subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Subject is auto-filled from batch" disabled />
                         </div>
                         <div className="flex gap-4">
                             <div className="flex-1">
@@ -246,7 +239,7 @@ export default function PerformancePage() {
                  <Card className="lg:col-span-2 shadow-soft-shadow">
                     <CardHeader>
                         <CardTitle>Test History</CardTitle>
-                        <CardDescription>Showing results for {students?.find(s => s.studentId === selectedStudentId)?.studentName || batches?.find(c => c.id === selectedBatchId)?.subject || 'all students'}.</CardDescription>
+                        <CardDescription>Showing results for {currentStudentName || currentBatchName || 'all students'}.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     {isLoadingResults && <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>}
