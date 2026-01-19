@@ -24,7 +24,7 @@ import {
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { collection, query, where, getDocs, setDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, setDoc, serverTimestamp, doc, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -141,7 +141,7 @@ export default function StudentDashboardPage() {
 
     try {
         const classesRef = collection(firestore, 'classes');
-        const q = query(classesRef, where('classCode', '==', classCode.trim()));
+        const q = query(classesRef, where('classCode', '==', classCode.trim()), limit(1));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
