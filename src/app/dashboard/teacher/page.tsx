@@ -36,7 +36,7 @@ type BatchType = {
   classLevel: string;
   batchTime: string;
   classCode: string;
-  createdAt: { toDate: () => Date };
+  createdAt?: { toDate: () => Date };
 };
 
 type UserProfile = {
@@ -291,7 +291,7 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
                             <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-3 mt-2">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="h-4 w-4" />
-                                    <span>Created: {batch.createdAt ? batch.createdAt.toDate().toLocaleDateString() : 'N/A'}</span>
+                                    <span>Created: {batch.createdAt ? batch.createdAt.toDate().toLocaleDateString() : 'Just now'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Users2 className="h-4 w-4" />
