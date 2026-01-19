@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useMemo } from 'react';
 import {
@@ -14,14 +14,12 @@ import { Input } from '@/components/ui/input';
 import {
   ArrowRight,
   User as UserIcon,
-  BookOpenCheck,
-  ClipboardList,
   Loader2,
   CheckCircle,
   Clock,
   XCircle,
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { collection, query, where, getDocs, setDoc, serverTimestamp, doc, limit } from 'firebase/firestore';
@@ -29,52 +27,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type Enrollment = {
   id: string;
   classId: string;
   teacherId: string;
   status: 'pending' | 'approved' | 'denied';
+  classTitle: string;
+  classSubject: string;
+  classLevel: string;
+  teacherName: string;
 };
 
-type ClassInfo = {
-    id: string;
-    subject: string;
-    classLevel: string;
-    teacherId: string;
-}
-
-type TeacherInfo = {
-    name: string;
-}
-
 function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
-    const firestore = useFirestore();
-
-    const classQuery = useMemo(() => {
-        if (!firestore) return null;
-        return doc(firestore, 'classes', enrollment.classId);
-    }, [firestore, enrollment.classId]);
-    const {data: classInfo, isLoading: isLoadingClass} = useDoc<ClassInfo>(classQuery);
-
-    const teacherQuery = useMemo(() => {
-        if (!firestore || !classInfo) return null;
-        return doc(firestore, 'users', classInfo.teacherId);
-    }, [firestore, classInfo]);
-    const {data: teacherInfo, isLoading: isLoadingTeacher} = useDoc<TeacherInfo>(teacherQuery);
-
     const statusIcons = {
         pending: <Clock className="h-5 w-5 text-yellow-500" />,
         approved: <CheckCircle className="h-5 w-5 text-green-500" />,
         denied: <XCircle className="h-5 w-5 text-red-500" />,
-    }
-
-    if (isLoadingClass || isLoadingTeacher) {
-        return <Skeleton className="h-40 w-full" />;
-    }
-    
-    if (!classInfo || !teacherInfo) {
-        return null; // Or some error state
     }
 
     return (
@@ -82,8 +52,8 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>{classInfo.subject} - {classInfo.classLevel}</CardTitle>
-                        <CardDescription>Tutor: {teacherInfo.name}</CardDescription>
+                        <CardTitle>{enrollment.classTitle}</CardTitle>
+                        <CardDescription>Tutor: {enrollment.teacherName}</CardDescription>
                     </div>
                      {enrollment.status === 'approved' && <CheckCircle className="w-6 h-6 text-green-500" />}
                 </div>
@@ -170,6 +140,10 @@ export default function StudentDashboardPage() {
             studentName: user.displayName,
             classId: classDoc.id,
             teacherId: classData.teacherId,
+            teacherName: classData.teacherName,
+            classTitle: classData.title,
+            classSubject: classData.subject,
+            classLevel: classData.classLevel,
             status: 'pending' as const,
             createdAt: serverTimestamp(),
         };
@@ -178,21 +152,10 @@ export default function StudentDashboardPage() {
         const enrollmentId = `${user.uid}_${classDoc.id}`;
         const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
 
-        setDoc(enrollmentRef, enrollmentData)
-        .then(() => {
-            toast({ title: 'Request Sent! 🎉', description: `Your request to join ${classData.subject} has been sent to the teacher.` });
-            setClassCode('');
-        })
-        .catch(error => {
-             errorEmitter.emit(
-                'permission-error',
-                new FirestorePermissionError({
-                    path: enrollmentRef.path,
-                    operation: 'create',
-                    requestResourceData: enrollmentData,
-                })
-            )
-        });
+        setDocumentNonBlocking(enrollmentRef, enrollmentData, {});
+
+        toast({ title: 'Request Sent! 🎉', description: `Your request to join ${classData.title} has been sent to the teacher.` });
+        setClassCode('');
 
     } catch (error) {
         console.error("Error joining class: ", error);
