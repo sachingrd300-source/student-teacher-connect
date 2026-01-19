@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   BookCopy,
   Sparkles,
+  ClipboardCheck,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -53,6 +54,7 @@ const navItems = {
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
     { href: '/dashboard/student/my-schedule', label: 'My Schedule', icon: CalendarDays },
+    { href: '/dashboard/student/my-attendance', label: 'My Attendance', icon: ClipboardCheck },
     { href: '/dashboard/student/browse-classes', label: 'Browse Classes', icon: BookCopy },
     { href: '/dashboard/student/find-tutor', label: 'Find a Tutor', icon: Search },
     { href: '/dashboard/student/study-material', label: 'Study Material', icon: BookOpenCheck },

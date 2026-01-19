@@ -16,6 +16,7 @@ import {
   BookCopy,
   CalendarDays,
   Sparkles,
+  ClipboardCheck,
 } from 'lucide-react';
 
 type Role = 'teacher' | 'student' | 'admin';
@@ -24,6 +25,7 @@ const navItems = {
   student: [
     { href: '/dashboard/student', label: 'Home', icon: Home },
     { href: '/dashboard/student/my-schedule', label: 'Schedule', icon: CalendarDays },
+    { href: '/dashboard/student/attendance', label: 'Attendance', icon: ClipboardCheck },
     { href: '/dashboard/student/find-tutor', label: 'Find Tutor', icon: Search },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
     { href: '/dashboard/student/my-store', label: 'My Store', icon: Store },
