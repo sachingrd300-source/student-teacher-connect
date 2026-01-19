@@ -70,7 +70,7 @@ function PendingVerificationCard() {
                 <div>
                     <CardTitle className="text-xl text-amber-800">Application Pending Review</CardTitle>
                     <CardDescription className="text-amber-700">
-                        Your profile has been submitted for verification. An administrator will review it shortly. You will be able to access the dashboard once your profile is approved.
+                        Your profile has been submitted for verification. An administrator will review it shortly. You will be able to access all dashboard features once your profile is approved.
                     </CardDescription>
                 </div>
             </CardHeader>
@@ -102,6 +102,8 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
   const [classLevel, setClassLevel] = useState("");
   const [batchTime, setBatchTime] = useState("");
   const [isCreatingBatch, setIsCreatingBatch] = useState(false);
+  
+  const isApproved = userProfile.status === 'approved';
 
   // Queries for stats
   const batchesQuery = useMemoFirebase(() => {
@@ -196,6 +198,7 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
 
   return (
     <div className="space-y-6">
+       {!isApproved && <PendingVerificationCard />}
       <div>
         <h1 className="text-3xl font-bold font-headline">
           {user ? `Welcome back, ${user.displayName?.split(' ')[0]}!` : 'Teacher Dashboard'}
@@ -224,24 +227,24 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
               placeholder="Batch Subject (e.g. Physics)"
               value={classSubject}
               onChange={(e) => setClassSubject(e.target.value)}
-              disabled={isCreatingBatch}
+              disabled={isCreatingBatch || !isApproved}
             />
             <Input
               placeholder="Batch Level (e.g. 11-12)"
               value={classLevel}
               onChange={(e) => setClassLevel(e.target.value)}
-              disabled={isCreatingBatch}
+              disabled={isCreatingBatch || !isApproved}
             />
             <Input
               placeholder="Batch Time (e.g. 7:00 AM)"
               value={batchTime}
               onChange={(e) => setBatchTime(e.target.value)}
-              disabled={isCreatingBatch}
+              disabled={isCreatingBatch || !isApproved}
             />
             <Button
               onClick={handleCreateBatch}
               className="w-full"
-              disabled={isCreatingBatch || !classLevel || !classSubject}
+              disabled={isCreatingBatch || !classLevel || !classSubject || !isApproved}
             >
               {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isCreatingBatch ? "Creating..." : "Create Batch"}
@@ -341,15 +344,11 @@ export default function TeacherPage() {
         );
     }
 
-    if (userProfile?.status === 'pending_verification') {
-        return <PendingVerificationCard />;
-    }
-
     if (userProfile?.status === 'denied') {
         return <DeniedVerificationCard />;
     }
     
-    if (userProfile?.status === 'approved' && user) {
+    if ((userProfile?.status === 'approved' || userProfile?.status === 'pending_verification') && user) {
         return <TeacherDashboardContent user={user} userProfile={userProfile} />;
     }
 

@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, BookOpenCheck, Mail, Phone, Edit, Info, MessageSquare } from 'lucide-react';
+import { User, BookOpenCheck, Mail, Phone, Edit, Info, MessageSquare, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -48,6 +48,7 @@ type TeacherProfileData = {
     classLevels?: string[];
     coachingName?: string;
     whatsappNumber?: string;
+    status: 'pending_verification' | 'approved' | 'denied';
 };
 
 type ProfileFormData = {
@@ -267,8 +268,22 @@ export default function TeacherProfilePage() {
                 </DialogContent>
             </Dialog>
         </div>
+
+        {teacherProfile.status === 'pending_verification' && (
+             <Card className="bg-amber-50 border-amber-200 shadow-soft-shadow">
+                <CardHeader className="flex-row items-center gap-4">
+                    <Clock className="h-8 w-8 text-amber-600"/>
+                    <div>
+                        <CardTitle className="text-xl text-amber-800">Profile Pending Review</CardTitle>
+                        <CardDescription className="text-amber-700">
+                            Your profile is currently being reviewed by an admin. You can still edit your details below while you wait.
+                        </CardDescription>
+                    </div>
+                </CardHeader>
+            </Card>
+        )}
       
-        {isProfileIncomplete && (
+        {isProfileIncomplete && teacherProfile.status === 'approved' && (
             <Card className="bg-primary/10 border-primary/20 shadow-soft-shadow">
                 <CardHeader className="flex-row items-center gap-4">
                     <Info className="h-6 w-6 text-primary"/>
