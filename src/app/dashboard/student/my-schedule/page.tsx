@@ -12,7 +12,7 @@ import {
 import { CalendarDays, Clock, MapPin, Video } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
@@ -26,15 +26,16 @@ type Schedule = {
     type: 'Online' | 'Offline';
     locationOrLink: string;
     classId: string;
-    teacherName?: string; // Assume denormalized
 };
-type ClassInfo = { id: string; title: string; };
+type ScheduleWithClassInfo = Schedule & {
+    classTitle: string;
+};
 
 export default function MySchedulePage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [schedules, setSchedules] = useState<ScheduleWithClassInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const enrollmentsQuery = useMemoFirebase(() => {
@@ -63,28 +64,44 @@ export default function MySchedulePage() {
             }
 
             const classIds = enrollments.map(e => e.classId);
-            const allSchedules: Schedule[] = [];
-
-            // Firestore 'in' query is limited to 30 values.
-            // For larger numbers of enrollments, we'd need to batch this.
-            // We fetch one by one to stay within security rule constraints.
-            const promises = classIds.map(classId => {
-                const schedulesQuery = query(
-                    collection(firestore, 'classSchedules'), 
-                    where('classId', '==', classId),
-                    where('date', '>=', new Date()),
-                    orderBy('date', 'asc')
-                );
-                return getDocs(schedulesQuery);
-            });
             
             try {
-                const snapshots = await Promise.all(promises);
-                const fetchedSchedules = snapshots.flatMap(snapshot => 
+                // We fetch one by one to stay within security rule constraints.
+                const schedulePromises = classIds.map(classId => {
+                    const schedulesQuery = query(
+                        collection(firestore, 'classSchedules'), 
+                        where('classId', '==', classId),
+                        where('date', '>=', new Date()),
+                        orderBy('date', 'asc')
+                    );
+                    return getDocs(schedulesQuery);
+                });
+                
+                const scheduleSnapshots = await Promise.all(schedulePromises);
+                const fetchedSchedules = scheduleSnapshots.flatMap(snapshot => 
                     snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Schedule))
                 );
-                fetchedSchedules.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
-                setSchedules(fetchedSchedules);
+
+                // Fetch class info to get titles
+                const uniqueClassIds = [...new Set(fetchedSchedules.map(s => s.classId))];
+                const classPromises = uniqueClassIds.map(id => getDoc(doc(firestore, 'classes', id)));
+                const classSnapshots = await Promise.all(classPromises);
+                
+                const classInfoMap = new Map<string, { title: string }>();
+                classSnapshots.forEach(docSnap => {
+                    if (docSnap.exists()) {
+                        classInfoMap.set(docSnap.id, docSnap.data() as { title: string });
+                    }
+                });
+                
+                const schedulesWithClassInfo: ScheduleWithClassInfo[] = fetchedSchedules.map(schedule => ({
+                    ...schedule,
+                    classTitle: classInfoMap.get(schedule.classId)?.title || schedule.subject
+                }));
+                
+                schedulesWithClassInfo.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
+                setSchedules(schedulesWithClassInfo);
+
             } catch (e) {
                 console.error("Error fetching schedules:", e);
             } finally {
@@ -104,7 +121,7 @@ export default function MySchedulePage() {
             }
             acc[dateStr].push(schedule);
             return acc;
-        }, {} as Record<string, Schedule[]>);
+        }, {} as Record<string, ScheduleWithClassInfo[]>);
     }, [schedules]);
 
     return (
@@ -143,9 +160,12 @@ export default function MySchedulePage() {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <CardTitle>{schedule.topic}</CardTitle>
-                                            <CardDescription>Subject: {schedule.subject}</CardDescription>
+                                            <CardDescription>{schedule.classTitle}</CardDescription>
                                         </div>
-                                        <Badge variant="secondary">{schedule.time}</Badge>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <Badge variant="secondary">{schedule.time}</Badge>
+                                            <Badge variant="outline">{schedule.subject}</Badge>
+                                        </div>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="flex items-center gap-4 text-sm text-muted-foreground">
