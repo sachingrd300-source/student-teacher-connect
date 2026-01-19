@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   BookCopy,
   CalendarDays,
+  Sparkles,
 } from 'lucide-react';
 
 type Role = 'teacher' | 'student' | 'admin';
@@ -32,6 +33,7 @@ const navItems = {
     { href: '/dashboard/teacher/batches', label: 'Classes', icon: Users2 },
     { href: '/dashboard/teacher/enrollments', label: 'Requests', icon: UserPlus },
     { href: '/dashboard/teacher/schedule', label: 'Schedule', icon: CalendarDays },
+    { href: '/dashboard/teacher/ai-tools', label: 'AI Tools', icon: Sparkles },
   ],
   admin: [
     { href: '/dashboard/admin', label: 'Admin', icon: ShieldCheck },

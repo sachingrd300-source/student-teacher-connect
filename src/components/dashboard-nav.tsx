@@ -21,6 +21,7 @@ import {
   Store,
   ShieldCheck,
   BookCopy,
+  Sparkles,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -47,6 +48,7 @@ const navItems = {
     { href: '/dashboard/teacher/my-shop', label: 'My Shop', icon: ShoppingCart },
     { href: '/dashboard/teacher/performance', label: 'Performance', icon: BarChart3 },
     { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: ClipboardList },
+    { href: '/dashboard/teacher/ai-tools', label: 'AI Tools', icon: Sparkles },
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
