@@ -33,7 +33,6 @@ const subjectCategories = [
     "Languages",
     "Arts & Hobbies",
   ];
-const classLevels = ["9-10", "11-12", "Undergraduate", "Postgraduate"];
 const experienceTypes = ["School", "Coaching", "Online", "Home Tutor"];
 
 export default function SignUpPage() {
@@ -162,7 +161,16 @@ export default function SignUpPage() {
                     </SelectContent>
                 </Select>
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
+                <Label htmlFor="subjectCategory">Primary Subject Category</Label>
+                 <Select onValueChange={(value) => handleSelectChange('subjectCategory', value)} value={formData.subjectCategory}>
+                    <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                    <SelectContent>
+                        {subjectCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="classLevels">Class Levels</Label>
                 <Input id="classLevels" placeholder="e.g. 9-10, 11-12" value={formData.classLevels} onChange={handleChange} disabled={isLoading} />
                 <p className="text-xs text-muted-foreground">Separate levels with a comma.</p>
