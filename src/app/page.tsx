@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star, Search, LogIn } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star, Search, LogIn, Quote } from 'lucide-react';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { AnimatedCard } from '@/components/ui/animated-card';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
@@ -145,8 +145,9 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
       <LandingHeader />
       <main className="flex-1">
-        <section className="w-full py-20 md:py-32 lg:py-40">
-          <div className="container px-4 md:px-6">
+        <section className="w-full relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 -z-10" />
+          <div className="container px-4 md:px-6 py-20 md:py-32 lg:py-40">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-24">
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-4">
@@ -161,7 +162,7 @@ export default function LandingPage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button asChild size="lg">
+                  <Button asChild size="lg" className="button-glow">
                     <Link href="/login-student">I'm a Student</Link>
                   </Button>
                   <Button asChild size="lg" variant="secondary">
@@ -170,13 +171,13 @@ export default function LandingPage() {
                 </div>
               </div>
                {heroImage && (
-                <div className="relative w-full h-64 lg:h-auto rounded-xl overflow-hidden shadow-2xl">
+                <div className="relative w-full h-64 lg:h-auto rounded-xl overflow-hidden shadow-2xl group">
                     <Image
                       src={heroImage.imageUrl}
                       alt={heroImage.description}
                       data-ai-hint={heroImage.imageHint}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                 </div>
               )}
@@ -197,16 +198,18 @@ export default function LandingPage() {
                 </div>
                 <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
                 {howItWorks.map((step, index) => (
-                    <AnimatedCard key={step.title} index={index} className="grid gap-4 p-6 text-center md:text-left">
-                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mx-auto md:mx-0">
-                            {step.icon}
-                        </div>
-                        <div className="grid gap-1">
-                        <h3 className="text-xl font-bold font-headline">{step.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                            {step.description}
-                        </p>
-                        </div>
+                    <AnimatedCard key={step.title} index={index}>
+                        <Card className="p-6 text-center md:text-left h-full bg-card/50 hover:bg-card border-2 border-transparent hover:border-primary transition-all duration-300 group">
+                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mx-auto md:mx-0 mb-4 transition-colors duration-300 group-hover:bg-primary/20">
+                                {step.icon}
+                            </div>
+                            <div className="grid gap-1">
+                                <h3 className="text-xl font-bold font-headline">{step.title}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {step.description}
+                                </p>
+                            </div>
+                        </Card>
                     </AnimatedCard>
                 ))}
                 </div>
@@ -214,7 +217,8 @@ export default function LandingPage() {
         </section>
 
 
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32">
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 relative">
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-transparent -z-10" />
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -259,25 +263,28 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {topTutors.map((tutor, index) => (
-                         <AnimatedCard 
-                            key={tutor.name} 
-                            index={index}
-                            className="text-center bg-card rounded-lg p-6 shadow-soft-shadow hover:shadow-lg hover:-translate-y-2 transition-all duration-300"
-                         >
-                            <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-primary/20">
-                                {tutor.image && <AvatarImage src={tutor.image.imageUrl} alt={tutor.name} data-ai-hint={tutor.image.imageHint}/>}
-                                <AvatarFallback className="text-3xl">{tutor.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <h3 className="text-xl font-bold font-headline">{tutor.name}</h3>
-                            <p className="text-sm text-muted-foreground">{tutor.subject}</p>
-                            <div className="flex items-center justify-center gap-4 mt-4">
-                                <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                                    <span className="font-semibold">{tutor.rating}</span>
-                                </div>
-                                <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" /> Verified</Badge>
-                            </div>
-                         </AnimatedCard>
+                         <AnimatedCard key={tutor.name} index={index}>
+                            <Card className="text-center h-full flex flex-col overflow-hidden shadow-soft-shadow hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
+                                <CardContent className="p-6 flex-1">
+                                    <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-primary/20">
+                                        {tutor.image && <AvatarImage src={tutor.image.imageUrl} alt={tutor.name} data-ai-hint={tutor.image.imageHint}/>}
+                                        <AvatarFallback className="text-3xl">{tutor.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <h3 className="text-xl font-bold font-headline">{tutor.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{tutor.subject}</p>
+                                    <div className="flex items-center justify-center gap-4 mt-4">
+                                        <div className="flex items-center gap-1">
+                                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                            <span className="font-semibold">{tutor.rating}</span>
+                                        </div>
+                                        <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" /> Verified</Badge>
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="p-4 bg-muted/50">
+                                    <Button variant="ghost" className="w-full">View Profile</Button>
+                                </CardFooter>
+                            </Card>
+                        </AnimatedCard>
                     ))}
                 </div>
             </div>
@@ -295,25 +302,28 @@ export default function LandingPage() {
                 </div>
                 <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
                     {testimonials.map((testimonial, index) => (
-                        <AnimatedCard key={index} index={index} className="bg-card rounded-lg p-6 shadow-soft-shadow flex flex-col">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-1 mb-4">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className={`w-5 h-5 ${i < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`} />
-                                    ))}
-                                </div>
-                                <p className="text-muted-foreground mb-6 italic">"{testimonial.quote}"</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 border-2 border-primary/20">
-                                    {testimonial.image && <AvatarImage src={testimonial.image.imageUrl} alt={testimonial.name} />}
-                                    <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <h4 className="font-semibold">{testimonial.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                                </div>
-                            </div>
+                        <AnimatedCard key={index} index={index}>
+                          <Card className="bg-card rounded-lg p-6 shadow-soft-shadow flex flex-col h-full relative overflow-hidden">
+                              <Quote className="absolute -top-2 -right-2 h-24 w-24 text-muted/10 transform-gpu" />
+                              <div className="flex-1 z-10">
+                                  <div className="flex items-center gap-1 mb-4">
+                                      {[...Array(5)].map((_, i) => (
+                                          <Star key={i} className={`w-5 h-5 ${i < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`} />
+                                      ))}
+                                  </div>
+                                  <p className="text-muted-foreground mb-6 italic">"{testimonial.quote}"</p>
+                              </div>
+                              <div className="flex items-center gap-4 z-10">
+                                  <Avatar className="h-12 w-12 border-2 border-primary/20">
+                                      {testimonial.image && <AvatarImage src={testimonial.image.imageUrl} alt={testimonial.name} />}
+                                      <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                      <h4 className="font-semibold">{testimonial.name}</h4>
+                                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                                  </div>
+                              </div>
+                          </Card>
                         </AnimatedCard>
                     ))}
                 </div>
@@ -334,8 +344,8 @@ export default function LandingPage() {
                     <div className="grid grid-cols-2 gap-8">
                         {stats.map(stat => (
                              <div key={stat.label} className="text-center">
-                                <h3 className="text-4xl lg:text-5xl font-bold text-primary font-headline">{stat.number}</h3>
-                                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                                <h3 className="text-5xl lg:text-6xl font-bold text-primary font-headline">{stat.number}</h3>
+                                <p className="text-base text-muted-foreground">{stat.label}</p>
                             </div>
                         ))}
                     </div>
@@ -387,28 +397,33 @@ export default function LandingPage() {
             </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
-          <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">
-                Ready to start your journey?
-              </h2>
-              <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Whether you're a student eager to learn or a tutor ready to inspire, your journey begins here.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 min-[400px]:flex-row lg:justify-end">
-              <Button asChild size="lg">
-                <Link href="/login-student">
-                  Join as a Student
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <Link href="/signup">
-                  Register as a Tutor
-                </Link>
-              </Button>
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container">
+            <div className="relative rounded-xl overflow-hidden p-8 md:p-12 bg-muted">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 -z-10" />
+                <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
+                    <div className="space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight font-headline">
+                        Ready to start your journey?
+                    </h2>
+                    <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                        Whether you're a student eager to learn or a tutor ready to inspire, your journey begins here.
+                    </p>
+                    </div>
+                    <div className="flex flex-col gap-2 min-[400px]:flex-row lg:justify-end">
+                    <Button asChild size="lg" className="button-glow">
+                        <Link href="/login-student">
+                        Join as a Student
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <Button asChild size="lg" variant="secondary">
+                        <Link href="/signup">
+                        Register as a Tutor
+                        </Link>
+                    </Button>
+                    </div>
+                </div>
             </div>
           </div>
         </section>

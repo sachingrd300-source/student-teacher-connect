@@ -79,4 +79,12 @@
   .shadow-soft-shadow {
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
+  .button-glow {
+    @apply shadow-lg shadow-primary/20;
+    transition: all 0.3s ease-in-out;
+  }
+  .button-glow:hover {
+    @apply shadow-xl shadow-primary/40;
+    transform: translateY(-2px);
+  }
 }
