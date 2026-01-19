@@ -92,7 +92,7 @@ function BecomeSellerCard() {
             marketplaceStatus: 'pending' as const,
             address: address,
             aadharNumber: aadharNo,
-            // In a real app, you'd get these URLs from a file upload service
+            // In a real app, you'd get these URLs from a file upload service. Here we use placeholders.
             aadharPhotoUrl: `https://picsum.photos/seed/${user.uid}-aadhar/400/250`,
             sellerPhotoUrl: `https://picsum.photos/seed/${user.uid}-seller/400/400`,
         };
@@ -138,7 +138,7 @@ function BecomeSellerCard() {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Seller Verification</DialogTitle>
-                <DialogDescription>Please provide the following details for verification.</DialogDescription>
+                <DialogDescription>Please provide the following details for verification. Photos will be handled in a future update.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="space-y-2">
@@ -148,16 +148,6 @@ function BecomeSellerCard() {
                 <div className="space-y-2">
                     <Label htmlFor="address">Full Address</Label>
                     <Textarea id="address" value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter your full residential address" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="aadharPhoto">Aadhaar Photo</Label>
-                    <Input id="aadharPhoto" type="file" />
-                    <p className="text-xs text-muted-foreground">Image upload is coming soon.</p>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="sellerPhoto">Your Photo</Label>
-                    <Input id="sellerPhoto" type="file" />
-                    <p className="text-xs text-muted-foreground">Image upload is coming soon.</p>
                 </div>
             </div>
             <DialogFooter>

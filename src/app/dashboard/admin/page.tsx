@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
@@ -16,9 +17,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+  } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, UserCheck, Check, X, PackageCheck, Clock, Store } from 'lucide-react';
+import { ShieldCheck, UserCheck, Check, X, PackageCheck, Store, Eye, Mail, Fingerprint, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
@@ -35,6 +43,8 @@ type UserProfile = {
     marketplaceStatus?: 'pending' | 'approved';
     aadharNumber?: string;
     address?: string;
+    aadharPhotoUrl?: string;
+    sellerPhotoUrl?: string;
     createdAt: { toDate: () => Date };
 };
 
@@ -50,6 +60,7 @@ type MarketplaceItem = {
 export default function AdminDashboardPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const [viewingSeller, setViewingSeller] = useState<UserProfile | null>(null);
 
     const pendingTutorsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -143,6 +154,7 @@ export default function AdminDashboardPage() {
     };
 
     return (
+        <>
         <div className="space-y-6">
             <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
                 <ShieldCheck className="h-8 w-8"/>
@@ -198,8 +210,6 @@ export default function AdminDashboardPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Aadhaar</TableHead>
-                                    <TableHead>Address</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -208,10 +218,11 @@ export default function AdminDashboardPage() {
                                 {pendingSellers?.map(seller => (
                                     <TableRow key={seller.id}>
                                         <TableCell className="font-medium">{seller.name}</TableCell>
-                                        <TableCell>{seller.aadharNumber || 'N/A'}</TableCell>
-                                        <TableCell className="text-xs">{seller.address || 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex gap-2 justify-end">
+                                                <Button size="sm" variant="ghost" onClick={() => setViewingSeller(seller)}>
+                                                     <Eye className="mr-2 h-4 w-4" /> View
+                                                </Button>
                                                 <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleUserVerification(seller.id, 'approved', 'seller')}>
                                                     <Check className="mr-2 h-4 w-4" /> Approve
                                                 </Button>
@@ -269,5 +280,58 @@ export default function AdminDashboardPage() {
                 </Card>
             </div>
         </div>
+        <Dialog open={!!viewingSeller} onOpenChange={(isOpen) => !isOpen && setViewingSeller(null)}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Seller Verification Details</DialogTitle>
+                    <DialogDescription>Review the information and photos submitted by {viewingSeller?.name}.</DialogDescription>
+                </DialogHeader>
+                {viewingSeller && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                        <div className="space-y-4">
+                             <h3 className="font-semibold">Applicant Information</h3>
+                             <div className="flex items-center gap-2 text-sm">
+                                <UserCheck className="h-4 w-4 text-muted-foreground" />
+                                <span>{viewingSeller.name}</span>
+                             </div>
+                             <div className="flex items-center gap-2 text-sm">
+                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                <span>{viewingSeller.email}</span>
+                             </div>
+                             <div className="flex items-center gap-2 text-sm">
+                                <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                                <span>{viewingSeller.aadharNumber || 'N/A'}</span>
+                             </div>
+                              <div className="flex items-start gap-2 text-sm">
+                                <Home className="h-4 w-4 text-muted-foreground mt-1" />
+                                <span className="flex-1">{viewingSeller.address || 'N/A'}</span>
+                             </div>
+                        </div>
+                         <div className="space-y-4">
+                            <h3 className="font-semibold">Submitted Photos</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium">Profile Photo</p>
+                                    <div className="relative w-full aspect-square rounded-lg overflow-hidden border">
+                                        {viewingSeller.sellerPhotoUrl ? (
+                                            <Image src={viewingSeller.sellerPhotoUrl} alt="Seller photo" fill className="object-cover" />
+                                        ) : <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">No image</div>}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                     <p className="text-sm font-medium">Aadhaar Card</p>
+                                     <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
+                                        {viewingSeller.aadharPhotoUrl ? (
+                                            <Image src={viewingSeller.aadharPhotoUrl} alt="Aadhaar photo" fill className="object-cover" />
+                                        ) : <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">No image</div>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
+     </>
     );
 }
