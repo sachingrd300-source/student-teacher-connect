@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LandingHeader } from '@/components/landing-header';
-import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star } from 'lucide-react';
+import { User, GraduationCap, CheckCircle, ArrowRight, BookOpen, MessageSquare, ShoppingCart, Star, Search, LogIn } from 'lucide-react';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +14,24 @@ import Autoplay from "embla-carousel-autoplay";
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const howItWorks = [
+    {
+        icon: <Search className="h-8 w-8 text-primary" />,
+        title: '1. Find Your Tutor',
+        description: 'Explore our extensive list of verified tutors. Filter by subject, location, and more to find your perfect match.',
+    },
+    {
+        icon: <LogIn className="h-8 w-8 text-primary" />,
+        title: '2. Join a Class',
+        description: 'Use the unique class code from your tutor to send an enrollment request and join your batch.',
+    },
+    {
+        icon: <GraduationCap className="h-8 w-8 text-primary" />,
+        title: '3. Start Learning',
+        description: 'Access class materials, view your schedule, track your performance, and engage with your learning community.',
+    },
+]
 
 const features = [
   {
@@ -98,6 +116,30 @@ export default function LandingPage() {
     },
   ], []);
 
+  const testimonials = React.useMemo(() => [
+    {
+        quote: "The one-on-one sessions have been a game-changer for my NEET preparation. My physics concepts are finally clear!",
+        name: "Riya Sharma",
+        role: "Class 12 Student",
+        rating: 5,
+        image: PlaceHolderImages.find(img => img.id === 'testimonial-student-2'),
+    },
+    {
+        quote: "As a tutor, this platform has made managing my batches and sharing materials incredibly easy. The AI tools are a huge time-saver.",
+        name: "Prof. Alok Nath",
+        role: "IIT-JEE Physics Tutor",
+        rating: 5,
+        image: PlaceHolderImages.find(img => img.id === 'testimonial-tutor-1'),
+    },
+    {
+        quote: "I found a great tutor for Mathematics and was able to clear my doubts before the board exams. The marketplace is great for finding cheap books too.",
+        name: "Arjun Singh",
+        role: "Class 10 Student",
+        rating: 5,
+        image: PlaceHolderImages.find(img => img.id === 'testimonial-student-1'),
+    }
+], []);
+
 
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
@@ -142,11 +184,41 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+        <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+            <div className="container px-4 md:px-6">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                    <div className="space-y-2">
+                        <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm shadow-sm">How It Works</div>
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Your Path to Success in 3 Simple Steps</h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                        Getting started with EduConnect Pro is quick and easy.
+                        </p>
+                    </div>
+                </div>
+                <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
+                {howItWorks.map((step, index) => (
+                    <AnimatedCard key={step.title} index={index} className="grid gap-4 p-6 text-center md:text-left">
+                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mx-auto md:mx-0">
+                            {step.icon}
+                        </div>
+                        <div className="grid gap-1">
+                        <h3 className="text-xl font-bold font-headline">{step.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {step.description}
+                        </p>
+                        </div>
+                    </AnimatedCard>
+                ))}
+                </div>
+            </div>
+        </section>
+
+
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm shadow-sm">Key Features</div>
+                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm shadow-sm">Key Features</div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Everything You Need to Succeed</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Our platform is designed to empower both teachers and students with powerful, easy-to-use features.
@@ -158,7 +230,7 @@ export default function LandingPage() {
                 <AnimatedCard 
                   key={feature.title} 
                   index={index}
-                  className="grid gap-4 p-6 rounded-lg bg-background shadow-soft-shadow hover:shadow-lg hover:-translate-y-2 transition-all duration-300"
+                  className="grid gap-4 p-6 rounded-lg bg-card shadow-soft-shadow hover:shadow-lg hover:-translate-y-2 transition-all duration-300"
                 >
                   <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10">
                     {feature.icon}
@@ -175,7 +247,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
             <div className="container px-4 md:px-6">
                  <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                     <div className="space-y-2">
@@ -210,6 +282,44 @@ export default function LandingPage() {
                 </div>
             </div>
         </section>
+        
+        <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32">
+            <div className="container px-4 md:px-6">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">What Our Users Say</h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                        Hear from students and tutors who have found success with EduConnect Pro.
+                        </p>
+                    </div>
+                </div>
+                <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
+                    {testimonials.map((testimonial, index) => (
+                        <AnimatedCard key={index} index={index} className="bg-card rounded-lg p-6 shadow-soft-shadow flex flex-col">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-1 mb-4">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Star key={i} className={`w-5 h-5 ${i < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`} />
+                                    ))}
+                                </div>
+                                <p className="text-muted-foreground mb-6 italic">"{testimonial.quote}"</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-12 w-12 border-2 border-primary/20">
+                                    {testimonial.image && <AvatarImage src={testimonial.image.imageUrl} alt={testimonial.name} />}
+                                    <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h4 className="font-semibold">{testimonial.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                                </div>
+                            </div>
+                        </AnimatedCard>
+                    ))}
+                </div>
+            </div>
+        </section>
+
 
         <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
             <div className="container px-4 md:px-6">
@@ -317,5 +427,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
