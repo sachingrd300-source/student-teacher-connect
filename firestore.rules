@@ -142,14 +142,14 @@ service cloud.firestore {
       
       // Allow listing materials under specific, secure conditions.
       allow list: if isSignedIn() && (
-          // Allow listing all public, free materials
-          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true) ||
-           // Allow listing all public, paid materials for the shop
-          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == false) ||
-          // Allow listing materials for a specific teacher
-          (request.query.where[0][0] == 'teacherId') ||
-          // Allow listing materials for a specific class, if the user is enrolled in it
-          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2]))
+          // Teacher can list their own materials
+          (request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid) ||
+          // Student can list materials for a class they are enrolled in
+          (request.query.where[0][0] == 'classId' && isEnrolledInClass(request.query.where[0][2])) ||
+          // Student can list PUBLIC materials (free or paid) which must not have a classId
+          (request.query.where.size() == 2 && request.query.where[0][0] == 'isFree' && request.query.where[1][0] == 'classId' && request.query.where[1][2] == null) ||
+          // Student can list PUBLIC DPPs which must not have a classId
+          (request.query.where.size() == 3 && request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true && request.query.where[1][0] == 'type' && request.query.where[1][2] == 'DPP' && request.query.where[2][0] == 'classId' && request.query.where[2][2] == null)
       );
 
       // Only approved teachers can create materials for themselves.

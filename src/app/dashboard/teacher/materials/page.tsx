@@ -56,6 +56,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PlusCircle, MoreVertical, BookOpenCheck, Trash2, Info, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
@@ -77,6 +78,7 @@ type StudyMaterial = {
     createdAt: { toDate: () => Date };
     isFree: boolean;
     price?: number;
+    classId?: string;
 };
 
 type UserProfile = {
@@ -135,9 +137,8 @@ export default function MaterialsPage() {
     const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    const ADMIN_USER_ID = 'YOUR_ADMIN_USER_ID_HERE';
-
     // Form state
+    const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [subject, setSubject] = useState('');
@@ -146,7 +147,6 @@ export default function MaterialsPage() {
     const [batchId, setBatchId] = useState<string | null>(null);
     const [classLevel, setClassLevel] = useState<string | null>(null);
     const [isFree, setIsFree] = useState(true);
-    const [isOfficial, setIsOfficial] = useState(false);
     const [price, setPrice] = useState<number | ''>('');
 
 
@@ -182,6 +182,7 @@ export default function MaterialsPage() {
     }, [batchId, batches]);
 
     const resetForm = () => {
+        setVisibility('public');
         setTitle('');
         setDescription('');
         setSubject('');
@@ -190,7 +191,6 @@ export default function MaterialsPage() {
         setBatchId(null);
         setClassLevel(null);
         setIsFree(true);
-        setIsOfficial(false);
         setPrice('');
         setAddMaterialOpen(false);
     }
@@ -200,8 +200,14 @@ export default function MaterialsPage() {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all required fields.' });
             return;
         }
-        if (!isFree && (price === '' || price <= 0)) {
+
+        if (visibility === 'public' && !isFree && (price === '' || price <= 0)) {
             toast({ variant: 'destructive', title: 'Invalid Price', description: 'Please enter a valid price for premium content.' });
+            return;
+        }
+        
+        if (visibility === 'private' && !batchId) {
+             toast({ variant: 'destructive', title: 'Batch Required', description: 'Please select a batch for private material.' });
             return;
         }
 
@@ -211,13 +217,12 @@ export default function MaterialsPage() {
             subject,
             chapter,
             type: materialType,
-            classId: batchId,
-            classLevel,
+            classId: visibility === 'private' ? batchId : null,
+            classLevel: visibility === 'public' ? classLevel : null,
             teacherId: user.uid,
             teacherName: userProfile.name,
-            isFree: isFree,
-            isOfficial: user.uid === ADMIN_USER_ID ? isOfficial : false, // Only admin can set official status
-            price: isFree ? 0 : Number(price),
+            isFree: visibility === 'private' ? true : isFree,
+            price: visibility === 'public' && !isFree ? Number(price) : 0,
             createdAt: serverTimestamp(),
             fileUrl: 'https://example.com/placeholder.pdf'
         };
@@ -311,12 +316,7 @@ export default function MaterialsPage() {
                                 <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Chapter 1: Motion in a Straight Line" />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief summary of the material. What topics does it cover?" />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
+                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="subject">Subject*</Label>
                                     <Select onValueChange={setSubject} value={subject}>
@@ -329,13 +329,6 @@ export default function MaterialsPage() {
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="chapter">Chapter</Label>
-                                    <Input id="chapter" value={chapter} onChange={e => setChapter(e.target.value)} placeholder="e.g. Chapter 5" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
                                     <Label htmlFor="type">Type*</Label>
                                     <Select onValueChange={setMaterialType} value={materialType}>
                                         <SelectTrigger><SelectValue placeholder="Select material type" /></SelectTrigger>
@@ -344,50 +337,58 @@ export default function MaterialsPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="classLevel">Public Class Level</Label>
-                                    <Select onValueChange={(val) => setClassLevel(val === 'none' ? null : val)} value={classLevel || 'none'}>
-                                        <SelectTrigger><SelectValue placeholder="Select a level" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            {classLevelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">For public filtering. Optional.</p>
-                                </div>
                             </div>
-
+                            
                             <Card className="bg-muted/50">
                                 <CardHeader className="p-4">
                                     <CardTitle className="text-base">Audience & Access</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="class">Assign to Private Batch (Optional)</Label>
-                                        <Select onValueChange={(val) => setBatchId(val === 'none' ? null : val)} value={batchId || 'none'} disabled={isLoadingBatches || isUserLoading}>
-                                            <SelectTrigger><SelectValue placeholder="Assign to a specific batch..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {isLoadingBatches ? <SelectItem value="loading" disabled>Loading batches...</SelectItem> :
-                                                    <>
-                                                        <SelectItem value="none">None (General Material)</SelectItem>
-                                                        {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
-                                                    </>
-                                                }
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">If assigned, only students in this batch can access it.</p>
+                                     <div className="space-y-3">
+                                        <Label>Visibility</Label>
+                                        <RadioGroup defaultValue="public" value={visibility} onValueChange={(v) => setVisibility(v as 'public' | 'private')}>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="public" id="public" />
+                                                <Label htmlFor="public">Public</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="private" id="private" />
+                                                <Label htmlFor="private">Private</Label>
+                                            </div>
+                                        </RadioGroup>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Access Level</Label>
-                                        <div className="flex items-center space-x-2 pt-1">
-                                            <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
-                                            <Label htmlFor="isFree">{isFree ? 'Free (Public)' : 'Paid (Premium)'}</Label>
+                                    {visibility === 'public' && (
+                                        <div className="space-y-4 pt-2 pl-6 border-l">
+                                            <div className="space-y-2">
+                                                <Label>Access Level</Label>
+                                                <div className="flex items-center space-x-2 pt-1">
+                                                    <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
+                                                    <Label htmlFor="isFree">{isFree ? 'Free for Everyone' : 'Paid (Premium)'}</Label>
+                                                </div>
+                                            </div>
+                                            {!isFree && (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="price">Price (INR)*</Label>
+                                                    <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="e.g. 199" />
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                    {!isFree && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="price">Price (INR)*</Label>
-                                            <Input id="price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} placeholder="e.g. 199" />
+                                    )}
+                                    {visibility === 'private' && (
+                                         <div className="space-y-2 pt-2 pl-6 border-l">
+                                            <Label htmlFor="class">Assign to Private Batch*</Label>
+                                            <Select onValueChange={(val) => setBatchId(val === 'none' ? null : val)} value={batchId || 'none'} disabled={isLoadingBatches || isUserLoading}>
+                                                <SelectTrigger><SelectValue placeholder="Assign to a specific batch..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    {isLoadingBatches ? <SelectItem value="loading" disabled>Loading batches...</SelectItem> :
+                                                        <>
+                                                            <SelectItem value="none">None</SelectItem>
+                                                            {batches?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                                                        </>
+                                                    }
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-muted-foreground">This material will only be visible to students in this batch.</p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -398,16 +399,9 @@ export default function MaterialsPage() {
                                 <Input id="file" type="file" />
                                 <p className="text-xs text-muted-foreground">File upload is for demonstration and not yet functional.</p>
                             </div>
-
-                            {user?.uid === ADMIN_USER_ID && (
-                                <div className="flex items-center space-x-2 rounded-md border p-4 bg-amber-500/10 border-amber-500/20">
-                                    <Switch id="isOfficial" checked={isOfficial} onCheckedChange={setIsOfficial} />
-                                    <Label htmlFor="isOfficial">Mark as Official Content (Admin Only)</Label>
-                                </div>
-                            )}
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !userProfile || !title || !subject || !materialType || (!isFree && (price === '' || price <= 0))}>
+                            <Button onClick={handleAddMaterial} disabled={isLoadingProfile || !userProfile || !title || !subject || !materialType}>
                                 {isLoadingProfile || !userProfile ? 'Loading...' : 'Upload Material'}
                             </Button>
                         </DialogFooter>
@@ -442,7 +436,7 @@ export default function MaterialsPage() {
                                 <TableHead>Title</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Subject</TableHead>
-                                <TableHead>Level</TableHead>
+                                <TableHead>Visibility</TableHead>
                                 <TableHead>Access</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -453,7 +447,6 @@ export default function MaterialsPage() {
                                 <>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
                                     <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
-                                    <TableRow><TableCell colSpan={7}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
                                 </>
                             ) : materials && materials.length > 0 ? (
                                 materials.map((material) => (
@@ -461,9 +454,9 @@ export default function MaterialsPage() {
                                         <TableCell className="font-medium">{material.title}</TableCell>
                                         <TableCell><Badge variant="outline">{material.type}</Badge></TableCell>
                                         <TableCell>{material.subject}</TableCell>
-                                        <TableCell>{material.classLevel || 'N/A'}</TableCell>
-                                        <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Public' : 'Premium'}</Badge></TableCell>
-                                        <TableCell>{material.isFree ? 'Free' : `₹${material.price}`}</TableCell>
+                                        <TableCell><Badge variant={material.classId ? 'secondary' : 'default'}>{material.classId ? 'Private' : 'Public'}</Badge></TableCell>
+                                        <TableCell><Badge variant={material.isFree ? 'default' : 'secondary'}>{material.isFree ? 'Free' : 'Premium'}</Badge></TableCell>
+                                        <TableCell>{material.isFree ? '—' : `₹${material.price}`}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <DropdownMenu>
@@ -511,5 +504,3 @@ export default function MaterialsPage() {
         </div>
     );
 }
-
-    

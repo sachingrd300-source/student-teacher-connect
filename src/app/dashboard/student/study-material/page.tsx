@@ -34,7 +34,7 @@ import {
   Book,
   Calculator,
 } from 'lucide-react';
-import { useFirestore, useCollection, useUser } from '@/firebase';
+import { useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -73,11 +73,12 @@ export default function StudyMaterialPage() {
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
-  const freeMaterialsQuery = useMemo(() => {
+  const freeMaterialsQuery = useMemoFirebase(() => {
     if(!firestore || !user) return null;
     return query(
         collection(firestore, 'studyMaterials'), 
         where('isFree', '==', true), 
+        where('classId', '==', null),
         orderBy('createdAt', 'desc')
     );
   }, [firestore, user]);

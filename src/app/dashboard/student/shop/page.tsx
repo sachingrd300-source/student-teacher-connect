@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, ShoppingBag, BookOpen } from 'lucide-react';
-import { useFirestore, useCollection, useUser } from '@/firebase';
+import { useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -114,16 +114,17 @@ export default function ShopPage() {
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
 
-  const premiumMaterialsQuery = useMemo(() => {
+  const premiumMaterialsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'studyMaterials'),
       where('isFree', '==', false),
+      where('classId', '==', null),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, user]);
 
-  const studentItemsQuery = useMemo(() => {
+  const studentItemsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
         collection(firestore, 'marketplaceItems'),
