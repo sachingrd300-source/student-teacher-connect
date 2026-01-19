@@ -27,6 +27,8 @@ import {
     SelectValue,
   } from '@/components/ui/select';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const subjectCategories = [
     "K-12",
@@ -80,13 +82,13 @@ export default function SignUpPage() {
       const subjectsArray = formData.subjects.split(',').map(s => s.trim()).filter(Boolean);
       const classLevelsArray = formData.classLevels.split(',').map(s => s.trim()).filter(Boolean);
 
-      await setDoc(doc(firestore, 'users', user.uid), {
+      const newUserData = {
         id: user.uid,
         name: formData.name,
         email: formData.email,
         mobileNumber: formData.mobileNumber,
-        role: 'tutor',
-        status: 'pending_verification',
+        role: 'tutor' as const,
+        status: 'pending_verification' as const,
         subjectCategory: formData.subjectCategory,
         subjects: subjectsArray,
         classLevels: classLevelsArray,
@@ -94,7 +96,17 @@ export default function SignUpPage() {
         experience: formData.experience,
         experienceType: formData.experienceType,
         createdAt: serverTimestamp(),
-      });
+      };
+      const userRef = doc(firestore, 'users', user.uid);
+
+      setDoc(userRef, newUserData)
+        .catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'create',
+                requestResourceData: newUserData
+            }));
+        });
 
       toast({
         title: 'Signup Successful!',

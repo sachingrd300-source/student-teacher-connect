@@ -22,6 +22,8 @@ import { Loader2 } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,15 +45,23 @@ export default function LoginPage() {
                 const userDoc = await getDoc(userDocRef);
         
                 if (!userDoc.exists()) {
-                    // Create a pending tutor profile for a new Google user
-                    await setDoc(userDocRef, {
+                    const newUserData = {
                         id: user.uid,
                         name: user.displayName,
                         email: user.email,
-                        role: 'tutor',
-                        status: 'pending_verification', // Tutors must be verified
+                        role: 'tutor' as const,
+                        status: 'pending_verification' as const,
                         createdAt: serverTimestamp(),
-                    });
+                    };
+                    setDoc(userDocRef, newUserData)
+                        .catch(error => {
+                            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                                path: userDocRef.path,
+                                operation: 'create',
+                                requestResourceData: newUserData
+                            }));
+                        });
+
                      toast({
                         title: 'Account Created!',
                         description: "Your profile has been submitted for verification. We'll notify you upon approval.",
@@ -122,13 +132,21 @@ export default function LoginPage() {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-             await setDoc(userDocRef, {
+             const newUserData = {
                 id: user.uid,
                 name: user.displayName,
                 email: user.email,
-                role: 'tutor',
-                status: 'pending_verification',
+                role: 'tutor' as const,
+                status: 'pending_verification' as const,
                 createdAt: serverTimestamp(),
+            };
+            setDoc(userDocRef, newUserData)
+            .catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'create',
+                    requestResourceData: newUserData
+                }));
             });
              toast({
                 title: 'Account Created!',

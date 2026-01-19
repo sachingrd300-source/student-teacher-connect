@@ -22,6 +22,8 @@ import { firestore } from '@/firebase/firebase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export default function StudentLoginPage() {
@@ -45,15 +47,23 @@ export default function StudentLoginPage() {
                  const userDoc = await getDoc(userDocRef);
         
                 if (!userDoc.exists()) {
-                    await setDoc(userDocRef, {
+                    const newUserData = {
                         id: user.uid,
                         name: user.displayName,
                         email: user.email,
-                        role: 'student',
-                        status: 'approved',
-                        marketplaceStatus: 'unverified',
+                        role: 'student' as const,
+                        status: 'approved' as const,
+                        marketplaceStatus: 'unverified' as const,
                         createdAt: serverTimestamp(),
-                    });
+                    };
+                    setDoc(userDocRef, newUserData)
+                        .catch(error => {
+                             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                                path: userDocRef.path,
+                                operation: 'create',
+                                requestResourceData: newUserData
+                            }));
+                        });
                 }
 
                 toast({
@@ -121,15 +131,23 @@ export default function StudentLoginPage() {
         const userDoc = await getDoc(userDocRef);
         
         if (!userDoc.exists()) {
-            await setDoc(userDocRef, {
+            const newUserData = {
                 id: user.uid,
                 name: user.displayName,
                 email: user.email,
-                role: 'student',
-                status: 'approved',
-                marketplaceStatus: 'unverified',
+                role: 'student' as const,
+                status: 'approved' as const,
+                marketplaceStatus: 'unverified' as const,
                 createdAt: serverTimestamp(),
-            });
+            };
+            setDoc(userDocRef, newUserData)
+                .catch(error => {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: userDocRef.path,
+                        operation: 'create',
+                        requestResourceData: newUserData
+                    }));
+                });
         }
 
         toast({
