@@ -21,7 +21,6 @@ import { Download, ClipboardList } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo } from 'react';
 import Link from 'next/link';
 
 
@@ -67,39 +66,21 @@ export default function DailyPracticePage() {
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
 
-  const dppQuery = useMemoFirebase(() => {
+  const practiceMaterialsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Query for all public DPPs, ensuring they are not assigned to a specific class
-    return query(
-      collection(firestore, 'studyMaterials'), 
-      where('isFree', '==', true),
-      where('type', '==', 'DPP'), 
-      where('classId', '==', null),
-      orderBy('createdAt', 'desc')
-    );
-  }, [firestore, user]);
-  
-  const homeworkQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    // Query for all public DPPs and Homework, ensuring they are not assigned to a specific class
     return query(
       collection(firestore, 'studyMaterials'),
       where('isFree', '==', true),
-      where('type', '==', 'Homework'),
+      where('type', 'in', ['DPP', 'Homework']),
       where('classId', '==', null),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, user]);
 
-  const { data: dailyPracticePapers, isLoading: isLoadingDpps } = useCollection<StudyMaterial>(dppQuery);
-  const { data: homework, isLoading: isLoadingHomework } = useCollection<StudyMaterial>(homeworkQuery);
+  const { data: practiceMaterials, isLoading: isLoadingMaterials } = useCollection<StudyMaterial>(practiceMaterialsQuery);
 
-  const allPracticeMaterials = useMemo(() => {
-    const combined = [...(dailyPracticePapers || []), ...(homework || [])];
-    combined.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
-    return combined;
-  }, [dailyPracticePapers, homework]);
-
-  const isLoading = isUserLoading || isLoadingDpps || isLoadingHomework;
+  const isLoading = isUserLoading || isLoadingMaterials;
 
   return (
     <div className="space-y-6">
@@ -129,12 +110,12 @@ export default function DailyPracticePage() {
                         <TableCell colSpan={4}><Skeleton className="h-12 w-full"/></TableCell>
                     </TableRow>
                 ))}
-                {!isLoading && allPracticeMaterials?.map((paper) => (
+                {!isLoading && practiceMaterials?.map((paper) => (
                     <MaterialRow key={paper.id} paper={paper} />
                 ))}
               </TableBody>
             </Table>
-            {!isLoading && allPracticeMaterials?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice materials available yet.</p>}
+            {!isLoading && practiceMaterials?.length === 0 && <p className="text-center text-muted-foreground py-8">No practice materials available yet.</p>}
         </CardContent>
       </Card>
     </div>

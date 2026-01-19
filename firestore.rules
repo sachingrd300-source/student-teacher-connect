@@ -164,7 +164,7 @@ service cloud.firestore {
           // Student can list PUBLIC materials (free or paid) which must not have a classId
           (request.query.where[0][0] == 'isFree' && request.query.where[1][0] == 'classId' && request.query.where[1][2] == null) ||
           // Student can list PUBLIC DPPs or Homework which must not have a classId
-          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true && request.query.where[1][0] == 'type' && (request.query.where[1][2] == 'DPP' || request.query.where[1][2] == 'Homework') && request.query.where[2][0] == 'classId' && request.query.where[2][2] == null)
+          (request.query.where[0][0] == 'isFree' && request.query.where[0][2] == true && request.query.where[1][0] == 'type' && request.query.where[1][2] in ['DPP', 'Homework'] && request.query.where[2][0] == 'classId' && request.query.where[2][2] == null)
       ));
 
       // Approved teachers can create for themselves. Admins can create.
