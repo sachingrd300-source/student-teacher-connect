@@ -35,13 +35,6 @@
       ]
     },
     {
-      "collectionGroup": "marketplaceItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "studyMaterials",
       "queryScope": "COLLECTION",
       "fields": [
