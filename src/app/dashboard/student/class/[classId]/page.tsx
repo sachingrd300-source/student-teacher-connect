@@ -33,7 +33,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
-import { FileText, AlertTriangle, BookOpenCheck, Calendar, Users, Video, MapPin } from 'lucide-react';
+import { FileText, AlertTriangle, BookOpenCheck, Calendar, Users, Video, MapPin, Download } from 'lucide-react';
 import Link from 'next/link';
 
 /* =======================
@@ -251,6 +251,7 @@ export default function ClassRoomPage() {
                         <TableHead className="w-[50px]">Type</TableHead>
                         <TableHead>Title</TableHead>
                         <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                     </TableHeader>
 
@@ -262,6 +263,14 @@ export default function ClassRoomPage() {
                         </TableCell>
                         <TableCell className="font-medium">{material.title}</TableCell>
                         <TableCell>{material.createdAt.toDate().toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={material.fileUrl} target="_blank" rel="noopener noreferrer">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download
+                                </Link>
+                            </Button>
+                        </TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
