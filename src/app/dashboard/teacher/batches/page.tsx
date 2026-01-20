@@ -202,7 +202,7 @@ export default function BatchesPage() {
                     </TableCell>
 
                     <TableCell>
-                      {batch.createdAt
+                      {batch.createdAt && typeof batch.createdAt.toDate === 'function'
                         ? batch.createdAt.toDate().toLocaleDateString()
                         : '—'}
                     </TableCell>
