@@ -297,10 +297,24 @@
             "isFree": { "type": "boolean", "description": "Whether the material is publically accessible."},
             "price": { "type": "number", "description": "The price of the material if it is not free." },
             "isOfficial": { "type": "boolean", "description": "Whether the material is official content from the platform." },
-            "fileUrl": { "type": "string" },
+            "fileUrl": { "type": "string", "description": "URL to the file, if it is a file-based material." },
+            "questions": {
+              "type": "array",
+              "description": "For 'Test Paper' type, this holds the array of generated questions.",
+              "items": {
+                  "type": "object",
+                  "properties": {
+                      "questionText": { "type": "string" },
+                      "questionType": { "type": "string", "enum": ["mcq", "short_answer"] },
+                      "options": { "type": "array", "items": { "type": "string" } },
+                      "correctAnswer": { "type": "string" }
+                  },
+                  "required": ["questionText", "questionType", "correctAnswer"]
+              }
+            },
             "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["teacherId", "teacherName", "title", "subject", "type", "isFree", "fileUrl", "createdAt"]
+        "required": ["teacherId", "teacherName", "title", "subject", "type", "isFree", "createdAt"]
     },
     "MarketplaceItem": {
       "title": "Marketplace Item",
