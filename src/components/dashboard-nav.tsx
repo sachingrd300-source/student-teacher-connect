@@ -36,10 +36,10 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where } from 'firebase/firestore';
 import { auth } from '@/firebase/firebase';
 
-type Role = 'teacher' | 'student' | 'admin';
+type Role = 'tutor' | 'student' | 'admin';
 
 const navItems = {
-  teacher: [
+  tutor: [
     { href: '/dashboard/teacher', label: 'Dashboard', icon: Home },
     { href: '/dashboard/teacher/profile', label: 'My Profile', icon: User },
     { href: '/dashboard/teacher/enrollments', label: 'Enrollments', icon: UserPlus },
@@ -70,7 +70,7 @@ const navItems = {
 };
 
 const roleIcons = {
-  teacher: <User className="h-5 w-5" />,
+  tutor: <User className="h-5 w-5" />,
   student: <BookOpenCheck className="h-5 w-5" />,
   admin: <ShieldCheck className="h-5 w-5" />,
 };

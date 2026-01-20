@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 type UserProfile = {
-  role: 'teacher' | 'student' | 'admin';
+  role: 'tutor' | 'student' | 'admin';
 }
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
@@ -56,7 +57,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     );
   }
 
-  if (userProfile?.role !== 'teacher') {
+  if (userProfile?.role !== 'tutor') {
     return (
       <div className="flex items-center justify-center py-12">
         <Card className="w-full max-w-md text-center">
@@ -66,7 +67,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
                 </div>
                 <CardTitle className="mt-4">Access Denied</CardTitle>
                 <CardDescription>
-                You do not have the required permissions to view this page. This area is for teachers only.
+                You do not have the required permissions to view this page. This area is for tutors only.
                 </CardDescription>
             </CardHeader>
             <CardContent>

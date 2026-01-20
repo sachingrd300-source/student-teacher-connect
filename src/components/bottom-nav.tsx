@@ -19,7 +19,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 
-type Role = 'teacher' | 'student' | 'admin';
+type Role = 'tutor' | 'student' | 'admin';
 
 const navItems = {
   student: [
@@ -30,7 +30,7 @@ const navItems = {
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingCart },
     { href: '/dashboard/student/my-store', label: 'My Store', icon: Store },
   ],
-  teacher: [
+  tutor: [
     { href: '/dashboard/teacher', label: 'Home', icon: Home },
     { href: '/dashboard/teacher/batches', label: 'Classes', icon: Users2 },
     { href: '/dashboard/teacher/enrollments', label: 'Requests', icon: UserPlus },

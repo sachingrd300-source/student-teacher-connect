@@ -8,7 +8,7 @@ import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 type UserProfile = {
-  role: 'teacher' | 'student' | 'admin';
+  role: 'tutor' | 'student' | 'admin';
 }
 
 export default function DashboardRedirectPage() {
@@ -38,7 +38,7 @@ export default function DashboardRedirectPage() {
 
     if (userProfile?.role === 'admin') {
       router.push('/dashboard/admin');
-    } else if (userProfile?.role === 'teacher') {
+    } else if (userProfile?.role === 'tutor') {
       router.push('/dashboard/teacher');
     } else {
       // Default to student dashboard if role is 'student' or not found.

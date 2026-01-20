@@ -22,7 +22,7 @@ import { useUser } from '@/firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BottomNav } from '@/components/bottom-nav';
 
-type Role = 'teacher' | 'student' | 'admin';
+type Role = 'tutor' | 'student' | 'admin';
 
 export default function DashboardLayout({
   children,
@@ -33,7 +33,7 @@ export default function DashboardLayout({
   const { user, isLoading: isUserLoading } = useUser();
 
   const getRole = (): Role => {
-    if (pathname.startsWith('/dashboard/teacher')) return 'teacher';
+    if (pathname.startsWith('/dashboard/teacher')) return 'tutor';
     if (pathname.startsWith('/dashboard/student')) return 'student';
     if (pathname.startsWith('/dashboard/admin')) return 'admin';
     // Default to student if no specific role path is matched.
