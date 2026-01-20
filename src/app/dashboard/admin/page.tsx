@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, UserCheck, Check, X, PackageCheck, Store, Eye, Mail, Fingerprint, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -39,7 +39,7 @@ type UserProfile = {
     name: string;
     email: string;
     status: 'pending_verification' | 'approved' | 'denied';
-    role: 'tutor' | 'student';
+    role: 'tutor' | 'student' | 'admin';
     marketplaceStatus?: 'pending' | 'approved';
     aadharNumber?: string;
     address?: string;
@@ -60,34 +60,41 @@ type MarketplaceItem = {
 export default function AdminDashboardPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { user, isLoading: isUserLoading } = useUser();
     const [viewingSeller, setViewingSeller] = useState<UserProfile | null>(null);
 
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
+
     const pendingTutorsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || userProfile?.role !== 'admin') return null;
         return query(
             collection(firestore, 'users'),
             where('role', '==', 'tutor'),
             where('status', '==', 'pending_verification')
         );
-    }, [firestore]);
+    }, [firestore, userProfile]);
 
     const pendingSellersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || userProfile?.role !== 'admin') return null;
         return query(
             collection(firestore, 'users'),
             where('role', '==', 'student'),
             where('marketplaceStatus', '==', 'pending')
         );
-    }, [firestore]);
+    }, [firestore, userProfile]);
 
     const pendingItemsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || userProfile?.role !== 'admin') return null;
         return query(
             collection(firestore, 'marketplaceItems'),
             where('status', '==', 'pending'),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore]);
+    }, [firestore, userProfile]);
 
     const { data: pendingTutors, isLoading: isLoadingTutors } = useCollection<UserProfile>(pendingTutorsQuery);
     const { data: pendingSellers, isLoading: isLoadingSellers } = useCollection<UserProfile>(pendingSellersQuery);
@@ -153,6 +160,8 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const isLoading = isUserLoading || isProfileLoading;
+
     return (
         <>
         <div className="space-y-6">
@@ -177,7 +186,7 @@ export default function AdminDashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoadingTutors && <TableRow><TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
+                                {(isLoading || isLoadingTutors) && <TableRow><TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
                                 {pendingTutors?.map(tutor => (
                                     <TableRow key={tutor.id}>
                                         <TableCell className="font-medium">{tutor.name}</TableCell>
@@ -196,7 +205,7 @@ export default function AdminDashboardPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                        {!isLoadingTutors && pendingTutors?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending tutor applications.</p>}
+                        {!(isLoading || isLoadingTutors) && pendingTutors?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending tutor applications.</p>}
                     </CardContent>
                 </Card>
 
@@ -214,7 +223,7 @@ export default function AdminDashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoadingSellers && <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
+                                {(isLoading || isLoadingSellers) && <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
                                 {pendingSellers?.map(seller => (
                                     <TableRow key={seller.id}>
                                         <TableCell className="font-medium">{seller.name}</TableCell>
@@ -235,7 +244,7 @@ export default function AdminDashboardPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                        {!isLoadingSellers && pendingSellers?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending seller requests.</p>}
+                        {!(isLoading || isLoadingSellers) && pendingSellers?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending seller requests.</p>}
                     </CardContent>
                 </Card>
 
@@ -255,7 +264,7 @@ export default function AdminDashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoadingItems && <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
+                                {(isLoading || isLoadingItems) && <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>}
                                 {pendingItems?.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.title}</TableCell>
@@ -275,7 +284,7 @@ export default function AdminDashboardPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                        {!isLoadingItems && pendingItems?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending items for approval.</p>}
+                        {!(isLoading || isLoadingItems) && pendingItems?.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No pending items for approval.</p>}
                     </CardContent>
                 </Card>
             </div>
