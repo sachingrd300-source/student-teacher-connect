@@ -8,7 +8,8 @@ import {
   addDoc,
   serverTimestamp,
   orderBy,
-  doc
+  doc,
+  limit,
 } from "firebase/firestore";
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
-import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCircle, Info, CalendarDays } from "lucide-react";
+import { Users2, BookOpenCheck, PlusCircle, Copy, BarChart3, Loader2, Clock, XCircle, Info, CalendarDays, BellRing, Video, MapPin } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import type { User } from "firebase/auth";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 type BatchType = {
   id: string;
@@ -45,10 +48,22 @@ type UserProfile = {
 }
 
 type Enrollment = {
+  id: string;
   studentId: string;
+  studentName: string;
   classId: string;
   status: 'approved' | 'pending' | 'denied';
 };
+
+type Schedule = {
+    id: string;
+    topic: string;
+    time: string;
+    type: 'Online' | 'Offline';
+    classTitle: string;
+    date: { toDate: () => Date };
+}
+
 
 const StatCard = ({ title, value, icon, isLoading }: { title: string, value: string | number, icon: React.ReactNode, isLoading: boolean }) => (
     <Card className="shadow-soft-shadow">
@@ -105,7 +120,7 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
   
   const isApproved = userProfile.status === 'approved';
 
-  // Queries for stats
+  // --- QUERIES ---
   const batchesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -119,7 +134,8 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
     if (!firestore || !user) return null;
     return query(
         collection(firestore, "enrollments"),
-        where("teacherId", "==", user.uid)
+        where("teacherId", "==", user.uid),
+        orderBy("createdAt", "desc")
     );
   }, [firestore, user]);
 
@@ -131,16 +147,44 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
     );
   }, [firestore, user]);
   
+  const upcomingSchedulesQuery = useMemoFirebase(() => {
+      if (!firestore || !user) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return query(
+          collection(firestore, "classSchedules"),
+          where("teacherId", "==", user.uid),
+          where("date", ">=", today),
+          orderBy("date", "asc"),
+          limit(5)
+      );
+  }, [firestore, user]);
+  
+  // --- DATA FROM HOOKS ---
   const { data: batches, isLoading: isLoadingBatches } = useCollection<BatchType>(batchesQuery);
   const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
   const { data: materials, isLoading: isLoadingMaterials } = useCollection<any>(materialsQuery);
+  const { data: upcomingSchedules, isLoading: isLoadingSchedules } = useCollection<Schedule>(upcomingSchedulesQuery);
   
+  // --- MEMOIZED DERIVED DATA ---
   const totalStudents = useMemo(() => {
     if (!enrollments) return 0;
     const approvedEnrollments = enrollments.filter(e => e.status === 'approved');
     const uniqueStudentIds = new Set(approvedEnrollments.map(e => e.studentId));
     return uniqueStudentIds.size;
   }, [enrollments]);
+
+  const pendingEnrollments = useMemo(() => {
+      if (!enrollments) return [];
+      return enrollments.filter(e => e.status === 'pending');
+  }, [enrollments]);
+
+  const todaysSchedules = useMemo(() => {
+    if (!upcomingSchedules) return [];
+    const todayStr = new Date().toDateString();
+    return upcomingSchedules.filter(s => s.date.toDate().toDateString() === todayStr);
+  }, [upcomingSchedules]);
 
 
   const handleCreateBatch = async () => {
@@ -194,7 +238,7 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
     toast({ title: "Copied!", description: `Batch code ${code} copied to clipboard.` });
   }
   
-  const isLoading = isLoadingBatches || isLoadingEnrollments || isLoadingMaterials;
+  const isLoading = isLoadingBatches || isLoadingEnrollments || isLoadingMaterials || isLoadingSchedules;
 
   return (
     <div className="space-y-6">
@@ -213,108 +257,182 @@ function TeacherDashboardContent({ user, userProfile }: { user: User, userProfil
        </div>
 
 
-      <div className="grid md:grid-cols-2 gap-6 items-start">
-        {/* CREATE BATCH */}
-        <Card className="shadow-soft-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><PlusCircle className="h-6 w-6 text-primary"/>Create a New Batch</CardTitle>
-            <CardDescription>
-              Create a new batch for students to join with a unique code.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="Batch Subject (e.g. Physics)"
-              value={classSubject}
-              onChange={(e) => setClassSubject(e.target.value)}
-              disabled={isCreatingBatch || !isApproved}
-            />
-            <Input
-              placeholder="Batch Level (e.g. 11-12)"
-              value={classLevel}
-              onChange={(e) => setClassLevel(e.target.value)}
-              disabled={isCreatingBatch || !isApproved}
-            />
-            <Input
-              placeholder="Batch Time (e.g. 7:00 AM)"
-              value={batchTime}
-              onChange={(e) => setBatchTime(e.target.value)}
-              disabled={isCreatingBatch || !isApproved}
-            />
-            <Button
-              onClick={handleCreateBatch}
-              className="w-full"
-              disabled={isCreatingBatch || !classLevel || !classSubject || !isApproved}
-            >
-              {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isCreatingBatch ? "Creating..." : "Create Batch"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* BATCH LIST */}
-        <Card className="shadow-soft-shadow">
-          <CardHeader>
-            <CardTitle>Your Batches</CardTitle>
-            <CardDescription>
-              Share the code with students to let them enroll.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingBatches || isLoadingEnrollments ? (
-                 <div className="space-y-2">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                </div>
-            ) : batches && batches.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">
-                You haven't created any batches yet.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {batches?.slice(0, 5).map((batch) => {
-                    const studentCount = enrollments?.filter(e => e.classId === batch.id && e.status === 'approved').length ?? 0;
-                    return (
-                        <div
-                            key={batch.id}
-                            className="border p-4 rounded-lg bg-muted/30 flex flex-col gap-3 transition-colors"
-                        >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold text-lg">{batch.title}</p>
-                                    <p className="text-sm text-muted-foreground">{batch.batchTime || "No time set"}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-mono text-sm text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{batch.classCode}</p>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopyCode(batch.classCode)}>
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-3 mt-2">
-                                <div className="flex items-center gap-2">
-                                    <CalendarDays className="h-4 w-4" />
-                                    <span>Created: {batch.createdAt ? batch.createdAt.toDate().toLocaleDateString() : 'Just now'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Users2 className="h-4 w-4" />
-                                    <span>{studentCount} {studentCount === 1 ? 'Student' : 'Students'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                })}
-              </div>
-            )}
-          </CardContent>
-          {batches && batches.length > 5 && (
-             <CardFooter>
-                 <Button variant="outline" asChild className="w-full mt-4">
-                    <Link href="/dashboard/teacher/batches">Manage All Batches</Link>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-2 space-y-6">
+            <Card className="shadow-soft-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><PlusCircle className="h-6 w-6 text-primary"/>Create a New Batch</CardTitle>
+                <CardDescription>
+                  Create a new batch for students to join with a unique code.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input
+                  placeholder="Batch Subject (e.g. Physics)"
+                  value={classSubject}
+                  onChange={(e) => setClassSubject(e.target.value)}
+                  disabled={isCreatingBatch || !isApproved}
+                />
+                <Input
+                  placeholder="Batch Level (e.g. 11-12)"
+                  value={classLevel}
+                  onChange={(e) => setClassLevel(e.target.value)}
+                  disabled={isCreatingBatch || !isApproved}
+                />
+                <Input
+                  placeholder="Batch Time (e.g. 7:00 AM)"
+                  value={batchTime}
+                  onChange={(e) => setBatchTime(e.target.value)}
+                  disabled={isCreatingBatch || !isApproved}
+                />
+                <Button
+                  onClick={handleCreateBatch}
+                  className="w-full"
+                  disabled={isCreatingBatch || !classLevel || !classSubject || !isApproved}
+                >
+                  {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isCreatingBatch ? "Creating..." : "Create Batch"}
                 </Button>
-              </CardFooter>
-          )}
-        </Card>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-soft-shadow">
+              <CardHeader>
+                <CardTitle>Recent Batches</CardTitle>
+                <CardDescription>
+                  Share the code with students to let them enroll.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingBatches || isLoadingEnrollments ? (
+                     <div className="space-y-2">
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                    </div>
+                ) : batches && batches.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    You haven't created any batches yet.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {batches?.slice(0, 5).map((batch) => {
+                        const studentCount = enrollments?.filter(e => e.classId === batch.id && e.status === 'approved').length ?? 0;
+                        return (
+                            <div
+                                key={batch.id}
+                                className="border p-4 rounded-lg bg-muted/30 flex flex-col gap-3 transition-colors"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-semibold text-lg">{batch.title}</p>
+                                        <p className="text-sm text-muted-foreground">{batch.batchTime || "No time set"}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-mono text-sm text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{batch.classCode}</p>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopyCode(batch.classCode)}>
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-3 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <CalendarDays className="h-4 w-4" />
+                                        <span>Created: {batch.createdAt ? batch.createdAt.toDate().toLocaleDateString() : 'Just now'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Users2 className="h-4 w-4" />
+                                        <span>{studentCount} {studentCount === 1 ? 'Student' : 'Students'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+                  </div>
+                )}
+              </CardContent>
+              {batches && batches.length > 5 && (
+                 <CardFooter>
+                     <Button variant="outline" asChild className="w-full mt-4">
+                        <Link href="/dashboard/teacher/batches">Manage All Batches</Link>
+                    </Button>
+                  </CardFooter>
+              )}
+            </Card>
+        </div>
+        <div className="lg:col-span-1 space-y-6">
+            <Card className="shadow-soft-shadow">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary"/>Today's Schedule</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingSchedules ? (
+                        <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+                    ) : todaysSchedules.length > 0 ? (
+                        <div className="space-y-4">
+                            {todaysSchedules.map(schedule => (
+                                <div key={schedule.id} className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 pt-1">
+                                        {schedule.type === 'Online' ? <Video className="h-5 w-5 text-muted-foreground"/> : <MapPin className="h-5 w-5 text-muted-foreground"/>}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-baseline">
+                                            <p className="font-semibold">{schedule.topic}</p>
+                                            <p className="text-xs font-medium text-primary">{schedule.time}</p>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">{schedule.classTitle}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-6 text-muted-foreground">
+                            <p className="text-sm">Your schedule is clear for today!</p>
+                        </div>
+                    )}
+                </CardContent>
+                <CardFooter>
+                    <Button asChild variant="outline" className="w-full">
+                        <Link href="/dashboard/teacher/schedule">View Full Schedule</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+            <Card className="shadow-soft-shadow">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><BellRing className="h-5 w-5 text-primary"/>Pending Requests</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     {isLoadingEnrollments ? (
+                        <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
+                     ) : pendingEnrollments.length > 0 ? (
+                         <div className="space-y-4">
+                            {pendingEnrollments.slice(0, 4).map(req => {
+                                const batch = batches?.find(b => b.id === req.classId);
+                                return (
+                                    <div key={req.id} className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-semibold">{req.studentName}</p>
+                                            <p className="text-xs text-muted-foreground">{batch?.title || "a class"}</p>
+                                        </div>
+                                        <Badge variant="secondary">New</Badge>
+                                    </div>
+                                )
+                            })}
+                         </div>
+                     ) : (
+                          <div className="text-center py-6 text-muted-foreground">
+                            <p className="text-sm">No new student requests.</p>
+                        </div>
+                     )}
+                </CardContent>
+                {pendingEnrollments.length > 0 && (
+                    <CardFooter>
+                         <Button asChild variant="default" className="w-full">
+                            <Link href="/dashboard/teacher/enrollments">Review Requests</Link>
+                        </Button>
+                    </CardFooter>
+                )}
+            </Card>
+        </div>
       </div>
     </div>
   );
