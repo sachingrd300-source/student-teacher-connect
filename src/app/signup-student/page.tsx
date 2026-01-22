@@ -56,14 +56,17 @@ export default function SignUpStudentPage() {
                         marketplaceStatus: 'unverified' as const,
                         createdAt: serverTimestamp(),
                     };
-                    setDoc(userDocRef, newUserData)
-                        .catch(error => {
-                            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                                path: userDocRef.path,
-                                operation: 'create',
-                                requestResourceData: newUserData
-                            }));
-                        });
+                    try {
+                        await setDoc(userDocRef, newUserData);
+                    } catch (error) {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({
+                            path: userDocRef.path,
+                            operation: 'create',
+                            requestResourceData: newUserData
+                        }));
+                        setGoogleLoading(false);
+                        return;
+                    }
                 }
 
                 toast({
@@ -112,14 +115,17 @@ export default function SignUpStudentPage() {
       };
       const userRef = doc(firestore, 'users', user.uid);
 
-      setDoc(userRef, newUserData)
-        .catch(error => {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'create',
-                requestResourceData: newUserData
-            }));
-        });
+      try {
+        await setDoc(userRef, newUserData);
+      } catch (dbError) {
+         errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'create',
+            requestResourceData: newUserData
+        }));
+        setIsLoading(false);
+        return;
+      }
 
       toast({
         title: 'Signup Successful!',
@@ -160,14 +166,17 @@ export default function SignUpStudentPage() {
                 marketplaceStatus: 'unverified' as const,
                 createdAt: serverTimestamp(),
             };
-            setDoc(userDocRef, newUserData)
-            .catch(error => {
+            try {
+                await setDoc(userDocRef, newUserData);
+            } catch (error) {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'create',
                     requestResourceData: newUserData
                 }));
-            });
+                setGoogleLoading(false);
+                return;
+            }
         }
 
         toast({

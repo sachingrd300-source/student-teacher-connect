@@ -53,19 +53,21 @@ export default function LoginPage() {
                         status: 'pending_verification' as const,
                         createdAt: serverTimestamp(),
                     };
-                    setDoc(userDocRef, newUserData)
-                        .catch(error => {
-                            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                                path: userDocRef.path,
-                                operation: 'create',
-                                requestResourceData: newUserData
-                            }));
+                    try {
+                        await setDoc(userDocRef, newUserData);
+                        toast({
+                            title: 'Account Created!',
+                            description: "Your profile has been submitted for verification. We'll notify you upon approval.",
                         });
-
-                     toast({
-                        title: 'Account Created!',
-                        description: "Your profile has been submitted for verification. We'll notify you upon approval.",
-                    });
+                    } catch (error) {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({
+                            path: userDocRef.path,
+                            operation: 'create',
+                            requestResourceData: newUserData
+                        }));
+                        setGoogleLoading(false);
+                        return; // Stop execution
+                    }
                 } else {
                      toast({
                         title: 'Login Successful!',
@@ -140,18 +142,21 @@ export default function LoginPage() {
                 status: 'pending_verification' as const,
                 createdAt: serverTimestamp(),
             };
-            setDoc(userDocRef, newUserData)
-            .catch(error => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
+            try {
+                await setDoc(userDocRef, newUserData);
+                toast({
+                    title: 'Account Created!',
+                    description: "Your profile has been submitted for verification.",
+                });
+            } catch (error) {
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'create',
                     requestResourceData: newUserData
                 }));
-            });
-             toast({
-                title: 'Account Created!',
-                description: "Your profile has been submitted for verification.",
-            });
+                setGoogleLoading(false);
+                return; // Stop execution
+            }
         } else {
             toast({
                 title: 'Login Successful!',

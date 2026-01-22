@@ -56,14 +56,17 @@ export default function StudentLoginPage() {
                         marketplaceStatus: 'unverified' as const,
                         createdAt: serverTimestamp(),
                     };
-                    setDoc(userDocRef, newUserData)
-                        .catch(error => {
-                             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                                path: userDocRef.path,
-                                operation: 'create',
-                                requestResourceData: newUserData
-                            }));
-                        });
+                    try {
+                        await setDoc(userDocRef, newUserData);
+                    } catch (error) {
+                         errorEmitter.emit('permission-error', new FirestorePermissionError({
+                            path: userDocRef.path,
+                            operation: 'create',
+                            requestResourceData: newUserData
+                        }));
+                        setGoogleLoading(false);
+                        return;
+                    }
                 }
 
                 toast({
@@ -140,14 +143,17 @@ export default function StudentLoginPage() {
                 marketplaceStatus: 'unverified' as const,
                 createdAt: serverTimestamp(),
             };
-            setDoc(userDocRef, newUserData)
-                .catch(error => {
-                        errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: userDocRef.path,
-                        operation: 'create',
-                        requestResourceData: newUserData
-                    }));
-                });
+            try {
+                await setDoc(userDocRef, newUserData);
+            } catch (error) {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'create',
+                    requestResourceData: newUserData
+                }));
+                setGoogleLoading(false);
+                return;
+            }
         }
 
         toast({

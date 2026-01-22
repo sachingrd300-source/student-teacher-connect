@@ -18,7 +18,7 @@ import { Icons } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { signupWithEmail } from '@/firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { firestore } from '@/firebase/firebase';
+import { auth, firestore } from '@/firebase/firebase';
 import {
     Select,
     SelectContent,
@@ -99,14 +99,17 @@ export default function SignUpPage() {
       };
       const userRef = doc(firestore, 'users', user.uid);
 
-      setDoc(userRef, newUserData)
-        .catch(error => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'create',
-                requestResourceData: newUserData
-            }));
-        });
+      try {
+          await setDoc(userRef, newUserData);
+      } catch (dbError) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'create',
+            requestResourceData: newUserData
+          }));
+          setIsLoading(false);
+          return;
+      }
 
       toast({
         title: 'Signup Successful!',
@@ -114,11 +117,11 @@ export default function SignUpPage() {
       });
       router.push('/dashboard/teacher');
 
-    } catch (error: any) {
+    } catch (authError: any) {
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: error.code === 'auth/email-already-in-use' ? 'This email is already registered.' : error.message,
+        description: authError.code === 'auth/email-already-in-use' ? 'This email is already registered.' : authError.message,
       });
     } finally {
       setIsLoading(false);
