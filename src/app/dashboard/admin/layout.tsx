@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 type UserProfile = {
-  role: 'teacher' | 'student' | 'admin';
+  role: 'tutor' | 'student' | 'admin';
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
