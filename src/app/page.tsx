@@ -5,7 +5,7 @@ export default function Home() {
         <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
           Welcome to Your New App
         </h1>
-        <p className="mt-6 text-lg leading-8 text-muted-foreground">
+        <p className="mt-6 text-lg leading-8 text-gray-600">
           This is your starting point. What should we build together?
         </p>
       </div>
