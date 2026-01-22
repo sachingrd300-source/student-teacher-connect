@@ -27,6 +27,7 @@ interface PendingStudentData {
     teacherName: string;
     classId: string;
     classTitle: string;
+    classSubject: string; // Assuming this will be useful, let's get it from pending data
 }
 
 export default function StudentSignupPage() {
@@ -104,6 +105,7 @@ export default function StudentSignupPage() {
             const enrollmentData = {
                 studentId: user.uid,
                 studentName: pendingData.studentName,
+                mobileNumber: pendingData.mobileNumber,
                 classId: pendingData.classId,
                 teacherId: pendingData.teacherId,
                 classTitle: pendingData.classTitle,
@@ -227,3 +229,5 @@ export default function StudentSignupPage() {
         </div>
     );
 }
+
+    

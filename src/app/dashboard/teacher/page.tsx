@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 
@@ -27,6 +27,56 @@ interface PendingStudent {
     studentName: string;
     classTitle: string;
 }
+
+interface EnrolledStudent {
+    id: string;
+    studentId: string;
+    studentName: string;
+    mobileNumber: string;
+}
+
+function StudentListForClass({ classId }: { classId: string }) {
+    const firestore = useFirestore();
+
+    const enrollmentsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'enrollments'), where('classId', '==', classId));
+    }, [firestore, classId]);
+
+    const { data: students, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
+
+    if (isLoading) {
+        return <p>Loading students...</p>;
+    }
+
+    if (!students || students.length === 0) {
+        return <p className="text-center text-muted-foreground py-8">No students are enrolled in this class yet.</p>;
+    }
+
+    return (
+        <div className="mt-4 border rounded-lg">
+            <table className="w-full text-sm">
+                <thead className="text-left bg-muted">
+                    <tr className="border-b">
+                        <th className="p-3 font-medium">Student Name</th>
+                        <th className="p-3 font-medium">Mobile Number</th>
+                        <th className="p-3 font-medium">Student ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {students.map(student => (
+                        <tr key={student.id} className="border-b last:border-0">
+                            <td className="p-3">{student.studentName}</td>
+                            <td className="p-3">{student.mobileNumber}</td>
+                            <td className="p-3 font-mono">{student.studentId}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
 
 export default function TeacherDashboard() {
     const firestore = useFirestore();
@@ -49,6 +99,9 @@ export default function TeacherDashboard() {
 
     // State for editing a class
     const [editingClass, setEditingClass] = useState<Class | null>(null);
+    
+    // State for viewing students in a class
+    const [viewingStudentsForClass, setViewingStudentsForClass] = useState<Class | null>(null);
 
 
     const userProfileRef = useMemoFirebase(() => {
@@ -199,6 +252,10 @@ export default function TeacherDashboard() {
                                                     <div className="font-mono text-base font-bold text-foreground">{c.classCode}</div>
                                                 </div>
                                                 <div className="flex items-center gap-1">
+                                                     <Button variant="outline" size="sm" onClick={() => setViewingStudentsForClass(c)}>
+                                                        <Users className="h-4 w-4 mr-1" />
+                                                        Students
+                                                    </Button>
                                                     <Button variant="outline" size="sm" onClick={() => setEditingClass(c)}>
                                                         <Edit className="h-4 w-4 mr-1" />
                                                         Edit
@@ -404,6 +461,25 @@ export default function TeacherDashboard() {
                 </Dialog>
             )}
 
+            {viewingStudentsForClass && (
+                <Dialog open={!!viewingStudentsForClass} onOpenChange={(isOpen) => !isOpen && setViewingStudentsForClass(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Students in {viewingStudentsForClass.title}</DialogTitle>
+                            <DialogDescription>
+                                Here is a list of all students enrolled in this class.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <StudentListForClass classId={viewingStudentsForClass.id} />
+                         <DialogFooter>
+                            <Button type="button" variant="secondary" onClick={() => setViewingStudentsForClass(null)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
+
         </div>
     );
 }
+
+    
