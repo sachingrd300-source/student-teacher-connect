@@ -3,7 +3,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -20,12 +20,14 @@ interface Class {
     subject: string;
     batchTime: string;
     classCode: string;
+    createdAt?: Timestamp;
 }
 
 interface PendingStudent {
     id: string;
     studentName: string;
     classTitle: string;
+    createdAt?: Timestamp;
 }
 
 interface EnrolledStudent {
@@ -33,6 +35,7 @@ interface EnrolledStudent {
     studentId: string;
     studentName: string;
     mobileNumber: string;
+    createdAt?: Timestamp;
 }
 
 function StudentListForClass({ classId }: { classId: string }) {
@@ -61,6 +64,7 @@ function StudentListForClass({ classId }: { classId: string }) {
                         <th className="p-3 font-medium">Student Name</th>
                         <th className="p-3 font-medium">Mobile Number</th>
                         <th className="p-3 font-medium">Student ID</th>
+                        <th className="p-3 font-medium">Enrolled On</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,6 +73,9 @@ function StudentListForClass({ classId }: { classId: string }) {
                             <td className="p-3">{student.studentName}</td>
                             <td className="p-3">{student.mobileNumber}</td>
                             <td className="p-3 font-mono">{student.studentId}</td>
+                            <td className="p-3">
+                                {student.createdAt ? student.createdAt.toDate().toLocaleString() : '...'}
+                            </td>
                         </tr>
                     ))}
                 </tbody>
@@ -245,6 +252,11 @@ export default function TeacherDashboard() {
                                             <CardHeader>
                                                 <CardTitle className="text-lg">{c.title}</CardTitle>
                                                 <CardDescription>{c.subject} ({c.batchTime})</CardDescription>
+                                                {c.createdAt && (
+                                                    <CardDescription className="text-xs pt-2">
+                                                        Created: {c.createdAt.toDate().toLocaleString()}
+                                                    </CardDescription>
+                                                )}
                                             </CardHeader>
                                             <CardFooter className="flex justify-between items-center">
                                                 <div>
@@ -355,7 +367,14 @@ export default function TeacherDashboard() {
                                     <div className="mt-4 space-y-2">
                                         {pendingStudents.map(s => (
                                             <div key={s.id} className="flex justify-between items-center p-3 bg-secondary rounded-lg">
-                                                <p><span className="font-semibold">{s.studentName}</span> (for class: {s.classTitle})</p>
+                                                <div>
+                                                    <p><span className="font-semibold">{s.studentName}</span> (for class: {s.classTitle})</p>
+                                                    {s.createdAt && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Generated: {s.createdAt.toDate().toLocaleString()}
+                                                        </p>
+                                                    )}
+                                                </div>
                                                 <p className="text-sm text-muted-foreground">ID: <span className="font-mono font-bold text-foreground">{s.id}</span></p>
                                             </div>
                                         ))}
