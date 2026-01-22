@@ -45,5 +45,17 @@ service cloud.firestore {
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if false; // soft deletes should be handled by a 'deleted' flag
     }
+
+    // Classes collection
+    match /classes/{classId} {
+      // Teachers can create classes for themselves
+      allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+
+      // The teacher who created the class can read, update, or delete it
+      allow get, update, delete: if isTutor() && get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+      
+      // Teachers can list their own classes.
+      allow list: if isTutor();
+    }
   }
 }
