@@ -226,8 +226,11 @@ export default function BatchesPage() {
                           </DropdownMenuTrigger>
 
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem disabled>
-                              View Students
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/teacher/class/${batch.id}`}>
+                                <Users2 className="mr-2 h-4 w-4" />
+                                View Students
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => {
                                 setEditingBatch(batch);
