@@ -73,9 +73,6 @@ service cloud.firestore {
       allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
                  || (isTutor() && resource.data.teacherId == request.auth.uid);
 
-      // Users can only query for their own enrollments (studentId) or classes they teach (teacherId)
-      allow list: if isSignedIn();
-
       // Teachers can approve or deny enrollment requests for their classes.
       // This rule only allows the 'status' field to be changed.
       allow update: if isTutor()
