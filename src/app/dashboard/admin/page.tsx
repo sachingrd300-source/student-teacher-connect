@@ -40,7 +40,7 @@ type UserProfile = {
     email: string;
     status: 'pending_verification' | 'approved' | 'denied';
     role: 'tutor' | 'student' | 'admin';
-    marketplaceStatus?: 'pending' | 'approved';
+    marketplaceStatus?: 'pending' | 'approved' | 'denied';
     aadharNumber?: string;
     address?: string;
     aadharPhotoUrl?: string;
