@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
@@ -28,21 +27,20 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student');
   const [error, setError] = useState<string | null>(null);
 
   const createUserProfileDocument = async (user: any, additionalData: any) => {
     if (!user) return;
     const userRef = doc(firestore, `users/${user.uid}`);
-    const { name, role, email } = additionalData;
+    const { name, email } = additionalData;
     const createdAt = new Date();
     const dataToSet = {
       id: user.uid,
       name,
       email,
-      role,
+      role: 'tutor', // Hardcoded to 'tutor' for this page
       createdAt,
-      status: role === 'tutor' ? 'pending_verification' : 'approved',
+      status: 'pending_verification',
     };
     setDocumentNonBlocking(userRef, dataToSet, { merge: true });
   };
@@ -51,14 +49,9 @@ export default function SignupPage() {
     event.preventDefault();
     setError(null);
 
-    if (!role) {
-      setError('Please select a role.');
-      return;
-    }
-
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await createUserProfileDocument(user, { name, email, role });
+      await createUserProfileDocument(user, { name, email });
       router.push('/dashboard'); // Redirect to dashboard after signup
     } catch (error: any) {
       setError(error.message);
@@ -69,9 +62,9 @@ export default function SignupPage() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-xl">Sign Up</CardTitle>
+          <CardTitle className="text-xl">Teacher Signup</CardTitle>
           <CardDescription>
-            Enter your information to create an account
+            Enter your information to create a teacher account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,28 +103,17 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div className="grid gap-2">
-              <Label>I am a...</Label>
-              <RadioGroup
-                defaultValue="student"
-                className="flex gap-4"
-                onValueChange={setRole}
-                value={role}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="student" id="r-student" />
-                  <Label htmlFor="r-student">Student</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="tutor" id="r-teacher" />
-                  <Label htmlFor="r-teacher">Teacher</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            
             <Button type="submit" className="w-full">
-              Create an account
+              Create a Teacher Account
             </Button>
           </form>
+           <div className="mt-4 text-center text-sm">
+             Are you a student?{' '}
+            <Link href="/signup/student" className="underline">
+              Sign up with a Student ID
+            </Link>
+          </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="underline">

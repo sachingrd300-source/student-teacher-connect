@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -10,81 +11,76 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // A user's own document
     function isUser() {
         return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // A user's role from their own document
     function userRole() {
         return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    // Is the user an admin
     function isAdmin() {
         return isUser() && userRole() == 'admin';
     }
 
-    // Is the user a student
     function isStudent() {
         return isUser() && userRole() == 'student';
     }
 
-    // Is the user a tutor
     function isTutor() {
         return isUser() && userRole() == 'tutor';
     }
     
-    // Users collection
-    // Users can be created, read, and updated by their owners.
-    // Admins can read and list all users.
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(userId);
+      // Allow user creation for anyone signing up
+      allow create: if true;
       allow update: if isOwner(userId) || isAdmin();
-      allow delete: if false; // soft deletes should be handled by a 'deleted' flag
+      allow delete: if false;
     }
 
-    // Classes collection
     match /classes/{classId} {
-      // Teachers can create classes for themselves
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-
-      // The teacher who created the class can read, update, or delete it
-      // Students can read a class document (needed for joining a class by code)
-      allow get: if (isTutor() && get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid) || isStudent();
-      
-      // Teachers can list their own classes. Students can query for classes.
+      allow get: if (isTutor() && resource.data.teacherId == request.auth.uid) || isStudent();
       allow list: if isTutor() || isStudent();
-
-      allow update, delete: if isTutor() && get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+      allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
-    // Enrollments collection
     match /enrollments/{enrollmentId} {
-      // Students can create their own enrollment requests
       allow create: if isStudent()
                     && request.resource.data.studentId == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.teacherId != request.auth.uid;
       
-      // Students can view their own enrollments. Teachers can view requests for their classes.
       allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
                  || (isTutor() && resource.data.teacherId == request.auth.uid);
 
-      // Students can query for their own enrollments, and teachers can query for theirs.
       allow list: if isStudent() || isTutor();
 
-      // Teachers can approve or deny enrollment requests for their classes.
-      // This rule only allows the 'status' field to be changed.
       allow update: if isTutor()
                     && resource.data.teacherId == request.auth.uid
                     && resource.data.status == 'pending'
                     && request.resource.data.status in ['approved', 'denied']
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
       
-      allow delete: if false; // No deletes for simplicity
+      allow delete: if false;
+    }
+
+    // Rules for pending students collection
+    match /pendingStudents/{studentId} {
+      // Allow anyone to read a pending student doc (for ID verification on signup)
+      allow get: if true;
+
+      // Allow tutors to create pending students
+      allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+
+      // Allow tutors to see the list of students they've created
+      allow list: if isTutor(); 
+      
+      // A user can delete a pending doc once they sign up
+      // Or the teacher who created it can delete it.
+      allow delete: if isSignedIn() || (isTutor() && get(/databases/$(database)/documents/pendingStudents/$(studentId)).data.teacherId == request.auth.uid);
     }
   }
 }
