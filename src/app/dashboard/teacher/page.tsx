@@ -2,15 +2,16 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 
 interface Class {
@@ -45,6 +46,9 @@ export default function TeacherDashboard() {
     const [studentAddress, setStudentAddress] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, id: string} | null>(null);
+
+    // State for editing a class
+    const [editingClass, setEditingClass] = useState<Class | null>(null);
 
 
     const userProfileRef = useMemoFirebase(() => {
@@ -136,6 +140,31 @@ export default function TeacherDashboard() {
         setIsAddingStudent(false);
     };
 
+    const handleUpdateClass = (e: FormEvent) => {
+        e.preventDefault();
+        if (!firestore || !editingClass) return;
+
+        const classRef = doc(firestore, 'classes', editingClass.id);
+        // We only update the fields that can be changed
+        const updatedData = {
+            title: editingClass.title,
+            subject: editingClass.subject,
+            batchTime: editingClass.batchTime,
+        };
+
+        updateDocumentNonBlocking(classRef, updatedData);
+        setEditingClass(null); // Close the modal
+    };
+
+    const handleDeleteClass = (classId: string) => {
+        if (!firestore) return;
+        if (window.confirm('Are you sure you want to delete this class? This will not delete the students, but it will remove the class itself. This action cannot be undone.')) {
+            const classRef = doc(firestore, 'classes', classId);
+            deleteDocumentNonBlocking(classRef);
+        }
+    };
+
+
     if (isAuthLoading || isProfileLoading) {
         return (
              <div className="flex items-center justify-center min-h-screen">
@@ -164,8 +193,21 @@ export default function TeacherDashboard() {
                                                 <CardTitle className="text-lg">{c.title}</CardTitle>
                                                 <CardDescription>{c.subject} ({c.batchTime})</CardDescription>
                                             </CardHeader>
-                                            <CardFooter>
-                                                 <div className="text-sm text-muted-foreground">Class Code: <span className="font-mono text-base font-bold text-foreground">{c.classCode}</span></div>
+                                            <CardFooter className="flex justify-between items-center">
+                                                <div>
+                                                    <div className="text-sm text-muted-foreground">Class Code:</div>
+                                                    <div className="font-mono text-base font-bold text-foreground">{c.classCode}</div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Button variant="outline" size="sm" onClick={() => setEditingClass(c)}>
+                                                        <Edit className="h-4 w-4 mr-1" />
+                                                        Edit
+                                                    </Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c.id)}>
+                                                        <Trash2 className="h-4 w-4 mr-1" />
+                                                        Delete
+                                                    </Button>
+                                                </div>
                                             </CardFooter>
                                         </Card>
                                     ))}
@@ -315,6 +357,53 @@ export default function TeacherDashboard() {
                     </Card>
                 </div>
             </div>
+
+            {editingClass && (
+                <Dialog open={!!editingClass} onOpenChange={(isOpen) => !isOpen && setEditingClass(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit Class: {editingClass.title}</DialogTitle>
+                            <DialogDescription>
+                                Make changes to your class details here. Click save when you're done.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleUpdateClass} className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-title">Class Title</Label>
+                                <Input
+                                    id="edit-title"
+                                    value={editingClass.title}
+                                    onChange={(e) => setEditingClass({ ...editingClass, title: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-subject">Subject</Label>
+                                <Input
+                                    id="edit-subject"
+                                    value={editingClass.subject}
+                                    onChange={(e) => setEditingClass({ ...editingClass, subject: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-batch-time">Batch Timing</Label>
+                                <Input
+                                    id="edit-batch-time"
+                                    value={editingClass.batchTime}
+                                    onChange={(e) => setEditingClass({ ...editingClass, batchTime: e.target.value })}
+                                    required
+                                />
+                            </div>
+                             <DialogFooter>
+                                <Button type="button" variant="secondary" onClick={() => setEditingClass(null)}>Cancel</Button>
+                                <Button type="submit">Save Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            )}
+
         </div>
     );
 }
