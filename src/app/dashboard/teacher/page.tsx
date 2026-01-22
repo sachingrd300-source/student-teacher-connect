@@ -1,14 +1,15 @@
+
 'use client';
 
 import { FormEvent, useState } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, addDoc } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
@@ -16,6 +17,7 @@ interface Class {
     id: string;
     title: string;
     subject: string;
+    batchTime: string;
     classCode: string;
 }
 
@@ -38,11 +40,15 @@ export default function TeacherDashboard() {
     // State for Create Class form
     const [title, setTitle] = useState('');
     const [subject, setSubject] = useState('');
+    const [batchTime, setBatchTime] = useState('');
     const [isCreatingClass, setIsCreatingClass] = useState(false);
 
     // State for Add Student form
     const [selectedClass, setSelectedClass] = useState('');
     const [studentName, setStudentName] = useState('');
+    const [studentFatherName, setStudentFatherName] = useState('');
+    const [studentMobileNumber, setStudentMobileNumber] = useState('');
+    const [studentAddress, setStudentAddress] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, id: string} | null>(null);
 
@@ -90,6 +96,7 @@ export default function TeacherDashboard() {
             teacherName: userProfile.name,
             title,
             subject,
+            batchTime,
             classCode: nanoid(6).toUpperCase(),
             createdAt: serverTimestamp(),
         };
@@ -99,15 +106,16 @@ export default function TeacherDashboard() {
           .then(() => {
               setTitle('');
               setSubject('');
+              setBatchTime('');
           })
           .finally(() => {
               setIsCreatingClass(false);
           });
     };
 
-    const handleAddStudent = async (e: FormEvent) => {
+    const handleAddStudent = (e: FormEvent) => {
         e.preventDefault();
-        if (!user || !selectedClass || !studentName.trim() || !firestore) return;
+        if (!user || !userProfile || !selectedClass || !studentName.trim() || !firestore) return;
         setIsAddingStudent(true);
         setNewlyAddedStudent(null);
 
@@ -122,7 +130,11 @@ export default function TeacherDashboard() {
         const pendingStudentRef = doc(firestore, 'pendingStudents', studentId);
         
         const newPendingStudent = {
+            id: studentId,
             studentName: studentName.trim(),
+            fatherName: studentFatherName.trim(),
+            mobileNumber: studentMobileNumber.trim(),
+            address: studentAddress.trim(),
             teacherId: user.uid,
             teacherName: userProfile.name,
             classId: selectedClass,
@@ -130,18 +142,15 @@ export default function TeacherDashboard() {
             createdAt: serverTimestamp()
         };
 
-        // We use `addDoc` on a specific doc ref via `setDoc` equivalent `addDocumentNonBlocking` doesn't support setting custom ID
-        try {
-            await addDoc(collection(firestore, 'pendingStudents'), newPendingStudent);
-            const pendingStudentDocRef = doc(firestore, 'pendingStudents', studentId);
-            setNewlyAddedStudent({name: studentName.trim(), id: studentId});
-            setStudentName('');
-            setSelectedClass('');
-        } catch (error) {
-            console.error("Error adding pending student:", error);
-        } finally {
-            setIsAddingStudent(false);
-        }
+        setDocumentNonBlocking(pendingStudentRef, newPendingStudent, {});
+
+        setNewlyAddedStudent({name: studentName.trim(), id: studentId});
+        setStudentName('');
+        setStudentFatherName('');
+        setStudentMobileNumber('');
+        setStudentAddress('');
+        setSelectedClass('');
+        setIsAddingStudent(false);
     };
 
     const handleEnrollmentAction = (enrollmentId: string, newStatus: 'approved' | 'denied') => {
@@ -176,7 +185,7 @@ export default function TeacherDashboard() {
                                         <Card key={c.id}>
                                             <CardHeader>
                                                 <CardTitle className="text-lg">{c.title}</CardTitle>
-                                                <CardDescription>{c.subject}</CardDescription>
+                                                <CardDescription>{c.subject} ({c.batchTime})</CardDescription>
                                             </CardHeader>
                                             <CardFooter>
                                                  <div className="text-sm text-muted-foreground">Class Code: <span className="font-mono text-base font-bold text-foreground">{c.classCode}</span></div>
@@ -208,15 +217,47 @@ export default function TeacherDashboard() {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="student-name">Student Full Name</Label>
-                                    <Input
-                                        id="student-name"
-                                        placeholder="e.g., Jane Doe"
-                                        value={studentName}
-                                        onChange={(e) => setStudentName(e.target.value)}
-                                        required
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="student-name">Student Full Name</Label>
+                                        <Input
+                                            id="student-name"
+                                            placeholder="e.g., Jane Doe"
+                                            value={studentName}
+                                            onChange={(e) => setStudentName(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="student-father-name">Father's Name</Label>
+                                        <Input
+                                            id="student-father-name"
+                                            placeholder="e.g., John Doe"
+                                            value={studentFatherName}
+                                            onChange={(e) => setStudentFatherName(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="student-mobile">Mobile Number</Label>
+                                        <Input
+                                            id="student-mobile"
+                                            placeholder="e.g., 9876543210"
+                                            value={studentMobileNumber}
+                                            onChange={(e) => setStudentMobileNumber(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="student-address">Address</Label>
+                                        <Input
+                                            id="student-address"
+                                            placeholder="e.g., 123 Main St, Anytown"
+                                            value={studentAddress}
+                                            onChange={(e) => setStudentAddress(e.target.value)}
+                                            required
+                                        />
+                                    </div>
                                 </div>
                                 <Button type="submit" disabled={isAddingStudent || !selectedClass} className="w-full">
                                     {isAddingStudent ? 'Generating ID...' : 'Generate Student ID'}
@@ -304,6 +345,16 @@ export default function TeacherDashboard() {
                                         placeholder="e.g., Physics"
                                         value={subject}
                                         onChange={(e) => setSubject(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="batch-time">Batch Timing</Label>
+                                    <Input
+                                        id="batch-time"
+                                        placeholder="e.g., 10:00 AM - 11:30 AM"
+                                        value={batchTime}
+                                        onChange={(e) => setBatchTime(e.target.value)}
                                         required
                                     />
                                 </div>

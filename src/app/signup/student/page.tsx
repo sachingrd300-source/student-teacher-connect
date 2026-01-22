@@ -20,6 +20,9 @@ import { doc, getDoc, collection, serverTimestamp, deleteDoc } from 'firebase/fi
 
 interface PendingStudentData {
     studentName: string;
+    fatherName: string;
+    mobileNumber: string;
+    address: string;
     teacherId: string;
     teacherName: string;
     classId: string;
@@ -87,6 +90,9 @@ export default function StudentSignupPage() {
             const userProfileData = {
                 id: user.uid,
                 name: pendingData.studentName,
+                fatherName: pendingData.fatherName,
+                mobileNumber: pendingData.mobileNumber,
+                address: pendingData.address,
                 email: user.email,
                 role: 'student',
                 createdAt: serverTimestamp(),
@@ -158,13 +164,23 @@ export default function StudentSignupPage() {
 
                     {step === 2 && pendingData && (
                         <form onSubmit={handleCreateAccount} className="grid gap-4">
-                             <div className="grid gap-2">
-                                <Label>Student Name</Label>
-                                <Input
-                                    value={pendingData.studentName}
-                                    readOnly
-                                    className="bg-secondary"
-                                />
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2 col-span-2">
+                                    <Label>Student Name</Label>
+                                    <Input
+                                        value={pendingData.studentName}
+                                        readOnly
+                                        className="bg-secondary"
+                                    />
+                                </div>
+                                <div className="grid gap-2 col-span-2">
+                                    <Label>Father's Name</Label>
+                                    <Input
+                                        value={pendingData.fatherName}
+                                        readOnly
+                                        className="bg-secondary"
+                                    />
+                                </div>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>

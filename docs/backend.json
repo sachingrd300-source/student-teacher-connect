@@ -19,6 +19,18 @@
           "type": "string",
           "description": "The full name of the user."
         },
+        "fatherName": {
+            "type": "string",
+            "description": "The full name of the student's father."
+        },
+        "mobileNumber": {
+            "type": "string",
+            "description": "The user's mobile phone number."
+        },
+        "address": {
+            "type": "string",
+            "description": "The user's physical address."
+        },
         "email": {
           "type": "string",
           "description": "The user's email address.",
@@ -65,6 +77,10 @@
             "type": "string",
             "description": "The title of the class, e.g. 'Math Class 8'"
         },
+        "batchTime": {
+            "type": "string",
+            "description": "The timing of the class batch, e.g. '10:00 AM - 11:30 AM'."
+        },
         "classCode": {
           "type": "string",
           "description": "A unique, shareable code for students to join the class."
@@ -81,7 +97,8 @@
         "title",
         "subject",
         "classCode",
-        "createdAt"
+        "createdAt",
+        "batchTime"
       ]
     },
     "Enrollment": {
@@ -146,13 +163,16 @@
           "description": "The unique, random ID given to the student to sign up."
         },
         "studentName": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "address": { "type": "string" },
         "teacherId": { "type": "string" },
         "teacherName": { "type": "string" },
         "classId": { "type": "string" },
         "classTitle": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "studentName", "teacherId", "classId", "createdAt"]
+      "required": ["id", "studentName", "teacherId", "classId", "createdAt", "fatherName", "mobileNumber", "address"]
     },
     "StudyMaterial": {
         "title": "Study Material",
