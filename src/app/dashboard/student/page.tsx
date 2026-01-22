@@ -64,6 +64,12 @@ export default function StudentDashboard() {
             const classDoc = querySnapshot.docs[0];
             const classData = classDoc.data();
 
+            if (classData.teacherId === user.uid) {
+                setError("You cannot enroll in your own class.");
+                setIsSubmitting(false);
+                return;
+            }
+
             const enrollmentData = {
                 studentId: user.uid,
                 studentName: userProfile.name,
