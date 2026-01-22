@@ -52,10 +52,38 @@ service cloud.firestore {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
 
       // The teacher who created the class can read, update, or delete it
-      allow get, update, delete: if isTutor() && get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+      // Students can read a class document (needed for joining a class by code)
+      allow get: if (isTutor() && get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid) || isStudent();
       
-      // Teachers can list their own classes.
-      allow list: if isTutor();
+      // Teachers can list their own classes. Students can query for classes.
+      allow list: if isTutor() || isStudent();
+
+      allow update, delete: if isTutor() && get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+    }
+
+    // Enrollments collection
+    match /enrollments/{enrollmentId} {
+      // Students can create their own enrollment requests
+      allow create: if isStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      
+      // Students can view their own enrollments. Teachers can view requests for their classes.
+      allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
+                 || (isTutor() && resource.data.teacherId == request.auth.uid);
+
+      // Users can only query for their own enrollments (studentId) or classes they teach (teacherId)
+      allow list: if isSignedIn();
+
+      // Teachers can approve or deny enrollment requests for their classes.
+      // This rule only allows the 'status' field to be changed.
+      allow update: if isTutor()
+                    && resource.data.teacherId == request.auth.uid
+                    && resource.data.status == 'pending'
+                    && request.resource.data.status in ['approved', 'denied']
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      
+      allow delete: if false; // No deletes for simplicity
     }
   }
 }

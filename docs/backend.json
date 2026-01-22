@@ -105,6 +105,9 @@
           "type": "string",
           "description": "The ID of the teacher who owns the class. Denormalized for security rules."
         },
+        "classTitle": { "type": "string", "description": "The title of the class. Denormalized for display." },
+        "classSubject": { "type": "string", "description": "The subject of the class. Denormalized for display." },
+        "teacherName": { "type": "string", "description": "The name of the teacher. Denormalized for display." },
         "status": {
           "type": "string",
           "enum": [
@@ -126,7 +129,10 @@
         "classId",
         "teacherId",
         "status",
-        "createdAt"
+        "createdAt",
+        "classTitle",
+        "classSubject",
+        "teacherName"
       ]
     },
     "StudyMaterial": {
