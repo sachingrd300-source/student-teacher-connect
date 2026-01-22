@@ -33,8 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-type Enrollment = { id: string; classId: string; status: 'approved' | 'pending' | 'denied'; };
-type ClassInfo = { title: string; };
+type Enrollment = { id: string; classId: string; classTitle: string; status: 'approved' | 'pending' | 'denied'; };
 type AttendanceRecordMap = { [studentId: string]: boolean; };
 type AttendanceDoc = { id: string; records: AttendanceRecordMap; date: string; };
 
@@ -84,13 +83,9 @@ export default function StudentAttendancePage() {
 
                 for (const enrollment of enrollments) {
                     const classId = enrollment.classId;
+                    const classTitle = enrollment.classTitle; // Use denormalized title
 
-                    // 1. Get Class Title
-                    const classDocRef = doc(firestore, 'classes', classId);
-                    const classDocSnap = await getDoc(classDocRef);
-                    const classTitle = classDocSnap.exists() ? (classDocSnap.data() as ClassInfo).title : 'Unknown Class';
-
-                    // 2. Get Attendance Records for this class
+                    // Get Attendance Records for this class
                     const attendanceQuery = query(collection(firestore, 'attendance'), where('classId', '==', classId));
                     const attendanceSnap = await getDocs(attendanceQuery);
                     
