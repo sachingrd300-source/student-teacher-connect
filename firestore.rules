@@ -69,8 +69,9 @@ service cloud.firestore {
       // Allow tutors to create pending students
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
 
-      // Allow tutors to see the list of students they've created
-      allow list: if isTutor(); 
+      // Allow tutors to see the list of students they've created.
+      // The client query `where('teacherId', '==', request.auth.uid)` is validated against this rule.
+      allow list: if isTutor() && request.auth.uid == resource.data.teacherId;
       
       // A user can delete a pending doc once they sign up
       // Or the teacher who created it can delete it.
