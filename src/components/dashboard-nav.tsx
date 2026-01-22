@@ -53,6 +53,7 @@ const navItems = {
   ],
   student: [
     { href: '/dashboard/student', label: 'Dashboard', icon: Home },
+    { href: '/dashboard/student/profile', label: 'My Profile', icon: User },
     { href: '/dashboard/student/my-schedule', label: 'My Schedule', icon: CalendarDays },
     { href: '/dashboard/student/attendance', label: 'My Attendance', icon: ClipboardCheck },
     { href: '/dashboard/student/browse-classes', label: 'Browse Classes', icon: BookCopy },
