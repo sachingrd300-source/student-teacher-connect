@@ -104,20 +104,20 @@
     "Enrollment": {
       "title": "Enrollment",
       "type": "object",
-      "description": "Represents a student's request to enroll in a specific class.",
+      "description": "Represents a student's enrollment in a specific class. Created during student signup.",
       "properties": {
         "id": { "type": "string" },
         "studentId": {
           "type": "string",
-          "description": "The ID of the student requesting to enroll."
+          "description": "The ID of the student."
         },
         "studentName": {
           "type": "string",
-          "description": "The name of the student requesting to enroll. Denormalized for performance."
+          "description": "The name of the student. Denormalized for performance."
         },
         "classId": {
           "type": "string",
-          "description": "The ID of the class the student wants to join."
+          "description": "The ID of the class the student is in."
         },
         "teacherId": {
           "type": "string",
@@ -129,11 +129,9 @@
         "status": {
           "type": "string",
           "enum": [
-            "pending",
-            "approved",
-            "denied"
+            "approved"
           ],
-          "description": "The status of the enrollment request."
+          "description": "The status of the enrollment. Always 'approved' as it's created on signup."
         },
         "createdAt": {
             "type": "string",

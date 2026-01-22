@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
@@ -19,12 +19,6 @@ interface Class {
     subject: string;
     batchTime: string;
     classCode: string;
-}
-
-interface EnrollmentRequest {
-    id: string;
-    studentName: string;
-    classTitle: string;
 }
 
 interface PendingStudent {
@@ -66,17 +60,6 @@ export default function TeacherDashboard() {
     }, [firestore, user]);
 
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
-
-    const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(
-            collection(firestore, 'enrollments'), 
-            where('teacherId', '==', user.uid),
-            where('status', '==', 'pending')
-        );
-    }, [firestore, user]);
-
-    const { data: enrollmentRequests, isLoading: enrollmentsLoading } = useCollection<EnrollmentRequest>(enrollmentsQuery);
 
     const pendingStudentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -153,12 +136,6 @@ export default function TeacherDashboard() {
         setIsAddingStudent(false);
     };
 
-    const handleEnrollmentAction = (enrollmentId: string, newStatus: 'approved' | 'denied') => {
-        if (!firestore) return;
-        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
-        updateDocumentNonBlocking(enrollmentRef, { status: newStatus });
-    };
-
     if (isAuthLoading || isProfileLoading) {
         return (
              <div className="flex items-center justify-center min-h-screen">
@@ -208,7 +185,7 @@ export default function TeacherDashboard() {
                                 <h3 className="text-lg font-medium">Add New Student</h3>
                                 <div className="space-y-2">
                                     <Label>Select Class</Label>
-                                    <Select onValueChange={setSelectedClass} value={selectedClass}>
+                                    <Select onValuechange={setSelectedClass} value={selectedClass}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select a class to add the student to" />
                                         </SelectTrigger>
@@ -288,34 +265,6 @@ export default function TeacherDashboard() {
                                     !pendingStudentsLoading && <p className="text-center text-muted-foreground pt-4">No students are pending signup.</p>
                                 )}
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Enrollment Requests</CardTitle>
-                            <CardDescription>Students waiting for your approval from a class code.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {enrollmentsLoading && <p>Loading requests...</p>}
-                            {enrollmentRequests && enrollmentRequests.length > 0 ? (
-                                <div className="space-y-4">
-                                    {enrollmentRequests.map((req) => (
-                                        <div key={req.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                                            <div>
-                                                <p className="font-semibold">{req.studentName}</p>
-                                                <p className="text-sm text-muted-foreground">wants to join "{req.classTitle}"</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="outline" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleEnrollmentAction(req.id, 'approved')}>Approve</Button>
-                                                <Button size="sm" variant="destructive" onClick={() => handleEnrollmentAction(req.id, 'denied')}>Deny</Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                !enrollmentsLoading && <p className="text-center text-muted-foreground py-8">No pending enrollment requests.</p>
-                            )}
                         </CardContent>
                     </Card>
                 </div>
