@@ -185,12 +185,12 @@ export default function TeacherDashboard() {
                                 <h3 className="text-lg font-medium">Add New Student</h3>
                                 <div className="space-y-2">
                                     <Label>Select Class</Label>
-                                    <Select onValuechange={setSelectedClass} value={selectedClass}>
+                                    <Select onValueChange={setSelectedClass} value={selectedClass}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select a class to add the student to" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {classes && classes.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                                            {classes && classes.map(c => <SelectItem key={c.id} value={c.id}>{c.title} - {c.subject} ({c.batchTime})</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
