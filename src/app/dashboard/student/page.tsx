@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -19,7 +20,7 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { collection, query, where, getDocs, setDoc, serverTimestamp, doc, limit } from 'firebase/firestore';
@@ -38,6 +39,10 @@ type Enrollment = {
   classSubject: string;
   classLevel: string;
   teacherName: string;
+};
+
+type UserProfile = {
+  name: string;
 };
 
 function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
@@ -88,6 +93,12 @@ export default function StudentDashboardPage() {
   const [classCode, setClassCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
+
   const enrollmentsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
@@ -103,7 +114,7 @@ export default function StudentDashboardPage() {
   };
 
   const handleJoinClass = async () => {
-    if (!classCode.trim() || !firestore || !user) {
+    if (!classCode.trim() || !firestore || !user || !userProfile) {
       toast({ variant: 'destructive', title: 'Invalid Code', description: 'Please enter a valid class code.' });
       return;
     }
@@ -137,7 +148,7 @@ export default function StudentDashboardPage() {
         
         const enrollmentData = {
             studentId: user.uid,
-            studentName: user.displayName,
+            studentName: userProfile.name,
             classId: classDoc.id,
             teacherId: classData.teacherId,
             teacherName: classData.teacherName,
@@ -166,7 +177,7 @@ export default function StudentDashboardPage() {
   };
 
 
-  if (isUserLoading) {
+  if (isUserLoading || isLoadingProfile) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/2" />
@@ -180,7 +191,7 @@ export default function StudentDashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold font-headline">
-          {user ? `${getGreeting()}, ${user.displayName || 'Student'}! 😊` : 'Student Dashboard'}
+          {userProfile ? `${getGreeting()}, ${userProfile.name || 'Student'}! 😊` : 'Student Dashboard'}
         </h1>
         <p className="text-muted-foreground">
           Join a class to access materials and connect with your teacher.
@@ -248,3 +259,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    

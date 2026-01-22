@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -67,6 +68,7 @@ type MarketplaceItem = {
 };
 
 type UserProfile = {
+    name: string;
     marketplaceStatus?: 'unverified' | 'pending' | 'approved' | 'denied';
 }
 
@@ -246,14 +248,14 @@ export default function MyStorePage() {
     }
 
     const handleAddItem = async () => {
-        if(!title || price === '' || !itemType || !firestore || !user) {
+        if(!title || price === '' || !itemType || !firestore || !user || !userProfile) {
              toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out title, price, and type.' });
             return;
         }
 
         const newItem = {
             sellerId: user.uid,
-            sellerName: user.displayName,
+            sellerName: userProfile.name,
             title,
             description,
             price: Number(price),
@@ -499,3 +501,5 @@ export default function MyStorePage() {
         </div>
     );
 }
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -86,25 +87,24 @@ function DeniedVerificationCard() {
     );
 }
 
-// Main content for approved tutors
-function TeacherDashboardContent() {
-    const { user } = useUser(); // user should exist here because of parent checks
+
+export default function TeacherPage() {
+    const { user, isLoading: isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-
+    
     const [classSubject, setClassSubject] = useState("");
     const [classLevel, setClassLevel] = useState("");
     const [batchTime, setBatchTime] = useState("");
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
-
-    // Re-fetch user profile to get name for batch creation
+    
     const userProfileQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
-    const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
-
-    // Queries
+    
+    const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
+    
     const batchesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, "classes"), where("teacherId", "==", user.uid), orderBy("createdAt", "desc"));
@@ -127,13 +127,11 @@ function TeacherDashboardContent() {
         return query(collection(firestore, "classSchedules"), where("teacherId", "==", user.uid), where("date", ">=", today), orderBy("date", "asc"), limit(5));
     }, [firestore, user]);
     
-    // Data from hooks
     const { data: batches, isLoading: isLoadingBatches } = useCollection<BatchType>(batchesQuery);
     const { data: enrollments, isLoading: isLoadingEnrollments } = useCollection<Enrollment>(enrollmentsQuery);
     const { data: materials, isLoading: isLoadingMaterials } = useCollection<any>(materialsQuery);
     const { data: upcomingSchedules, isLoading: isLoadingSchedules } = useCollection<Schedule>(upcomingSchedulesQuery);
     
-    // Memoized derived data
     const totalStudents = useMemo(() => {
         if (!enrollments) return 0;
         const approvedEnrollments = enrollments.filter(e => e.status === 'approved');
@@ -170,91 +168,7 @@ function TeacherDashboardContent() {
 
     const handleCopyCode = (code: string) => { navigator.clipboard.writeText(code); toast({ title: "Copied!", description: `Batch code ${code} copied to clipboard.` }); }
 
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold font-headline">{user ? `Welcome back, ${user.displayName?.split(' ')[0]}!` : 'Teacher Dashboard'}</h1>
-                <p className="text-muted-foreground">Here's a quick overview of your activities.</p>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Total Batches" value={batches?.length ?? 0} icon={<Users2 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingBatches} />
-                <StatCard title="Total Students" value={totalStudents} icon={<BarChart3 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingEnrollments} />
-                <StatCard title="Materials Uploaded" value={materials?.length ?? 0} icon={<BookOpenCheck className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingMaterials} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2 space-y-6">
-                    <Card className="shadow-soft-shadow">
-                        <CardHeader><CardTitle className="flex items-center gap-2"><PlusCircle className="h-6 w-6 text-primary"/>Create a New Batch</CardTitle><CardDescription>Create a new batch for students to join with a unique code.</CardDescription></CardHeader>
-                        <CardContent className="space-y-4">
-                            <Input placeholder="Batch Subject (e.g. Physics)" value={classSubject} onChange={(e) => setClassSubject(e.target.value)} disabled={isCreatingBatch} />
-                            <Input placeholder="Batch Level (e.g. 11-12)" value={classLevel} onChange={(e) => setClassLevel(e.target.value)} disabled={isCreatingBatch} />
-                            <Input placeholder="Batch Time (e.g. 7:00 AM)" value={batchTime} onChange={(e) => setBatchTime(e.target.value)} disabled={isCreatingBatch} />
-                            <Button onClick={handleCreateBatch} className="w-full" disabled={isCreatingBatch || !classLevel || !classSubject}>
-                                {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isCreatingBatch ? "Creating..." : "Create Batch"}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                    <Card className="shadow-soft-shadow">
-                        <CardHeader><CardTitle>Recent Batches</CardTitle><CardDescription>Share the code with students to let them enroll.</CardDescription></CardHeader>
-                        <CardContent>
-                            {isLoadingBatches || isLoadingEnrollments ? (<div className="space-y-2"><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></div>) : batches && batches.length === 0 ? (
-                            <p className="text-muted-foreground text-sm text-center py-8">You haven't created any batches yet.</p>) : (
-                            <div className="space-y-4">
-                                {batches?.slice(0, 5).map((batch) => {
-                                    const studentCount = enrollments?.filter(e => e.classId === batch.id && e.status === 'approved').length ?? 0;
-                                    return (
-                                        <div key={batch.id} className="border p-4 rounded-lg bg-muted/30 flex flex-col gap-3 transition-colors">
-                                            <div className="flex justify-between items-start">
-                                                <div><p className="font-semibold text-lg">{batch.title}</p><p className="text-sm text-muted-foreground">{batch.batchTime || "No time set"}</p></div>
-                                                <div className="flex items-center gap-2"><p className="font-mono text-sm text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{batch.classCode}</p><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopyCode(batch.classCode)}><Copy className="h-4 w-4" /></Button></div>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-3 mt-2">
-                                                <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span>Created: {batch.createdAt && typeof batch.createdAt.toDate === 'function' ? batch.createdAt.toDate().toLocaleDateString() : 'Just now'}</span></div>
-                                                <div className="flex items-center gap-2"><Users2 className="h-4 w-4" /><span>{studentCount} {studentCount === 1 ? 'Student' : 'Students'}</span></div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>)}
-                        </CardContent>
-                        {batches && batches.length > 5 && (<CardFooter><Button variant="outline" asChild className="w-full mt-4"><Link href="/dashboard/teacher/batches">Manage All Batches</Link></Button></CardFooter>)}
-                    </Card>
-                </div>
-                <div className="lg:col-span-1 space-y-6">
-                    <Card className="shadow-soft-shadow">
-                        <CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary"/>Today's Schedule</CardTitle></CardHeader>
-                        <CardContent>{isLoadingSchedules ? (<div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>) : todaysSchedules.length > 0 ? (<div className="space-y-4">
-                                    {todaysSchedules.map(schedule => (
-                                        <div key={schedule.id} className="flex items-start gap-3">
-                                            <div className="flex-shrink-0 pt-1">{schedule.type === 'Online' ? <Video className="h-5 w-5 text-muted-foreground"/> : <MapPin className="h-5 w-5 text-muted-foreground"/>}</div>
-                                            <div className="flex-1"><div className="flex justify-between items-baseline"><p className="font-semibold">{schedule.topic}</p><p className="text-xs font-medium text-primary">{schedule.time}</p></div><p className="text-sm text-muted-foreground">{schedule.classTitle}</p></div>
-                                        </div>))}</div>) : (<div className="text-center py-6 text-muted-foreground"><p className="text-sm">Your schedule is clear for today!</p></div>)}</CardContent>
-                        <CardFooter><Button asChild variant="outline" className="w-full"><Link href="/dashboard/teacher/schedule">View Full Schedule</Link></Button></CardFooter>
-                    </Card>
-                    <Card className="shadow-soft-shadow">
-                        <CardHeader><CardTitle className="flex items-center gap-2"><BellRing className="h-5 w-5 text-primary"/>Pending Requests</CardTitle></CardHeader>
-                        <CardContent>{isLoadingEnrollments ? (<div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>) : pendingEnrollments.length > 0 ? (<div className="space-y-4">
-                                    {pendingEnrollments.slice(0, 4).map(req => { const batch = batches?.find(b => b.id === req.classId); return (<div key={req.id} className="flex items-center justify-between"><div><p className="font-semibold">{req.studentName}</p><p className="text-xs text-muted-foreground">{batch?.title || "a class"}</p></div><Badge variant="secondary">New</Badge></div>) })}</div>) : (<div className="text-center py-6 text-muted-foreground"><p className="text-sm">No new student requests.</p></div>)}</CardContent>
-                        {pendingEnrollments.length > 0 && (<CardFooter><Button asChild variant="default" className="w-full"><Link href="/dashboard/teacher/enrollments">Review Requests</Link></Button></CardFooter>)}
-                    </Card>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export default function TeacherPage() {
-    const { user, isLoading: isUserLoading } = useUser();
-    const firestore = useFirestore();
-    
-    const userProfileQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    
-    const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileQuery);
-    const isLoading = isUserLoading || isLoadingProfile;
+    const isLoading = isUserLoading || isLoadingProfile || isLoadingBatches || isLoadingEnrollments || isLoadingMaterials || isLoadingSchedules;
     
     if (isLoading) {
         return (
@@ -275,9 +189,82 @@ export default function TeacherPage() {
     }
     
     if (userProfile?.status === 'approved') {
-        return <TeacherDashboardContent />;
+        return (
+             <div className="space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">{userProfile ? `Welcome back, ${userProfile.name?.split(' ')[0]}!` : 'Teacher Dashboard'}</h1>
+                    <p className="text-muted-foreground">Here's a quick overview of your activities.</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <StatCard title="Total Batches" value={batches?.length ?? 0} icon={<Users2 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingBatches} />
+                    <StatCard title="Total Students" value={totalStudents} icon={<BarChart3 className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingEnrollments} />
+                    <StatCard title="Materials Uploaded" value={materials?.length ?? 0} icon={<BookOpenCheck className="h-5 w-5 text-muted-foreground" />} isLoading={isLoadingMaterials} />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div className="lg:col-span-2 space-y-6">
+                        <Card className="shadow-soft-shadow">
+                            <CardHeader><CardTitle className="flex items-center gap-2"><PlusCircle className="h-6 w-6 text-primary"/>Create a New Batch</CardTitle><CardDescription>Create a new batch for students to join with a unique code.</CardDescription></CardHeader>
+                            <CardContent className="space-y-4">
+                                <Input placeholder="Batch Subject (e.g. Physics)" value={classSubject} onChange={(e) => setClassSubject(e.target.value)} disabled={isCreatingBatch} />
+                                <Input placeholder="Batch Level (e.g. 11-12)" value={classLevel} onChange={(e) => setClassLevel(e.target.value)} disabled={isCreatingBatch} />
+                                <Input placeholder="Batch Time (e.g. 7:00 AM)" value={batchTime} onChange={(e) => setBatchTime(e.target.value)} disabled={isCreatingBatch} />
+                                <Button onClick={handleCreateBatch} className="w-full" disabled={isCreatingBatch || !classLevel || !classSubject}>
+                                    {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isCreatingBatch ? "Creating..." : "Create Batch"}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                        <Card className="shadow-soft-shadow">
+                            <CardHeader><CardTitle>Recent Batches</CardTitle><CardDescription>Share the code with students to let them enroll.</CardDescription></CardHeader>
+                            <CardContent>
+                                {isLoadingBatches || isLoadingEnrollments ? (<div className="space-y-2"><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></div>) : batches && batches.length === 0 ? (
+                                <p className="text-muted-foreground text-sm text-center py-8">You haven't created any batches yet.</p>) : (
+                                <div className="space-y-4">
+                                    {batches?.slice(0, 5).map((batch) => {
+                                        const studentCount = enrollments?.filter(e => e.classId === batch.id && e.status === 'approved').length ?? 0;
+                                        return (
+                                            <div key={batch.id} className="border p-4 rounded-lg bg-muted/30 flex flex-col gap-3 transition-colors">
+                                                <div className="flex justify-between items-start">
+                                                    <div><p className="font-semibold text-lg">{batch.title}</p><p className="text-sm text-muted-foreground">{batch.batchTime || "No time set"}</p></div>
+                                                    <div className="flex items-center gap-2"><p className="font-mono text-sm text-primary tracking-widest bg-primary/10 px-2 py-1 rounded-md">{batch.classCode}</p><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopyCode(batch.classCode)}><Copy className="h-4 w-4" /></Button></div>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-3 mt-2">
+                                                    <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span>Created: {batch.createdAt && typeof batch.createdAt.toDate === 'function' ? batch.createdAt.toDate().toLocaleDateString() : 'Just now'}</span></div>
+                                                    <div className="flex items-center gap-2"><Users2 className="h-4 w-4" /><span>{studentCount} {studentCount === 1 ? 'Student' : 'Students'}</span></div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>)}
+                            </CardContent>
+                            {batches && batches.length > 5 && (<CardFooter><Button variant="outline" asChild className="w-full mt-4"><Link href="/dashboard/teacher/batches">Manage All Batches</Link></Button></CardFooter>)}
+                        </Card>
+                    </div>
+                    <div className="lg:col-span-1 space-y-6">
+                        <Card className="shadow-soft-shadow">
+                            <CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary"/>Today's Schedule</CardTitle></CardHeader>
+                            <CardContent>{isLoadingSchedules ? (<div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>) : todaysSchedules.length > 0 ? (<div className="space-y-4">
+                                        {todaysSchedules.map(schedule => (
+                                            <div key={schedule.id} className="flex items-start gap-3">
+                                                <div className="flex-shrink-0 pt-1">{schedule.type === 'Online' ? <Video className="h-5 w-5 text-muted-foreground"/> : <MapPin className="h-5 w-5 text-muted-foreground"/>}</div>
+                                                <div className="flex-1"><div className="flex justify-between items-baseline"><p className="font-semibold">{schedule.topic}</p><p className="text-xs font-medium text-primary">{schedule.time}</p></div><p className="text-sm text-muted-foreground">{schedule.classTitle}</p></div>
+                                            </div>))}</div>) : (<div className="text-center py-6 text-muted-foreground"><p className="text-sm">Your schedule is clear for today!</p></div>)}</CardContent>
+                            <CardFooter><Button asChild variant="outline" className="w-full"><Link href="/dashboard/teacher/schedule">View Full Schedule</Link></Button></CardFooter>
+                        </Card>
+                        <Card className="shadow-soft-shadow">
+                            <CardHeader><CardTitle className="flex items-center gap-2"><BellRing className="h-5 w-5 text-primary"/>Pending Requests</CardTitle></CardHeader>
+                            <CardContent>{isLoadingEnrollments ? (<div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>) : pendingEnrollments.length > 0 ? (<div className="space-y-4">
+                                        {pendingEnrollments.slice(0, 4).map(req => { const batch = batches?.find(b => b.id === req.classId); return (<div key={req.id} className="flex items-center justify-between"><div><p className="font-semibold">{req.studentName}</p><p className="text-xs text-muted-foreground">{batch?.title || "a class"}</p></div><Badge variant="secondary">New</Badge></div>) })}</div>) : (<div className="text-center py-6 text-muted-foreground"><p className="text-sm">No new student requests.</p></div>)}</CardContent>
+                            {pendingEnrollments.length > 0 && (<CardFooter><Button asChild variant="default" className="w-full"><Link href="/dashboard/teacher/enrollments">Review Requests</Link></Button></CardFooter>)}
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     // Fallback case for any other state
     return <PendingVerificationCard />;
 }
+
+    

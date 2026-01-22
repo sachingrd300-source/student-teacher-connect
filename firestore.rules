@@ -134,7 +134,7 @@ service cloud.firestore {
                       && request.resource.data.classTitle == classDoc.title
                       && request.resource.data.classSubject == classDoc.subject
                       && request.resource.data.classLevel == classDoc.classLevel
-                      && request.resource.data.studentName == request.auth.token.name;
+                      && request.resource.data.studentName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name;
 
         // Only the teacher can approve/deny the request.
         allow update: if isExistingDoc() 
@@ -280,3 +280,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
