@@ -1,231 +1,49 @@
-
-/**
- * Core Philosophy: This ruleset enforces a teacher-centric security model.
- * Teachers act as owners and administrators of their own data, which includes
- * their students, parents, and educational materials. Access for students and
- * parents is granted on a read-only basis, contingent upon approval from the
- * teacher, creating a secure, hierarchical system.
- *
- * Data Structure: The data is organized into silos under the top-level
- * `/teachers/{teacherId}` collection. This structure provides strong path-based
- * security, ensuring that users can only access data within the context of a
- * specific teacher they are associated with. A separate top-level collection,
- * `/freeStudyMaterials`, is used for content that is publicly accessible to all users.
- *
- * Key Security Decisions:
- * - Teacher as Owner: Teachers have full Create, Read, Update, and Delete (CRUD)
- *   permissions on all documents nested under their unique ID (`/teachers/{teacherId}`).
- * - Student/Parent Access: Students and Parents are granted read-only access to
- *   specific data (e.g., their own profile, attendance, test results) only after
- *   the `isApproved` flag on their respective document is set to `true` by the teacher.
- * - UID as ID: A critical assumption is that the document ID for a student
- *   (`{studentId}`) and parent (`{parentId}`) matches their Firebase Auth UID. This
- *   provides a secure and verifiable link for authorization.
- * - Public vs. Private Materials: Teacher-specific materials are kept private
- *   within the teacher's data silo, while public materials are stored in a
- *   separate, globally readable collection to prevent data leakage and simplify list queries.
- * - No User Listing: Listing of top-level collections like `/teachers` is disabled
- *   to protect user privacy.
- *
- * Denormalization for Authorization: The schema uses denormalization effectively.
- * Fields like `teacherId` and `studentId` are copied onto related documents
- * (e.g., Attendance, TestResult). This allows for fast, efficient security rules
- * that do not require extra `get()` calls to determine ownership or relationships,
- * except for checking the approval status of a student or parent.
- *
- * Structural Segregation: The use of two separate collections for study materials
- * (`/teachers/{teacherId}/studyMaterials` for private and `/freeStudyMaterials` for public)
- * is a deliberate choice. This segregation is more secure and performant than a
- * single collection with a boolean flag, especially for list operations.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --------------------------------
-    // Helper Functions
-    // --------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
+    
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the fundamental check for document ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks for ownership on an existing document. Used for update and delete
-     * operations to prevent acting on non-existent data.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    // A user's own document
+    function isUser() {
+        return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    /**
-     * Checks if the requesting user is an approved student of a given teacher.
-     * Requires a get() call to check the student's subcollection document.
-     */
-    function isApprovedStudent(teacherId, studentId) {
-      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(teacherId)/students/$(studentId))
-          && get(/databases/$(database)/documents/teachers/$(teacherId)/students/$(studentId)).data.isApproved == true;
+    // A user's role from their own document
+    function userRole() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    /**
-     * Checks if the requesting user is the approved parent of a specific student
-     * under a given teacher.
-     */
-    function isApprovedParentOfStudent(teacherId, parentId, studentId) {
-      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(teacherId)/parents/$(parentId))
-          && get(/databases/$(database)/documents/teachers/$(teacherId)/parents/$(parentId)).data.isApproved == true
-          && get(/databases/$(database)/documents/teachers/$(teacherId)/parents/$(parentId)).data.studentId == studentId;
+    // Is the user an admin
+    function isAdmin() {
+        return isUser() && userRole() == 'admin';
     }
 
-    /**
-     * Validates that the creator of a document is a registered teacher.
-     */
-    function isRegisteredTeacher() {
-      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    // Is the user a student
+    function isStudent() {
+        return isUser() && userRole() == 'student';
+    }
+
+    // Is the user a tutor
+    function isTutor() {
+        return isUser() && userRole() == 'tutor';
     }
     
-    // /**
-    //  * Ensures critical relational IDs cannot be changed after creation.
-    //  */
-    // function areRelationalIdsImmutable(fields) {
-    //   return fields.hasAll(request.resource.data.keys())
-    //       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields) == false;
-    // }
-
-    // --------------------------------
-    // Collection Rules
-    // --------------------------------
-
-    /**
-     * @description Manages teacher profiles. Each teacher can create and manage their own profile.
-     * @path /teachers/{teacherId}
-     * @allow (create) An authenticated user creating their own teacher profile: `auth.uid == 'teacher123'`, `create /teachers/teacher123`.
-     * @deny (update) A teacher trying to update another teacher's profile: `auth.uid == 'teacher456'`, `update /teachers/teacher123`.
-     * @principle Enforces self-creation and ownership. A user's document ID must match their authentication UID.
-     */
-    match /teachers/{teacherId} {
-      allow get: if isOwner(teacherId) || isApprovedStudent(teacherId, request.auth.uid);
-      allow list: if false;
-      allow create: if isOwner(teacherId) && request.resource.data.id == teacherId;
-      allow update: if isExistingOwner(teacherId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(teacherId);
-    }
-
-    /**
-     * @description Manages students associated with a teacher. Only the teacher can manage this list.
-     * The student can read their own data.
-     * @path /teachers/{teacherId}/students/{studentId}
-     * @allow (get) A student reading their own profile: `auth.uid == 'student123'`, `get /teachers/teacherABC/students/student123`.
-     * @deny (create) A student trying to add themselves to a teacher's class: `auth.uid == 'student123'`, `create /teachers/teacherABC/students/student123`.
-     * @principle Restricts write access to the owner of the data tree (the teacher).
-     * @note ASSUMPTION: The `{studentId}` wildcard is expected to match the student's Firebase Auth UID.
-     */
-    match /teachers/{teacherId}/students/{studentId} {
-      allow get: if isOwner(teacherId) || isOwner(studentId);
-      allow list: if isOwner(teacherId);
-      allow create: if isOwner(teacherId) && request.resource.data.teacherId == teacherId && request.resource.data.id == studentId;
-      allow update: if isOwner(teacherId) && resource != null && request.resource.data.id == resource.data.id && request.resource.data.teacherId == resource.data.teacherId;
-      allow delete: if isOwner(teacherId) && resource != null;
-    }
-
-    /**
-     * @description Manages parents associated with a teacher's student. Only the teacher can manage this list.
-     * The parent can read their own data.
-     * @path /teachers/{teacherId}/parents/{parentId}
-     * @allow (get) A parent reading their own profile: `auth.uid == 'parent123'`, `get /teachers/teacherABC/parents/parent123`.
-     * @deny (list) A parent trying to list all other parents: `auth.uid == 'parent123'`, `list /teachers/teacherABC/parents`.
-     * @principle Restricts write access to the owner of the data tree (the teacher).
-     * @note ASSUMPTION: The `{parentId}` wildcard is expected to match the parent's Firebase Auth UID.
-     */
-    match /teachers/{teacherId}/parents/{parentId} {
-      allow get: if isOwner(teacherId) || isOwner(parentId);
-      allow list: if isOwner(teacherId);
-      allow create: if isOwner(teacherId) && request.resource.data.teacherId == teacherId && request.resource.data.id == parentId;
-      allow update: if isOwner(teacherId) && resource != null && request.resource.data.id == resource.data.id && request.resource.data.teacherId == resource.data.teacherId && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isOwner(teacherId) && resource != null;
-    }
-
-    /**
-     * @description Manages study materials private to a teacher and their approved students.
-     * @path /teachers/{teacherId}/studyMaterials/{studyMaterialId}
-     * @allow (get) An approved student accessing material: `isApprovedStudent('teacherABC', auth.uid)`, `get /teachers/teacherABC/studyMaterials/math101`.
-     * @deny (get) An unapproved student trying to access material: `!isApprovedStudent(...)`, `get /teachers/teacherABC/studyMaterials/math101`.
-     * @principle Enforces shared access for a closed group (teacher and approved students).
-     */
-    match /teachers/{teacherId}/studyMaterials/{studyMaterialId} {
-      allow get, list: if isOwner(teacherId) || isApprovedStudent(teacherId, request.auth.uid);
-      allow create: if isOwner(teacherId) && request.resource.data.teacherId == teacherId;
-      allow update: if isOwner(teacherId) && resource != null && request.resource.data.teacherId == resource.data.teacherId;
-      allow delete: if isOwner(teacherId) && resource != null;
-    }
-
-    /**
-     * @description Manages student attendance records. Readable by the teacher, the relevant student, and the student's parent.
-     * @path /teachers/{teacherId}/attendance/{attendanceId}
-     * @allow (get) An approved parent viewing their child's attendance: `isApprovedParentOfStudent(...)`, `get /teachers/teacherABC/attendance/att123`.
-     * @deny (update) A student trying to change their attendance: `auth.uid == resource.data.studentId`, `update /teachers/teacherABC/attendance/att123`.
-     * @principle Provides granular read access based on roles (teacher, student, parent) derived from document data.
-     */
-    match /teachers/{teacherId}/attendance/{attendanceId} {
-      allow get: if isOwner(teacherId) || isOwner(resource.data.studentId) || isApprovedParentOfStudent(teacherId, request.auth.uid, resource.data.studentId);
-      allow list: if isOwner(teacherId);
-      allow create: if isOwner(teacherId) && request.resource.data.teacherId == teacherId;
-      allow update: if isOwner(teacherId) && resource != null && request.resource.data.teacherId == resource.data.teacherId && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isOwner(teacherId) && resource != null;
-    }
-
-    /**
-     * @description Manages student test results. Readable by the teacher, the relevant student, and the student's parent.
-     * @path /teachers/{teacherId}/testResults/{testResultId}
-     * @allow (get) The student viewing their own test result: `auth.uid == resource.data.studentId`, `get /teachers/teacherABC/testResults/res123`.
-     * @deny (list) A student trying to list all test results: `auth.uid == 'student123'`, `list /teachers/teacherABC/testResults`.
-     * @principle Provides granular read access based on roles (teacher, student, parent) derived from document data.
-     */
-    match /teachers/{teacherId}/testResults/{testResultId} {
-      allow get: if isOwner(teacherId) || isOwner(resource.data.studentId) || isApprovedParentOfStudent(teacherId, request.auth.uid, resource.data.studentId);
-      allow list: if isOwner(teacherId);
-      allow create: if isOwner(teacherId) && request.resource.data.teacherId == teacherId;
-      allow update: if isOwner(teacherId) && resource != null && request.resource.data.teacherId == resource.data.teacherId && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isOwner(teacherId) && resource != null;
-    }
-    
-    /**
-     * @description Manages class schedules. Readable by the teacher and their approved students.
-     * @path /teachers/{teacherId}/classSchedule/{classScheduleId}
-     * @allow (get) An approved student viewing the class schedule: `isApprovedStudent(...)`, `get /teachers/teacherABC/classSchedule/sched123`.
-     * @deny (create) A student trying to create a schedule: `auth.uid == 'student123'`, `create /teachers/teacherABC/classSchedule/sched456`.
-     * @principle Enforces shared access for a closed group (teacher and approved students).
-     */
-    match /teachers/{teacherId}/classSchedule/{classScheduleId} {
-      allow get, list: if isOwner(teacherId) || isApprovedStudent(teacherId, request.auth.uid);
-      allow create: if isOwner(teacherId) && request.resource.data.teacherId == teacherId;
-      allow update: if isOwner(teacherId) && resource != null && request.resource.data.teacherId == resource.data.teacherId;
-      allow delete: if isOwner(teacherId) && resource != null;
-    }
-
-    /**
-     * @description Manages free study materials available to the public. Only registered teachers can create/manage content.
-     * @path /freeStudyMaterials/{studyMaterialId}
-     * @allow (get) Any user, including unauthenticated ones, can read free materials: `get /freeStudyMaterials/intro-to-algebra`.
-     * @deny (create) An anonymous user trying to create content: `auth == null`, `create /freeStudyMaterials/exploit`.
-     * @principle Implements a "Public Read with Owner-Only Writes" pattern.
-     */
-    match /freeStudyMaterials/{studyMaterialId} {
-      allow get, list: if true;
-      allow create: if isRegisteredTeacher() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.teacherId) && request.resource.data.teacherId == resource.data.teacherId;
-      allow delete: if isExistingOwner(resource.data.teacherId);
+    // Users collection
+    // Users can be created, read, and updated by their owners.
+    // Admins can read and list all users.
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if false; // soft deletes should be handled by a 'deleted' flag
     }
   }
 }
