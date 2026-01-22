@@ -16,21 +16,23 @@ service cloud.firestore {
     }
     
     function isStudent() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && userDoc.data != null && userDoc.data.role == 'student';
     }
     
     function isAdmin() {
-      // User is an admin if their document's role field is 'admin'
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && userDoc.data != null && userDoc.data.role == 'admin';
     }
 
     function isApprovedSeller() {
-        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.marketplaceStatus == 'approved';
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && userDoc.data != null && userDoc.data.marketplaceStatus == 'approved';
     }
 
     function isApprovedTeacher() {
-      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return isSignedIn() && user.role == 'tutor' && user.status == 'approved';
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && user.data != null && user.data.role == 'tutor' && user.data.status == 'approved';
     }
 
     function isExistingDoc() {
@@ -84,20 +86,23 @@ service cloud.firestore {
 
     match /users/{userId} {
       // A user can get their own document.
-      // An approved tutor's profile can be read by any signed-in user.
-      // An approved seller's profile can be read by any signed-in user.
       // An admin can get any user document.
-      allow get: if isOwner(userId) || isAdmin() || 
-                    (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'tutor' && get(/databases/$(database)/documents/users/$(userId)).data.status == 'approved') ||
-                    (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.marketplaceStatus == 'approved');
+      // Any signed-in user can read another user's profile if they are an approved tutor or seller.
+      allow get: if isOwner(userId) || isAdmin() ||
+                    (isSignedIn() && resource != null && resource.data.role == 'tutor' && resource.data.status == 'approved') ||
+                    (isSignedIn() && resource != null && resource.data.marketplaceStatus == 'approved');
+      
       // A user can update their own document. An admin can also update any user document (e.g. for verification).
       allow update: if isOwner(userId) || isAdmin();
+      
       // A user can create their own profile document.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId;
+
       // Admins can list pending users. Tutors can be listed by any signed-in user.
       allow list: if (isAdmin() && (isPendingTutorQuery() || isPendingSellerQuery())) ||
                      (isSignedIn() && isApprovedTutorQuery());
+
       allow delete: if false;
     }
 
@@ -302,5 +307,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
