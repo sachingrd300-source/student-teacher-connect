@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   User,
 } from 'lucide-react';
+import { Skeleton } from './ui/skeleton';
 
 type Role = 'tutor' | 'student' | 'admin';
 
@@ -44,8 +45,24 @@ const navItems = {
   ]
 };
 
-export function BottomNav({ role }: { role: Role }) {
+export function BottomNav({ role }: { role: Role | null }) {
   const pathname = usePathname();
+
+  if (!role) {
+    return (
+       <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
+         <div className="grid h-full grid-cols-5 max-w-lg mx-auto">
+           {Array.from({ length: 5 }).map((_, i) => (
+             <div key={i} className="inline-flex flex-col items-center justify-center px-5">
+               <Skeleton className="w-6 h-6 mb-1"/>
+               <Skeleton className="w-10 h-2"/>
+             </div>
+           ))}
+         </div>
+       </div>
+    );
+  }
+
   const items = navItems[role] || [];
 
   return (

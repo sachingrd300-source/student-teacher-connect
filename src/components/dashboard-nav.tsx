@@ -80,7 +80,7 @@ type Enrollment = {
     status: 'approved' | 'pending' | 'denied';
 }
 
-export function DashboardNav({ role }: { role: Role }) {
+export function DashboardNav({ role }: { role: Role | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
@@ -107,6 +107,7 @@ export function DashboardNav({ role }: { role: Role }) {
 
   
   const items = useMemo(() => {
+    if (!role) return [];
     const roleItems = navItems[role] || [];
     if (role === 'student') {
         return roleItems.filter(item => {
@@ -128,20 +129,21 @@ export function DashboardNav({ role }: { role: Role }) {
     router.push('/');
   };
 
-  const navContentLoading = role === 'student' && isLoadingEnrollments;
+  const navContentLoading = (role === 'student' && isLoadingEnrollments) || !role;
 
   return (
     <nav className="flex flex-col gap-2 p-4">
       {isClient ? (
-        <Collapsible defaultOpen={true} key={role}>
+        <Collapsible defaultOpen={true} key={role || 'loading'}>
           <CollapsibleTrigger
             className={cn(
               buttonVariants({ variant: 'ghost' }),
               'flex w-full justify-start items-center gap-3 mb-2 font-semibold text-lg hover:bg-primary/10'
             )}
+            disabled={!role}
           >
-            {roleIcons[role]}
-            <span className="capitalize">{role} Menu</span>
+            {role ? roleIcons[role] : <Skeleton className="h-5 w-5" />}
+            <span className="capitalize">{role ? `${role} Menu` : 'Loading...'}</span>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-1 pl-4 border-l-2 border-primary/20 ml-4">
             {navContentLoading ? (

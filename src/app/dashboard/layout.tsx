@@ -18,37 +18,42 @@ import { DashboardNav } from '@/components/dashboard-nav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, User } from 'lucide-react';
 import Link from 'next/link';
-import { useUser } from '@/firebase/auth';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BottomNav } from '@/components/bottom-nav';
 
 type Role = 'tutor' | 'student' | 'admin';
+
+type UserProfile = {
+  role: Role;
+}
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const { user, isLoading: isUserLoading } = useUser();
+  const firestore = useFirestore();
 
-  const getRole = (): Role => {
-    if (pathname.startsWith('/dashboard/teacher')) return 'tutor';
-    if (pathname.startsWith('/dashboard/student')) return 'student';
-    if (pathname.startsWith('/dashboard/admin')) return 'admin';
-    // Default to student if no specific role path is matched.
-    // This handles the case of /dashboard redirecting page.
-    return 'student'; 
-  };
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
 
-  const role = getRole();
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
+
+  const role = userProfile?.role ?? null;
 
   const getDisplayName = () => user?.displayName || user?.email?.split('@')[0] || 'User';
   const getAvatarFallback = () => (user?.displayName || user?.email || 'U').charAt(0).toUpperCase();
 
+  const isLoading = isUserLoading || isProfileLoading;
+
   const UserInfo = () => (
     <>
-      {isUserLoading ? (
+      {isLoading ? (
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex flex-col gap-1">
@@ -115,7 +120,7 @@ export default function DashboardLayout({
                   <Bell className="h-5 w-5" />
                   <span className="sr-only">Notifications</span>
                 </Button>
-                {isUserLoading ? (
+                {isLoading ? (
                   <Skeleton className="h-10 w-10 rounded-full" />
                 ) : user ? (
                    <Avatar>
