@@ -43,7 +43,7 @@ service cloud.firestore {
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get: if (isTutor() && resource.data.teacherId == request.auth.uid) || isStudent();
-      allow list: if isTutor() || isStudent();
+      allow list: if isSignedIn();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
@@ -56,7 +56,7 @@ service cloud.firestore {
       allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
                  || (isTutor() && resource.data.teacherId == request.auth.uid);
 
-      allow list: if isStudent() || isTutor();
+      allow list: if isSignedIn();
       
       allow delete: if false;
     }
