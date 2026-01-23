@@ -1,8 +1,9 @@
+
 'use client';
 
 import { FormEvent, useState } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp, addDoc, setDoc, getApp } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, addDoc, setDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Trash2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 
@@ -527,3 +528,5 @@ export default function TeacherDashboard() {
         </div>
     );
 }
+
+    
