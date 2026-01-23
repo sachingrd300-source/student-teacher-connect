@@ -13,9 +13,9 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
 
 export default function SignupPage() {
@@ -27,8 +27,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
-  const createUserProfileDocument = (user: any, additionalData: any) => {
+  const createUserProfileDocument = async (user: any, additionalData: any) => {
     if (!user || !firestore) return;
     const userRef = doc(firestore, `users/${user.uid}`);
     const { name, email } = additionalData;
@@ -41,23 +42,30 @@ export default function SignupPage() {
       createdAt: serverTimestamp(),
       status: 'pending_verification',
     };
-    setDocumentNonBlocking(userRef, dataToSet, { merge: true });
+    // Wait for the document to be created before proceeding
+    await setDoc(userRef, dataToSet, { merge: true });
   };
 
   const handleSignUp = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
+    setIsSigningUp(true);
+
     if (!auth) {
       setError('Firebase Auth is not available. Please try again later.');
+      setIsSigningUp(false);
       return;
     }
 
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      createUserProfileDocument(user, { name, email });
+      // Ensure the user profile is created before we redirect
+      await createUserProfileDocument(user, { name, email });
       router.push('/dashboard'); // Redirect to dashboard after signup
     } catch (error: any) {
       setError(error.message);
+    } finally {
+        setIsSigningUp(false);
     }
   };
 
@@ -75,7 +83,7 @@ export default function SignupPage() {
               <CardDescription>
                 Fill out the form below to get started. Students must be added by a teacher.
               </CardDescription>
-            </CardHeader>
+            </Header>
             <CardContent>
               {error && (
                 <p className="text-sm font-medium text-destructive mb-4">{error}</p>
@@ -113,8 +121,8 @@ export default function SignupPage() {
                   />
                 </div>
                 
-                <Button type="submit" className="w-full">
-                  Create Account
+                <Button type="submit" className="w-full" disabled={isSigningUp}>
+                  {isSigningUp ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </form>
               <div className="mt-4 text-center text-sm">
