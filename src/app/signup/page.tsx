@@ -83,7 +83,7 @@ export default function SignupPage() {
               <CardDescription>
                 Fill out the form below to get started. Students must be added by a teacher.
               </CardDescription>
-            </Header>
+            </CardHeader>
             <CardContent>
               {error && (
                 <p className="text-sm font-medium text-destructive mb-4">{error}</p>
