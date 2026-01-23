@@ -117,7 +117,7 @@ export default function TeacherDashboard() {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string}>(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string, name: string}>(userProfileRef);
 
     useEffect(() => {
         if (isAuthLoading || isProfileLoading) {
