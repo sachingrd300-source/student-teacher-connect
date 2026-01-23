@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -17,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, collection, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { School } from 'lucide-react';
 
 interface PendingStudentData {
     studentName: string;
@@ -27,7 +27,7 @@ interface PendingStudentData {
     teacherName: string;
     classId: string;
     classTitle: string;
-    classSubject: string; // Assuming this will be useful, let's get it from pending data
+    classSubject: string; 
 }
 
 export default function StudentSignupPage() {
@@ -61,7 +61,14 @@ export default function StudentSignupPage() {
             const docSnap = await getDoc(pendingStudentRef);
 
             if (docSnap.exists()) {
-                setPendingData(docSnap.data() as PendingStudentData);
+                const data = docSnap.data() as PendingStudentData;
+                // Fetch class subject for better description
+                const classRef = doc(firestore, 'classes', data.classId);
+                const classSnap = await getDoc(classRef);
+                if (classSnap.exists()) {
+                    data.classSubject = classSnap.data().subject;
+                }
+                setPendingData(data);
                 setStep(2);
             } else {
                 setError('Invalid Student ID. Please check the ID and try again.');
@@ -77,16 +84,14 @@ export default function StudentSignupPage() {
     const handleCreateAccount = async (e: FormEvent) => {
         e.preventDefault();
         setError(null);
-        if (!email || !password || !pendingData || !firestore) {
-            setError('Please fill out all fields.');
+        if (!email || !password || !pendingData || !firestore || !auth) {
+            setError('Please fill out all fields and ensure services are available.');
             return;
         }
 
         try {
-            // 1. Create the Firebase Auth user
             const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-            // 2. Create the user profile in 'users' collection
             const userRef = doc(firestore, `users/${user.uid}`);
             const userProfileData = {
                 id: user.uid,
@@ -101,7 +106,6 @@ export default function StudentSignupPage() {
             };
             setDocumentNonBlocking(userRef, userProfileData, { merge: true });
 
-            // 3. Create an 'approved' enrollment document
             const enrollmentData = {
                 studentId: user.uid,
                 studentName: pendingData.studentName,
@@ -116,11 +120,9 @@ export default function StudentSignupPage() {
             const enrollmentsColRef = collection(firestore, 'enrollments');
             addDocumentNonBlocking(enrollmentsColRef, enrollmentData);
             
-            // 4. Delete the pending student document
             const pendingStudentRef = doc(firestore, 'pendingStudents', studentId.trim());
             await deleteDoc(pendingStudentRef);
 
-            // 5. Redirect to the dashboard
             router.push('/dashboard');
 
         } catch (error: any) {
@@ -128,16 +130,23 @@ export default function StudentSignupPage() {
         }
     };
 
-
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <Card className="w-full max-w-sm">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-secondary">
+          <div className="w-full max-w-sm p-8 space-y-4">
+            <div className="text-center">
+                <School className="w-12 h-12 mx-auto text-primary" />
+                <h1 className="text-3xl font-bold font-serif text-foreground mt-2">EduConnect Pro</h1>
+                <p className="text-muted-foreground">
+                  {step === 1 ? "Let's get you signed up for class." : "Final step! Create your account."}
+                </p>
+            </div>
+            <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Student Signup</CardTitle>
+                    <CardTitle className="text-xl font-serif">Student Signup</CardTitle>
                     <CardDescription>
                         {step === 1 
-                            ? 'Enter the Student ID provided by your teacher.'
-                            : `Welcome, ${pendingData?.studentName}! Create your account.`}
+                            ? 'Enter the unique Student ID provided by your teacher.'
+                            : `Welcome, ${pendingData?.studentName}! Let's create your account.`}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -166,23 +175,11 @@ export default function StudentSignupPage() {
 
                     {step === 2 && pendingData && (
                         <form onSubmit={handleCreateAccount} className="grid gap-4">
-                             <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2 col-span-2">
-                                    <Label>Student Name</Label>
-                                    <Input
-                                        value={pendingData.studentName}
-                                        readOnly
-                                        className="bg-secondary"
-                                    />
-                                </div>
-                                <div className="grid gap-2 col-span-2">
-                                    <Label>Father's Name</Label>
-                                    <Input
-                                        value={pendingData.fatherName}
-                                        readOnly
-                                        className="bg-secondary"
-                                    />
-                                </div>
+                             <div className="p-3 mb-4 rounded-md border bg-muted">
+                                <h4 className="text-sm font-semibold">Registration Details</h4>
+                                <p className="text-sm text-muted-foreground">
+                                    You are registering for <span className="font-medium text-foreground">{pendingData.classTitle}</span> with <span className="font-medium text-foreground">{pendingData.teacherName}</span>.
+                                </p>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
@@ -207,27 +204,24 @@ export default function StudentSignupPage() {
                                 />
                             </div>
                             <Button type="submit" className="w-full">
-                                Create Account
+                                Create Account & Join Class
                             </Button>
                         </form>
                     )}
                     
                     <div className="mt-4 text-center text-sm">
-                        Already have an account?{' '}
                         <Link href="/login" className="underline">
-                            Login
+                            Already have an account? Login
                         </Link>
                     </div>
                      <div className="mt-2 text-center text-sm">
-                        Are you a teacher?{' '}
                         <Link href="/signup" className="underline">
-                            Sign up here
+                            Are you a teacher? Sign up here
                         </Link>
                     </div>
                 </CardContent>
             </Card>
+          </div>
         </div>
     );
 }
-
-    
