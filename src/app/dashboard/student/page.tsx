@@ -3,6 +3,8 @@
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface Enrollment {
     id: string;
@@ -14,27 +16,49 @@ interface Enrollment {
 export default function StudentDashboard() {
     const firestore = useFirestore();
     const { user, isUserLoading: isAuthLoading } = useUser();
+    const router = useRouter();
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { isLoading: isProfileLoading } = useDoc(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string}>(userProfileRef);
+
+    useEffect(() => {
+        if (isAuthLoading || isProfileLoading) {
+            return;
+        }
+        if (!user) {
+            router.replace('/login');
+            return;
+        }
+        if (userProfile && userProfile.role !== 'student') {
+            router.replace('/dashboard/teacher');
+        }
+    }, [user, isAuthLoading, userProfile, isProfileLoading, router]);
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user || !userProfile || userProfile.role !== 'student') return null;
         return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
-    }, [firestore, user]);
+    }, [firestore, user, userProfile]);
 
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
-    if (isAuthLoading || isProfileLoading) {
+    if (isAuthLoading || isProfileLoading || !userProfile) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <p>Loading student dashboard...</p>
             </div>
         );
+    }
+
+    if (userProfile.role !== 'student') {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <p>Unauthorized. Redirecting...</p>
+            </div>
+        )
     }
 
     return (

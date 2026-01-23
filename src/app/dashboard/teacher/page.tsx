@@ -1,7 +1,7 @@
 
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc, Timestamp, addDoc, setDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { initializeApp, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
+import { useRouter } from 'next/navigation';
 
 
 interface Class {
@@ -85,6 +86,7 @@ function StudentListForClass({ classId }: { classId: string }) {
 export default function TeacherDashboard() {
     const firestore = useFirestore();
     const { user, isUserLoading: isAuthLoading } = useUser();
+    const router = useRouter();
 
     // State for Create Class form
     const [title, setTitle] = useState('');
@@ -115,12 +117,25 @@ export default function TeacherDashboard() {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string}>(userProfileRef);
+
+    useEffect(() => {
+        if (isAuthLoading || isProfileLoading) {
+            return;
+        }
+        if (!user) {
+            router.replace('/login');
+            return;
+        }
+        if (userProfile && userProfile.role !== 'tutor') {
+            router.replace('/dashboard/student');
+        }
+    }, [user, isAuthLoading, userProfile, isProfileLoading, router]);
 
     const classesQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user || !userProfile || userProfile.role !== 'tutor') return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user]);
+    }, [firestore, user, userProfile]);
 
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
 
@@ -259,12 +274,20 @@ export default function TeacherDashboard() {
         }
     };
 
-    if (isAuthLoading || isProfileLoading) {
+    if (isAuthLoading || isProfileLoading || !userProfile) {
         return (
              <div className="flex items-center justify-center min-h-screen">
                 <p>Loading teacher dashboard...</p>
             </div>
         );
+    }
+
+    if (userProfile.role !== 'tutor') {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <p>Unauthorized. Redirecting...</p>
+            </div>
+        )
     }
 
     return (
