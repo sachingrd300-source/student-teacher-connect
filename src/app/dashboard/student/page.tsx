@@ -11,6 +11,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 interface Enrollment {
     id: string;
     classTitle: string;
+    classSubject: string;
     teacherName: string;
     status: 'pending' | 'approved' | 'denied';
 }
@@ -91,12 +92,12 @@ export default function StudentDashboard() {
                                                 <CardDescription>Taught by {enrollment.teacherName}</CardDescription>
                                             </CardHeader>
                                             <CardFooter>
-                                                <div className={`text-sm font-medium px-2 py-1 rounded-full ${
+                                                <div className={`text-xs font-semibold capitalize px-2 py-1 rounded-full ${
                                                     enrollment.status === 'approved' ? 'bg-green-100 text-green-800' :
                                                     enrollment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                                     'bg-red-100 text-red-800'
                                                 }`}>
-                                                    Status: {enrollment.status}
+                                                    {enrollment.status}
                                                 </div>
                                             </CardFooter>
                                         </Card>

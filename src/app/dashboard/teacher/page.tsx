@@ -331,17 +331,17 @@ export default function TeacherDashboard() {
                                                             <div className="font-mono text-base font-bold text-foreground">{c.classCode}</div>
                                                         </div>
                                                         <div className="flex items-center gap-1">
-                                                            <Button variant="outline" size="sm" onClick={() => setViewingStudentsForClass(c)}>
-                                                                <Users className="h-4 w-4 mr-1" />
-                                                                Students
+                                                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setViewingStudentsForClass(c)}>
+                                                                <Users className="h-4 w-4" />
+                                                                <span className="sr-only">View Students</span>
                                                             </Button>
-                                                            <Button variant="outline" size="sm" onClick={() => setEditingClass(c)}>
-                                                                <Edit className="h-4 w-4 mr-1" />
-                                                                Edit
+                                                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditingClass(c)}>
+                                                                <Edit className="h-4 w-4" />
+                                                                 <span className="sr-only">Edit Class</span>
                                                             </Button>
-                                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c.id)}>
-                                                                <Trash2 className="h-4 w-4 mr-1" />
-                                                                Delete
+                                                            <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteClass(c.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span className="sr-only">Delete Class</span>
                                                             </Button>
                                                         </div>
                                                     </CardFooter>
@@ -357,10 +357,10 @@ export default function TeacherDashboard() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Manage Students</CardTitle>
+                                    <CardDescription>Create a new login for a student and enroll them in a class.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <form onSubmit={handleCreateStudentLogin} className="space-y-4 p-4 border rounded-lg">
-                                        <h3 className="text-lg font-medium">Create Student Login</h3>
+                                    <form onSubmit={handleCreateStudentLogin} className="space-y-4">
                                         <div className="space-y-2">
                                             <Label>Select Class</Label>
                                             <Select onValueChange={setSelectedClass} value={selectedClass}>
@@ -435,12 +435,18 @@ export default function TeacherDashboard() {
                                             </div>
                                         )}
                                         {newlyAddedStudent && (
-                                            <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg">
-                                                <p className="font-bold">Student Login Created!</p>
-                                                <p>Share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
-                                                <div className="mt-2 space-y-1">
-                                                    <p>Student ID: <span className="font-mono text-base font-bold">{newlyAddedStudent.id}</span></p>
-                                                    <p>Password: <span className="font-mono text-base font-bold">{newlyAddedStudent.pass}</span></p>
+                                            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                                <p className="font-bold text-green-800">Student Login Created Successfully!</p>
+                                                <p className="text-sm text-green-700">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
+                                                <div className="mt-3 space-y-2 bg-green-100 p-3 rounded-md">
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-green-800">Student ID:</p> 
+                                                        <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.id}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-green-800">Password:</p> 
+                                                        <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.pass}</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
