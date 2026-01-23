@@ -71,7 +71,7 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-secondary">
-      <div className="w-full max-w-sm p-8 space-y-4">
+      <div className="w-full max-w-sm p-4 sm:p-8 space-y-4">
           <div className="text-center">
               <School className="w-12 h-12 mx-auto text-primary" />
               <h1 className="text-3xl font-bold font-serif text-foreground mt-2">EduConnect Pro</h1>

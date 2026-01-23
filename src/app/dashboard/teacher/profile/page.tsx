@@ -65,7 +65,7 @@ export default function TeacherProfilePage() {
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
             <DashboardHeader userName={userProfile.name} userRole="tutor" />
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
+            <main className="flex-1">
                  <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">My Profile</h1>
                     <Card className="max-w-2xl mx-auto">

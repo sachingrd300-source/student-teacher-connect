@@ -56,8 +56,8 @@ function StudentListForClass({ classId }: { classId: string }) {
     }
 
     return (
-        <div className="mt-4 border rounded-lg">
-            <table className="w-full text-sm">
+        <div className="mt-4 border rounded-lg overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
                 <thead className="text-left bg-muted">
                     <tr className="border-b">
                         <th className="p-3 font-medium">Student Name</th>
@@ -69,10 +69,10 @@ function StudentListForClass({ classId }: { classId: string }) {
                 <tbody>
                     {students.map(student => (
                         <tr key={student.id} className="border-b last:border-0">
-                            <td className="p-3">{student.studentName}</td>
+                            <td className="p-3 whitespace-nowrap">{student.studentName}</td>
                             <td className="p-3">{student.mobileNumber}</td>
                             <td className="p-3 font-mono">{student.studentId}</td>
-                            <td className="p-3">
+                            <td className="p-3 whitespace-nowrap">
                                 {student.createdAt ? student.createdAt.toDate().toLocaleString() : '...'}
                             </td>
                         </tr>
