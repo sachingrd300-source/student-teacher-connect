@@ -20,11 +20,13 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { School } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'teacher' | 'student'>('teacher');
+  const [credential, setCredential] = useState(''); // Used for both email and student ID
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -35,11 +37,25 @@ export default function LoginPage() {
       setError('Firebase Auth is not available. Please try again later.');
       return;
     }
+
+    let emailToLogin;
+    if (role === 'student') {
+      // For students, the credential is their Student ID, which we convert to the internal email.
+      emailToLogin = `${credential}@educonnect.pro`;
+    } else {
+      // For teachers, the credential is their actual email.
+      emailToLogin = credential;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard'); // Redirect to a dashboard page after login
+      await signInWithEmailAndPassword(auth, emailToLogin, password);
+      router.push('/dashboard'); 
     } catch (error: any) {
-      setError(error.message);
+       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        setError('Invalid login credentials. Please check your ID/Email and password.');
+      } else {
+        setError(error.message);
+      }
     }
   };
 
@@ -52,9 +68,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // Logic to create user profile in Firestore if it doesn't exist would go here
-      // This is particularly important for Google sign-in where user record may not exist yet
-      router.push('/dashboard'); // Redirect to a dashboard page after login
+      router.push('/dashboard');
     } catch (error: any) {
       setError(error.message);
     }
@@ -72,7 +86,7 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-serif">Login</CardTitle>
             <CardDescription>
-              Enter your email and password to access your account.
+              Select your role and enter your credentials to access your account.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -81,14 +95,28 @@ export default function LoginPage() {
             )}
             <form onSubmit={handleLogin} className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label>I am a...</Label>
+                <RadioGroup defaultValue="teacher" onValueChange={(value: 'teacher' | 'student') => setRole(value)} className="flex gap-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="teacher" id="r1" />
+                    <Label htmlFor="r1">Teacher</Label>
+                  </div>
+                   <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="student" id="r2" />
+                    <Label htmlFor="r2">Student</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="credential">{role === 'teacher' ? 'Email' : 'Student ID'}</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
+                  id="credential"
+                  type={role === 'teacher' ? 'email' : 'text'}
+                  placeholder={role === 'teacher' ? 'm@example.com' : 'Enter your Student ID'}
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={credential}
+                  onChange={(e) => setCredential(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
@@ -97,6 +125,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   required
+                  placeholder={role === 'student' ? 'Your Date of Birth (YYYY-MM-DD)' : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -105,23 +134,27 @@ export default function LoginPage() {
                 Login
               </Button>
             </form>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
-              Sign in with Google
-            </Button>
+            {role === 'teacher' && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                  Sign in with Google
+                </Button>
+              </>
+            )}
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="underline">
-                Sign up
+                Sign up as a Teacher
               </Link>
             </div>
           </CardContent>

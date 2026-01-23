@@ -10,6 +10,10 @@
           "type": "string",
           "description": "Unique identifier for the user, typically the Firebase Auth UID."
         },
+        "studentLoginId": {
+            "type": "string",
+            "description": "The custom, shorter ID students use to log in."
+        },
         "role": {
           "type": "string",
           "enum": ["student", "tutor", "admin"],
@@ -35,6 +39,10 @@
           "type": "string",
           "description": "The user's email address.",
           "format": "email"
+        },
+        "dateOfBirth": {
+            "type": "string",
+            "description": "The user's date of birth, used as initial password for students."
         },
         "createdAt": {
             "type": "string",
@@ -156,27 +164,6 @@
         "teacherName"
       ]
     },
-    "PendingStudent": {
-      "title": "Pending Student",
-      "type": "object",
-      "description": "A temporary record for a student who has been invited by a teacher but has not yet created an account.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "The unique, random ID given to the student to sign up."
-        },
-        "studentName": { "type": "string" },
-        "fatherName": { "type": "string" },
-        "mobileNumber": { "type": "string" },
-        "address": { "type": "string" },
-        "teacherId": { "type": "string" },
-        "teacherName": { "type": "string" },
-        "classId": { "type": "string" },
-        "classTitle": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "studentName", "teacherId", "classId", "createdAt", "fatherName", "mobileNumber", "address"]
-    },
     "StudyMaterial": {
         "title": "Study Material",
         "type": "object",
@@ -282,12 +269,6 @@
       },
       "description": "Tracks student enrollment in classes."
     },
-    "/pendingStudents/{studentId}": {
-      "schema": {
-        "$ref": "#/entities/PendingStudent"
-      },
-      "description": "Temporary records for students invited by teachers."
-    },
     "/studyMaterials/{materialId}": {
       "schema": {
         "$ref": "#/entities/StudyMaterial"
@@ -314,5 +295,3 @@
     }
   }
 }
-
-    

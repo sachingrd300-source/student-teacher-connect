@@ -73,7 +73,7 @@ export default function SignupPage() {
             <CardHeader>
               <CardTitle className="text-xl font-serif">Create a Teacher Account</CardTitle>
               <CardDescription>
-                Fill out the form below to get started.
+                Fill out the form below to get started. Students must be added by a teacher.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -117,13 +117,7 @@ export default function SignupPage() {
                   Create Account
                 </Button>
               </form>
-               <div className="mt-4 text-center text-sm">
-                 Are you a student?{' '}
-                <Link href="/signup/student" className="underline">
-                  Sign up with a Student ID
-                </Link>
-              </div>
-              <div className="mt-2 text-center text-sm">
+              <div className="mt-4 text-center text-sm">
                 Already have an account?{' '}
                 <Link href="/login" className="underline">
                   Login

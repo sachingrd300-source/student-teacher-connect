@@ -1,9 +1,8 @@
-
 'use client';
 
 import { FormEvent, useState } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, addDoc, setDoc, getApp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -12,6 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Trash2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { firebaseConfig } from '@/firebase/config';
 
 
 interface Class {
@@ -20,13 +22,6 @@ interface Class {
     subject: string;
     batchTime: string;
     classCode: string;
-    createdAt?: Timestamp;
-}
-
-interface PendingStudent {
-    id: string;
-    studentName: string;
-    classTitle: string;
     createdAt?: Timestamp;
 }
 
@@ -101,8 +96,10 @@ export default function TeacherDashboard() {
     const [studentFatherName, setStudentFatherName] = useState('');
     const [studentMobileNumber, setStudentMobileNumber] = useState('');
     const [studentAddress, setStudentAddress] = useState('');
+    const [studentDateOfBirth, setStudentDateOfBirth] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
-    const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, id: string} | null>(null);
+    const [studentCreationError, setStudentCreationError] = useState<string | null>(null);
+    const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, id: string, pass: string} | null>(null);
 
     // State for editing a class
     const [editingClass, setEditingClass] = useState<Class | null>(null);
@@ -124,13 +121,6 @@ export default function TeacherDashboard() {
     }, [firestore, user]);
 
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
-
-    const pendingStudentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(collection(firestore, 'pendingStudents'), where('teacherId', '==', user.uid));
-    }, [firestore, user]);
-
-    const { data: pendingStudents, isLoading: pendingStudentsLoading } = useCollection<PendingStudent>(pendingStudentsQuery);
 
     const handleCreateClass = (e: FormEvent) => {
         e.preventDefault();
@@ -160,44 +150,88 @@ export default function TeacherDashboard() {
           });
     };
 
-    const handleAddStudent = (e: FormEvent) => {
+    const handleCreateStudentLogin = (e: FormEvent) => {
         e.preventDefault();
-        if (!user || !userProfile || !selectedClass || !studentName.trim() || !firestore) return;
+        if (!user || !userProfile || !selectedClass || !studentName.trim() || !firestore || !studentDateOfBirth) return;
+        
         setIsAddingStudent(true);
         setNewlyAddedStudent(null);
+        setStudentCreationError(null);
 
         const classData = classes?.find(c => c.id === selectedClass);
         if (!classData) {
-            console.error("Selected class not found");
+            setStudentCreationError("Selected class not found.");
             setIsAddingStudent(false);
             return;
         }
 
-        const studentId = nanoid(8);
-        const pendingStudentRef = doc(firestore, 'pendingStudents', studentId);
-        
-        const newPendingStudent = {
-            id: studentId,
-            studentName: studentName.trim(),
-            fatherName: studentFatherName.trim(),
-            mobileNumber: studentMobileNumber.trim(),
-            address: studentAddress.trim(),
-            teacherId: user.uid,
-            teacherName: userProfile.name,
-            classId: selectedClass,
-            classTitle: classData.title,
-            createdAt: serverTimestamp()
-        };
+        const studentLoginId = nanoid(8);
+        const email = `${studentLoginId}@educonnect.pro`; // This is a "hidden" email for Firebase Auth
+        const password = studentDateOfBirth; // The student's date of birth is their password
 
-        setDocumentNonBlocking(pendingStudentRef, newPendingStudent, {});
+        // We use a secondary Firebase App instance to create a new user.
+        // This is crucial to avoid logging out the currently signed-in teacher.
+        let secondaryApp;
+        try {
+            secondaryApp = initializeApp(firebaseConfig, 'student-creator');
+        } catch (error) {
+            secondaryApp = getApp('student-creator'); // Get existing instance if already initialized
+        }
+        const secondaryAuth = getAuth(secondaryApp);
 
-        setNewlyAddedStudent({name: studentName.trim(), id: studentId});
-        setStudentName('');
-        setStudentFatherName('');
-        setStudentMobileNumber('');
-        setStudentAddress('');
-        setSelectedClass('');
-        setIsAddingStudent(false);
+        createUserWithEmailAndPassword(secondaryAuth, email, password)
+            .then(userCredential => {
+                const newUser = userCredential.user;
+
+                // 2. Create the User document in Firestore
+                const userRef = doc(firestore, `users/${newUser.uid}`);
+                const userProfileData = {
+                    id: newUser.uid,
+                    studentLoginId: studentLoginId, // The ID the student uses to log in
+                    name: studentName.trim(),
+                    fatherName: studentFatherName.trim(),
+                    mobileNumber: studentMobileNumber.trim(),
+                    address: studentAddress.trim(),
+                    email: email, // Store the internal-facing email
+                    role: 'student',
+                    dateOfBirth: studentDateOfBirth,
+                    createdAt: serverTimestamp(),
+                    status: 'approved',
+                };
+                setDocumentNonBlocking(userRef, userProfileData, {});
+
+                // 3. Create the Enrollment document
+                const enrollmentData = {
+                    studentId: newUser.uid,
+                    studentName: studentName.trim(),
+                    mobileNumber: studentMobileNumber.trim(),
+                    classId: selectedClass,
+                    teacherId: user.uid,
+                    classTitle: classData.title,
+                    classSubject: classData.subject,
+                    teacherName: userProfile.name,
+                    status: 'approved',
+                    createdAt: serverTimestamp(),
+                };
+                const enrollmentsColRef = collection(firestore, 'enrollments');
+                addDocumentNonBlocking(enrollmentsColRef, enrollmentData);
+                
+                // 4. Show the credentials to the teacher
+                setNewlyAddedStudent({ name: studentName.trim(), id: studentLoginId, pass: studentDateOfBirth });
+                setStudentName('');
+                setStudentFatherName('');
+                setStudentMobileNumber('');
+                setStudentAddress('');
+                setStudentDateOfBirth('');
+                setSelectedClass('');
+            })
+            .catch(error => {
+                console.error("Error creating student auth user:", error);
+                setStudentCreationError(`Failed to create student login: ${error.message}`);
+            })
+            .finally(() => {
+                setIsAddingStudent(false);
+            });
     };
 
     const handleUpdateClass = (e: FormEvent) => {
@@ -205,7 +239,6 @@ export default function TeacherDashboard() {
         if (!firestore || !editingClass) return;
 
         const classRef = doc(firestore, 'classes', editingClass.id);
-        // We only update the fields that can be changed
         const updatedData = {
             title: editingClass.title,
             subject: editingClass.subject,
@@ -213,7 +246,7 @@ export default function TeacherDashboard() {
         };
 
         updateDocumentNonBlocking(classRef, updatedData);
-        setEditingClass(null); // Close the modal
+        setEditingClass(null);
     };
 
     const handleDeleteClass = (classId: string) => {
@@ -223,7 +256,6 @@ export default function TeacherDashboard() {
             deleteDocumentNonBlocking(classRef);
         }
     };
-
 
     if (isAuthLoading || isProfileLoading) {
         return (
@@ -292,13 +324,13 @@ export default function TeacherDashboard() {
                             <CardTitle>Manage Students</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleAddStudent} className="space-y-4 p-4 border rounded-lg">
-                                <h3 className="text-lg font-medium">Add New Student</h3>
+                            <form onSubmit={handleCreateStudentLogin} className="space-y-4 p-4 border rounded-lg">
+                                <h3 className="text-lg font-medium">Create Student Login</h3>
                                 <div className="space-y-2">
                                     <Label>Select Class</Label>
                                     <Select onValueChange={setSelectedClass} value={selectedClass}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select a class to add the student to" />
+                                            <SelectValue placeholder="Select a class to enroll the student in" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {classes && classes.map(c => <SelectItem key={c.id} value={c.id}>{c.title} - {c.subject} ({c.batchTime})</SelectItem>)}
@@ -347,42 +379,37 @@ export default function TeacherDashboard() {
                                         />
                                     </div>
                                 </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="student-dob">Student's Date of Birth (Password)</Label>
+                                    <Input
+                                        id="student-dob"
+                                        type="date"
+                                        value={studentDateOfBirth}
+                                        onChange={(e) => setStudentDateOfBirth(e.target.value)}
+                                        required
+                                    />
+                                    <p className="text-xs text-muted-foreground">The student will use this as their password to log in. Format: YYYY-MM-DD.</p>
+                                </div>
                                 <Button type="submit" disabled={isAddingStudent || !selectedClass} className="w-full">
-                                    {isAddingStudent ? 'Generating ID...' : 'Generate Student ID'}
+                                    {isAddingStudent ? 'Creating Login...' : 'Create Student Login'}
                                 </Button>
+                                {studentCreationError && (
+                                     <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-800 rounded-lg">
+                                        <p className="font-bold">Error</p>
+                                        <p>{studentCreationError}</p>
+                                    </div>
+                                )}
                                 {newlyAddedStudent && (
                                     <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg">
-                                        <p className="font-bold">Student ID Generated!</p>
-                                        <p>Share this ID with <span className="font-semibold">{newlyAddedStudent.name}</span> to allow them to sign up.</p>
-                                        <p className="mt-2">Student ID: <span className="font-mono text-base font-bold">{newlyAddedStudent.id}</span></p>
+                                        <p className="font-bold">Student Login Created!</p>
+                                        <p>Share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
+                                        <div className="mt-2 space-y-1">
+                                            <p>Student ID: <span className="font-mono text-base font-bold">{newlyAddedStudent.id}</span></p>
+                                            <p>Password: <span className="font-mono text-base font-bold">{newlyAddedStudent.pass}</span></p>
+                                        </div>
                                     </div>
                                 )}
                             </form>
-
-                            <div className="mt-6">
-                                <h3 className="text-lg font-medium">Pending Student Signups</h3>
-                                <CardDescription>Students who have been given an ID but have not yet created their account.</CardDescription>
-                                {pendingStudentsLoading && <p className="mt-4">Loading pending students...</p>}
-                                {pendingStudents && pendingStudents.length > 0 ? (
-                                    <div className="mt-4 space-y-2">
-                                        {pendingStudents.map(s => (
-                                            <div key={s.id} className="flex justify-between items-center p-3 bg-secondary rounded-lg">
-                                                <div>
-                                                    <p><span className="font-semibold">{s.studentName}</span> (for class: {s.classTitle})</p>
-                                                    {s.createdAt && (
-                                                        <p className="text-xs text-muted-foreground">
-                                                            Generated: {s.createdAt.toDate().toLocaleString()}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">ID: <span className="font-mono font-bold text-foreground">{s.id}</span></p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ): (
-                                    !pendingStudentsLoading && <p className="text-center text-muted-foreground pt-4">No students are pending signup.</p>
-                                )}
-                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -500,5 +527,3 @@ export default function TeacherDashboard() {
         </div>
     );
 }
-
-    

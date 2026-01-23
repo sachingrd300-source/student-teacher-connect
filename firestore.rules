@@ -34,7 +34,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      // Allow user creation for anyone signing up
+      // Allow user creation for anyone signing up OR a teacher creating a student
       allow create: if true;
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if false;
@@ -48,9 +48,9 @@ service cloud.firestore {
     }
 
     match /enrollments/{enrollmentId} {
-      // Allow creation during student signup process
-      allow create: if isSignedIn()
-                    && request.resource.data.studentId == request.auth.uid
+      // Allow creation by a teacher on behalf of a student.
+      allow create: if isTutor() 
+                    && request.resource.data.teacherId == request.auth.uid
                     && request.resource.data.status == 'approved';
       
       allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
@@ -59,23 +59,6 @@ service cloud.firestore {
       allow list: if isStudent() || isTutor();
       
       allow delete: if false;
-    }
-
-    // Rules for pending students collection
-    match /pendingStudents/{studentId} {
-      // Allow anyone to read a pending student doc (for ID verification on signup)
-      allow get: if true;
-
-      // Allow tutors to create pending students
-      allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-
-      // Allow tutors to see the list of students they've created.
-      // The client query `where('teacherId', '==', request.auth.uid)` is validated against this rule.
-      allow list: if isTutor() && request.auth.uid == resource.data.teacherId;
-      
-      // A user can delete a pending doc once they sign up
-      // Or the teacher who created it can delete it.
-      allow delete: if isSignedIn() || (isTutor() && get(/databases/$(database)/documents/pendingStudents/$(studentId)).data.teacherId == request.auth.uid);
     }
   }
 }
