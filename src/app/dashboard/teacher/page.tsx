@@ -36,11 +36,12 @@ interface EnrolledStudent {
 
 function StudentListForClass({ classId }: { classId: string }) {
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'enrollments'), where('classId', '==', classId));
-    }, [firestore, classId]);
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', user.uid));
+    }, [firestore, classId, user]);
 
     const { data: students, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
 
@@ -528,5 +529,3 @@ export default function TeacherDashboard() {
         </div>
     );
 }
-
-    
