@@ -199,13 +199,9 @@ export default function LoginPage() {
               </>
             )}
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
+              Don&apos;t have a teacher account?{' '}
               <Link href="/signup" className="underline">
-                Sign up as a Teacher
-              </Link>
-              {' | '}
-              <Link href="/signup/student" className="underline">
-                Sign up as a Student
+                Sign up
               </Link>
             </div>
             <div className="mt-2 text-center text-xs text-muted-foreground px-4">
