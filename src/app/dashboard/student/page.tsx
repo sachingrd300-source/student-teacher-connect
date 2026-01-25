@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
@@ -61,9 +62,9 @@ export default function StudentDashboard() {
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
     const tutorsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null;
         return query(collection(firestore, 'users'), where('role', '==', 'tutor'));
-    }, [firestore]);
+    }, [firestore, user]);
 
     const { data: tutors, isLoading: tutorsLoading } = useCollection<TutorProfile>(tutorsQuery);
 
