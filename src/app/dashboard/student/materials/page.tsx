@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -14,6 +13,7 @@ import { BookCopy, Search, Users, FileText, Video, PenSquare, ClipboardList, X }
 interface Enrollment {
     id: string;
     classId: string;
+    teacherName: string;
 }
 interface StudyMaterial {
     id: string;
@@ -51,6 +51,7 @@ export default function StudentMaterialsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -82,6 +83,17 @@ export default function StudentMaterialsPage() {
         const subjects = new Set(visibleMaterials.map(m => m.subject));
         return Array.from(subjects);
     }, [materials, enrolledClassIds]);
+    
+    const availableTeachers = useMemo(() => {
+        if (!enrollments && !materials) return [];
+        // Get teachers from classes the student is enrolled in
+        const enrolledTeacherNames = new Set(enrollments?.map(e => e.teacherName) || []);
+        // Also get teachers who have posted general materials visible to everyone
+        const generalMaterialTeacherNames = new Set(materials?.filter(m => !m.classId).map(m => m.teacherName) || []);
+        
+        const allTeacherNames = new Set([...enrolledTeacherNames, ...generalMaterialTeacherNames]);
+        return Array.from(allTeacherNames);
+    }, [enrollments, materials]);
 
     const filteredMaterials = useMemo(() => {
         if (!materials) return [];
@@ -96,6 +108,10 @@ export default function StudentMaterialsPage() {
 
         if (selectedClass) {
             results = results.filter(material => material.className === selectedClass);
+        }
+        
+        if (selectedTeacher) {
+            results = results.filter(material => material.teacherName === selectedTeacher);
         }
 
         if (selectedSubject) {
@@ -112,7 +128,7 @@ export default function StudentMaterialsPage() {
 
         return results.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
 
-    }, [materials, searchTerm, enrolledClassIds, selectedCategory, selectedClass, selectedSubject]);
+    }, [materials, searchTerm, enrolledClassIds, selectedCategory, selectedClass, selectedSubject, selectedTeacher]);
 
 
     return (
@@ -178,11 +194,20 @@ export default function StudentMaterialsPage() {
                                             {availableSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
+                                     <Select onValueChange={(value) => setSelectedTeacher(value === 'all' ? null : value)} value={selectedTeacher || 'all'}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Filter by Teacher" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Teachers</SelectItem>
+                                            {availableTeachers.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
 
                             {/* Active Filters */}
-                            {(selectedCategory || selectedClass || selectedSubject) && (
+                            {(selectedCategory || selectedClass || selectedSubject || selectedTeacher) && (
                                 <div className="pt-4 flex gap-2 flex-wrap">
                                     {selectedCategory && (
                                         <Button variant="secondary" size="sm" onClick={() => setSelectedCategory(null)}>
@@ -197,6 +222,11 @@ export default function StudentMaterialsPage() {
                                     {selectedSubject && (
                                         <Button variant="secondary" size="sm" onClick={() => setSelectedSubject(null)}>
                                             Subject: {selectedSubject} <X className="h-4 w-4 ml-2" />
+                                        </Button>
+                                    )}
+                                    {selectedTeacher && (
+                                        <Button variant="secondary" size="sm" onClick={() => setSelectedTeacher(null)}>
+                                            Teacher: {selectedTeacher} <X className="h-4 w-4 ml-2" />
                                         </Button>
                                     )}
                                 </div>
