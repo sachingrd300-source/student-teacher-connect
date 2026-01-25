@@ -3,12 +3,16 @@
 
 import { useState, useMemo } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, Timestamp }from 'firebase/firestore';
+import { collection, query, where, doc, Timestamp }from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { BookCopy, Search } from 'lucide-react';
+import { BookCopy, Search, Users } from 'lucide-react';
 
+interface Enrollment {
+    id: string;
+    classId: string;
+}
 interface StudyMaterial {
     id: string;
     title: string;
@@ -19,6 +23,8 @@ interface StudyMaterial {
     fileUrl?: string;
     teacherName: string;
     createdAt: Timestamp;
+    classId?: string;
+    className?: string;
 }
 
 export default function StudentMaterialsPage() {
@@ -32,6 +38,16 @@ export default function StudentMaterialsPage() {
     
     const [searchTerm, setSearchTerm] = useState('');
 
+    const enrollmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: enrollments } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const enrolledClassIds = useMemo(() => {
+        return enrollments?.map(e => e.classId) || [];
+    }, [enrollments]);
+
     const materialsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'studyMaterials'));
@@ -41,12 +57,21 @@ export default function StudentMaterialsPage() {
 
     const filteredMaterials = useMemo(() => {
         if (!materials) return [];
-        return materials.filter(material => 
+
+        const classFiltered = materials.filter(material => 
+            !material.classId || enrolledClassIds.includes(material.classId)
+        );
+
+        if (!searchTerm) {
+            return classFiltered;
+        }
+
+        return classFiltered.filter(material => 
             material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             material.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
             material.description.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [materials, searchTerm]);
+    }, [materials, searchTerm, enrolledClassIds]);
 
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
@@ -57,7 +82,7 @@ export default function StudentMaterialsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Resource Library</CardTitle>
-                            <CardDescription>Browse and search for study materials uploaded by teachers.</CardDescription>
+                            <CardDescription>Browse materials from your classes or from the general library.</CardDescription>
                             <div className="relative pt-4">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input 
@@ -77,6 +102,12 @@ export default function StudentMaterialsPage() {
                                             <CardHeader className="flex-1">
                                                 <CardTitle className="text-lg">{material.title}</CardTitle>
                                                 <CardDescription>by {material.teacherName}</CardDescription>
+                                                 {material.className && (
+                                                    <div className="flex items-center gap-2 pt-2">
+                                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-xs font-semibold text-primary">{material.className}</span>
+                                                    </div>
+                                                )}
                                             </CardHeader>
                                             <CardContent className="flex-1 space-y-3 text-sm">
                                                 <div className="flex items-start gap-2">
@@ -101,7 +132,7 @@ export default function StudentMaterialsPage() {
                                     ))}
                                 </div>
                             ) : (
-                                !isLoading && <p className="text-center text-muted-foreground py-8">No study materials found matching your search.</p>
+                                !isLoading && <p className="text-center text-muted-foreground py-8">No study materials found.</p>
                             )}
                         </CardContent>
                     </Card>

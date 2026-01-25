@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Users } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface StudyMaterial {
@@ -21,6 +21,12 @@ interface StudyMaterial {
     chapter?: string;
     fileUrl?: string;
     createdAt: Timestamp;
+    className?: string;
+}
+
+interface Class {
+    id: string;
+    title: string;
 }
 
 export default function TeacherMaterialsPage() {
@@ -39,6 +45,7 @@ export default function TeacherMaterialsPage() {
     const [type, setType] = useState('');
     const [description, setDescription] = useState('');
     const [fileUrl, setFileUrl] = useState('');
+    const [classId, setClassId] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const materialsQuery = useMemoFirebase(() => {
@@ -48,6 +55,12 @@ export default function TeacherMaterialsPage() {
 
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
 
+     const classesQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: classes } = useCollection<Class>(classesQuery);
+
     const resetForm = () => {
         setTitle('');
         setSubject('');
@@ -55,6 +68,7 @@ export default function TeacherMaterialsPage() {
         setType('');
         setDescription('');
         setFileUrl('');
+        setClassId('');
     };
 
     const handleSubmit = (e: FormEvent) => {
@@ -62,6 +76,9 @@ export default function TeacherMaterialsPage() {
         if (!user || !userProfile || !firestore || !type) return;
 
         setIsSubmitting(true);
+        
+        const selectedClass = classes?.find(c => c.id === classId);
+
         const newMaterial = {
             teacherId: user.uid,
             teacherName: userProfile.name,
@@ -71,6 +88,8 @@ export default function TeacherMaterialsPage() {
             type,
             description,
             fileUrl,
+            classId: selectedClass?.id || null,
+            className: selectedClass?.title || null,
             createdAt: serverTimestamp(),
         };
 
@@ -115,8 +134,12 @@ export default function TeacherMaterialsPage() {
                                                         <CardDescription>{material.subject} - {material.chapter}</CardDescription>
                                                     </CardHeader>
                                                     <CardContent>
-                                                        <div className="text-sm space-y-1">
+                                                        <div className="text-sm space-y-2">
                                                              <p><span className="font-semibold">Type:</span> {material.type}</p>
+                                                             <div className="flex items-center gap-2">
+                                                                <Users className="h-4 w-4 text-muted-foreground" />
+                                                                <span className="font-semibold">{material.className || 'General (All Students)'}</span>
+                                                            </div>
                                                             {material.fileUrl && <p><span className="font-semibold">Link:</span> <a href={material.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">View Material</a></p>}
                                                         </div>
                                                     </CardContent>
@@ -145,6 +168,18 @@ export default function TeacherMaterialsPage() {
                                         <div className="space-y-2">
                                             <Label htmlFor="material-title">Title</Label>
                                             <Input id="material-title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Chapter 5: Thermodynamics" required />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="class-select">Assign to Class (Optional)</Label>
+                                             <Select onValueChange={setClassId} value={classId}>
+                                                <SelectTrigger id="class-select">
+                                                    <SelectValue placeholder="Select a class" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="">General (All Students)</SelectItem>
+                                                    {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="material-subject">Subject</Label>

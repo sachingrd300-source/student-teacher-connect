@@ -176,6 +176,7 @@
             "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
             "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material. Denormalized for display." },
             "classId": { "type": "string", "description": "The ID of the class this material belongs to. Null if not class-specific." },
+            "className": { "type": "string", "description": "The name of the class this material belongs to. Denormalized for display." },
             "title": { "type": "string" },
             "description": { "type": "string" },
             "subject": { "type": "string" },
