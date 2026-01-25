@@ -77,7 +77,8 @@ service cloud.firestore {
 
     match /testResults/{resultId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
-      allow get, list: if (isStudent() && request.auth.uid == resource.data.studentId) || (isTutor() && request.auth.uid == resource.data.teacherId);
+      allow get: if (isStudent() && request.auth.uid == resource.data.studentId) || (isTutor() && request.auth.uid == resource.data.teacherId);
+      allow list: if isTutor() || isStudent(); // Allow list for client-side queries
       allow update, delete: if false;
     }
 

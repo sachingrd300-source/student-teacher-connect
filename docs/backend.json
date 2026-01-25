@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -240,13 +239,17 @@
             "id": { "type": "string" },
             "testId": { "type": "string" },
             "studentId": { "type": "string" },
+            "studentName": {
+                "type": "string",
+                "description": "The name of the student who took the test. Denormalized for display."
+            },
             "teacherId": { "type": "string" },
             "classId": { "type": "string" },
             "marksObtained": { "type": "number" },
             "totalMarks": { "type": "number" },
             "submittedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "testId", "studentId", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt"]
+        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt"]
     }
   },
   "auth": {

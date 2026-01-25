@@ -29,6 +29,7 @@ interface Test {
     subject: string;
     totalMarks: number;
     classId: string;
+    teacherId: string;
     questions: Question[];
     createdAt: Timestamp;
 }
@@ -49,7 +50,7 @@ export default function StudentTestsPage() {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
-    const { data: userProfile } = useDoc(userProfileRef);
+    const { data: userProfile } = useDoc<{name: string}>(userProfileRef);
     
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -92,7 +93,7 @@ export default function StudentTestsPage() {
     };
 
     const handleSubmitTest = () => {
-        if (!user || !firestore || !takingTest) return;
+        if (!user || !firestore || !takingTest || !userProfile) return;
 
         setIsSubmitting(true);
         
@@ -109,7 +110,8 @@ export default function StudentTestsPage() {
 
         const resultData = {
             studentId: user.uid,
-            teacherId: 'teacherId' in takingTest ? (takingTest as any).teacherId : 'unknown', // teacherId should be on test doc
+            studentName: userProfile.name, // Denormalize student name
+            teacherId: takingTest.teacherId,
             testId: takingTest.id,
             classId: takingTest.classId,
             marksObtained: finalScore,
