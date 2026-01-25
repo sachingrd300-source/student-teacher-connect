@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2, BarChartHorizontal } from 'lucide-react';
 import { initializeApp, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -307,15 +307,25 @@ export default function ClassDetailsPage() {
             <DashboardHeader userName={userProfile?.name} userRole="tutor" />
              <main className="flex-1">
                 <div className="container mx-auto p-4 md:p-8">
-                    <div className="mb-6">
-                        <Link href="/dashboard/teacher" className="text-sm text-primary hover:underline">
-                            &larr; Back to Dashboard
-                        </Link>
-                        <h1 className="text-3xl font-bold">{classData.title}</h1>
-                        <p className="text-muted-foreground">{classData.subject} ({classData.batchTime})</p>
-                        <div className="mt-2 text-sm">
-                            <span className="text-muted-foreground">Class Code: </span>
-                            <span className="font-mono text-base font-bold text-foreground">{classData.classCode}</span>
+                    <div className="flex items-start justify-between mb-6">
+                        <div>
+                            <Link href="/dashboard/teacher" className="text-sm text-primary hover:underline mb-2 inline-block">
+                                &larr; Back to Dashboard
+                            </Link>
+                            <h1 className="text-3xl font-bold">{classData.title}</h1>
+                            <p className="text-muted-foreground">{classData.subject} ({classData.batchTime})</p>
+                            <div className="mt-2 text-sm">
+                                <span className="text-muted-foreground">Class Code: </span>
+                                <span className="font-mono text-base font-bold text-foreground">{classData.classCode}</span>
+                            </div>
+                        </div>
+                         <div>
+                            <Button asChild>
+                                <Link href={`/dashboard/teacher/class/${classId}/performance`}>
+                                    <BarChartHorizontal className="mr-2 h-4 w-4" />
+                                    View Performance
+                                </Link>
+                            </Button>
                         </div>
                     </div>
                     
@@ -430,3 +440,5 @@ export default function ClassDetailsPage() {
         </div>
     );
 }
+
+    
