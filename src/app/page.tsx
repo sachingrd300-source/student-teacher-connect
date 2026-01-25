@@ -62,6 +62,8 @@ const getImageById = (id: string) => {
 export default function Home() {
 
   const heroImage = getImageById('hero-section');
+  const empoweringTeachersImage = getImageById('empowering-teachers');
+  const builtForStudentsImage = getImageById('built-for-students');
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -175,73 +177,94 @@ export default function Home() {
           </div>
         </section>
 
-
-        {/* How it works Section */}
-        <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
-          <div className="container px-4 md:px-6">
-             <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-3">
-                <h2 className="text-3xl font-bold font-serif tracking-tighter md:text-4xl/tight">Simple for Teachers, Powerful for Students</h2>
-                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Get up and running in just a few easy steps.
-                </p>
-              </div>
+        {/* Empowering Teachers Section */}
+        <section id="platform-tour" className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
+          <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
+            <div className="space-y-4">
+              <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">For Teachers</div>
+              <h2 className="text-3xl font-bold font-serif tracking-tighter md:text-4xl/tight">Teach Smarter, Not Harder</h2>
+              <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Our platform provides you with the tools to reduce administrative work and focus on what you do best: teaching.
+              </p>
+              <ul className="grid gap-4">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold">Save Time with AI</h3>
+                    <p className="text-sm text-muted-foreground">Generate complete tests and draft announcements in seconds, freeing up valuable prep time.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                   <div>
+                    <h3 className="font-semibold">Centralized Class Hub</h3>
+                    <p className="text-sm text-muted-foreground">Manage students, share materials, and track attendance all from one easy-to-use dashboard.</p>
+                  </div>
+                </li>
+                 <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                   <div>
+                    <h3 className="font-semibold">Gain Actionable Insights</h3>
+                    <p className="text-sm text-muted-foreground">Use the AI Performance Analyzer to quickly identify students who need extra help or praise.</p>
+                  </div>
+                </li>
+              </ul>
             </div>
+            {empoweringTeachersImage && (
+                <Image
+                    src={empoweringTeachersImage.src}
+                    alt="Teacher using a laptop"
+                    width={empoweringTeachersImage.width}
+                    height={empoweringTeachersImage.height}
+                    className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full"
+                    data-ai-hint={empoweringTeachersImage.hint}
+                />
+            )}
+          </div>
+        </section>
 
-             <div className="mx-auto w-full max-w-5xl grid lg:grid-cols-2 items-start gap-10 pt-12">
-                <Card className="p-6">
-                  <CardHeader className="p-0">
-                    <CardTitle className="text-2xl">For Teachers</CardTitle>
-                    <CardDescription>A complete toolkit to streamline your teaching.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0 mt-6">
-                    <ul className="space-y-4">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Create a free account and set up your professional profile.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Create distinct classes for your different subjects and batches.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Enroll students by sharing a simple class code or creating logins.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Upload materials, track attendance, and create tests with AI.</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-                
-                <Card className="p-6">
-                  <CardHeader className="p-0">
-                    <CardTitle className="text-2xl">For Students</CardTitle>
-                    <CardDescription>Your personal dashboard for success.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0 mt-6">
-                    <ul className="space-y-4">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Sign up or log in with details from your teacher.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Join your classes by entering the unique code from your teacher.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Access all your study materials and class announcements in one place.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                        <span>Check attendance, take tests, and view your results instantly.</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+        {/* Built for Students Section */}
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
+             {builtForStudentsImage && (
+                <Image
+                    src={builtForStudentsImage.src}
+                    alt="Student studying with books"
+                    width={builtForStudentsImage.width}
+                    height={builtForStudentsImage.height}
+                    className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
+                    data-ai-hint={builtForStudentsImage.hint}
+                />
+            )}
+            <div className="space-y-4">
+              <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">For Students</div>
+              <h2 className="text-3xl font-bold font-serif tracking-tighter md:text-4xl/tight">Your Personal Learning Hub</h2>
+              <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Everything you need to stay organized, access resources, and get help when you need it.
+              </p>
+              <ul className="grid gap-4">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold">Find Tutors & Enroll Instantly</h3>
+                    <p className="text-sm text-muted-foreground">Browse teacher profiles and enroll in their classes directly from the platform.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                   <div>
+                    <h3 className="font-semibold">All Resources in One Place</h3>
+                    <p className="text-sm text-muted-foreground">Access all your study materials, announcements, and test results from a single dashboard.</p>
+                  </div>
+                </li>
+                 <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                   <div>
+                    <h3 className="font-semibold">Get Instant Help with AI</h3>
+                    <p className="text-sm text-muted-foreground">Stuck on a problem? Use the AI Question Solver to get step-by-step explanations 24/7.</p>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </section>
@@ -325,7 +348,7 @@ export default function Home() {
                         <h3 className="text-sm font-semibold tracking-wider uppercase">Platform</h3>
                         <ul className="mt-4 space-y-2">
                             <li><Link href="#features" className="text-sm text-muted-foreground hover:text-foreground">Features</Link></li>
-                            <li><Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground">How it Works</Link></li>
+                            <li><Link href="#platform-tour" className="text-sm text-muted-foreground hover:text-foreground">Platform Tour</Link></li>
                             <li><Link href="/materials" className="text-sm text-muted-foreground hover:text-foreground">Free Materials</Link></li>
                         </ul>
                     </div>
