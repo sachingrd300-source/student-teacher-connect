@@ -8,6 +8,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookCopy, Search, Users, FileText, Video, PenSquare, ClipboardList, X } from 'lucide-react';
 
 interface Enrollment {
@@ -48,6 +49,8 @@ export default function StudentMaterialsPage() {
     
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [selectedClass, setSelectedClass] = useState<string | null>(null);
+    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -66,27 +69,51 @@ export default function StudentMaterialsPage() {
 
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
 
+    const availableClasses = useMemo(() => {
+        if (!materials) return [];
+        const visibleMaterials = materials.filter(material => !material.classId || enrolledClassIds.includes(material.classId));
+        const classNames = new Set(visibleMaterials.map(m => m.className).filter(Boolean as any));
+        return Array.from(classNames);
+    }, [materials, enrolledClassIds]);
+
+    const availableSubjects = useMemo(() => {
+        if (!materials) return [];
+        const visibleMaterials = materials.filter(material => !material.classId || enrolledClassIds.includes(material.classId));
+        const subjects = new Set(visibleMaterials.map(m => m.subject));
+        return Array.from(subjects);
+    }, [materials, enrolledClassIds]);
+
     const filteredMaterials = useMemo(() => {
         if (!materials) return [];
 
-        let classFiltered = materials.filter(material => 
+        let results = materials.filter(material => 
             !material.classId || enrolledClassIds.includes(material.classId)
         );
 
         if (selectedCategory) {
-            classFiltered = classFiltered.filter(material => material.type === selectedCategory);
+            results = results.filter(material => material.type === selectedCategory);
         }
 
-        if (!searchTerm) {
-            return classFiltered;
+        if (selectedClass) {
+            results = results.filter(material => material.className === selectedClass);
         }
 
-        return classFiltered.filter(material => 
-            material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [materials, searchTerm, enrolledClassIds, selectedCategory]);
+        if (selectedSubject) {
+            results = results.filter(material => material.subject === selectedSubject);
+        }
+
+        if (searchTerm) {
+            results = results.filter(material => 
+                material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                material.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                material.description.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        return results.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+
+    }, [materials, searchTerm, enrolledClassIds, selectedCategory, selectedClass, selectedSubject]);
+
 
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
@@ -103,7 +130,7 @@ export default function StudentMaterialsPage() {
                                 <Card 
                                     key={category.name}
                                     className={`cursor-pointer transition-all hover:shadow-lg hover:border-primary ${selectedCategory === category.name ? 'border-primary bg-primary/10' : ''}`}
-                                    onClick={() => setSelectedCategory(category.name)}
+                                    onClick={() => setSelectedCategory(prev => prev === category.name ? null : category.name)}
                                 >
                                     <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
                                         <div className="bg-primary/10 p-3 rounded-full text-primary">
@@ -120,21 +147,58 @@ export default function StudentMaterialsPage() {
                         <CardHeader>
                             <CardTitle>Resource Library</CardTitle>
                             <CardDescription>Browse materials from your classes or from the general library.</CardDescription>
-                            <div className="relative pt-4">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                    placeholder="Search by title, subject, or description..."
-                                    className="pl-10"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
+                            
+                            {/* Search and Filters */}
+                            <div className="space-y-4 pt-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input 
+                                        placeholder="Search by title, subject, or description..."
+                                        className="pl-10"
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <Select onValueChange={(value) => setSelectedClass(value === 'all' ? null : value)} value={selectedClass || 'all'}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Filter by Class" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Classes</SelectItem>
+                                            {availableClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select onValueChange={(value) => setSelectedSubject(value === 'all' ? null : value)} value={selectedSubject || 'all'}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Filter by Subject" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Subjects</SelectItem>
+                                            {availableSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            {selectedCategory && (
-                                <div className="pt-2">
-                                    <Button variant="secondary" size="sm" onClick={() => setSelectedCategory(null)}>
-                                        Filtering by: {selectedCategory}
-                                        <X className="h-4 w-4 ml-2" />
-                                    </Button>
+
+                            {/* Active Filters */}
+                            {(selectedCategory || selectedClass || selectedSubject) && (
+                                <div className="pt-4 flex gap-2 flex-wrap">
+                                    {selectedCategory && (
+                                        <Button variant="secondary" size="sm" onClick={() => setSelectedCategory(null)}>
+                                            Type: {selectedCategory} <X className="h-4 w-4 ml-2" />
+                                        </Button>
+                                    )}
+                                    {selectedClass && (
+                                        <Button variant="secondary" size="sm" onClick={() => setSelectedClass(null)}>
+                                            Class: {selectedClass} <X className="h-4 w-4 ml-2" />
+                                        </Button>
+                                    )}
+                                    {selectedSubject && (
+                                        <Button variant="secondary" size="sm" onClick={() => setSelectedSubject(null)}>
+                                            Subject: {selectedSubject} <X className="h-4 w-4 ml-2" />
+                                        </Button>
+                                    )}
                                 </div>
                             )}
                         </CardHeader>
