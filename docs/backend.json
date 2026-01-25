@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -235,7 +236,7 @@
     "TestResult": {
         "title": "Test Result",
         "type": "object",
-        "description": "Stores a student's result for a specific test.",
+        "description": "Stores a student's result for a specific test, including their answers.",
         "properties": {
             "id": { "type": "string" },
             "testId": { "type": "string" },
@@ -248,9 +249,23 @@
             "classId": { "type": "string" },
             "marksObtained": { "type": "number" },
             "totalMarks": { "type": "number" },
+            "answers": {
+                "type": "array",
+                "description": "An array containing the student's answer for each question.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "questionText": { "type": "string" },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "selectedAnswer": { "type": "string" },
+                        "correctAnswer": { "type": "string" }
+                    },
+                    "required": ["questionText", "options", "selectedAnswer", "correctAnswer"]
+                }
+            },
             "submittedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt"]
+        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt", "answers"]
     }
   },
   "auth": {

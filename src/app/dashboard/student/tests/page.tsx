@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, CheckCircle, Percent } from 'lucide-react';
+import { ClipboardList, CheckCircle, Percent, FileText, XCircle } from 'lucide-react';
 
 interface Enrollment {
     id: string;
@@ -34,12 +34,20 @@ interface Test {
     createdAt: Timestamp;
 }
 
+interface AnswerDetail {
+    questionText: string;
+    options: string[];
+    selectedAnswer: string;
+    correctAnswer: string;
+}
+
 interface TestResult {
     id: string;
     testId: string;
     marksObtained: number;
     totalMarks: number;
     submittedAt: Timestamp;
+    answers: AnswerDetail[];
 }
 
 export default function StudentTestsPage() {
@@ -81,6 +89,9 @@ export default function StudentTestsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastResult, setLastResult] = useState<{ marksObtained: number, totalMarks: number } | null>(null);
 
+    // Test review state
+    const [viewingResult, setViewingResult] = useState<TestResult | null>(null);
+
     const handleAnswerChange = (questionIndex: number, value: string) => {
         setAnswers(prev => ({ ...prev, [questionIndex]: value }));
     };
@@ -108,14 +119,22 @@ export default function StudentTestsPage() {
 
         const finalScore = Math.round(score);
 
+        const answersPayload: AnswerDetail[] = takingTest.questions.map((q, index) => ({
+            questionText: q.questionText,
+            options: q.options,
+            selectedAnswer: answers[index] || "Not Answered",
+            correctAnswer: q.correctAnswer,
+        }));
+
         const resultData = {
             studentId: user.uid,
-            studentName: userProfile.name, // Denormalize student name
+            studentName: userProfile.name,
             teacherId: takingTest.teacherId,
             testId: takingTest.id,
             classId: takingTest.classId,
             marksObtained: finalScore,
             totalMarks: takingTest.totalMarks,
+            answers: answersPayload,
             submittedAt: serverTimestamp(),
         };
 
@@ -152,19 +171,25 @@ export default function StudentTestsPage() {
                                     {tests.map(test => {
                                         const result = getResultForTest(test.id);
                                         return (
-                                            <Card key={test.id}>
-                                                <CardHeader>
+                                            <Card key={test.id} className="flex flex-col">
+                                                <CardHeader className="flex-1">
                                                     <CardTitle className="text-lg">{test.title}</CardTitle>
                                                     <CardDescription>{test.subject}</CardDescription>
                                                 </CardHeader>
-                                                <CardContent className="text-sm">
+                                                <CardContent className="flex-1 text-sm space-y-1">
                                                     <p>Total Marks: <span className="font-semibold">{test.totalMarks}</span></p>
                                                     <p>Questions: <span className="font-semibold">{test.questions.length}</span></p>
                                                 </CardContent>
                                                 <CardFooter>
                                                     {result ? (
-                                                        <div className="w-full text-center p-2 rounded-md bg-success/10 text-success font-semibold">
-                                                            Score: {result.marksObtained} / {result.totalMarks}
+                                                        <div className='w-full space-y-2'>
+                                                            <div className="w-full text-center p-2 rounded-md bg-success/10 text-success font-semibold">
+                                                                Score: {result.marksObtained} / {result.totalMarks}
+                                                            </div>
+                                                            <Button className="w-full" variant="outline" onClick={() => setViewingResult(result)}>
+                                                                <FileText className="mr-2 h-4 w-4" />
+                                                                View Result
+                                                            </Button>
                                                         </div>
                                                     ) : (
                                                         <Button className="w-full" onClick={() => startTest(test)}>
@@ -184,6 +209,7 @@ export default function StudentTestsPage() {
                 </div>
             </main>
 
+            {/* Test Taking Dialog */}
             {takingTest && (
                 <Dialog open={!!takingTest} onOpenChange={(isOpen) => { if (!isOpen) setTakingTest(null) }}>
                     <DialogContent className="max-w-2xl">
@@ -196,7 +222,7 @@ export default function StudentTestsPage() {
                             <div className="py-8 flex flex-col items-center justify-center text-center">
                                 <CheckCircle className="h-16 w-16 text-success mb-4" />
                                 <h2 className="text-2xl font-bold">Test Submitted!</h2>
-                                <p className="text-muted-foreground">You can now close this window.</p>
+                                <p className="text-muted-foreground">You can now close this window and review your results.</p>
                                 <div className="mt-6 p-6 rounded-lg bg-muted w-full">
                                     <p className="text-lg font-medium">Your Score</p>
                                     <p className="text-5xl font-bold text-primary">{lastResult.marksObtained} <span className="text-3xl text-muted-foreground">/ {lastResult.totalMarks}</span></p>
@@ -232,6 +258,64 @@ export default function StudentTestsPage() {
                                 </DialogFooter>
                             </>
                         )}
+                    </DialogContent>
+                </Dialog>
+            )}
+
+            {/* Test Review Dialog */}
+            {viewingResult && (
+                <Dialog open={!!viewingResult} onOpenChange={(isOpen) => { if (!isOpen) setViewingResult(null) }}>
+                    <DialogContent className="max-w-3xl">
+                         <DialogHeader>
+                            <DialogTitle>Test Review</DialogTitle>
+                            <DialogDescription>
+                                Here is a breakdown of your answers. Correct answers are marked in green.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="my-4 p-4 rounded-lg bg-muted text-center">
+                            <p className="text-lg font-medium">Final Score</p>
+                            <p className="text-4xl font-bold text-primary">{viewingResult.marksObtained} <span className="text-2xl text-muted-foreground">/ {viewingResult.totalMarks}</span></p>
+                        </div>
+
+                        <div className="space-y-6 py-4 max-h-[50vh] overflow-y-auto pr-4">
+                            {viewingResult.answers.map((ans, index) => (
+                                <div key={index} className="border-b pb-4 last:border-b-0">
+                                    <p className="font-semibold mb-3">Q{index + 1}: {ans.questionText}</p>
+                                    <div className="space-y-2 text-sm">
+                                        {ans.options.map((opt, i) => {
+                                            const isCorrect = opt === ans.correctAnswer;
+                                            const isSelected = opt === ans.selectedAnswer;
+                                            
+                                            let indicator = <div className="h-4 w-4" />;
+                                            if (isCorrect) {
+                                                indicator = <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />;
+                                            } else if (isSelected) {
+                                                indicator = <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />;
+                                            }
+
+                                            return (
+                                                <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${
+                                                    isCorrect ? 'bg-success/10 font-semibold' : 
+                                                    isSelected ? 'bg-destructive/10' : 'bg-muted/50'
+                                                }`}>
+                                                    {indicator}
+                                                    <span>{opt}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {ans.selectedAnswer !== ans.correctAnswer && (
+                                        <div className="mt-2 text-xs p-2 bg-amber-100 dark:bg-amber-900/30 rounded-md">
+                                            <span className="font-semibold">Your Answer: </span> {ans.selectedAnswer}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" onClick={() => setViewingResult(null)}>Close</Button>
+                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
             )}
