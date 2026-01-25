@@ -1,14 +1,18 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { BarChartHorizontal } from 'lucide-react';
+import { BarChartHorizontal, Wand2 } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { analyzeStudentPerformance } from '@/ai/flows/student-performance-analyzer';
+
 
 // --- Data Interfaces ---
 interface EnrolledStudent {
@@ -31,6 +35,7 @@ interface TestResult {
     id: string; // result doc id
     studentId: string;
     testId: string;
+    testTitle: string;
     marksObtained: number;
     totalMarks: number;
 }
@@ -39,7 +44,12 @@ interface StudentPerformance {
     studentId: string;
     studentName: string;
     attendance: { present: number; total: number; percentage: number };
-    tests: { completed: number; totalAssigned: number; averageScore: number };
+    tests: { 
+        completed: number; 
+        totalAssigned: number; 
+        averageScore: number;
+        results: TestResult[];
+    };
 }
 
 export default function PerformanceDashboardPage() {
@@ -47,6 +57,10 @@ export default function PerformanceDashboardPage() {
     const { user } = useUser();
     const params = useParams();
     const classId = params.classId as string;
+
+    const [isGeneratingInsight, setIsGeneratingInsight] = useState<string | null>(null);
+    const [aiInsight, setAiInsight] = useState<{ studentName: string, insight: string } | null>(null);
+
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -127,6 +141,7 @@ export default function PerformanceDashboardPage() {
                     completed: studentResults.length,
                     totalAssigned: assignedTests.length,
                     averageScore: averageScore,
+                    results: studentResults,
                 },
             };
         });
@@ -134,6 +149,33 @@ export default function PerformanceDashboardPage() {
     }, [enrolledStudents, attendanceRecords, assignedTests, testResults]);
     
     const isLoading = studentsLoading || attendanceLoading || testsLoading || resultsLoading;
+
+    const handleGetInsight = async (studentData: StudentPerformance) => {
+        setIsGeneratingInsight(studentData.studentId);
+        setAiInsight(null);
+        try {
+            const result = await analyzeStudentPerformance({
+                studentName: studentData.studentName,
+                className: classData?.title || 'this class',
+                attendance: {
+                    present: studentData.attendance.present,
+                    total: studentData.attendance.total
+                },
+                testResults: studentData.tests.results.map(r => ({
+                    testTitle: r.testTitle,
+                    marksObtained: r.marksObtained,
+                    totalMarks: r.totalMarks
+                }))
+            });
+            setAiInsight({ studentName: studentData.studentName, insight: result.analysis });
+        } catch (error) {
+            console.error("Failed to get AI insight:", error);
+            alert("An error occurred while generating the AI insight. Please try again.");
+        } finally {
+            setIsGeneratingInsight(null);
+        }
+    };
+
 
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
@@ -160,13 +202,14 @@ export default function PerformanceDashboardPage() {
                         <CardContent>
                             {isLoading ? <p>Analyzing performance data...</p> : (
                                 <div className="border rounded-lg overflow-x-auto">
-                                    <table className="w-full text-sm min-w-[700px]">
+                                    <table className="w-full text-sm min-w-[800px]">
                                         <thead className="text-left bg-muted">
                                             <tr className="border-b">
                                                 <th className="p-3 font-medium">Student Name</th>
                                                 <th className="p-3 font-medium">Attendance</th>
                                                 <th className="p-3 font-medium">Average Test Score</th>
                                                 <th className="p-3 font-medium text-center">Tests Completed</th>
+                                                <th className="p-3 font-medium text-center">AI Insight</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -192,10 +235,21 @@ export default function PerformanceDashboardPage() {
                                                     <td className="p-3 text-center font-medium">
                                                         {data.tests.completed} / {data.tests.totalAssigned}
                                                     </td>
+                                                    <td className="p-3 text-center">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleGetInsight(data)}
+                                                            disabled={isGeneratingInsight === data.studentId}
+                                                        >
+                                                            <Wand2 className="h-4 w-4 mr-2" />
+                                                            {isGeneratingInsight === data.studentId ? 'Analyzing...' : 'Get Insight'}
+                                                        </Button>
+                                                    </td>
                                                 </tr>
                                             )) : (
                                                 <tr>
-                                                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                                                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
                                                         No performance data available yet.
                                                     </td>
                                                 </tr>
@@ -208,9 +262,26 @@ export default function PerformanceDashboardPage() {
                     </Card>
                 </div>
             </main>
+
+            <Dialog open={!!aiInsight} onOpenChange={(isOpen) => !isOpen && setAiInsight(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>AI Performance Insight for {aiInsight?.studentName}</DialogTitle>
+                        <DialogDescription>
+                            This analysis is generated by AI based on the student's attendance and test results.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div 
+                        className="prose prose-sm dark:prose-invert max-w-none py-4 max-h-[60vh] overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: aiInsight?.insight.replace(/\n/g, '<br />') || '' }}
+                    />
+                    <DialogFooter>
+                        <Button type="button" onClick={() => setAiInsight(null)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
 
-
-    
