@@ -8,7 +8,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { ClipboardCheck, Eye, BarChart2, Check, X, Star, TrendingDown, TrendingUp } from 'lucide-react';
+import { ClipboardCheck, Eye, BarChart2, Check, X, Star, TrendingDown, TrendingUp, FileText, CheckCircle, XCircle } from 'lucide-react';
 
 interface Test {
     id: string;
@@ -20,6 +20,7 @@ interface Test {
 
 interface AnswerDetail {
     questionText: string;
+    options: string[];
     selectedAnswer: string;
     correctAnswer: string;
 }
@@ -52,6 +53,7 @@ export default function TeacherResultsPage() {
 
     const [viewingResultsForTest, setViewingResultsForTest] = useState<Test | null>(null);
     const [viewingAnalyticsForTest, setViewingAnalyticsForTest] = useState<Test | null>(null);
+    const [viewingSubmission, setViewingSubmission] = useState<TestResult | null>(null);
 
     // 1. Fetch all tests created by the teacher
     const testsQuery = useMemoFirebase(() => {
@@ -193,7 +195,7 @@ export default function TeacherResultsPage() {
 
             {viewingResultsForTest && (
                 <Dialog open={!!viewingResultsForTest} onOpenChange={(isOpen) => !isOpen && setViewingResultsForTest(null)}>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-3xl">
                         <DialogHeader>
                             <DialogTitle>Scores for: {viewingResultsForTest.title}</DialogTitle>
                             <DialogDescription>
@@ -208,7 +210,8 @@ export default function TeacherResultsPage() {
                                             <th className="p-3 font-medium">Student Name</th>
                                             <th className="p-3 font-medium text-center">Score</th>
                                             <th className="p-3 font-medium text-center">Percentage</th>
-                                            <th className="p-3 font-medium">Submitted At</th>
+                                            <th className="p-3 font-medium hidden sm:table-cell">Submitted At</th>
+                                            <th className="p-3 font-medium text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -217,7 +220,13 @@ export default function TeacherResultsPage() {
                                                 <td className="p-3 font-semibold">{result.studentName}</td>
                                                 <td className="p-3 text-center">{result.marksObtained} / {result.totalMarks}</td>
                                                 <td className="p-3 text-center font-bold">{Math.round((result.marksObtained / result.totalMarks) * 100)}%</td>
-                                                <td className="p-3 text-xs">{result.submittedAt ? new Date(result.submittedAt.seconds * 1000).toLocaleString() : 'N/A'}</td>
+                                                <td className="p-3 text-xs hidden sm:table-cell">{result.submittedAt ? new Date(result.submittedAt.seconds * 1000).toLocaleString() : 'N/A'}</td>
+                                                <td className="p-3 text-center">
+                                                    <Button variant="outline" size="sm" onClick={() => setViewingSubmission(result)}>
+                                                        <FileText className="h-4 w-4 mr-2" />
+                                                        Answers
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -304,6 +313,64 @@ export default function TeacherResultsPage() {
                     </DialogContent>
                  </Dialog>
             )}
+
+            {viewingSubmission && (
+                <Dialog open={!!viewingSubmission} onOpenChange={(isOpen) => { if (!isOpen) setViewingSubmission(null) }}>
+                    <DialogContent className="max-w-3xl">
+                         <DialogHeader>
+                            <DialogTitle>Reviewing Submission: {viewingSubmission.studentName}</DialogTitle>
+                            <DialogDescription>
+                                Here is a breakdown of the student's answers. Correct answers are marked in green.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="my-4 p-4 rounded-lg bg-muted text-center">
+                            <p className="text-lg font-medium">Final Score</p>
+                            <p className="text-4xl font-bold text-primary">{viewingSubmission.marksObtained} <span className="text-2xl text-muted-foreground">/ {viewingSubmission.totalMarks}</span></p>
+                        </div>
+
+                        <div className="space-y-6 py-4 max-h-[50vh] overflow-y-auto pr-4">
+                            {viewingSubmission.answers.map((ans, index) => (
+                                <div key={index} className="border-b pb-4 last:border-b-0">
+                                    <p className="font-semibold mb-3">Q{index + 1}: {ans.questionText}</p>
+                                    <div className="space-y-2 text-sm">
+                                        {ans.options.map((opt, i) => {
+                                            const isCorrect = opt === ans.correctAnswer;
+                                            const isSelected = opt === ans.selectedAnswer;
+                                            
+                                            let indicator = <div className="h-4 w-4" />;
+                                            if (isCorrect) {
+                                                indicator = <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />;
+                                            } else if (isSelected) {
+                                                indicator = <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />;
+                                            }
+
+                                            return (
+                                                <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${
+                                                    isCorrect ? 'bg-success/10 font-semibold' : 
+                                                    isSelected ? 'bg-destructive/10' : 'bg-muted/50'
+                                                }`}>
+                                                    {indicator}
+                                                    <span>{opt}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {ans.selectedAnswer !== ans.correctAnswer && (
+                                        <div className="mt-2 text-xs p-2 bg-amber-100 dark:bg-amber-900/30 rounded-md">
+                                            <span className="font-semibold">Student's Answer: </span> {ans.selectedAnswer}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" onClick={() => setViewingSubmission(null)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }
+
