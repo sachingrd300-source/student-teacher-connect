@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle } from "lucide-react";
+import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
 
 const { placeholderImages } = placeholderData;
@@ -68,7 +68,7 @@ export default function Home() {
       <MainHeader />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh]">
+        <section className="relative w-full h-[70vh] lg:h-[85vh]">
             {heroImage && (
                 <Image
                     alt="Hero Background"
@@ -79,16 +79,16 @@ export default function Home() {
                     priority
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-            <div className="relative container h-full px-4 md:px-6 flex flex-col justify-end pb-12 md:pb-24">
-                <div className="max-w-2xl text-center md:text-left">
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+            <div className="relative container h-full px-4 md:px-6 flex flex-col items-center justify-center text-center">
+                <div className="max-w-3xl">
                     <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-serif text-foreground">
                         The Smart Way to Connect Teachers and Students
                     </h1>
-                    <p className="mt-4 max-w-[600px] text-foreground/80 md:text-xl">
+                    <p className="mt-4 max-w-2xl mx-auto text-foreground/80 md:text-xl">
                         EduConnect Pro is the all-in-one platform for seamless collaboration. Manage classes, share materials, track attendance, and generate tests with AI.
                     </p>
-                    <div className="mt-6 flex flex-col gap-2 min-[400px]:flex-row justify-center md:justify-start">
+                    <div className="mt-6 flex flex-col gap-2 min-[400px]:flex-row justify-center">
                         <Link
                             className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-base font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             href="/signup"
@@ -247,11 +247,11 @@ export default function Home() {
         </section>
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32">
+        <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Testimonials</div>
+                <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">Testimonials</div>
                 <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-5xl">Loved by Teachers & Students</h2>
                  <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Hear what our users have to say about their experience with EduConnect Pro.
@@ -262,10 +262,11 @@ export default function Home() {
               {testimonials.map((testimonial) => {
                 const avatar = getImageById(testimonial.avatarId);
                 return (
-                  <Card key={testimonial.name} className="flex flex-col p-6">
+                  <Card key={testimonial.name} className="flex flex-col p-6 bg-background">
                     <CardContent className="p-0 flex-grow flex flex-col">
+                        <Quote className="h-8 w-8 text-primary mb-4" />
                       <p className="text-muted-foreground flex-grow">"{testimonial.quote}"</p>
-                      <div className="mt-4 flex items-center gap-4">
+                      <div className="mt-4 flex items-center gap-4 border-t pt-4">
                         {avatar && (
                            <Image
                               src={avatar.src}
@@ -309,18 +310,42 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">
-          © 2024 EduConnect Pro. All rights reserved.
-        </p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Terms of Service
-          </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Privacy
-          </Link>
-        </nav>
+      <footer className="bg-background border-t">
+        <div className="container mx-auto py-12 px-4 md:px-6">
+            <div className="grid gap-10 md:grid-cols-4">
+                <div className="space-y-4 md:col-span-1">
+                    <Link href="/" className="flex items-center gap-2 font-semibold">
+                        <School className="h-6 w-6 text-primary" />
+                        <span className="text-lg font-serif">EduConnect Pro</span>
+                    </Link>
+                    <p className="text-sm text-muted-foreground">The smart platform to connect teachers and students seamlessly.</p>
+                </div>
+                <div className="grid grid-cols-2 md:col-span-3 gap-8">
+                    <div>
+                        <h3 className="text-sm font-semibold tracking-wider uppercase">Platform</h3>
+                        <ul className="mt-4 space-y-2">
+                            <li><Link href="#features" className="text-sm text-muted-foreground hover:text-foreground">Features</Link></li>
+                            <li><Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground">How it Works</Link></li>
+                            <li><Link href="/materials" className="text-sm text-muted-foreground hover:text-foreground">Free Materials</Link></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-semibold tracking-wider uppercase">Company</h3>
+                        <ul className="mt-4 space-y-2">
+                            <li><Link href="#" className="text-sm text-muted-foreground hover:text-foreground">About Us</Link></li>
+                            <li><Link href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground">Testimonials</Link></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-8 border-t pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
+                <p>&copy; 2024 EduConnect Pro. All rights reserved.</p>
+                <div className="flex gap-4 mt-4 md:mt-0">
+                    <Link href="#" className="hover:text-foreground">Terms of Service</Link>
+                    <Link href="#" className="hover:text-foreground">Privacy Policy</Link>
+                </div>
+            </div>
+        </div>
       </footer>
     </div>
   );
