@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School, ShieldCheck, Zap, Gift } from "lucide-react";
+import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School, ShieldCheck, Zap, Gift, Languages } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
 
 const { placeholderImages } = placeholderData;
@@ -172,7 +172,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-6xl items-stretch gap-6 py-12 sm:grid-cols-2 md:grid-cols-3">
+            <div className="mx-auto grid max-w-5xl items-stretch gap-8 py-12 sm:grid-cols-2">
               <Card className="flex flex-col items-center text-center p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                 <div className="mb-4 rounded-full bg-primary/10 p-4">
                   <Zap className="h-10 w-10 text-primary" />
@@ -204,6 +204,17 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="p-0 mt-2">
                   <p className="text-sm text-muted-foreground">All our core features are completely free for teachers and students, with no hidden costs.</p>
+                </CardContent>
+              </Card>
+              <Card className="flex flex-col items-center text-center p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
+                <div className="mb-4 rounded-full bg-primary/10 p-4">
+                  <Languages className="h-10 w-10 text-primary" />
+                </div>
+                <CardHeader className="p-0">
+                  <CardTitle>Learn English with AI</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 mt-2">
+                  <p className="text-sm text-muted-foreground">For Hindi medium students, learning English is now easier than ever with our AI-powered tools.</p>
                 </CardContent>
               </Card>
             </div>
@@ -461,9 +472,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
-
-    
-
-    
