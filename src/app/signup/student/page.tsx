@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, collection, query, where, limit, getDocs, addDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
 
 export default function StudentSignupPage() {
@@ -35,6 +36,7 @@ export default function StudentSignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [classLevel, setClassLevel] = useState('');
+  const [classCode, setClassCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -67,7 +69,7 @@ export default function StudentSignupPage() {
     setError(null);
     setIsSigningUp(true);
 
-    if (!auth) {
+    if (!auth || !firestore) {
       setError('Firebase Auth is not available. Please try again later.');
       setIsSigningUp(false);
       return;
@@ -76,6 +78,35 @@ export default function StudentSignupPage() {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       await createUserProfileDocument(user, { name, email, mobileNumber, classLevel });
+
+      if (classCode.trim()) {
+        const classesRef = collection(firestore, 'classes');
+        const q = query(classesRef, where('classCode', '==', classCode.trim().toUpperCase()), limit(1));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            const classDoc = querySnapshot.docs[0];
+            const classData = classDoc.data();
+            
+            const enrollmentData = {
+                studentId: user.uid,
+                studentName: name.trim(),
+                mobileNumber: mobileNumber.trim(),
+                classId: classDoc.id,
+                teacherId: classData.teacherId,
+                classTitle: classData.title,
+                classSubject: classData.subject,
+                teacherName: classData.teacherName,
+                status: 'approved',
+                createdAt: serverTimestamp(),
+            };
+            const enrollmentsColRef = collection(firestore, 'enrollments');
+            await addDoc(enrollmentsColRef, enrollmentData);
+        } else {
+            console.warn("Invalid class code entered during signup. The user can join later from the dashboard.");
+        }
+      }
+
       router.push('/dashboard');
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
@@ -108,13 +139,15 @@ export default function StudentSignupPage() {
                 <p className="text-sm font-medium text-destructive mb-4">{error}</p>
               )}
               <form onSubmit={handleSignUp} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full Name</Label>
-                  <Input id="full-name" placeholder="e.g., Priya Sharma" required value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                 <div className="grid gap-2">
-                  <Label htmlFor="mobile">Mobile Number</Label>
-                  <Input id="mobile" placeholder="e.g., 9876543210" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="full-name">Full Name</Label>
+                    <Input id="full-name" placeholder="e.g., Priya Sharma" required value={name} onChange={(e) => setName(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="mobile">Mobile Number</Label>
+                    <Input id="mobile" placeholder="e.g., 9876543210" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
@@ -135,6 +168,16 @@ export default function StudentSignupPage() {
                         </SelectContent>
                     </Select>
                  </div>
+                 <div className="grid gap-2">
+                  <Label htmlFor="class-code">Class Code (Optional)</Label>
+                  <Input 
+                    id="class-code" 
+                    placeholder="Enter code from your teacher" 
+                    value={classCode} 
+                    onChange={(e) => setClassCode(e.target.value)} 
+                    className="uppercase"
+                  />
+                </div>
                 
                 <Button type="submit" className="w-full" disabled={isSigningUp}>
                   {isSigningUp ? 'Creating Account...' : 'Create Account'}
@@ -152,3 +195,5 @@ export default function StudentSignupPage() {
     </div>
   );
 }
+
+    

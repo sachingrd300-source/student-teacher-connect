@@ -44,16 +44,15 @@ service cloud.firestore {
 
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get: if (isTutor() && resource.data.teacherId == request.auth.uid) || isStudent();
-      allow list: if isTutor();
+      // Allow students to list classes to find one by class code
+      allow get, list: if isUser();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /enrollments/{enrollmentId} {
-      // Allow creation by a teacher on behalf of a student.
-      allow create: if isTutor() 
-                    && request.resource.data.teacherId == request.auth.uid
-                    && request.resource.data.status == 'approved';
+      // Allow creation by a teacher OR by a student for themselves
+      allow create: if (isTutor() && request.resource.data.teacherId == request.auth.uid && request.resource.data.status == 'approved') ||
+                      (isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'approved');
       
       allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
                  || (isTutor() && resource.data.teacherId == request.auth.uid);

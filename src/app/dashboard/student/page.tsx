@@ -1,13 +1,16 @@
+
 'use client';
 
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, Timestamp, getDocs, limit, serverTimestamp } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { BookUser, MapPin, CalendarCheck, ClipboardList } from 'lucide-react';
+import { BookUser, MapPin, CalendarCheck, ClipboardList, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // --- Interfaces for Data Models ---
 interface Enrollment {
@@ -17,6 +20,14 @@ interface Enrollment {
     classSubject: string;
     teacherName: string;
     status: 'pending' | 'approved' | 'denied';
+}
+
+interface ClassData {
+    id: string;
+    teacherId: string;
+    teacherName: string;
+    title: string;
+    subject: string;
 }
 
 interface TutorProfile {
@@ -66,13 +77,17 @@ export default function StudentDashboard() {
     const firestore = useFirestore();
     const { user, isUserLoading: isAuthLoading } = useUser();
     const router = useRouter();
+
+    const [classCode, setClassCode] = useState('');
+    const [joinMessage, setJoinMessage] = useState<{type: 'error' | 'success', text: string} | null>(null);
+    const [isJoining, setIsJoining] = useState(false);
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string, name: string}>(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string, name: string, mobileNumber?: string}>(userProfileRef);
 
     const isStudent = userProfile?.role === 'student';
 
@@ -151,6 +166,55 @@ export default function StudentDashboard() {
     }, [tests, results]);
 
 
+    const handleJoinClass = async () => {
+        if (!classCode.trim() || !firestore || !user || !userProfile) return;
+
+        setIsJoining(true);
+        setJoinMessage(null);
+
+        const classesRef = collection(firestore, 'classes');
+        const q = query(classesRef, where('classCode', '==', classCode.trim().toUpperCase()), limit(1));
+        const classSnapshot = await getDocs(q);
+
+        if (classSnapshot.empty) {
+            setJoinMessage({ type: 'error', text: 'Invalid Class Code. Please check the code and try again.' });
+            setIsJoining(false);
+            return;
+        }
+
+        const classDoc = classSnapshot.docs[0];
+        const classData = classDoc.data() as ClassData;
+
+        const enrollmentsRef = collection(firestore, 'enrollments');
+        const enrollQuery = query(enrollmentsRef, where('studentId', '==', user.uid), where('classId', '==', classDoc.id));
+        const enrollSnapshot = await getDocs(enrollQuery);
+
+        if (!enrollSnapshot.empty) {
+            setJoinMessage({ type: 'error', text: 'You are already enrolled in this class.' });
+            setIsJoining(false);
+            return;
+        }
+        
+        const enrollmentData = {
+            studentId: user.uid,
+            studentName: userProfile.name,
+            mobileNumber: userProfile.mobileNumber ?? '',
+            classId: classDoc.id,
+            teacherId: classData.teacherId,
+            classTitle: classData.title,
+            classSubject: classData.subject,
+            teacherName: classData.teacherName,
+            status: 'approved',
+            createdAt: serverTimestamp(),
+        };
+        
+        addDocumentNonBlocking(enrollmentsRef, enrollmentData);
+        
+        setJoinMessage({ type: 'success', text: `Successfully joined ${classData.title}!` });
+        setClassCode('');
+        setIsJoining(false);
+    };
+
     // --- Loading and Auth checks ---
     if (isAuthLoading || isProfileLoading || !userProfile) {
         return (
@@ -202,6 +266,33 @@ export default function StudentDashboard() {
                             isLoading={testsLoading || resultsLoading}
                         />
                     </div>
+
+                    {/* --- Join a Class Section --- */}
+                    <Card className="mb-8">
+                        <CardHeader>
+                            <CardTitle>Join a New Class</CardTitle>
+                            <CardDescription>Enter the class code provided by your teacher to enroll in their class.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+                                <Input
+                                    placeholder="Enter Class Code"
+                                    value={classCode}
+                                    onChange={(e) => setClassCode(e.target.value)}
+                                    className="uppercase"
+                                />
+                                <Button onClick={handleJoinClass} disabled={isJoining || !classCode.trim()} className="w-full sm:w-auto">
+                                    <PlusCircle className="mr-2 h-4 w-4" /> 
+                                    {isJoining ? 'Joining...' : 'Join Class'}
+                                </Button>
+                            </div>
+                            {joinMessage && (
+                                <p className={`text-sm mt-3 font-semibold ${joinMessage.type === 'success' ? 'text-success' : 'text-destructive'}`}>
+                                    {joinMessage.text}
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
                     
                     {/* --- My Classes Section --- */}
                     <Card>
@@ -283,3 +374,5 @@ export default function StudentDashboard() {
         </div>
     );
 }
+
+    
