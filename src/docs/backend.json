@@ -54,6 +54,14 @@
         "status": {
           "type": "string",
           "description": "The verification status of the user (e.g., pending_verification, approved)."
+        },
+        "fee": {
+            "type": "string",
+            "description": "The teacher's fee structure (e.g., '500/month per subject')."
+        },
+        "discount": {
+            "type": "string",
+            "description": "Details about available discounts for classes or students."
         }
       },
       "required": [
@@ -299,5 +307,3 @@
     }
   }
 }
-
-    

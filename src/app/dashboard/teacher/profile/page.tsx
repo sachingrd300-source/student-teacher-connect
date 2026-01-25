@@ -6,7 +6,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocki
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, Badge, Book, Award, Briefcase, MapPin, MessageSquare, Edit, Save } from 'lucide-react';
+import { UserCircle, Mail, Phone, Badge, Book, Award, Briefcase, MapPin, MessageSquare, Edit, Save, DollarSign, Percent } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,8 @@ interface UserProfile {
     subjects?: string[];
     qualification?: string;
     experience?: string;
+    fee?: string;
+    discount?: string;
 }
 
 const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | string[] }) => {
@@ -168,6 +170,14 @@ export default function TeacherProfilePage() {
                                             <Label htmlFor="experience">Years of Experience</Label>
                                             <Input id="experience" name="experience" value={formData.experience || ''} onChange={handleInputChange} placeholder="e.g., 5 Years" />
                                         </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="fee">Fee Structure</Label>
+                                            <Input id="fee" name="fee" value={formData.fee || ''} onChange={handleInputChange} placeholder="e.g., 500/month per subject" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="discount">Discount Information</Label>
+                                            <Input id="discount" name="discount" value={formData.discount || ''} onChange={handleInputChange} placeholder="e.g., 10% off for early birds" />
+                                        </div>
                                     </div>
                                 </CardContent>
                                 <CardFooter className="justify-end gap-2">
@@ -192,6 +202,8 @@ export default function TeacherProfilePage() {
                                     <ProfileItem icon={<Book className="h-5 w-5" />} label="Subjects" value={userProfile.subjects} />
                                     <ProfileItem icon={<Award className="h-5 w-5" />} label="Qualification" value={userProfile.qualification} />
                                     <ProfileItem icon={<UserCircle className="h-5 w-5" />} label="Experience" value={userProfile.experience} />
+                                    <ProfileItem icon={<DollarSign className="h-5 w-5" />} label="Fee Structure" value={userProfile.fee} />
+                                    <ProfileItem icon={<Percent className="h-5 w-5" />} label="Discounts" value={userProfile.discount} />
                                 </div>
                             </CardContent>
                         )}

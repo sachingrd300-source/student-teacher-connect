@@ -76,6 +76,14 @@
         "experience": {
             "type": "string",
             "description": "The teacher's years of teaching experience."
+        },
+        "fee": {
+            "type": "string",
+            "description": "The teacher's fee structure (e.g., '500/month per subject')."
+        },
+        "discount": {
+            "type": "string",
+            "description": "Details about available discounts for classes or students."
         }
       },
       "required": [

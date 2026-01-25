@@ -5,7 +5,7 @@ import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, Award, Book, Briefcase, MapPin, MessageSquare } from 'lucide-react';
+import { UserCircle, Mail, Phone, Award, Book, Briefcase, MapPin, MessageSquare, DollarSign, Percent } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ interface TeacherProfile {
     subjects?: string[];
     qualification?: string;
     experience?: string;
+    fee?: string;
+    discount?: string;
 }
 
 const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | string[] }) => {
@@ -116,6 +118,8 @@ export default function TeacherPublicProfilePage() {
                                         <ProfileItem icon={<Book className="h-5 w-5" />} label="Subjects Taught" value={teacherProfile.subjects} />
                                         <ProfileItem icon={<Award className="h-5 w-5" />} label="Highest Qualification" value={teacherProfile.qualification} />
                                         <ProfileItem icon={<UserCircle className="h-5 w-5" />} label="Experience" value={teacherProfile.experience} />
+                                        <ProfileItem icon={<DollarSign className="h-5 w-5" />} label="Fee Structure" value={teacherProfile.fee} />
+                                        <ProfileItem icon={<Percent className="h-5 w-5" />} label="Discounts Available" value={teacherProfile.discount} />
                                     </div>
                                 </CardContent>
                             </Card>
