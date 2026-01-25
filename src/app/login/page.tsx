@@ -100,7 +100,7 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
-    } catch (error: any) => {
+    } catch (error: any) {
       setError(error.message);
     }
   };
