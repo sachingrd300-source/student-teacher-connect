@@ -59,7 +59,7 @@ service cloud.firestore {
 
       allow list: if isTutor() || isStudent();
       
-      allow delete: if false;
+      allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /studyMaterials/{materialId} {
