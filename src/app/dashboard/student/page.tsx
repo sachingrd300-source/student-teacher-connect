@@ -7,10 +7,11 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { BookUser, MapPin, CalendarCheck, ClipboardList, PlusCircle, Briefcase } from 'lucide-react';
+import { BookUser, MapPin, CalendarCheck, ClipboardList, PlusCircle, Briefcase, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 // --- Interfaces for Data Models ---
 interface Enrollment {
@@ -81,6 +82,7 @@ export default function StudentDashboard() {
     const [classCode, setClassCode] = useState('');
     const [joinMessage, setJoinMessage] = useState<{type: 'error' | 'success', text: string} | null>(null);
     const [isJoining, setIsJoining] = useState(false);
+    const [tutorSearch, setTutorSearch] = useState('');
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -135,10 +137,23 @@ export default function StudentDashboard() {
 
     // 4. Tutors (for "Find a Teacher")
     const tutorsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore) return null;
         return query(collection(firestore, 'users'), where('role', '==', 'tutor'));
-    }, [firestore, user]);
+    }, [firestore]);
     const { data: tutors, isLoading: tutorsLoading } = useCollection<TutorProfile>(tutorsQuery);
+
+    const filteredTutors = useMemo(() => {
+        if (!tutors) return [];
+        if (!tutorSearch) return tutors;
+
+        const searchTerm = tutorSearch.toLowerCase();
+        return tutors.filter(tutor => 
+            tutor.name.toLowerCase().includes(searchTerm) ||
+            (tutor.address && tutor.address.toLowerCase().includes(searchTerm)) ||
+            (tutor.coachingName && tutor.coachingName.toLowerCase().includes(searchTerm)) ||
+            (tutor.subjects && tutor.subjects.join(', ').toLowerCase().includes(searchTerm))
+        );
+    }, [tutors, tutorSearch]);
 
     // --- Stat Calculations ---
     const overallAttendance = useMemo(() => {
@@ -332,13 +347,26 @@ export default function StudentDashboard() {
                     <Card className="mt-8">
                         <CardHeader>
                             <CardTitle>Find a Teacher</CardTitle>
-                            <CardDescription>Browse available tutors on the platform.</CardDescription>
+                            <CardDescription>Browse available tutors on the platform or search by name, subject, or location.</CardDescription>
+                            <div className="pt-4">
+                                <Label htmlFor="tutor-search" className="sr-only">Search Tutors</Label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input
+                                        id="tutor-search"
+                                        placeholder="Search by name, subject, location..."
+                                        className="pl-10"
+                                        value={tutorSearch}
+                                        onChange={e => setTutorSearch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {tutorsLoading && <p>Loading tutors...</p>}
-                            {tutors && tutors.length > 0 ? (
+                            {filteredTutors && filteredTutors.length > 0 ? (
                                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    {tutors.map((tutor) => (
+                                    {filteredTutors.map((tutor) => (
                                         <Card key={tutor.id} className="flex flex-col">
                                             <CardHeader className="flex-1">
                                                 <CardTitle>{tutor.name}</CardTitle>
@@ -364,13 +392,15 @@ export default function StudentDashboard() {
                                                 )}
                                             </CardContent>
                                             <CardFooter>
-                                               <Button className="w-full" variant="secondary" disabled>View Profile</Button> 
+                                               <Link href={`/dashboard/profile/${tutor.id}`} className="w-full">
+                                                  <Button className="w-full" variant="secondary">View Profile</Button>
+                                               </Link>
                                             </CardFooter>
                                         </Card>
                                     ))}
                                 </div>
                             ) : (
-                                !tutorsLoading && <p className="text-center text-muted-foreground py-8">No tutors are currently listed.</p>
+                                !tutorsLoading && <p className="text-center text-muted-foreground py-8">No tutors found matching your search.</p>
                             )}
                         </CardContent>
                     </Card>

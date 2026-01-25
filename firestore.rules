@@ -32,7 +32,9 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      // Allow any authenticated user to view any other user's profile.
+      // This is necessary for students to view teacher profiles.
+      allow get: if isUser();
       // Allow any registered user to query the user list (to find tutors or students by ID).
       // Client-side queries must be used to filter.
       allow list: if isUser();
