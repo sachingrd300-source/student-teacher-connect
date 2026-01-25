@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { BookUser, CalendarCheck, ClipboardList, PlusCircle, Briefcase, Search, MapPin } from 'lucide-react';
+import { BookUser, CalendarCheck, ClipboardList, PlusCircle, Briefcase, Search, MapPin, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,7 @@ interface Enrollment {
     classId: string;
     classTitle: string;
     classSubject: string;
+    teacherId: string;
     teacherName: string;
     status: 'pending' | 'approved' | 'denied';
     batchTime?: string;
@@ -75,6 +76,44 @@ const StatCard = ({ title, value, icon, isLoading }: { title: string, value: str
         </CardContent>
     </Card>
 );
+
+const EnrolledClassCard = ({ enrollment }: { enrollment: Enrollment }) => {
+    const firestore = useFirestore();
+
+    const teacherProfileRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'users', enrollment.teacherId);
+    }, [firestore, enrollment.teacherId]);
+
+    const { data: teacherProfile } = useDoc<{ mobileNumber?: string }>(teacherProfileRef);
+
+    return (
+        <Card key={enrollment.id}>
+            <CardHeader>
+                <CardTitle className="text-lg">{enrollment.classTitle}</CardTitle>
+                <CardDescription>Taught by {enrollment.teacherName}</CardDescription>
+                {teacherProfile?.mobileNumber && (
+                    <CardDescription className="flex items-center gap-2 pt-2 text-foreground/90">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        {teacherProfile.mobileNumber}
+                    </CardDescription>
+                )}
+                 {enrollment.batchTime && (
+                    <CardDescription className="pt-2 font-semibold text-foreground/90">{enrollment.batchTime}</CardDescription>
+                )}
+            </CardHeader>
+            <CardFooter>
+                <div className={`text-xs font-semibold capitalize px-2 py-1 rounded-full ${
+                    enrollment.status === 'approved' ? 'bg-success/10 text-success' :
+                    enrollment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-destructive/10 text-destructive'
+                }`}>
+                    {enrollment.status}
+                </div>
+            </CardFooter>
+        </Card>
+    );
+};
 
 export default function StudentDashboard() {
     const firestore = useFirestore();
@@ -323,24 +362,7 @@ export default function StudentDashboard() {
                             {enrollments && enrollments.length > 0 ? (
                                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {enrollments.map((enrollment) => (
-                                        <Card key={enrollment.id}>
-                                            <CardHeader>
-                                                <CardTitle className="text-lg">{enrollment.classTitle}</CardTitle>
-                                                <CardDescription>Taught by {enrollment.teacherName}</CardDescription>
-                                                 {enrollment.batchTime && (
-                                                    <CardDescription className="pt-2 font-semibold text-foreground/90">{enrollment.batchTime}</CardDescription>
-                                                )}
-                                            </CardHeader>
-                                            <CardFooter>
-                                                <div className={`text-xs font-semibold capitalize px-2 py-1 rounded-full ${
-                                                    enrollment.status === 'approved' ? 'bg-success/10 text-success' :
-                                                    enrollment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-destructive/10 text-destructive'
-                                                }`}>
-                                                    {enrollment.status}
-                                                </div>
-                                            </CardFooter>
-                                        </Card>
+                                        <EnrolledClassCard key={enrollment.id} enrollment={enrollment} />
                                     ))}
                                 </div>
                             ) : (
@@ -415,5 +437,7 @@ export default function StudentDashboard() {
         </div>
     );
 }
+
+    
 
     
