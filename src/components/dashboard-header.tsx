@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3 } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface DashboardHeaderProps {
   userName: string | null | undefined;
@@ -30,6 +31,7 @@ interface NavLink {
 export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
   const auth = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -71,60 +73,92 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
 
   const navLinks = userRole === 'tutor' ? tutorLinks : studentLinks;
 
+  // For desktop, we may want to show only a few links and the rest in "More"
+  const visibleTutorLinks = userRole === 'tutor' ? tutorLinks.slice(0, 5) : [];
+  const hiddenTutorLinks = userRole === 'tutor' ? tutorLinks.slice(5) : [];
+  const desktopNavLinks = userRole === 'student' ? studentLinks : visibleTutorLinks;
+
   return (
     <>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
-            <Link className="flex items-center justify-center mr-auto" href="/dashboard">
-                <School className="h-6 w-6 mr-2 text-primary" />
-                <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+            <Link className="flex items-center gap-2 font-semibold" href="/dashboard">
+                <School className="h-6 w-6 mr-1 text-primary" />
+                <span className="hidden sm:inline-block text-lg font-semibold font-serif">EduConnect Pro</span>
             </Link>
             
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-4">
-                <DropdownMenu>
+            {/* Desktop Navigation */}
+            <nav className="ml-10 hidden flex-1 items-center gap-4 text-sm font-medium md:flex lg:gap-6">
+                {desktopNavLinks.map((link) => (
+                    <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                        "transition-colors hover:text-foreground",
+                        pathname === link.href ? "text-foreground" : "text-muted-foreground"
+                    )}
+                    >
+                    {link.label}
+                    </Link>
+                ))}
+                {userRole === 'tutor' && hiddenTutorLinks.length > 0 && (
+                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="overflow-hidden rounded-full"
-                        >
-                        <UserCircle className="h-5 w-5" />
+                        <Button variant="ghost" className="flex items-center gap-1 text-muted-foreground hover:text-foreground focus:text-foreground focus:bg-accent px-2">
+                        More
+                        <ChevronDown className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>
-                            <p>My Account</p>
-                            <p className="text-sm font-normal text-muted-foreground">{userName}</p>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {navLinks.map((link) => (
-                             <DropdownMenuItem key={link.href} onClick={() => router.push(link.href)}>
-                                {link.icon}
-                                <span>{link.label}</span>
-                            </DropdownMenuItem>
+                    <DropdownMenuContent align="start">
+                        {hiddenTutorLinks.map((link) => (
+                        <DropdownMenuItem key={link.href} onClick={() => router.push(link.href)}>
+                            {link.icon}
+                            <span>{link.label}</span>
+                        </DropdownMenuItem>
                         ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout}>
+                    </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </nav>
+
+            <div className="flex items-center gap-2 ml-auto">
+                {/* User Dropdown for Desktop */}
+                <div className="hidden md:block">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="secondary" size="icon" className="rounded-full">
+                            <UserCircle className="h-5 w-5" />
+                            <span className="sr-only">Toggle user menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>
+                                <p>My Account</p>
+                                <p className="text-sm font-normal text-muted-foreground">{userName}</p>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Logout</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                
+                {/* Mobile Menu Button */}
+                <div className="md:hidden">
+                    <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                        {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        <span className="sr-only">Toggle menu</span>
+                    </Button>
+                </div>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-                 <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                    {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    <span className="sr-only">Toggle menu</span>
-                </Button>
-            </div>
         </header>
 
         {/* Mobile Menu Overlay */}
         {isMenuOpen && (
             <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in-20">
-                <div className="fixed top-14 left-0 w-full h-full bg-background p-6">
+                <div className="fixed top-16 left-0 w-full h-full bg-background p-6">
                     <div className="flex flex-col space-y-2">
                         <p className="text-lg font-semibold">{userName}</p>
                         <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
