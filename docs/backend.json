@@ -306,6 +306,21 @@
             "submittedAt": { "type": "string", "format": "date-time" }
         },
         "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "testTitle", "testSubject", "marksObtained", "totalMarks", "submittedAt", "answers"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "type": "object",
+      "description": "Represents an announcement made by a teacher for a specific class.",
+      "properties": {
+        "id": { "type": "string" },
+        "classId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "classTitle": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["classId", "teacherId", "teacherName", "classTitle", "content", "createdAt"]
     }
   },
   "auth": {
@@ -356,6 +371,12 @@
             "$ref": "#/entities/TestResult"
         },
         "description": "Stores all student test results."
+    },
+    "/announcements/{announcementId}": {
+      "schema": {
+        "$ref": "#/entities/Announcement"
+      },
+      "description": "Stores all announcements made by teachers in their classes."
     }
   }
 }

@@ -88,7 +88,18 @@ service cloud.firestore {
       allow get, list: if isUser();
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
+
+    match /announcements/{announcementId} {
+      allow create: if isTutor() &&
+                      request.resource.data.teacherId == request.auth.uid &&
+                      get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.teacherId == request.auth.uid;
+
+      // Allow reads if user is the teacher of the class, or any student.
+      // Student-side queries must be filtered to only show announcements for their enrolled classes.
+      allow get, list: if isUser();
+
+      allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
+      allow update: if false;
+    }
   }
 }
-
-    

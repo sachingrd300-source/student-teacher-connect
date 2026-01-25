@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck, Megaphone } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -71,6 +71,7 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
   const studentLinks: NavLink[] = [
        ...commonLinks,
        { href: '/dashboard/student/profile', label: 'My Profile', icon: <UserCircle className="mr-2 h-4 w-4" /> },
+       { href: '/dashboard/student/announcements', label: 'Announcements', icon: <Megaphone className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/materials', label: 'Study Materials', icon: <BookOpen className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/attendance', label: 'Attendance', icon: <CalendarCheck className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/tests', label: 'My Tests', icon: <ClipboardList className="mr-2 h-4 w-4" /> },

@@ -3,19 +3,20 @@
 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, getDocs, limit, orderBy } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Trash2, BarChartHorizontal } from 'lucide-react';
+import { Search, Trash2, BarChartHorizontal, Megaphone, Send } from 'lucide-react';
 import { initializeApp, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Class {
     id: string;
@@ -39,6 +40,97 @@ interface StudentProfile {
     studentLoginId: string; // The short ID for login
     mobileNumber: string;
 }
+
+interface Announcement {
+    id: string;
+    content: string;
+    createdAt: Timestamp;
+}
+
+function AnnouncementsForClass({ classId, teacherId, teacherName, classTitle }: { classId: string; teacherId: string; teacherName: string; classTitle: string }) {
+    const firestore = useFirestore();
+    const [newAnnouncement, setNewAnnouncement] = useState('');
+    const [isPosting, setIsPosting] = useState(false);
+
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'announcements'), where('classId', '==', classId), orderBy('createdAt', 'desc'));
+    }, [firestore, classId]);
+
+    const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
+
+    const handlePostAnnouncement = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!newAnnouncement.trim() || !firestore) return;
+        setIsPosting(true);
+
+        const announcementsColRef = collection(firestore, 'announcements');
+        await addDocumentNonBlocking(announcementsColRef, {
+            classId,
+            teacherId,
+            teacherName,
+            classTitle,
+            content: newAnnouncement,
+            createdAt: serverTimestamp(),
+        });
+
+        setNewAnnouncement('');
+        setIsPosting(false);
+    };
+
+    const handleDeleteAnnouncement = (announcementId: string) => {
+        if (!firestore) return;
+        if (window.confirm("Are you sure you want to delete this announcement?")) {
+            deleteDocumentNonBlocking(doc(firestore, 'announcements', announcementId));
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Class Announcements</CardTitle>
+                <CardDescription>Post updates and messages for your students here.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handlePostAnnouncement} className="flex gap-2 mb-6">
+                    <Textarea
+                        placeholder="Type your announcement here..."
+                        value={newAnnouncement}
+                        onChange={(e) => setNewAnnouncement(e.target.value)}
+                        required
+                    />
+                    <Button type="submit" disabled={isPosting}>
+                        <Send className="h-4 w-4" />
+                    </Button>
+                </form>
+                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                    {isLoading && <p>Loading announcements...</p>}
+                    {announcements && announcements.length > 0 ? (
+                        announcements.map(announcement => (
+                            <div key={announcement.id} className="text-sm p-3 rounded-lg bg-muted relative group">
+                                <p>{announcement.content}</p>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    {new Date(announcement.createdAt?.seconds * 1000).toLocaleString()}
+                                </p>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-1 right-1 h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleDeleteAnnouncement(announcement.id)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))
+                    ) : (
+                        !isLoading && <p className="text-center text-muted-foreground py-4">No announcements yet.</p>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function StudentListForClass({ classId, teacherId }: { classId: string, teacherId: string }) {
     const firestore = useFirestore();
@@ -125,7 +217,7 @@ export default function ClassDetailsPage() {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{name: string}>(userProfileRef);
 
     const classRef = useMemoFirebase(() => {
         if (!firestore || !classId) return null;
@@ -370,6 +462,7 @@ export default function ClassDetailsPage() {
                                     {user && <StudentListForClass classId={classId} teacherId={user.uid} />}
                                 </CardContent>
                             </Card>
+                            {user && userProfile && <AnnouncementsForClass classId={classId} teacherId={user.uid} teacherName={userProfile.name} classTitle={classData.title} />}
                         </div>
                         <div className="lg:col-span-1 space-y-8">
                             <Card>
@@ -470,5 +563,3 @@ export default function ClassDetailsPage() {
         </div>
     );
 }
-
-    
