@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, FormEvent, useMemo } from 'react';
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, useStorage } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -30,6 +31,7 @@ interface Class {
 
 export default function TeacherMaterialsPage() {
     const firestore = useFirestore();
+    const storage = useStorage();
     const { user } = useUser();
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -45,7 +47,11 @@ export default function TeacherMaterialsPage() {
     const [description, setDescription] = useState('');
     const [fileUrl, setFileUrl] = useState('');
     const [classId, setClassId] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+
+    // UI state
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const materialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -68,38 +74,67 @@ export default function TeacherMaterialsPage() {
         setDescription('');
         setFileUrl('');
         setClassId('');
+        setFile(null);
+        setUploadProgress(0);
     };
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!user || !userProfile || !firestore || !type) return;
+        if (!user || !userProfile || !firestore || !storage || !type) return;
 
         setIsSubmitting(true);
-        
+
         const selectedClass = classes?.find(c => c.id === classId);
 
-        const newMaterial = {
-            teacherId: user.uid,
-            teacherName: userProfile.name,
-            title,
-            subject,
-            chapter,
-            type,
-            description,
-            fileUrl,
-            classId: selectedClass?.id || null,
-            className: selectedClass?.title || null,
-            createdAt: serverTimestamp(),
+        const saveToFirestore = (finalFileUrl: string) => {
+            const newMaterial = {
+                teacherId: user!.uid,
+                teacherName: userProfile!.name,
+                title,
+                subject,
+                chapter,
+                type,
+                description,
+                fileUrl: finalFileUrl,
+                classId: classId === 'general' ? null : classId,
+                className: selectedClass?.title || null,
+                createdAt: serverTimestamp(),
+            };
+            const materialsColRef = collection(firestore, 'studyMaterials');
+            addDocumentNonBlocking(materialsColRef, newMaterial)
+                .then(() => {
+                    resetForm();
+                })
+                .finally(() => {
+                    setIsSubmitting(false);
+                });
         };
 
-        const materialsColRef = collection(firestore, 'studyMaterials');
-        addDocumentNonBlocking(materialsColRef, newMaterial)
-            .then(() => {
-                resetForm();
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-            });
+        const showFileInput = type === 'Notes' || type === 'PDF' || type === 'Homework';
+
+        if (showFileInput && file) {
+            const storageRef = ref(storage, `study-materials/${user.uid}/${Date.now()}-${file.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error("Upload failed:", error);
+                    alert("File upload failed. Please try again.");
+                    setIsSubmitting(false);
+                },
+                () => { // On successful completion
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        saveToFirestore(downloadURL);
+                    });
+                }
+            );
+        } else {
+             saveToFirestore(type === 'Video' ? fileUrl : '');
+        }
     };
 
     const handleDelete = (materialId: string) => {
@@ -108,6 +143,9 @@ export default function TeacherMaterialsPage() {
             deleteDocumentNonBlocking(doc(firestore, 'studyMaterials', materialId));
         }
     };
+    
+    const showFileInput = useMemo(() => ['Notes', 'PDF', 'Homework'].includes(type), [type]);
+    const showUrlInput = useMemo(() => type === 'Video', [type]);
     
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
@@ -170,7 +208,7 @@ export default function TeacherMaterialsPage() {
                                         </div>
                                          <div className="space-y-2">
                                             <Label htmlFor="class-select">Assign to Class (Optional)</Label>
-                                             <Select onValueChange={setClassId} value={classId}>
+                                             <Select onValueChange={(value) => setClassId(value)} value={classId}>
                                                 <SelectTrigger id="class-select">
                                                     <SelectValue placeholder="General (visible to all)" />
                                                 </SelectTrigger>
@@ -207,13 +245,32 @@ export default function TeacherMaterialsPage() {
                                             <Label htmlFor="material-description">Description</Label>
                                             <Textarea id="material-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief description of the material." />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="material-url">File URL / Video Link</Label>
-                                            <Input id="material-url" value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="https://example.com/file.pdf" />
-                                            <p className="text-xs text-muted-foreground">For now, please paste a public link to the file.</p>
-                                        </div>
+
+                                        {showUrlInput && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="material-url">Video Link</Label>
+                                                <Input id="material-url" value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." required />
+                                            </div>
+                                        )}
+
+                                        {showFileInput && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="material-file">Upload File</Label>
+                                                <Input id="material-file" type="file" onChange={e => setFile(e.target.files ? e.target.files[0] : null)} required={!fileUrl} />
+                                            </div>
+                                        )}
+
+                                        {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
+                                            <div className="space-y-2 pt-2">
+                                                <Label>Uploading...</Label>
+                                                <div className="w-full bg-muted rounded-full h-2.5">
+                                                    <div className="bg-primary h-2.5 rounded-full transition-all" style={{ width: `${uploadProgress}%` }}></div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                            {isSubmitting ? 'Uploading...' : 'Upload Material'}
+                                            {isSubmitting ? (uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : 'Saving...') : 'Upload Material'}
                                         </Button>
                                     </form>
                                 </CardContent>
