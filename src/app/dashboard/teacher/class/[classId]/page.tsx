@@ -125,6 +125,7 @@ export default function ClassDetailsPage() {
 
     // State for creating a new student
     const [studentName, setStudentName] = useState('');
+    const [studentEmail, setStudentEmail] = useState('');
     const [studentFatherName, setStudentFatherName] = useState('');
     const [studentMobileNumber, setStudentMobileNumber] = useState('');
     const [studentAddress, setStudentAddress] = useState('');
@@ -213,14 +214,14 @@ export default function ClassDetailsPage() {
 
     const handleCreateStudentLogin = (e: FormEvent) => {
         e.preventDefault();
-        if (!user || !userProfile || !classId || !studentName.trim() || !firestore || !studentDateOfBirth || !classData) return;
+        if (!user || !userProfile || !classId || !studentName.trim() || !studentEmail.trim() || !firestore || !studentDateOfBirth || !classData) return;
         
         setIsAddingStudent(true);
         setNewlyAddedStudent(null);
         setStudentCreationError(null);
 
         const studentLoginId = nanoid(8);
-        const email = `${studentLoginId}@educonnect.pro`; 
+        const email = studentEmail.trim(); 
         const password = studentDateOfBirth; 
 
         let secondaryApp;
@@ -268,6 +269,7 @@ export default function ClassDetailsPage() {
                 
                 setNewlyAddedStudent({ name: studentName.trim(), id: studentLoginId, pass: studentDateOfBirth });
                 setStudentName('');
+                setStudentEmail('');
                 setStudentFatherName('');
                 setStudentMobileNumber('');
                 setStudentAddress('');
@@ -275,7 +277,11 @@ export default function ClassDetailsPage() {
             })
             .catch(error => {
                 console.error("Error creating student auth user:", error);
-                setStudentCreationError(`Failed to create student login: ${error.message}`);
+                 if (error.code === 'auth/email-already-in-use') {
+                     setStudentCreationError(`This email is already in use by another account.`);
+                } else {
+                     setStudentCreationError(`Failed to create student login: ${error.message}`);
+                }
             })
             .finally(() => {
                 setIsAddingStudent(false);
@@ -363,6 +369,10 @@ export default function ClassDetailsPage() {
                                             <div className="space-y-2">
                                                 <Label htmlFor="student-name">Student Full Name</Label>
                                                 <Input id="student-name" placeholder="e.g., Jane Doe" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+                                            </div>
+                                             <div className="space-y-2">
+                                                <Label htmlFor="student-email">Student Email</Label>
+                                                <Input id="student-email" type="email" placeholder="e.g., student@example.com" value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} required />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="student-father-name">Father's Name</Label>
