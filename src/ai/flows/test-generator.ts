@@ -2,6 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const GenerateTestInputSchema = z.object({
     topic: z.string().describe('The main topic or chapter for the test'),
@@ -27,6 +28,7 @@ export type GenerateTestOutput = z.infer<typeof GenerateTestOutputSchema>;
 
 const prompt = ai.definePrompt({
     name: 'testGeneratorPrompt',
+    model: googleAI.model('gemini-pro'),
     input: { schema: GenerateTestInputSchema },
     output: { schema: GenerateTestOutputSchema },
     prompt: `You are an expert educator tasked with creating a multiple-choice test.
