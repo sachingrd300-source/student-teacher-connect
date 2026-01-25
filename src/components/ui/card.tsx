@@ -56,11 +56,11 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
-const CardContent =React.forwardRef<
-  HTMLElement,
-  React.HTMLAttributes<HTMLElement>
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <section
+  <div
     ref={ref}
     className={cn("p-6 pt-0", className)}
     {...props}

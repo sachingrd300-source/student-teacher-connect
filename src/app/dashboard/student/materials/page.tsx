@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, Timestamp } from 'firebase/firestore';
+import { collection, query, doc, Timestamp }from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,11 @@ interface StudyMaterial {
 export default function StudentMaterialsPage() {
     const firestore = useFirestore();
     const { user } = useUser();
-    const { data: userProfile } = useDoc(user ? doc(firestore, 'users', user.uid) : null);
+    const userProfileRef = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user?.uid]);
+    const { data: userProfile } = useDoc(userProfileRef);
     
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -35,7 +39,7 @@ export default function StudentMaterialsPage() {
 
     const { data: materials, isLoading } = useCollection<StudyMaterial>(materialsQuery);
 
-    const filteredMaterials = useMemoFirebase(() => {
+    const filteredMaterials = useMemo(() => {
         if (!materials) return [];
         return materials.filter(material => 
             material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

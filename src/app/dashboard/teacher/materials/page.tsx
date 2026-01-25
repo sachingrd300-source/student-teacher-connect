@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useState, FormEvent, useMemo } from 'react';
+import { useFirestore, useUser, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,11 @@ interface StudyMaterial {
 export default function TeacherMaterialsPage() {
     const firestore = useFirestore();
     const { user } = useUser();
-    const { data: userProfile } = useDoc(user ? doc(firestore, 'users', user.uid) : null);
+    const userProfileRef = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user?.uid]);
+    const { data: userProfile } = useDoc(userProfileRef);
 
     // Form state
     const [title, setTitle] = useState('');
@@ -186,14 +190,4 @@ export default function TeacherMaterialsPage() {
             </main>
         </div>
     );
-}
-
-// Add a basic Textarea component if it's not in shadcn
-const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => {
-  return (
-    <textarea
-      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      {...props}
-    />
-  );
 }
