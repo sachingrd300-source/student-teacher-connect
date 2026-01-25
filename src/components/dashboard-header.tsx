@@ -81,10 +81,6 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
 
   const navLinks = userRole === 'tutor' ? tutorLinks : userRole === 'student' ? studentLinks : adminLinks;
 
-  // For desktop, we may want to show only a few links and the rest in "More"
-  const visibleTutorLinks = userRole === 'tutor' ? tutorLinks.slice(0, 5) : [];
-  const hiddenTutorLinks = userRole === 'tutor' ? tutorLinks.slice(5) : [];
-  
   const getDesktopNavLinks = () => {
     switch (userRole) {
         case 'student':
