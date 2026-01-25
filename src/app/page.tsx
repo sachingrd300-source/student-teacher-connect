@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Landmark, Palette, FlaskConical } from "lucide-react";
+import { CheckCircle, Landmark, Palette, FlaskConical, ArrowRight } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
 
 const { placeholderImages } = placeholderData;
@@ -150,76 +150,24 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Jharkhand Board Section */}
+        {/* Free Materials Section */}
         <section id="resources" className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">For Jharkhand Board</div>
-                <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-5xl">Free Study Materials</h2>
+                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">Open Access</div>
+                <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-5xl">Free Study Materials Library</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Access a comprehensive library of free resources for Classes 8 to 12, covering Science, Commerce, and Arts streams.
+                  Access a comprehensive, open library of free resources for Classes 8 to 12, covering Science, Commerce, and Arts streams. No login required.
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 sm:grid-cols-2 md:grid-cols-3">
-                <Card className="h-full">
-                  <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 p-3 rounded-full">
-                        <FlaskConical className="h-8 w-8 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">Science</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Everything you need for Physics, Chemistry, Biology, and Maths.</p>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Chapter-wise Notes</span></li>
-                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Textbooks & PYQs</span></li>
-                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Daily Practice Problems (DPPs)</span></li>
-                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Video Lectures</span></li>
-                    </ul>
-                  </CardContent>
-                </Card>
-                <Card className="h-full">
-                  <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 p-3 rounded-full">
-                        <Landmark className="h-8 w-8 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">Commerce</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Master Accounts, Economics, and Business Studies.</p>
-                    <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Detailed Notes</span></li>
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Solved PYQs</span></li>
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Important Questions</span></li>
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Reference Books</span></li>
-                    </ul>
-                  </CardContent>
-                </Card>
-                <Card className="h-full">
-                  <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 p-3 rounded-full">
-                        <Palette className="h-8 w-8 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">Arts</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Explore History, Geography, Political Science, and more.</p>
-                     <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Complete NCERT Solutions</span></li>
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Previous Year Papers</span></li>
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Topic-wise Notes</span></li>
-                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-success" /><span>Model Test Papers</span></li>
-                    </ul>
-                  </CardContent>
-                </Card>
+            <div className="mx-auto max-w-5xl text-center mt-12">
+               <Link href="/materials">
+                    <Button size="lg">
+                        Browse Free Materials <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                </Link>
             </div>
           </div>
         </section>

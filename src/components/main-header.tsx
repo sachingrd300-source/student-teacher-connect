@@ -8,8 +8,8 @@ export function MainHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
     const navLinks = [
+        { href: '/materials', label: 'Free Materials' },
         { href: '#features', label: 'Features' },
-        { href: '#resources', label: 'Free Resources' },
         { href: '#how-it-works', label: 'How it Works' },
         { href: '#testimonials', label: 'Testimonials' },
     ];

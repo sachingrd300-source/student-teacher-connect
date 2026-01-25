@@ -173,10 +173,10 @@ export default function TeacherMaterialsPage() {
                                             <Label htmlFor="class-select">Assign to Class (Optional)</Label>
                                              <Select onValueChange={setClassId} value={classId}>
                                                 <SelectTrigger id="class-select">
-                                                    <SelectValue placeholder="Select a class" />
+                                                    <SelectValue placeholder="General (visible to all)" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="">General (All Students)</SelectItem>
+                                                    <SelectItem value="">General (visible to all)</SelectItem>
                                                     {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
