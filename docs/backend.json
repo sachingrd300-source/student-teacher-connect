@@ -198,8 +198,8 @@
         "date": { "type": "string", "format": "date" },
         "records": {
           "type": "object",
-          "description": "A map of student UIDs to their attendance status (present, absent, late).",
-          "additionalProperties": { "type": "string", "enum": ["present", "absent", "late"] }
+          "description": "A map of student UIDs to their attendance status (true for present, false for absent).",
+          "additionalProperties": { "type": "boolean" }
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
