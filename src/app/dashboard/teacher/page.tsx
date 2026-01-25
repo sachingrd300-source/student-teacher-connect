@@ -9,8 +9,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Users, Search } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Edit, Trash2, Users, Search, PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { initializeApp, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -121,6 +121,7 @@ export default function TeacherDashboard() {
     const [subject, setSubject] = useState('');
     const [batchTime, setBatchTime] = useState('');
     const [isCreatingClass, setIsCreatingClass] = useState(false);
+    const [isCreateClassOpen, setIsCreateClassOpen] = useState(false);
 
     // State for Manage Students section
     const [selectedClass, setSelectedClass] = useState('');
@@ -209,6 +210,7 @@ export default function TeacherDashboard() {
               setTitle('');
               setSubject('');
               setBatchTime('');
+              setIsCreateClassOpen(false);
           })
           .finally(() => {
               setIsCreatingClass(false);
@@ -416,17 +418,25 @@ export default function TeacherDashboard() {
             <main className="flex-1">
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Teacher Dashboard</h1>
-                    <div className="grid gap-8 lg:grid-cols-3 animate-fade-in-down">
-                        <div className="lg:col-span-2 space-y-8">
+                    <div className="grid gap-8 animate-fade-in-down">
+                        <div className="space-y-8">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Your Classes</CardTitle>
-                                    <CardDescription>Here are the classes you've created.</CardDescription>
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                        <div className='mb-4 sm:mb-0'>
+                                            <CardTitle>Your Classes</CardTitle>
+                                            <CardDescription>Here are the classes you've created.</CardDescription>
+                                        </div>
+                                        <Button onClick={() => setIsCreateClassOpen(true)}>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Create New Class
+                                        </Button>
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
                                     {classesLoading && <p>Loading classes...</p>}
                                     {classes && classes.length > 0 ? (
-                                        <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                             {classes.map((c) => (
                                                 <Card key={c.id}>
                                                     <CardHeader>
@@ -577,53 +587,36 @@ export default function TeacherDashboard() {
                                 </CardContent>
                             </Card>
                         </div>
-
-                        <div className="lg:col-span-1 space-y-8">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Create a New Class</CardTitle>
-                                    <CardDescription>Fill in the details to create a new class batch.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <form onSubmit={handleCreateClass} className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="title">Class Title</Label>
-                                            <Input
-                                                id="title"
-                                                placeholder="e.g., Grade 10 Physics"
-                                                value={title}
-                                                onChange={(e) => setTitle(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="subject">Subject</Label>
-                                            <Input
-                                                id="subject"
-                                                placeholder="e.g., Physics"
-                                                value={subject}
-                                                onChange={(e) => setSubject(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="batch-time">Batch Timing</Label>
-                                            <Input
-                                                id="batch-time"
-                                                placeholder="e.g., 10:00 AM - 11:30 AM"
-                                                value={batchTime}
-                                                onChange={(e) => setBatchTime(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <Button type="submit" disabled={isCreatingClass} className="w-full">
-                                            {isCreatingClass ? 'Creating...' : 'Create Class'}
-                                        </Button>
-                                    </form>
-                                </CardContent>
-                            </Card>
-                        </div>
                     </div>
+
+                    <Dialog open={isCreateClassOpen} onOpenChange={setIsCreateClassOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Create a New Class</DialogTitle>
+                                <DialogDescription>Fill in the details to create a new class batch.</DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleCreateClass} className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="title">Class Title</Label>
+                                    <Input id="title" placeholder="e.g., Grade 10 Physics" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="subject">Subject</Label>
+                                    <Input id="subject" placeholder="e.g., Physics" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="batch-time">Batch Timing</Label>
+                                    <Input id="batch-time" placeholder="e.g., 10:00 AM - 11:30 AM" value={batchTime} onChange={(e) => setBatchTime(e.target.value)} required />
+                                </div>
+                                <DialogFooter>
+                                    <Button type="button" variant="secondary" onClick={() => setIsCreateClassOpen(false)}>Cancel</Button>
+                                    <Button type="submit" disabled={isCreatingClass}>
+                                        {isCreatingClass ? 'Creating...' : 'Create Class'}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
 
                     {editingClass && (
                         <Dialog open={!!editingClass} onOpenChange={(isOpen) => !isOpen && setEditingClass(null)}>
@@ -692,5 +685,3 @@ export default function TeacherDashboard() {
         </div>
     );
 }
-
-    
