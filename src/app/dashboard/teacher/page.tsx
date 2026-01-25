@@ -136,6 +136,8 @@ export default function TeacherDashboard() {
 
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string, name: string}>(userProfileRef);
 
+    const isTutor = userProfile?.role === 'tutor';
+
     useEffect(() => {
         if (isAuthLoading || isProfileLoading) {
             return;
@@ -144,15 +146,15 @@ export default function TeacherDashboard() {
             router.replace('/login');
             return;
         }
-        if (userProfile && userProfile.role !== 'tutor') {
+        if (userProfile && !isTutor) {
             router.replace('/dashboard/student');
         }
-    }, [user, isAuthLoading, userProfile, isProfileLoading, router]);
+    }, [user, isAuthLoading, userProfile, isProfileLoading, isTutor, router]);
 
     const classesQuery = useMemoFirebase(() => {
-        if (!firestore || !user || !userProfile || userProfile.role !== 'tutor') return null;
+        if (!isTutor || !firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
-    }, [firestore, user, userProfile]);
+    }, [firestore, user, isTutor]);
 
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
     
@@ -376,7 +378,7 @@ export default function TeacherDashboard() {
         );
     }
 
-    if (userProfile.role !== 'tutor') {
+    if (!isTutor) {
         return (
              <div className="flex flex-col min-h-screen">
                 <DashboardHeader userName={userProfile.name} userRole="student" />
