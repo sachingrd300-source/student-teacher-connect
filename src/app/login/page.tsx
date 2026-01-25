@@ -40,9 +40,12 @@ export default function LoginPage() {
 
     let emailToLogin;
     if (role === 'student') {
+      // A student might be logging in with their email OR their custom studentLoginId
       const isEmail = credential.includes('@');
+      // If it's not an email, we assume it's a studentLoginId and append the domain.
       emailToLogin = isEmail ? credential : `${credential}@educonnect.pro`;
     } else {
+      // Teachers always log in with email.
       emailToLogin = credential;
     }
 
@@ -108,11 +111,11 @@ export default function LoginPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="credential">{role === 'teacher' ? 'Email' : 'Email or Student ID'}</Label>
+                <Label htmlFor="credential">{role === 'teacher' ? 'Email' : 'Email or Student Login ID'}</Label>
                 <Input
                   id="credential"
                   type="text"
-                  placeholder={role === 'teacher' ? 'm@example.com' : 'your@email.com or Student ID'}
+                  placeholder={role === 'teacher' ? 'm@example.com' : 'your@email.com or Login ID'}
                   required
                   value={credential}
                   onChange={(e) => setCredential(e.target.value)}
@@ -124,7 +127,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   required
-                  placeholder={role === 'student' ? 'Password or Date of Birth (YYYY-MM-DD)' : undefined}
+                  placeholder={role === 'student' ? 'Password is your Date of Birth (YYYY-MM-DD)' : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -168,3 +171,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

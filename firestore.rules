@@ -33,12 +33,12 @@ service cloud.firestore {
     
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      // Allow any registered user to query the user list (to find tutors).
-      // Client-side queries must be used to filter for specific roles.
+      // Allow any registered user to query the user list (to find tutors or students by ID).
+      // Client-side queries must be used to filter.
       allow list: if isUser();
       // Allow user creation for anyone signing up OR a teacher creating a student
       allow create: if true;
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin() || isTutor();
       allow delete: if false;
     }
 
@@ -88,3 +88,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

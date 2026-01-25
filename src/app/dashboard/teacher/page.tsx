@@ -1,4 +1,3 @@
-
 'use client';
 
 import { FormEvent, useState, useEffect } from 'react';
@@ -30,16 +29,16 @@ interface Class {
 
 interface EnrolledStudent {
     id: string;
-    studentId: string;
+    studentId: string; // This is the auth UID
     studentName: string;
     mobileNumber: string;
     createdAt?: Timestamp;
 }
 
 interface StudentProfile {
-    id: string;
+    id: string; // Auth UID
     name: string;
-    studentLoginId: string;
+    studentLoginId: string; // The short ID for login
     mobileNumber: string;
 }
 
@@ -47,18 +46,36 @@ function StudentListForClass({ classId }: { classId: string }) {
     const firestore = useFirestore();
     const { user } = useUser();
 
+    // This query gets enrollments, which link students to classes
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', user.uid));
     }, [firestore, classId, user]);
 
-    const { data: students, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
+    const { data: enrolledStudents, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
+
+    // We need another query to get the `studentLoginId` from the `users` collection
+    const studentUids = useMemo(() => enrolledStudents?.map(s => s.studentId) || [], [enrolledStudents]);
+
+    const studentsProfileQuery = useMemoFirebase(() => {
+        if (!firestore || studentUids.length === 0) return null;
+        return query(collection(firestore, 'users'), where('id', 'in', studentUids));
+    }, [firestore, studentUids]);
+
+    const { data: studentProfiles } = useCollection<StudentProfile>(studentsProfileQuery);
+    
+    // Create a map for easy lookup
+    const studentProfileMap = useMemo(() => {
+        const map = new Map<string, StudentProfile>();
+        studentProfiles?.forEach(p => map.set(p.id, p));
+        return map;
+    }, [studentProfiles]);
 
     if (isLoading) {
         return <p>Loading students...</p>;
     }
 
-    if (!students || students.length === 0) {
+    if (!enrolledStudents || enrolledStudents.length === 0) {
         return <p className="text-center text-muted-foreground py-8">No students are enrolled in this class yet.</p>;
     }
 
@@ -69,21 +86,24 @@ function StudentListForClass({ classId }: { classId: string }) {
                     <tr className="border-b">
                         <th className="p-3 font-medium">Student Name</th>
                         <th className="p-3 font-medium">Mobile Number</th>
-                        <th className="p-3 font-medium">Student ID</th>
+                        <th className="p-3 font-medium">Student Login ID</th>
                         <th className="p-3 font-medium">Enrolled On</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {students.map(student => (
-                        <tr key={student.id} className="border-b last:border-0">
-                            <td className="p-3 whitespace-nowrap">{student.studentName}</td>
-                            <td className="p-3">{student.mobileNumber}</td>
-                            <td className="p-3 font-mono">{student.studentId}</td>
-                            <td className="p-3 whitespace-nowrap">
-                                {student.createdAt ? student.createdAt.toDate().toLocaleString() : '...'}
-                            </td>
-                        </tr>
-                    ))}
+                    {enrolledStudents.map(student => {
+                        const profile = studentProfileMap.get(student.studentId);
+                        return (
+                            <tr key={student.id} className="border-b last:border-0">
+                                <td className="p-3 whitespace-nowrap">{student.studentName}</td>
+                                <td className="p-3">{student.mobileNumber}</td>
+                                <td className="p-3 font-mono">{profile?.studentLoginId || '...'}</td>
+                                <td className="p-3 whitespace-nowrap">
+                                    {student.createdAt ? student.createdAt.toDate().toLocaleString() : '...'}
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>
@@ -540,7 +560,7 @@ export default function TeacherDashboard() {
                                                         <p className="text-sm text-success">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
                                                         <div className="mt-3 space-y-2 bg-success/20 p-3 rounded-md">
                                                             <div>
-                                                                <p className="text-xs font-semibold text-success">Student ID:</p> 
+                                                                <p className="text-xs font-semibold text-success">Student Login ID:</p> 
                                                                 <p className="font-mono text-base font-bold">{newlyAddedStudent.id}</p>
                                                             </div>
                                                             <div>
@@ -653,7 +673,7 @@ export default function TeacherDashboard() {
 
                     {viewingStudentsForClass && (
                         <Dialog open={!!viewingStudentsForClass} onOpenChange={(isOpen) => !isOpen && setViewingStudentsForClass(null)}>
-                            <DialogContent className="max-w-2xl">
+                            <DialogContent className="max-w-3xl">
                                 <DialogHeader>
                                     <DialogTitle>Students in {viewingStudentsForClass.title}</DialogTitle>
                                     <DialogDescription>
@@ -672,3 +692,5 @@ export default function TeacherDashboard() {
         </div>
     );
 }
+
+    
