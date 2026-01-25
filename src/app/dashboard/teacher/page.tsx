@@ -1,3 +1,4 @@
+
 'use client';
 
 import { FormEvent, useState, useEffect } from 'react';
@@ -395,7 +396,7 @@ export default function TeacherDashboard() {
             <main className="flex-1">
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Teacher Dashboard</h1>
-                    <div className="grid gap-8 lg:grid-cols-3">
+                    <div className="grid gap-8 lg:grid-cols-3 animate-fade-in-down">
                         <div className="lg:col-span-2 space-y-8">
                             <Card>
                                 <CardHeader>
@@ -492,7 +493,7 @@ export default function TeacherDashboard() {
                                                     </CardContent>
                                                 </Card>
                                             )}
-                                             {enrollMessage && <p className="text-sm font-semibold text-green-600">{enrollMessage}</p>}
+                                             {enrollMessage && <p className="text-sm font-semibold text-success">{enrollMessage}</p>}
                                         </div>
 
                                         <div className="my-6 border-t"></div>
@@ -528,23 +529,23 @@ export default function TeacherDashboard() {
                                                     {isAddingStudent ? 'Creating Login...' : 'Create New Student Login & Enroll'}
                                                 </Button>
                                                 {studentCreationError && (
-                                                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-800 rounded-lg">
+                                                    <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg">
                                                         <p className="font-bold">Error</p>
                                                         <p>{studentCreationError}</p>
                                                     </div>
                                                 )}
                                                 {newlyAddedStudent && (
-                                                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                                                        <p className="font-bold text-green-800">Student Login Created Successfully!</p>
-                                                        <p className="text-sm text-green-700">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
-                                                        <div className="mt-3 space-y-2 bg-green-100 p-3 rounded-md">
+                                                    <div className="mt-4 p-4 bg-success/10 border border-success/20 rounded-lg">
+                                                        <p className="font-bold text-success">Student Login Created Successfully!</p>
+                                                        <p className="text-sm text-success">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
+                                                        <div className="mt-3 space-y-2 bg-success/20 p-3 rounded-md">
                                                             <div>
-                                                                <p className="text-xs font-semibold text-green-800">Student ID:</p> 
-                                                                <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.id}</p>
+                                                                <p className="text-xs font-semibold text-success">Student ID:</p> 
+                                                                <p className="font-mono text-base font-bold">{newlyAddedStudent.id}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs font-semibold text-green-800">Password:</p> 
-                                                                <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.pass}</p>
+                                                                <p className="text-xs font-semibold text-success">Password:</p> 
+                                                                <p className="font-mono text-base font-bold">{newlyAddedStudent.pass}</p>
                                                             </div>
                                                         </div>
                                                     </div>

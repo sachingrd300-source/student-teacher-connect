@@ -94,7 +94,7 @@ export default function StudentDashboard() {
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
             <DashboardHeader userName={userProfile.name} userRole="student" />
-            <main className="flex-1">
+            <main className="flex-1 animate-fade-in-down">
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Student Dashboard</h1>
                     <Card>
@@ -114,9 +114,9 @@ export default function StudentDashboard() {
                                             </CardHeader>
                                             <CardFooter>
                                                 <div className={`text-xs font-semibold capitalize px-2 py-1 rounded-full ${
-                                                    enrollment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                                    enrollment.status === 'approved' ? 'bg-success/10 text-success' :
                                                     enrollment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-red-100 text-red-800'
+                                                    'bg-destructive/10 text-destructive'
                                                 }`}>
                                                     {enrollment.status}
                                                 </div>

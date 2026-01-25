@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -175,11 +176,11 @@ export default function TestGeneratorPage() {
                                 <CardContent>
                                     {isGenerating && <p className="text-center text-muted-foreground py-8">Generating your test, please wait...</p>}
                                     {error && (
-                                        <div className="flex items-center gap-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <div className="flex items-center gap-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                                             <AlertTriangle className="h-6 w-6 text-destructive" />
                                             <div>
                                                 <p className="font-bold text-destructive">Generation Failed</p>
-                                                <p className="text-sm text-red-700">{error}</p>
+                                                <p className="text-sm text-destructive/80">{error}</p>
                                             </div>
                                         </div>
                                     )}
@@ -190,8 +191,8 @@ export default function TestGeneratorPage() {
                                                     <p className="font-semibold mb-3">Q{index + 1}: {q.questionText}</p>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                                                         {q.options.map((opt, i) => (
-                                                            <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${opt === q.correctAnswer ? 'bg-green-100 text-green-900' : 'bg-muted'}`}>
-                                                                {opt === q.correctAnswer ? <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" /> : <div className="h-4 w-4" />}
+                                                            <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${opt === q.correctAnswer ? 'bg-success/10 text-success' : 'bg-muted'}`}>
+                                                                {opt === q.correctAnswer ? <CheckCircle className="h-4 w-4 text-success flex-shrink-0" /> : <div className="h-4 w-4" />}
                                                                 <span>{opt}</span>
                                                             </div>
                                                         ))}

@@ -78,11 +78,11 @@ function ClassAttendanceCard({ enrollment }: { enrollment: Enrollment }) {
                                 <p className="text-sm text-muted-foreground">Overall</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-2xl font-bold text-green-600">{studentAttendance.present}</p>
+                                <p className="text-2xl font-bold text-success">{studentAttendance.present}</p>
                                 <p className="text-sm text-muted-foreground">Present</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-2xl font-bold text-red-600">{studentAttendance.absent}</p>
+                                <p className="text-2xl font-bold text-destructive">{studentAttendance.absent}</p>
                                 <p className="text-sm text-muted-foreground">Absent</p>
                             </div>
                         </div>
@@ -92,7 +92,7 @@ function ClassAttendanceCard({ enrollment }: { enrollment: Enrollment }) {
                                 {studentAttendance.details.map((record, index) => (
                                     <div key={index} className="flex items-center justify-between p-3 border-b last:border-0">
                                         <span className="font-medium text-sm">{new Date(record.date).toLocaleDateString()}</span>
-                                        <div className={`flex items-center gap-2 text-sm font-semibold ${record.status === 'Present' ? 'text-green-600' : 'text-red-600'}`}>
+                                        <div className={`flex items-center gap-2 text-sm font-semibold ${record.status === 'Present' ? 'text-success' : 'text-destructive'}`}>
                                             {record.status === 'Present' ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                                             {record.status}
                                         </div>

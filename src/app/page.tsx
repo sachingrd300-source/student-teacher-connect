@@ -135,19 +135,19 @@ export default function Home() {
                 <div className="inline-block rounded-lg bg-primary px-3 py-1 text-primary-foreground text-sm">For Teachers</div>
                 <ul className="space-y-4 text-left">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Create a free account and set up your teacher profile.</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Create classes for your different subjects and batches.</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Enroll existing students or create new student logins in seconds.</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Upload materials, track attendance, and create tests with AI.</span>
                   </li>
                 </ul>
@@ -156,19 +156,19 @@ export default function Home() {
                  <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-secondary-foreground text-sm">For Students</div>
                 <ul className="space-y-4 text-left">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Sign up with your email or get login details from your teacher.</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Log in to your personal dashboard to see all your classes.</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Access study materials and check your attendance records.</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                     <span>Take tests assigned by your teachers and view your results instantly.</span>
                   </li>
                 </ul>

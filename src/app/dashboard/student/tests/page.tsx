@@ -161,7 +161,7 @@ export default function StudentTestsPage() {
                                                 </CardContent>
                                                 <CardFooter>
                                                     {result ? (
-                                                        <div className="w-full text-center p-2 rounded-md bg-green-100 text-green-800 font-semibold">
+                                                        <div className="w-full text-center p-2 rounded-md bg-success/10 text-success font-semibold">
                                                             Score: {result.marksObtained} / {result.totalMarks}
                                                         </div>
                                                     ) : (
@@ -192,7 +192,7 @@ export default function StudentTestsPage() {
                         
                         {lastResult ? (
                             <div className="py-8 flex flex-col items-center justify-center text-center">
-                                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                                <CheckCircle className="h-16 w-16 text-success mb-4" />
                                 <h2 className="text-2xl font-bold">Test Submitted!</h2>
                                 <p className="text-muted-foreground">You can now close this window.</p>
                                 <div className="mt-6 p-6 rounded-lg bg-muted w-full">

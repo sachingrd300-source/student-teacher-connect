@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -110,8 +111,8 @@ export default function TeacherTestsPage() {
                                     <p className="font-semibold mb-3">Q{index + 1}: {q.questionText}</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                                         {q.options.map((opt, i) => (
-                                            <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${opt === q.correctAnswer ? 'bg-green-100 text-green-900 font-semibold' : 'bg-muted'}`}>
-                                                {opt === q.correctAnswer ? <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" /> : <div className="h-4 w-4" />}
+                                            <div key={i} className={`flex items-center gap-2 p-2 rounded-md ${opt === q.correctAnswer ? 'bg-success/10 text-success font-semibold' : 'bg-muted'}`}>
+                                                {opt === q.correctAnswer ? <CheckCircle className="h-4 w-4 text-success flex-shrink-0" /> : <div className="h-4 w-4" />}
                                                 <span>{opt}</span>
                                             </div>
                                         ))}
