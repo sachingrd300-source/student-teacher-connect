@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { BookUser, MapPin, CalendarCheck, ClipboardList, PlusCircle, Briefcase, Search } from 'lucide-react';
+import { BookUser, CalendarCheck, ClipboardList, PlusCircle, Briefcase, Search, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -310,7 +310,7 @@ export default function StudentDashboard() {
                     </Card>
                     
                     {/* --- My Classes Section --- */}
-                    <Card>
+                    <Card className="mb-8">
                         <CardHeader>
                             <CardTitle>My Classes</CardTitle>
                             <CardDescription>Here are the classes you are enrolled in.</CardDescription>
@@ -344,7 +344,7 @@ export default function StudentDashboard() {
                     </Card>
 
                     {/* --- Find a Teacher Section --- */}
-                    <Card className="mt-8">
+                    <Card>
                         <CardHeader>
                             <CardTitle>Find a Teacher</CardTitle>
                             <CardDescription>Browse available tutors on the platform or search by name, subject, or location.</CardDescription>
