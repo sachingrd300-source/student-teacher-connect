@@ -30,7 +30,7 @@ const prompt = ai.definePrompt({
     name: 'testGeneratorPrompt',
     model: googleAI.model('gemini-1.5-pro'),
     input: { schema: GenerateTestInputSchema },
-    // output: { schema: GenerateTestOutputSchema }, // Removed to prevent invalid "responseMimeType" param
+    output: { schema: GenerateTestOutputSchema }, // Re-enabling structured output
     prompt: `You are an expert educator tasked with creating a multiple-choice test.
 
     Generate a test with {{numQuestions}} questions based on the following criteria:
@@ -41,18 +41,7 @@ const prompt = ai.definePrompt({
     
     Each question must have exactly 4 options.
     Ensure the questions are relevant to the topic and appropriate for the specified class level and difficulty.
-    Provide the correct answer for each question.
-    
-    IMPORTANT: Your entire response must be ONLY a single, valid JSON object. Do not wrap it in markdown like \`\`\`json. The JSON object must conform to this structure:
-    {
-      "questions": [
-        {
-          "questionText": "The full text of the question",
-          "options": ["An array of 4 possible answers"],
-          "correctAnswer": "The correct answer from the options array"
-        }
-      ]
-    }`,
+    Provide the correct answer for each question.`,
 });
 
 const generateTestQuestionsFlow = ai.defineFlow(
@@ -62,32 +51,14 @@ const generateTestQuestionsFlow = ai.defineFlow(
         outputSchema: GenerateTestOutputSchema,
     },
     async (input) => {
-        const response = await prompt(input);
-        const textResponse = response.text;
-
-        if (!textResponse) {
-            throw new Error('The AI returned an empty response.');
+        // With structured output enabled, Genkit handles the parsing.
+        const { output } = await prompt(input);
+        
+        if (!output) {
+            throw new Error('The AI returned an empty or invalid response.');
         }
-
-        try {
-            // The prompt now asks for raw JSON, so we just parse it.
-            const parsedOutput = JSON.parse(textResponse);
-            // We should still validate it against our schema on the way out.
-            return GenerateTestOutputSchema.parse(parsedOutput);
-        } catch (e) {
-            console.error("Failed to parse JSON response from AI:", textResponse, e);
-            // Fallback: Try to find JSON inside markdown ```json ... ```
-            const jsonMatch = textResponse.match(/```json\n([\s\S]*?)\n```/);
-            if (jsonMatch && jsonMatch[1]) {
-                try {
-                    const parsedJson = JSON.parse(jsonMatch[1]);
-                    return GenerateTestOutputSchema.parse(parsedJson);
-                } catch (e2) {
-                     console.error("Failed to parse JSON from markdown block:", jsonMatch[1], e2);
-                }
-            }
-            throw new Error("The AI returned a response in an invalid format.");
-        }
+        
+        return output;
     }
 );
 
