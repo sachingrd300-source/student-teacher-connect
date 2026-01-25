@@ -18,8 +18,9 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { School } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -92,13 +93,28 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setError(null);
-    if (!auth) {
-      setError('Firebase Auth is not available. Please try again later.');
+    if (!auth || !firestore) {
+      setError('Firebase services are not available. Please try again later.');
       return;
     }
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const additionalInfo = getAdditionalUserInfo(result);
+      
+      // If it's a new user, create their profile document in Firestore
+      if (additionalInfo?.isNewUser && result.user.email) {
+        const userRef = doc(firestore, `users/${result.user.uid}`);
+        const userProfileData = {
+          id: result.user.uid,
+          name: result.user.displayName || result.user.email.split('@')[0],
+          email: result.user.email,
+          role: 'tutor', // Google Sign-In on this page is for tutors
+          createdAt: serverTimestamp(),
+          status: 'pending_verification',
+        };
+        await setDoc(userRef, userProfileData);
+      }
       router.push('/dashboard');
     } catch (error: any) {
       setError(error.message);

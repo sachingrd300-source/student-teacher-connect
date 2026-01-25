@@ -1,16 +1,15 @@
-
 'use client';
 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp, getDocs, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, getDocs, limit, orderBy, addDoc, setDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search, Trash2, BarChartHorizontal, Megaphone, Send } from 'lucide-react';
-import { initializeApp, getApp } from 'firebase/app';
+import { initializeApp, getApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { useParams, useRouter } from 'next/navigation';
@@ -308,14 +307,14 @@ export default function ClassDetailsPage() {
             createdAt: serverTimestamp(),
         };
 
-        addDocumentNonBlocking(enrollmentsRef, enrollmentData);
+        await addDoc(enrollmentsRef, enrollmentData);
         setEnrollMessage(`Successfully enrolled ${foundStudent.name} in ${classData.title}.`);
         setIsEnrolling(false);
         setFoundStudent(null);
         setSearchStudentId('');
     };
 
-    const handleCreateStudentLogin = (e: FormEvent) => {
+    const handleCreateStudentLogin = async (e: FormEvent) => {
         e.preventDefault();
         if (!user || !userProfile || !classId || !studentName.trim() || !studentEmail.trim() || !firestore || !studentDateOfBirth || !classData) return;
         
@@ -328,68 +327,70 @@ export default function ClassDetailsPage() {
         const password = studentDateOfBirth; 
 
         let secondaryApp;
+        const appName = 'student-creator';
+        
         try {
-            secondaryApp = initializeApp(firebaseConfig, 'student-creator');
-        } catch (error) {
-            secondaryApp = getApp('student-creator'); 
-        }
+            secondaryApp = getApp(appName);
+            await deleteApp(secondaryApp);
+        } catch (error) {}
+
+        secondaryApp = initializeApp(firebaseConfig, appName);
         const secondaryAuth = getAuth(secondaryApp);
 
-        createUserWithEmailAndPassword(secondaryAuth, email, password)
-            .then(userCredential => {
-                const newUser = userCredential.user;
+        try {
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+            const newUser = userCredential.user;
 
-                const userRef = doc(firestore, `users/${newUser.uid}`);
-                const userProfileData = {
-                    id: newUser.uid,
-                    studentLoginId: studentLoginId, 
-                    name: studentName.trim(),
-                    fatherName: studentFatherName.trim(),
-                    mobileNumber: studentMobileNumber.trim(),
-                    address: studentAddress.trim(),
-                    email: email, 
-                    role: 'student',
-                    dateOfBirth: studentDateOfBirth,
-                    createdAt: serverTimestamp(),
-                    status: 'approved',
-                };
-                setDocumentNonBlocking(userRef, userProfileData, {});
+            const userRef = doc(firestore, `users/${newUser.uid}`);
+            const userProfileData = {
+                id: newUser.uid,
+                studentLoginId: studentLoginId, 
+                name: studentName.trim(),
+                fatherName: studentFatherName.trim(),
+                mobileNumber: studentMobileNumber.trim(),
+                address: studentAddress.trim(),
+                email: email, 
+                role: 'student',
+                dateOfBirth: studentDateOfBirth,
+                createdAt: serverTimestamp(),
+                status: 'approved',
+            };
+            await setDoc(userRef, userProfileData, {});
 
-                const enrollmentData = {
-                    studentId: newUser.uid,
-                    studentName: studentName.trim(),
-                    mobileNumber: studentMobileNumber.trim(),
-                    classId: classId,
-                    teacherId: user.uid,
-                    classTitle: classData.title,
-                    classSubject: classData.subject,
-                    teacherName: userProfile.name,
-                    batchTime: classData.batchTime,
-                    status: 'approved',
-                    createdAt: serverTimestamp(),
-                };
-                const enrollmentsColRef = collection(firestore, 'enrollments');
-                addDocumentNonBlocking(enrollmentsColRef, enrollmentData);
-                
-                setNewlyAddedStudent({ name: studentName.trim(), id: studentLoginId, pass: studentDateOfBirth });
-                setStudentName('');
-                setStudentEmail('');
-                setStudentFatherName('');
-                setStudentMobileNumber('');
-                setStudentAddress('');
-                setStudentDateOfBirth('');
-            })
-            .catch(error => {
-                console.error("Error creating student auth user:", error);
-                 if (error.code === 'auth/email-already-in-use') {
-                     setStudentCreationError(`This email is already in use by another account.`);
-                } else {
-                     setStudentCreationError(`Failed to create student login: ${error.message}`);
-                }
-            })
-            .finally(() => {
-                setIsAddingStudent(false);
-            });
+            const enrollmentData = {
+                studentId: newUser.uid,
+                studentName: studentName.trim(),
+                mobileNumber: studentMobileNumber.trim(),
+                classId: classId,
+                teacherId: user.uid,
+                classTitle: classData.title,
+                classSubject: classData.subject,
+                teacherName: userProfile.name,
+                batchTime: classData.batchTime,
+                status: 'approved',
+                createdAt: serverTimestamp(),
+            };
+            const enrollmentsColRef = collection(firestore, 'enrollments');
+            await addDoc(enrollmentsColRef, enrollmentData);
+            
+            setNewlyAddedStudent({ name: studentName.trim(), id: studentLoginId, pass: studentDateOfBirth });
+            setStudentName('');
+            setStudentEmail('');
+            setStudentFatherName('');
+            setStudentMobileNumber('');
+            setStudentAddress('');
+            setStudentDateOfBirth('');
+        } catch (error: any) {
+            console.error("Error creating student auth user:", error);
+            if (error.code === 'auth/email-already-in-use') {
+                setStudentCreationError(`This email is already in use by another account.`);
+            } else {
+                setStudentCreationError(`Failed to create student login: ${error.message}`);
+            }
+        } finally {
+            setIsAddingStudent(false);
+            await deleteApp(secondaryApp);
+        }
     };
     
     if (isClassLoading || isProfileLoading) {
