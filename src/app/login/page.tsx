@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -14,17 +13,19 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { School } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const [role, setRole] = useState<'teacher' | 'student'>('teacher');
   const [credential, setCredential] = useState(''); // Used for both email and student ID
@@ -34,20 +35,47 @@ export default function LoginPage() {
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (!auth) {
-      setError('Firebase Auth is not available. Please try again later.');
+    if (!auth || !firestore) {
+      setError('Firebase services are not available. Please try again later.');
       return;
     }
 
-    let emailToLogin;
-    if (role === 'student') {
-      // A student might be logging in with their email OR their custom studentLoginId
-      const isEmail = credential.includes('@');
-      // If it's not an email, we assume it's a studentLoginId and append the domain.
-      emailToLogin = isEmail ? credential : `${credential}@educonnect.pro`;
-    } else {
-      // Teachers always log in with email.
+    let emailToLogin: string | undefined;
+
+    // Teacher login remains the same, using email
+    if (role === 'teacher') {
       emailToLogin = credential;
+    } 
+    // Student login has special handling for Student Login ID
+    else {
+      const isEmail = credential.includes('@');
+      if (isEmail) {
+        // If it's an email, use it directly
+        emailToLogin = credential;
+      } else {
+        // If it's not an email, assume it's a Student Login ID and find the user's email
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, where('studentLoginId', '==', credential.trim()), limit(1));
+        
+        try {
+          const querySnapshot = await getDocs(q);
+          if (querySnapshot.empty) {
+            setError('Invalid Student Login ID. Please check the ID and try again.');
+            return;
+          }
+          const studentDoc = querySnapshot.docs[0];
+          emailToLogin = studentDoc.data().email;
+        } catch (err) {
+            console.error("Error looking up student by Login ID:", err);
+            setError("An error occurred while trying to log in.");
+            return;
+        }
+      }
+    }
+    
+    if (!emailToLogin) {
+        setError('Could not find a user with the provided credentials.');
+        return;
     }
 
     try {
@@ -72,7 +100,7 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: any) => {
       setError(error.message);
     }
   };
