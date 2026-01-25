@@ -8,7 +8,7 @@ const GenerateTestInputSchema = z.object({
     topic: z.string().describe('The main topic or chapter for the test'),
     subject: z.string().describe('The subject of the test (e.g., Physics, History)'),
     classLevel: z.string().describe('The grade or class level for the test (e.g., "Class 10")'),
-    numQuestions: z.number().min(1).max(20).describe('The number of questions to generate'),
+    numQuestions: z.number().min(1).describe('The number of questions to generate'),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe('The difficulty level of the questions'),
 });
 export type GenerateTestInput = z.infer<typeof GenerateTestInputSchema>;
@@ -28,7 +28,7 @@ export type GenerateTestOutput = z.infer<typeof GenerateTestOutputSchema>;
 
 const prompt = ai.definePrompt({
     name: 'testGeneratorPrompt',
-    model: googleAI.model('gemini-pro'),
+    model: googleAI.model('gemini-1.5-pro-latest'),
     input: { schema: GenerateTestInputSchema },
     output: { schema: GenerateTestOutputSchema },
     prompt: `You are an expert educator tasked with creating a multiple-choice test.

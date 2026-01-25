@@ -184,7 +184,7 @@ export default function TestGeneratorPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="num-questions">Number of Questions</Label>
-                                            <Input id="num-questions" type="number" min="1" max="20" value={numQuestions} onChange={e => setNumQuestions(Number(e.target.value))} required />
+                                            <Input id="num-questions" type="number" min="1" value={numQuestions} onChange={e => setNumQuestions(Number(e.target.value))} required />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="difficulty">Difficulty</Label>
