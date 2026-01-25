@@ -276,6 +276,14 @@
             },
             "teacherId": { "type": "string" },
             "classId": { "type": "string" },
+            "testTitle": {
+                "type": "string",
+                "description": "The title of the test. Denormalized for display."
+            },
+            "testSubject": {
+                "type": "string",
+                "description": "The subject of the test. Denormalized for display."
+            },
             "marksObtained": { "type": "number" },
             "totalMarks": { "type": "number" },
             "answers": {
@@ -294,7 +302,7 @@
             },
             "submittedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt", "answers"]
+        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "testTitle", "testSubject", "marksObtained", "totalMarks", "submittedAt", "answers"]
     }
   },
   "auth": {

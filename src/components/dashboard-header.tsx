@@ -70,6 +70,7 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
        { href: '/dashboard/student/materials', label: 'Study Materials', icon: <BookOpen className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/attendance', label: 'Attendance', icon: <CalendarCheck className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/tests', label: 'My Tests', icon: <ClipboardList className="mr-2 h-4 w-4" /> },
+       { href: '/dashboard/student/results', label: 'My Results', icon: <ResultsIcon className="mr-2 h-4 w-4" /> },
   ];
 
   const navLinks = userRole === 'tutor' ? tutorLinks : studentLinks;

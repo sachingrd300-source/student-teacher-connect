@@ -44,6 +44,8 @@ interface AnswerDetail {
 interface TestResult {
     id: string;
     testId: string;
+    testTitle: string;
+    testSubject: string;
     marksObtained: number;
     totalMarks: number;
     submittedAt: Timestamp;
@@ -132,6 +134,8 @@ export default function StudentTestsPage() {
             teacherId: takingTest.teacherId,
             testId: takingTest.id,
             classId: takingTest.classId,
+            testTitle: takingTest.title,
+            testSubject: takingTest.subject,
             marksObtained: finalScore,
             totalMarks: takingTest.totalMarks,
             answers: answersPayload,
