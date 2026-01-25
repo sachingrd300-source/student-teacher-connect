@@ -78,39 +78,29 @@ export default function TeacherMaterialsPage() {
         setUploadProgress(0);
     };
 
-    const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         if (!user || !userProfile || !firestore || !storage || !type) return;
 
         setIsSubmitting(true);
 
         const selectedClass = classes?.find(c => c.id === classId);
+        
+        const createMaterialData = (url: string) => ({
+            teacherId: user!.uid,
+            teacherName: userProfile!.name,
+            title,
+            subject,
+            chapter,
+            type,
+            description,
+            fileUrl: url,
+            classId: classId === 'general' ? null : classId,
+            className: selectedClass?.title || null,
+            createdAt: serverTimestamp(),
+        });
 
-        const saveToFirestore = (finalFileUrl: string) => {
-            const newMaterial = {
-                teacherId: user!.uid,
-                teacherName: userProfile!.name,
-                title,
-                subject,
-                chapter,
-                type,
-                description,
-                fileUrl: finalFileUrl,
-                classId: classId === 'general' ? null : classId,
-                className: selectedClass?.title || null,
-                createdAt: serverTimestamp(),
-            };
-            const materialsColRef = collection(firestore, 'studyMaterials');
-            addDocumentNonBlocking(materialsColRef, newMaterial)
-                .then(() => {
-                    resetForm();
-                })
-                .finally(() => {
-                    setIsSubmitting(false);
-                });
-        };
-
-        const showFileInput = type === 'Notes' || type === 'PDF' || type === 'Homework';
+        const showFileInput = ['Notes', 'PDF', 'Homework'].includes(type);
 
         if (showFileInput && file) {
             const storageRef = ref(storage, `study-materials/${user.uid}/${Date.now()}-${file.name}`);
@@ -128,12 +118,24 @@ export default function TeacherMaterialsPage() {
                 },
                 () => { // On successful completion
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        saveToFirestore(downloadURL);
+                        const newMaterial = createMaterialData(downloadURL);
+                        const materialsColRef = collection(firestore, 'studyMaterials');
+                        addDocumentNonBlocking(materialsColRef, newMaterial);
+
+                        // Optimistic UI update
+                        resetForm();
+                        setIsSubmitting(false);
                     });
                 }
             );
         } else {
-             saveToFirestore(type === 'Video' ? fileUrl : '');
+             const newMaterial = createMaterialData(type === 'Video' ? fileUrl : '');
+             const materialsColRef = collection(firestore, 'studyMaterials');
+             addDocumentNonBlocking(materialsColRef, newMaterial);
+             
+             // Optimistic UI update
+             resetForm();
+             setIsSubmitting(false);
         }
     };
 
