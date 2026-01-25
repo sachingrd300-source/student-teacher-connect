@@ -1,16 +1,15 @@
-
 'use client';
 
 import { FormEvent, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp, addDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, addDoc, setDoc, getDocs, limit } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Users } from 'lucide-react';
+import { Edit, Trash2, Users, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { initializeApp, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -34,6 +33,13 @@ interface EnrolledStudent {
     studentName: string;
     mobileNumber: string;
     createdAt?: Timestamp;
+}
+
+interface StudentProfile {
+    id: string;
+    name: string;
+    studentLoginId: string;
+    mobileNumber: string;
 }
 
 function StudentListForClass({ classId }: { classId: string }) {
@@ -95,8 +101,10 @@ export default function TeacherDashboard() {
     const [batchTime, setBatchTime] = useState('');
     const [isCreatingClass, setIsCreatingClass] = useState(false);
 
-    // State for Add Student form
+    // State for Manage Students section
     const [selectedClass, setSelectedClass] = useState('');
+    
+    // State for creating a new student
     const [studentName, setStudentName] = useState('');
     const [studentFatherName, setStudentFatherName] = useState('');
     const [studentMobileNumber, setStudentMobileNumber] = useState('');
@@ -105,6 +113,14 @@ export default function TeacherDashboard() {
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [studentCreationError, setStudentCreationError] = useState<string | null>(null);
     const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, id: string, pass: string} | null>(null);
+
+    // State for enrolling an existing student
+    const [searchStudentId, setSearchStudentId] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const [foundStudent, setFoundStudent] = useState<StudentProfile | null>(null);
+    const [searchMessage, setSearchMessage] = useState<string | null>(null);
+    const [isEnrolling, setIsEnrolling] = useState(false);
+    const [enrollMessage, setEnrollMessage] = useState<string | null>(null);
 
     // State for editing a class
     const [editingClass, setEditingClass] = useState<Class | null>(null);
@@ -139,6 +155,14 @@ export default function TeacherDashboard() {
     }, [firestore, user, userProfile]);
 
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
+    
+    // Reset search when selected class changes
+    useEffect(() => {
+        setFoundStudent(null);
+        setSearchMessage(null);
+        setSearchStudentId('');
+        setEnrollMessage(null);
+    }, [selectedClass]);
 
     const handleCreateClass = (e: FormEvent) => {
         e.preventDefault();
@@ -168,6 +192,78 @@ export default function TeacherDashboard() {
           });
     };
 
+    const handleSearchStudent = async () => {
+        if (!firestore || !searchStudentId.trim()) return;
+
+        setIsSearching(true);
+        setFoundStudent(null);
+        setSearchMessage(null);
+        setEnrollMessage(null);
+
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, where('studentLoginId', '==', searchStudentId.trim()), limit(1));
+        
+        try {
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                setSearchMessage('No student found with this Login ID.');
+            } else {
+                const studentDoc = querySnapshot.docs[0];
+                setFoundStudent({ id: studentDoc.id, ...studentDoc.data() } as StudentProfile);
+            }
+        } catch (error) {
+            console.error('Error searching for student: ', error);
+            setSearchMessage('An error occurred while searching.');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleEnrollExistingStudent = async () => {
+        if (!firestore || !user || !userProfile || !foundStudent || !selectedClass) return;
+
+        setIsEnrolling(true);
+        setEnrollMessage(null);
+
+        const classData = classes?.find(c => c.id === selectedClass);
+        if (!classData) {
+            setEnrollMessage("Selected class not found.");
+            setIsEnrolling(false);
+            return;
+        }
+        
+        // Check if student is already enrolled
+        const enrollmentsRef = collection(firestore, 'enrollments');
+        const q = query(enrollmentsRef, where('studentId', '==', foundStudent.id), where('classId', '==', selectedClass));
+        const existingEnrollment = await getDocs(q);
+
+        if (!existingEnrollment.empty) {
+            setEnrollMessage('This student is already enrolled in this class.');
+            setIsEnrolling(false);
+            return;
+        }
+
+        // Create new enrollment
+        const enrollmentData = {
+            studentId: foundStudent.id,
+            studentName: foundStudent.name,
+            mobileNumber: foundStudent.mobileNumber,
+            classId: selectedClass,
+            teacherId: user.uid,
+            classTitle: classData.title,
+            classSubject: classData.subject,
+            teacherName: userProfile.name,
+            status: 'approved',
+            createdAt: serverTimestamp(),
+        };
+
+        addDocumentNonBlocking(enrollmentsRef, enrollmentData);
+        setEnrollMessage(`Successfully enrolled ${foundStudent.name} in ${classData.title}.`);
+        setIsEnrolling(false);
+        setFoundStudent(null);
+        setSearchStudentId('');
+    };
+
     const handleCreateStudentLogin = (e: FormEvent) => {
         e.preventDefault();
         if (!user || !userProfile || !selectedClass || !studentName.trim() || !firestore || !studentDateOfBirth) return;
@@ -184,16 +280,14 @@ export default function TeacherDashboard() {
         }
 
         const studentLoginId = nanoid(8);
-        const email = `${studentLoginId}@educonnect.pro`; // This is a "hidden" email for Firebase Auth
-        const password = studentDateOfBirth; // The student's date of birth is their password
+        const email = `${studentLoginId}@educonnect.pro`; 
+        const password = studentDateOfBirth; 
 
-        // We use a secondary Firebase App instance to create a new user.
-        // This is crucial to avoid logging out the currently signed-in teacher.
         let secondaryApp;
         try {
             secondaryApp = initializeApp(firebaseConfig, 'student-creator');
         } catch (error) {
-            secondaryApp = getApp('student-creator'); // Get existing instance if already initialized
+            secondaryApp = getApp('student-creator'); 
         }
         const secondaryAuth = getAuth(secondaryApp);
 
@@ -201,16 +295,15 @@ export default function TeacherDashboard() {
             .then(userCredential => {
                 const newUser = userCredential.user;
 
-                // 2. Create the User document in Firestore
                 const userRef = doc(firestore, `users/${newUser.uid}`);
                 const userProfileData = {
                     id: newUser.uid,
-                    studentLoginId: studentLoginId, // The ID the student uses to log in
+                    studentLoginId: studentLoginId, 
                     name: studentName.trim(),
                     fatherName: studentFatherName.trim(),
                     mobileNumber: studentMobileNumber.trim(),
                     address: studentAddress.trim(),
-                    email: email, // Store the internal-facing email
+                    email: email, 
                     role: 'student',
                     dateOfBirth: studentDateOfBirth,
                     createdAt: serverTimestamp(),
@@ -218,7 +311,6 @@ export default function TeacherDashboard() {
                 };
                 setDocumentNonBlocking(userRef, userProfileData, {});
 
-                // 3. Create the Enrollment document
                 const enrollmentData = {
                     studentId: newUser.uid,
                     studentName: studentName.trim(),
@@ -234,14 +326,12 @@ export default function TeacherDashboard() {
                 const enrollmentsColRef = collection(firestore, 'enrollments');
                 addDocumentNonBlocking(enrollmentsColRef, enrollmentData);
                 
-                // 4. Show the credentials to the teacher
                 setNewlyAddedStudent({ name: studentName.trim(), id: studentLoginId, pass: studentDateOfBirth });
                 setStudentName('');
                 setStudentFatherName('');
                 setStudentMobileNumber('');
                 setStudentAddress('');
                 setStudentDateOfBirth('');
-                setSelectedClass('');
             })
             .catch(error => {
                 console.error("Error creating student auth user:", error);
@@ -356,101 +446,111 @@ export default function TeacherDashboard() {
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Manage Students</CardTitle>
-                                    <CardDescription>Create a new login for a student and enroll them in a class.</CardDescription>
+                                    <CardTitle>Manage Student Enrollment</CardTitle>
+                                    <CardDescription>Enroll an existing student or create a new student account.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <form onSubmit={handleCreateStudentLogin} className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label>Select Class</Label>
-                                            <Select onValueChange={setSelectedClass} value={selectedClass}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a class to enroll the student in" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {classes && classes.map(c => <SelectItem key={c.id} value={c.id}>{c.title} - {c.subject} ({c.batchTime})</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
+                                <CardContent className="space-y-6">
+                                    <div className="space-y-2">
+                                        <Label className='text-base font-semibold'>1. Select a Class</Label>
+                                        <Select onValueChange={setSelectedClass} value={selectedClass}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a class to enroll a student in" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {classes && classes.map(c => <SelectItem key={c.id} value={c.id}>{c.title} - {c.subject} ({c.batchTime})</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    
+                                    {selectedClass && (
+                                    <>
+                                        <div className="my-6 border-t"></div>
+
+                                        {/* Enroll Existing Student */}
+                                        <div className="space-y-4">
+                                            <h3 className='text-base font-semibold'>2. Enroll an Existing Student</h3>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="Enter Student Login ID"
+                                                    value={searchStudentId}
+                                                    onChange={(e) => setSearchStudentId(e.target.value)}
+                                                />
+                                                <Button onClick={handleSearchStudent} disabled={isSearching}>
+                                                    <Search className="mr-2 h-4 w-4" /> {isSearching ? 'Searching...' : 'Find'}
+                                                </Button>
+                                            </div>
+                                            {searchMessage && <p className="text-sm text-muted-foreground">{searchMessage}</p>}
+                                            {foundStudent && (
+                                                <Card className='bg-muted/50'>
+                                                    <CardContent className="p-4 space-y-3">
+                                                         <p>Found student: <span className="font-bold">{foundStudent.name}</span></p>
+                                                        <Button className="w-full" onClick={handleEnrollExistingStudent} disabled={isEnrolling}>
+                                                            {isEnrolling ? 'Enrolling...' : `Enroll ${foundStudent.name}`}
+                                                        </Button>
+                                                    </CardContent>
+                                                </Card>
+                                            )}
+                                             {enrollMessage && <p className="text-sm font-semibold text-green-600">{enrollMessage}</p>}
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-name">Student Full Name</Label>
-                                                <Input
-                                                    id="student-name"
-                                                    placeholder="e.g., Jane Doe"
-                                                    value={studentName}
-                                                    onChange={(e) => setStudentName(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-father-name">Father's Name</Label>
-                                                <Input
-                                                    id="student-father-name"
-                                                    placeholder="e.g., John Doe"
-                                                    value={studentFatherName}
-                                                    onChange={(e) => setStudentFatherName(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-mobile">Mobile Number</Label>
-                                                <Input
-                                                    id="student-mobile"
-                                                    placeholder="e.g., 9876543210"
-                                                    value={studentMobileNumber}
-                                                    onChange={(e) => setStudentMobileNumber(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-address">Address</Label>
-                                                <Input
-                                                    id="student-address"
-                                                    placeholder="e.g., 123 Main St, Anytown"
-                                                    value={studentAddress}
-                                                    onChange={(e) => setStudentAddress(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="student-dob">Student's Date of Birth (Password)</Label>
-                                            <Input
-                                                id="student-dob"
-                                                type="date"
-                                                value={studentDateOfBirth}
-                                                onChange={(e) => setStudentDateOfBirth(e.target.value)}
-                                                required
-                                            />
-                                            <p className="text-xs text-muted-foreground">The student will use this as their password to log in. Format: YYYY-MM-DD.</p>
-                                        </div>
-                                        <Button type="submit" disabled={isAddingStudent || !selectedClass} className="w-full">
-                                            {isAddingStudent ? 'Creating Login...' : 'Create Student Login'}
-                                        </Button>
-                                        {studentCreationError && (
-                                            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-800 rounded-lg">
-                                                <p className="font-bold">Error</p>
-                                                <p>{studentCreationError}</p>
-                                            </div>
-                                        )}
-                                        {newlyAddedStudent && (
-                                            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                                                <p className="font-bold text-green-800">Student Login Created Successfully!</p>
-                                                <p className="text-sm text-green-700">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
-                                                <div className="mt-3 space-y-2 bg-green-100 p-3 rounded-md">
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-green-800">Student ID:</p> 
-                                                        <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.id}</p>
+
+                                        <div className="my-6 border-t"></div>
+
+                                        {/* Create New Student */}
+                                        <div className="space-y-4">
+                                            <h3 className='text-base font-semibold'>Or, Create a New Student & Enroll</h3>
+                                            <form onSubmit={handleCreateStudentLogin} className="space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student-name">Student Full Name</Label>
+                                                        <Input id="student-name" placeholder="e.g., Jane Doe" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
                                                     </div>
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-green-800">Password:</p> 
-                                                        <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.pass}</p>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student-father-name">Father's Name</Label>
+                                                        <Input id="student-father-name" placeholder="e.g., John Doe" value={studentFatherName} onChange={(e) => setStudentFatherName(e.target.value)} required />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student-mobile">Mobile Number</Label>
+                                                        <Input id="student-mobile" placeholder="e.g., 9876543210" value={studentMobileNumber} onChange={(e) => setStudentMobileNumber(e.target.value)} required />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student-address">Address</Label>
+                                                        <Input id="student-address" placeholder="e.g., 123 Main St, Anytown" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} required />
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </form>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="student-dob">Student's Date of Birth (Password)</Label>
+                                                    <Input id="student-dob" type="date" value={studentDateOfBirth} onChange={(e) => setStudentDateOfBirth(e.target.value)} required />
+                                                    <p className="text-xs text-muted-foreground">The student will use this as their password to log in. Format: YYYY-MM-DD.</p>
+                                                </div>
+                                                <Button type="submit" disabled={isAddingStudent} className="w-full">
+                                                    {isAddingStudent ? 'Creating Login...' : 'Create New Student Login & Enroll'}
+                                                </Button>
+                                                {studentCreationError && (
+                                                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-800 rounded-lg">
+                                                        <p className="font-bold">Error</p>
+                                                        <p>{studentCreationError}</p>
+                                                    </div>
+                                                )}
+                                                {newlyAddedStudent && (
+                                                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                                        <p className="font-bold text-green-800">Student Login Created Successfully!</p>
+                                                        <p className="text-sm text-green-700">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
+                                                        <div className="mt-3 space-y-2 bg-green-100 p-3 rounded-md">
+                                                            <div>
+                                                                <p className="text-xs font-semibold text-green-800">Student ID:</p> 
+                                                                <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.id}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-semibold text-green-800">Password:</p> 
+                                                                <p className="font-mono text-base font-bold text-green-900">{newlyAddedStudent.pass}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </form>
+                                        </div>
+                                    </>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>

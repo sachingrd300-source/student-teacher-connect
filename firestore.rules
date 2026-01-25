@@ -33,7 +33,8 @@ service cloud.firestore {
     
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
+      // Allow tutors to search for students by their ID, but not to list everyone
+      allow list: if isAdmin() || isTutor();
       // Allow user creation for anyone signing up OR a teacher creating a student
       allow create: if true;
       allow update: if isOwner(userId) || isAdmin();
