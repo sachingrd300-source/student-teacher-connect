@@ -28,7 +28,7 @@ export type GenerateTestOutput = z.infer<typeof GenerateTestOutputSchema>;
 
 const prompt = ai.definePrompt({
     name: 'testGeneratorPrompt',
-    model: googleAI.model('gemini-1.5-pro-latest'),
+    model: googleAI.model('gemini-1.5-pro'),
     input: { schema: GenerateTestInputSchema },
     output: { schema: GenerateTestOutputSchema },
     prompt: `You are an expert educator tasked with creating a multiple-choice test.
