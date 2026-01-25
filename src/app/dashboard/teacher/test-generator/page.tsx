@@ -3,18 +3,24 @@
 import { useState } from 'react';
 import { generateTest, Question } from '@/ai/flows/test-generator';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useMemoFirebase, useFirestore, useCollection, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, where, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FlaskConical, AlertTriangle, CheckCircle, Wand2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { FlaskConical, AlertTriangle, CheckCircle, Wand2, Save } from 'lucide-react';
+
+interface Class {
+    id: string;
+    title: string;
+}
 
 export default function TestGeneratorPage() {
     const { user } = useUser();
-    const firestore = useDoc.firestore;
+    const firestore = useFirestore();
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
@@ -32,6 +38,20 @@ export default function TestGeneratorPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
+
+    // Save Dialog State
+    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [testTitle, setTestTitle] = useState('');
+    const [totalMarks, setTotalMarks] = useState(0);
+    const [selectedClassId, setSelectedClassId] = useState('');
+
+
+    const classesQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: classes } = useCollection<Class>(classesQuery);
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,6 +72,8 @@ export default function TestGeneratorPage() {
                 difficulty,
             });
             setGeneratedQuestions(result.questions);
+            setTestTitle(topic); // Pre-fill test title
+            setTotalMarks(numQuestions * 5); // Default marks
         } catch (err) {
             console.error(err);
             setError('An unexpected error occurred while generating the test. Please try again.');
@@ -59,6 +81,35 @@ export default function TestGeneratorPage() {
             setIsGenerating(false);
         }
     };
+
+    const handleSaveTest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !firestore || !selectedClassId || generatedQuestions.length === 0) {
+            alert("Please select a class and generate questions first.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const testsColRef = collection(firestore, 'tests');
+            await addDocumentNonBlocking(testsColRef, {
+                teacherId: user.uid,
+                classId: selectedClassId,
+                title: testTitle,
+                subject: subject,
+                totalMarks: totalMarks,
+                questions: generatedQuestions,
+                createdAt: serverTimestamp(),
+            });
+            setIsSaveDialogOpen(false);
+            setGeneratedQuestions([]);
+            setTopic('');
+        } catch (error) {
+            console.error("Error saving test:", error);
+            alert("Failed to save the test.");
+        } finally {
+            setIsSaving(false);
+        }
+    }
     
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
@@ -147,7 +198,10 @@ export default function TestGeneratorPage() {
                                                     </div>
                                                 </div>
                                             ))}
-                                            <Button className="w-full" disabled>Save Test (Coming Soon)</Button>
+                                            <Button className="w-full" onClick={() => setIsSaveDialogOpen(true)}>
+                                                <Save className="mr-2 h-4 w-4" />
+                                                Save Test
+                                            </Button>
                                         </div>
                                     ) : (
                                         !isGenerating && <p className="text-center text-muted-foreground py-8">Your generated questions will appear here.</p>
@@ -158,6 +212,46 @@ export default function TestGeneratorPage() {
                     </div>
                 </div>
             </main>
+
+            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Save Test</DialogTitle>
+                        <DialogDescription>
+                            Provide a title, total marks, and assign this test to a class.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSaveTest} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="test-title">Test Title</Label>
+                            <Input id="test-title" value={testTitle} onChange={e => setTestTitle(e.target.value)} required />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="total-marks">Total Marks</Label>
+                            <Input id="total-marks" type="number" value={totalMarks} onChange={e => setTotalMarks(Number(e.target.value))} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="class-select">Assign to Class</Label>
+                             <Select onValueChange={setSelectedClassId} value={selectedClassId}>
+                                <SelectTrigger id="class-select">
+                                    <SelectValue placeholder="Select a class" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type="button" variant="secondary">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={isSaving || !selectedClassId}>
+                                {isSaving ? 'Saving...' : 'Confirm & Save'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
