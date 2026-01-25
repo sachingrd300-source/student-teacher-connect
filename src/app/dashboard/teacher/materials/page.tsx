@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, FormEvent, useMemo } from 'react';
@@ -176,7 +175,7 @@ export default function TeacherMaterialsPage() {
                                                     <SelectValue placeholder="General (visible to all)" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="">General (visible to all)</SelectItem>
+                                                    <SelectItem value="general">General (visible to all)</SelectItem>
                                                     {classes?.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
