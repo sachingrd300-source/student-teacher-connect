@@ -3,7 +3,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const GenerateTestInputSchema = z.object({
+const GenerateTestInputSchema = z.object({
     topic: z.string().describe('The main topic or chapter for the test'),
     subject: z.string().describe('The subject of the test (e.g., Physics, History)'),
     classLevel: z.string().describe('The grade or class level for the test (e.g., "Class 10")'),
@@ -12,14 +12,14 @@ export const GenerateTestInputSchema = z.object({
 });
 export type GenerateTestInput = z.infer<typeof GenerateTestInputSchema>;
 
-export const QuestionSchema = z.object({
+const QuestionSchema = z.object({
     questionText: z.string().describe('The full text of the question'),
     options: z.array(z.string()).length(4).describe('An array of 4 possible answers'),
     correctAnswer: z.string().describe('The correct answer from the options array'),
 });
 export type Question = z.infer<typeof QuestionSchema>;
 
-export const GenerateTestOutputSchema = z.object({
+const GenerateTestOutputSchema = z.object({
     questions: z.array(QuestionSchema),
 });
 export type GenerateTestOutput = z.infer<typeof GenerateTestOutputSchema>;
