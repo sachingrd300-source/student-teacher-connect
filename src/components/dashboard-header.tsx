@@ -82,7 +82,23 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
   // For desktop, we may want to show only a few links and the rest in "More"
   const visibleTutorLinks = userRole === 'tutor' ? tutorLinks.slice(0, 5) : [];
   const hiddenTutorLinks = userRole === 'tutor' ? tutorLinks.slice(5) : [];
-  const desktopNavLinks = userRole === 'student' ? studentLinks : userRole === 'tutor' ? visibleTutorLinks : adminLinks;
+  
+  const getDesktopNavLinks = () => {
+    switch (userRole) {
+        case 'student':
+            // Show first 4 links, rest in "More"
+            return { visible: studentLinks.slice(0, 4), hidden: studentLinks.slice(4) };
+        case 'tutor':
+            // Show first 5 links, rest in "More"
+            return { visible: tutorLinks.slice(0, 5), hidden: tutorLinks.slice(5) };
+        case 'admin':
+            return { visible: adminLinks, hidden: [] };
+        default:
+            return { visible: [], hidden: [] };
+    }
+  }
+
+  const { visible: desktopNavLinks, hidden: hiddenNavLinks } = getDesktopNavLinks();
 
   return (
     <>
@@ -100,13 +116,13 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                     href={link.href}
                     className={cn(
                         "transition-colors hover:text-foreground",
-                        pathname === link.href || (link.href === '/dashboard/admin' && pathname === '/dashboard') ? "text-foreground" : "text-muted-foreground"
+                        pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/dashboard') ? "text-foreground" : "text-muted-foreground"
                     )}
                     >
                     {link.label}
                     </Link>
                 ))}
-                {userRole === 'tutor' && hiddenTutorLinks.length > 0 && (
+                {hiddenNavLinks.length > 0 && (
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-1 text-muted-foreground hover:text-foreground focus:text-foreground focus:bg-accent px-2">
@@ -115,7 +131,7 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                        {hiddenTutorLinks.map((link) => (
+                        {hiddenNavLinks.map((link) => (
                         <DropdownMenuItem key={link.href} onClick={() => router.push(link.href)}>
                             {link.icon}
                             <span>{link.label}</span>
