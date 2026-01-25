@@ -40,10 +40,9 @@ export default function LoginPage() {
 
     let emailToLogin;
     if (role === 'student') {
-      // For students, the credential is their Student ID, which we convert to the internal email.
-      emailToLogin = `${credential}@educonnect.pro`;
+      const isEmail = credential.includes('@');
+      emailToLogin = isEmail ? credential : `${credential}@educonnect.pro`;
     } else {
-      // For teachers, the credential is their actual email.
       emailToLogin = credential;
     }
 
@@ -109,11 +108,11 @@ export default function LoginPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="credential">{role === 'teacher' ? 'Email' : 'Student ID'}</Label>
+                <Label htmlFor="credential">{role === 'teacher' ? 'Email' : 'Email or Student ID'}</Label>
                 <Input
                   id="credential"
-                  type={role === 'teacher' ? 'email' : 'text'}
-                  placeholder={role === 'teacher' ? 'm@example.com' : 'Enter your Student ID'}
+                  type="text"
+                  placeholder={role === 'teacher' ? 'm@example.com' : 'your@email.com or Student ID'}
                   required
                   value={credential}
                   onChange={(e) => setCredential(e.target.value)}
@@ -125,7 +124,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   required
-                  placeholder={role === 'student' ? 'Your Date of Birth (YYYY-MM-DD)' : undefined}
+                  placeholder={role === 'student' ? 'Password or Date of Birth (YYYY-MM-DD)' : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -155,6 +154,12 @@ export default function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="underline">
                 Sign up as a Teacher
+              </Link>
+            </div>
+             <div className="mt-2 text-center text-sm">
+              New student?{' '}
+              <Link href="/signup/student" className="underline">
+                Sign up here
               </Link>
             </div>
           </CardContent>

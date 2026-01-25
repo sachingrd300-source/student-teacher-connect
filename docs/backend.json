@@ -44,6 +44,10 @@
             "type": "string",
             "description": "The user's date of birth, used as initial password for students."
         },
+        "classLevel": {
+            "type": "string",
+            "description": "The student's class level (e.g., 'Class 8', 'Class 12')."
+        },
         "createdAt": {
             "type": "string",
             "format": "date-time"

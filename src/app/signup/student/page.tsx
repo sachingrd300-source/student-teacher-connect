@@ -13,41 +13,57 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
 
-export default function SignupPage() {
+export default function StudentSignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
 
   const [name, setName] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [classLevel, setClassLevel] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
+
+  const classLevels = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
 
   const createUserProfileDocument = async (user: any, additionalData: any) => {
     if (!user || !firestore) return;
     const userRef = doc(firestore, `users/${user.uid}`);
-    const { name, email } = additionalData;
+    const { name, email, mobileNumber, classLevel } = additionalData;
     
     const dataToSet = {
       id: user.uid,
       name,
       email,
-      role: 'tutor', // Hardcoded to 'tutor' for this page
+      mobileNumber,
+      classLevel,
+      role: 'student',
       createdAt: serverTimestamp(),
-      status: 'pending_verification',
+      status: 'approved', // Self-registered students are auto-approved
     };
-    // Wait for the document to be created before proceeding
-    await setDoc(userRef, dataToSet, { merge: true });
+    await setDoc(userRef, dataToSet);
   };
 
   const handleSignUp = async (event: FormEvent) => {
     event.preventDefault();
+    if (!classLevel) {
+        setError("Please select your class level.");
+        return;
+    }
     setError(null);
     setIsSigningUp(true);
 
@@ -59,11 +75,14 @@ export default function SignupPage() {
 
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      // Ensure the user profile is created before we redirect
-      await createUserProfileDocument(user, { name, email });
-      router.push('/dashboard'); // Redirect to dashboard after signup
+      await createUserProfileDocument(user, { name, email, mobileNumber, classLevel });
+      router.push('/dashboard');
     } catch (error: any) {
-      setError(error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('This email address is already in use by another account.');
+      } else {
+        setError(error.message);
+      }
     } finally {
         setIsSigningUp(false);
     }
@@ -75,14 +94,13 @@ export default function SignupPage() {
           <div className="text-center">
               <School className="w-12 h-12 mx-auto text-primary" />
               <h1 className="text-3xl font-bold font-serif text-foreground mt-2">EduConnect Pro</h1>
-              <p className="text-muted-foreground">Become a part of our learning community.</p>
+              <p className="text-muted-foreground">Join our learning community.</p>
           </div>
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl font-serif">Create a Teacher Account</CardTitle>
+              <CardTitle className="text-xl font-serif">Create a Student Account</CardTitle>
               <CardDescription>
-                Fill out the form below to get started. Are you a student?{' '}
-                <Link href="/signup/student" className="underline">Sign up here.</Link>
+                For students in Jharkhand, all study materials and books for classes 8 and above are provided for free.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -91,36 +109,32 @@ export default function SignupPage() {
               )}
               <form onSubmit={handleSignUp} className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full name</Label>
-                  <Input
-                    id="full-name"
-                    placeholder="John Doe"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+                  <Label htmlFor="full-name">Full Name</Label>
+                  <Input id="full-name" placeholder="e.g., Priya Sharma" required value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                 <div className="grid gap-2">
+                  <Label htmlFor="mobile">Mobile Number</Label>
+                  <Input id="mobile" placeholder="e.g., 9876543210" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <Input id="email" type="email" placeholder="priya@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="class-level">Class</Label>
+                    <Select onValueChange={setClassLevel} value={classLevel}>
+                        <SelectTrigger id="class-level">
+                            <SelectValue placeholder="Select your class level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {classLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                 </div>
                 
                 <Button type="submit" className="w-full" disabled={isSigningUp}>
                   {isSigningUp ? 'Creating Account...' : 'Create Account'}
