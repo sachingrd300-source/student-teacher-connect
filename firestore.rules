@@ -68,5 +68,17 @@ service cloud.firestore {
       allow get, list: if isUser();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
+
+    match /tests/{testId} {
+      allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+      allow get, list: if isUser();
+      allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
+    }
+
+    match /testResults/{resultId} {
+      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
+      allow get, list: if (isStudent() && request.auth.uid == resource.data.studentId) || (isTutor() && request.auth.uid == resource.data.teacherId);
+      allow update, delete: if false;
+    }
   }
 }

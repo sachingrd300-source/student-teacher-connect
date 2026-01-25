@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userName: string | null | undefined;
@@ -71,6 +71,12 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                         <BookOpen className="mr-2 h-4 w-4" />
                         <span>Study Materials</span>
                     </DropdownMenuItem>
+                     {userRole === 'tutor' && (
+                         <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/test-generator')}>
+                            <FlaskConical className="mr-2 h-4 w-4" />
+                            <span>AI Test Generator</span>
+                         </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
