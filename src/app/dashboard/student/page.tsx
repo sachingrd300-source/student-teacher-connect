@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { BookUser, MapPin, CalendarCheck, ClipboardList, PlusCircle } from 'lucide-react';
+import { BookUser, MapPin, CalendarCheck, ClipboardList, PlusCircle, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -342,7 +342,12 @@ export default function StudentDashboard() {
                                         <Card key={tutor.id} className="flex flex-col">
                                             <CardHeader className="flex-1">
                                                 <CardTitle>{tutor.name}</CardTitle>
-                                                {tutor.coachingName && <CardDescription>{tutor.coachingName}</CardDescription>}
+                                                {tutor.coachingName && 
+                                                    <div className="flex items-center gap-2 pt-1">
+                                                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                                        <CardDescription>{tutor.coachingName}</CardDescription>
+                                                    </div>
+                                                }
                                             </CardHeader>
                                             <CardContent className="space-y-3 text-sm flex-1">
                                                 {tutor.subjects && tutor.subjects.length > 0 && (

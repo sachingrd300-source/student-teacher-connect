@@ -55,6 +55,27 @@
         "status": {
           "type": "string",
           "description": "The verification status of the user (e.g., pending_verification, approved)."
+        },
+        "coachingName": {
+            "type": "string",
+            "description": "The name of the teacher's coaching center or institute."
+        },
+        "whatsappNumber": {
+            "type": "string",
+            "description": "The teacher's WhatsApp number for student communication."
+        },
+        "subjects": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "A list of subjects the teacher specializes in."
+        },
+        "qualification": {
+            "type": "string",
+            "description": "The teacher's highest academic qualification."
+        },
+        "experience": {
+            "type": "string",
+            "description": "The teacher's years of teaching experience."
         }
       },
       "required": [

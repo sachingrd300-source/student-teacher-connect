@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
@@ -170,7 +171,7 @@ export default function TeacherProfilePage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter className="justify-end gap-2">
-                                    <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                    <Button variant="ghost" type="button" onClick={() => setIsEditing(false)}>Cancel</Button>
                                     <Button type="submit">
                                         <Save className="h-4 w-4 mr-2" /> Save Changes
                                     </Button>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { FormEvent, useState, useEffect } from 'react';
@@ -59,7 +60,8 @@ function StudentListForClass({ classId }: { classId: string }) {
 
     const studentsProfileQuery = useMemoFirebase(() => {
         if (!firestore || studentUids.length === 0) return null;
-        return query(collection(firestore, 'users'), where('id', 'in', studentUids));
+        // Firestore 'in' queries are limited to 30 items. For larger classes, this would need pagination.
+        return query(collection(firestore, 'users'), where('__name__', 'in', studentUids));
     }, [firestore, studentUids]);
 
     const { data: studentProfiles } = useCollection<StudentProfile>(studentsProfileQuery);
