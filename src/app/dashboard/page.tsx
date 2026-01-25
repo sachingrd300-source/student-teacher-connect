@@ -15,7 +15,7 @@ export default function DashboardRedirector() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string}>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: 'student' | 'tutor' | 'admin'}>(userProfileRef);
 
   useEffect(() => {
     if (isUserLoading || isProfileLoading) {
@@ -32,10 +32,13 @@ export default function DashboardRedirector() {
         router.replace('/dashboard/teacher');
       } else if (userProfile.role === 'student') {
         router.replace('/dashboard/student');
+      } else if (userProfile.role === 'admin') {
+        router.replace('/dashboard/admin');
       } else {
         // Fallback for other roles or if role is not defined
-        // For now, just stay on a loading page or redirect to a generic page
         console.error("Unknown or missing user role:", userProfile.role);
+        // You might want to redirect to a generic "pending" or error page here
+        router.replace('/login');
       }
     }
     // If userProfile is loading, the effect will re-run when it's available.

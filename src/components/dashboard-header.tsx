@@ -13,13 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface DashboardHeaderProps {
   userName: string | null | undefined;
-  userRole: 'tutor' | 'student';
+  userRole: 'tutor' | 'student' | 'admin';
 }
 
 interface NavLink {
@@ -53,6 +53,10 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="mr-2 h-4 w-4" /> },
   ];
 
+  const adminLinks: NavLink[] = [
+     { href: '/dashboard/admin', label: 'Verification', icon: <ShieldCheck className="mr-2 h-4 w-4" /> },
+  ];
+
   const tutorLinks: NavLink[] = [
         ...commonLinks,
         { href: '/dashboard/teacher/profile', label: 'Profile', icon: <UserCircle className="mr-2 h-4 w-4" /> },
@@ -73,12 +77,12 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
        { href: '/dashboard/student/results', label: 'My Results', icon: <ResultsIcon className="mr-2 h-4 w-4" /> },
   ];
 
-  const navLinks = userRole === 'tutor' ? tutorLinks : studentLinks;
+  const navLinks = userRole === 'tutor' ? tutorLinks : userRole === 'student' ? studentLinks : adminLinks;
 
   // For desktop, we may want to show only a few links and the rest in "More"
   const visibleTutorLinks = userRole === 'tutor' ? tutorLinks.slice(0, 5) : [];
   const hiddenTutorLinks = userRole === 'tutor' ? tutorLinks.slice(5) : [];
-  const desktopNavLinks = userRole === 'student' ? studentLinks : visibleTutorLinks;
+  const desktopNavLinks = userRole === 'student' ? studentLinks : userRole === 'tutor' ? visibleTutorLinks : adminLinks;
 
   return (
     <>
@@ -96,7 +100,7 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                     href={link.href}
                     className={cn(
                         "transition-colors hover:text-foreground",
-                        pathname === link.href ? "text-foreground" : "text-muted-foreground"
+                        pathname === link.href || (link.href === '/dashboard/admin' && pathname === '/dashboard') ? "text-foreground" : "text-muted-foreground"
                     )}
                     >
                     {link.label}
