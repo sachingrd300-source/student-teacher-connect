@@ -3,17 +3,45 @@
   "placeholderImages": [
     {
       "id": "hero-section",
-      "src": "https://picsum.photos/seed/hero/600/400",
-      "width": 600,
-      "height": 400,
-      "hint": "classroom students"
+      "src": "https://picsum.photos/seed/hero2/1280/720",
+      "width": 1280,
+      "height": 720,
+      "hint": "teacher classroom"
+    },
+    {
+      "id": "feature-class-management",
+      "src": "https://picsum.photos/seed/feature1/500/300",
+      "width": 500,
+      "height": 300,
+      "hint": "teacher with students"
+    },
+    {
+      "id": "feature-study-materials",
+      "src": "https://picsum.photos/seed/feature2/500/300",
+      "width": 500,
+      "height": 300,
+      "hint": "stack of books"
+    },
+    {
+      "id": "feature-attendance",
+      "src": "https://picsum.photos/seed/feature3/500/300",
+      "width": 500,
+      "height": 300,
+      "hint": "checklist on clipboard"
+    },
+    {
+      "id": "feature-ai-tests",
+      "src": "https://picsum.photos/seed/feature4/500/300",
+      "width": 500,
+      "height": 300,
+      "hint": "robot using computer"
     },
     {
       "id": "how-it-works",
       "src": "https://picsum.photos/seed/howitworks/500/500",
       "width": 500,
       "height": 500,
-      "hint": "teacher student"
+      "hint": "teacher and student"
     },
     {
       "id": "testimonial-1",

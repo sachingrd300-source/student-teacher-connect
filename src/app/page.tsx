@@ -4,27 +4,27 @@ import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, FlaskConical, CalendarCheck, CheckCircle, Landmark, Palette } from "lucide-react";
+import { CheckCircle, Landmark, Palette, FlaskConical } from "lucide-react";
 import { placeholderImages as allImages } from "@/lib/placeholder-images.json";
 
 const features = [
   {
-    icon: <Users className="h-8 w-8 text-primary" />,
+    image_id: "feature-class-management",
     title: "Class & Student Management",
     description: "Easily create classes, manage student enrollments, and keep track of your student roster in one place.",
   },
   {
-    icon: <BookOpen className="h-8 w-8 text-primary" />,
+    image_id: "feature-study-materials",
     title: "Study Materials Hub",
     description: "Upload, organize, and share study materials like notes, books, and homework with your students effortlessly.",
   },
   {
-    icon: <CalendarCheck className="h-8 w-8 text-primary" />,
+    image_id: "feature-attendance",
     title: "Attendance Tracking",
     description: "Take daily attendance for your classes with a simple and intuitive interface, and let students view their records.",
   },
   {
-    icon: <FlaskConical className="h-8 w-8 text-primary" />,
+    image_id: "feature-ai-tests",
     title: "AI Test Generator",
     description: "Save time by using our AI-powered tool to generate multiple-choice tests on any topic, ready to be assigned.",
   },
@@ -53,58 +53,59 @@ const testimonials = [
 
 export default function Home() {
 
-  const heroImage = allImages.find(img => img.id === 'hero-section');
-  const howItWorksImage = allImages.find(img => img.id === 'how-it-works');
-  
-  const getAvatar = (id: string) => {
+  const getImageById = (id: string) => {
     return allImages.find(img => img.id === id);
   }
+
+  const heroImage = getImageById('hero-section');
+  const howItWorksImage = getImageById('how-it-works');
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <MainHeader />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16">
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="space-y-4">
-                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-serif text-foreground">
-                    The Smart Way to Connect Teachers and Students
-                  </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    EduConnect Pro is the all-in-one platform for seamless
-                    teacher-student collaboration. Manage classes, share materials, track attendance, and generate tests with AI.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link
-                    className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                    href="/signup"
-                  >
-                    Get Started as a Teacher
-                  </Link>
-                  <Link
-                    className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                    href="/login"
-                  >
-                    Login
-                  </Link>
-                </div>
-              </div>
-              {heroImage && (
+        <section className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh]">
+            {heroImage && (
                 <Image
-                  alt="Hero"
-                  className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-                  data-ai-hint={heroImage.hint}
-                  height={heroImage.height}
-                  src={heroImage.src}
-                  width={heroImage.width}
+                    alt="Hero Background"
+                    className="object-cover"
+                    data-ai-hint={heroImage.hint}
+                    src={heroImage.src}
+                    fill
+                    priority
                 />
-              )}
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/60 to-transparent" />
+            <div className="relative container h-full px-4 md:px-6">
+                <div className="flex h-full items-center">
+                    <div className="flex flex-col justify-center space-y-6 max-w-lg">
+                        <div className="space-y-4">
+                            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-serif text-foreground">
+                                The Smart Way to Connect Teachers and Students
+                            </h1>
+                            <p className="max-w-[600px] text-foreground/90 md:text-xl">
+                                EduConnect Pro is the all-in-one platform for seamless
+                                teacher-student collaboration. Manage classes, share materials, track attendance, and generate tests with AI.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                            <Link
+                                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                href="/signup"
+                            >
+                                Get Started as a Teacher
+                            </Link>
+                            <Link
+                                className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background/80 backdrop-blur-sm px-8 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                                href="/login"
+                            >
+                                Login
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </section>
 
         {/* Features Section */}
@@ -119,18 +120,30 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-2 lg:gap-12">
-              {features.map((feature, index) => (
-                <div key={index} className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    {feature.icon}
-                  </div>
-                  <div className="grid gap-1">
-                    <h3 className="text-lg font-bold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="mx-auto grid max-w-6xl items-stretch gap-6 py-12 md:grid-cols-2 lg:gap-8">
+              {features.map((feature, index) => {
+                const featureImage = getImageById(feature.image_id);
+                return (
+                    <Card key={index} className="overflow-hidden transition-all hover:shadow-lg">
+                        {featureImage && (
+                            <Image
+                                alt={feature.title}
+                                className="aspect-video w-full object-cover"
+                                data-ai-hint={featureImage.hint}
+                                height={featureImage.height}
+                                src={featureImage.src}
+                                width={featureImage.width}
+                            />
+                        )}
+                        <CardHeader>
+                            <CardTitle>{feature.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">{feature.description}</p>
+                        </CardContent>
+                    </Card>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -292,7 +305,7 @@ export default function Home() {
             </div>
             <div className="mx-auto grid max-w-5xl items-stretch gap-6 py-12 lg:grid-cols-3 lg:gap-8">
               {testimonials.map((testimonial) => {
-                const avatar = getAvatar(testimonial.avatarId);
+                const avatar = getImageById(testimonial.avatarId);
                 return (
                   <Card key={testimonial.name} className="flex flex-col p-6">
                     <CardContent className="p-0 flex-grow flex flex-col">
@@ -302,8 +315,8 @@ export default function Home() {
                            <Image
                               src={avatar.src}
                               alt={`Avatar of ${testimonial.name}`}
-                              width={40}
-                              height={40}
+                              width={avatar.width}
+                              height={avatar.height}
                               className="rounded-full"
                               data-ai-hint={avatar.hint}
                             />
