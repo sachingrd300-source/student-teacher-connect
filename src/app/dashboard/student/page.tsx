@@ -21,6 +21,7 @@ interface Enrollment {
     classSubject: string;
     teacherName: string;
     status: 'pending' | 'approved' | 'denied';
+    batchTime?: string;
 }
 
 interface ClassData {
@@ -29,6 +30,7 @@ interface ClassData {
     teacherName: string;
     title: string;
     subject: string;
+    batchTime: string;
 }
 
 interface TutorProfile {
@@ -219,6 +221,7 @@ export default function StudentDashboard() {
             classTitle: classData.title,
             classSubject: classData.subject,
             teacherName: classData.teacherName,
+            batchTime: classData.batchTime,
             status: 'approved',
             createdAt: serverTimestamp(),
         };
@@ -324,6 +327,9 @@ export default function StudentDashboard() {
                                             <CardHeader>
                                                 <CardTitle className="text-lg">{enrollment.classTitle}</CardTitle>
                                                 <CardDescription>Taught by {enrollment.teacherName}</CardDescription>
+                                                 {enrollment.batchTime && (
+                                                    <CardDescription className="pt-2 font-semibold text-foreground/90">{enrollment.batchTime}</CardDescription>
+                                                )}
                                             </CardHeader>
                                             <CardFooter>
                                                 <div className={`text-xs font-semibold capitalize px-2 py-1 rounded-full ${

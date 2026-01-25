@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -171,6 +172,7 @@
         "classTitle": { "type": "string", "description": "The title of the class. Denormalized for display." },
         "classSubject": { "type": "string", "description": "The subject of the class. Denormalized for display." },
         "teacherName": { "type": "string", "description": "The name of the teacher. Denormalized for display." },
+        "batchTime": { "type": "string", "description": "The timing of the class batch. Denormalized for display." },
         "status": {
           "type": "string",
           "enum": [
@@ -194,7 +196,8 @@
         "createdAt",
         "classTitle",
         "classSubject",
-        "teacherName"
+        "teacherName",
+        "batchTime"
       ]
     },
     "StudyMaterial": {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
@@ -201,6 +202,7 @@ export default function ClassDetailsPage() {
             classTitle: classData.title,
             classSubject: classData.subject,
             teacherName: userProfile.name,
+            batchTime: classData.batchTime,
             status: 'approved',
             createdAt: serverTimestamp(),
         };
@@ -261,6 +263,7 @@ export default function ClassDetailsPage() {
                     classTitle: classData.title,
                     classSubject: classData.subject,
                     teacherName: userProfile.name,
+                    batchTime: classData.batchTime,
                     status: 'approved',
                     createdAt: serverTimestamp(),
                 };

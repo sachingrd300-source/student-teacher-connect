@@ -97,6 +97,7 @@ export default function StudentSignupPage() {
                 classTitle: classData.title,
                 classSubject: classData.subject,
                 teacherName: classData.teacherName,
+                batchTime: classData.batchTime,
                 status: 'approved',
                 createdAt: serverTimestamp(),
             };
