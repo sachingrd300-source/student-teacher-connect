@@ -54,7 +54,8 @@
         },
         "status": {
           "type": "string",
-          "description": "The verification status of the user (e.g., pending_verification, approved)."
+          "description": "The verification status of the user.",
+          "enum": ["pending_verification", "approved", "denied"]
         },
         "coachingName": {
             "type": "string",
@@ -171,6 +172,7 @@
         "classTitle": { "type": "string", "description": "The title of the class. Denormalized for display." },
         "classSubject": { "type": "string", "description": "The subject of the class. Denormalized for display." },
         "teacherName": { "type": "string", "description": "The name of the teacher. Denormalized for display." },
+        "batchTime": { "type": "string", "description": "The timing of the class batch. Denormalized for display." },
         "status": {
           "type": "string",
           "enum": [
@@ -194,7 +196,8 @@
         "createdAt",
         "classTitle",
         "classSubject",
-        "teacherName"
+        "teacherName",
+        "batchTime"
       ]
     },
     "StudyMaterial": {
@@ -276,6 +279,14 @@
             },
             "teacherId": { "type": "string" },
             "classId": { "type": "string" },
+            "testTitle": {
+                "type": "string",
+                "description": "The title of the test. Denormalized for display."
+            },
+            "testSubject": {
+                "type": "string",
+                "description": "The subject of the test. Denormalized for display."
+            },
             "marksObtained": { "type": "number" },
             "totalMarks": { "type": "number" },
             "answers": {
@@ -294,7 +305,7 @@
             },
             "submittedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt", "answers"]
+        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "testTitle", "testSubject", "marksObtained", "totalMarks", "submittedAt", "answers"]
     }
   },
   "auth": {

@@ -53,11 +53,11 @@ const testimonials = [
   },
 ];
 
-export default function Home() {
+const getImageById = (id: string) => {
+  return placeholderImages.find(img => img.id === id);
+}
 
-  const getImageById = (id: string) => {
-    return placeholderImages.find(img => img.id === id);
-  }
+export default function Home() {
 
   const heroImage = getImageById('hero-section');
   const howItWorksImage = getImageById('how-it-works');

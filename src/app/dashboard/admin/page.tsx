@@ -195,10 +195,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-// Dummy Tabs component to avoid breaking the build if not present
-// This can be replaced with the actual shadcn component
-const Tabs = ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>;
-const TabsList = ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>;
-const TabsTrigger = ({ children, ...props }: React.ComponentProps<'button'>) => <button {...props}>{children}</button>;
-const TabsContent = ({ children, ...props }: React.ComponentProps<'div'>) => <div {...props}>{children}</div>;

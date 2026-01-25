@@ -118,35 +118,38 @@ export default function TestGeneratorPage() {
     };
 
 
-    const handleSaveTest = async (e: React.FormEvent) => {
+    const handleSaveTest = (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !firestore || !selectedClassId || generatedQuestions.length === 0) {
             alert("Please select a class and generate questions first.");
             return;
         }
         setIsSaving(true);
-        try {
-            const testsColRef = collection(firestore, 'tests');
-            await addDocumentNonBlocking(testsColRef, {
-                teacherId: user.uid,
-                classId: selectedClassId,
-                title: testTitle,
-                subject: subject,
-                totalMarks: totalMarks,
-                questions: generatedQuestions,
-                createdAt: serverTimestamp(),
-            });
+
+        const testsColRef = collection(firestore, 'tests');
+        addDocumentNonBlocking(testsColRef, {
+            teacherId: user.uid,
+            classId: selectedClassId,
+            title: testTitle,
+            subject: subject,
+            totalMarks: totalMarks,
+            questions: generatedQuestions,
+            createdAt: serverTimestamp(),
+        })
+        .then(() => {
             setIsSaveDialogOpen(false);
             setGeneratedQuestions([]);
             setTopic('');
             setSubject('');
             setClassLevel('');
-        } catch (error) {
-            console.error("Error saving test:", error);
-            alert("Failed to save the test.");
-        } finally {
+        })
+        .catch((error) => {
+             console.error("Error saving test:", error);
+             alert("Failed to save the test.");
+        })
+        .finally(() => {
             setIsSaving(false);
-        }
+        });
     }
     
     return (
