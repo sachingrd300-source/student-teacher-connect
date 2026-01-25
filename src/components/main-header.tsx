@@ -9,6 +9,7 @@ export function MainHeader() {
     
     const navLinks = [
         { href: '#features', label: 'Features' },
+        { href: '#resources', label: 'Free Resources' },
         { href: '#how-it-works', label: 'How it Works' },
         { href: '#testimonials', label: 'Testimonials' },
     ];
