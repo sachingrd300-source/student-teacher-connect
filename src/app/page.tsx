@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School } from "lucide-react";
+import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School, ShieldCheck } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
 
 const { placeholderImages } = placeholderData;
@@ -146,10 +146,10 @@ export default function Home() {
                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Open Library</div>
                 <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-5xl">Free Study Materials</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Access a comprehensive, open library of free resources for Classes 8 to 12, covering Science, Commerce, and Arts streams. No login required.
+                  Access a comprehensive, open library of free resources, including special materials for the Jharkhand Board (Class 10 & 12). No login required.
                 </p>
               </div>
-              <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 pt-12 sm:grid-cols-3">
+              <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 pt-12 sm:grid-cols-2 lg:grid-cols-4">
                   <Card className="text-center p-6">
                       <div className="flex justify-center mb-4"><FlaskConical className="h-10 w-10 text-primary"/></div>
                       <CardTitle className="text-xl">Science</CardTitle>
@@ -165,6 +165,11 @@ export default function Home() {
                       <CardTitle className="text-xl">Arts</CardTitle>
                       <CardDescription>History, Geography, Political Science & more.</CardDescription>
                   </Card>
+                   <Card className="text-center p-6 bg-primary/10 border-2 border-primary">
+                        <div className="flex justify-center mb-4"><ShieldCheck className="h-10 w-10 text-primary"/></div>
+                        <CardTitle className="text-xl">Jharkhand Board</CardTitle>
+                        <CardDescription>All materials for Class 10 & 12 absolutely free.</CardDescription>
+                    </Card>
               </div>
               <div className="mx-auto max-w-5xl text-center mt-8">
                    <Link href="/materials">
