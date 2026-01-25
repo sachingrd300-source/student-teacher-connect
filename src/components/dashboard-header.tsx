@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 
 interface DashboardHeaderProps {
@@ -59,7 +59,7 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
         { href: '/dashboard/teacher/attendance-reports', label: 'Attendance Reports', icon: <BarChart3 className="mr-2 h-4 w-4" /> },
         { href: '/dashboard/teacher/test-generator', label: 'AI Test Generator', icon: <FlaskConical className="mr-2 h-4 w-4" /> },
         { href: '/dashboard/teacher/tests', label: 'Manage Tests', icon: <ClipboardList className="mr-2 h-4 w-4" /> },
-        { href: '/dashboard/teacher/results', label: 'Test Results', icon: <ClipboardCheck className="mr-2 h-4 w-4" /> },
+        { href: '/dashboard/teacher/results', label: 'Test Results', icon: <ResultsIcon className="mr-2 h-4 w-4" /> },
   ];
 
   const studentLinks: NavLink[] = [
