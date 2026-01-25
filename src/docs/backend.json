@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -54,6 +55,27 @@
         "status": {
           "type": "string",
           "description": "The verification status of the user (e.g., pending_verification, approved)."
+        },
+        "coachingName": {
+            "type": "string",
+            "description": "The name of the teacher's coaching center or institute."
+        },
+        "whatsappNumber": {
+            "type": "string",
+            "description": "The teacher's WhatsApp number for student communication."
+        },
+        "subjects": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "A list of subjects the teacher specializes in."
+        },
+        "qualification": {
+            "type": "string",
+            "description": "The teacher's highest academic qualification."
+        },
+        "experience": {
+            "type": "string",
+            "description": "The teacher's years of teaching experience."
         },
         "fee": {
             "type": "string",
@@ -184,6 +206,7 @@
             "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
             "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material. Denormalized for display." },
             "classId": { "type": "string", "description": "The ID of the class this material belongs to. Null if not class-specific." },
+            "className": { "type": "string", "description": "The name of the class this material belongs to. Denormalized for display." },
             "title": { "type": "string" },
             "description": { "type": "string" },
             "subject": { "type": "string" },
@@ -242,18 +265,36 @@
     "TestResult": {
         "title": "Test Result",
         "type": "object",
-        "description": "Stores a student's result for a specific test.",
+        "description": "Stores a student's result for a specific test, including their answers.",
         "properties": {
             "id": { "type": "string" },
             "testId": { "type": "string" },
             "studentId": { "type": "string" },
+            "studentName": {
+                "type": "string",
+                "description": "The name of the student who took the test. Denormalized for display."
+            },
             "teacherId": { "type": "string" },
             "classId": { "type": "string" },
             "marksObtained": { "type": "number" },
             "totalMarks": { "type": "number" },
+            "answers": {
+                "type": "array",
+                "description": "An array containing the student's answer for each question.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "questionText": { "type": "string" },
+                        "options": { "type": "array", "items": { "type": "string" } },
+                        "selectedAnswer": { "type": "string" },
+                        "correctAnswer": { "type": "string" }
+                    },
+                    "required": ["questionText", "options", "selectedAnswer", "correctAnswer"]
+                }
+            },
             "submittedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "testId", "studentId", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt"]
+        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "marksObtained", "totalMarks", "submittedAt", "answers"]
     }
   },
   "auth": {

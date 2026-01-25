@@ -8,13 +8,20 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { ClipboardCheck, Eye } from 'lucide-react';
+import { ClipboardCheck, Eye, BarChart2, Check, X, Star, TrendingDown, TrendingUp } from 'lucide-react';
 
 interface Test {
     id: string;
     title: string;
     subject: string;
+    questions: { questionText: string }[];
     createdAt: Timestamp;
+}
+
+interface AnswerDetail {
+    questionText: string;
+    selectedAnswer: string;
+    correctAnswer: string;
 }
 
 interface TestResult {
@@ -24,6 +31,14 @@ interface TestResult {
     marksObtained: number;
     totalMarks: number;
     submittedAt: Timestamp;
+    answers: AnswerDetail[];
+}
+
+interface QuestionStat {
+    questionText: string;
+    correct: number;
+    incorrect: number;
+    total: number;
 }
 
 export default function TeacherResultsPage() {
@@ -36,6 +51,7 @@ export default function TeacherResultsPage() {
     const { data: userProfile } = useDoc(userProfileRef);
 
     const [viewingResultsForTest, setViewingResultsForTest] = useState<Test | null>(null);
+    const [viewingAnalyticsForTest, setViewingAnalyticsForTest] = useState<Test | null>(null);
 
     // 1. Fetch all tests created by the teacher
     const testsQuery = useMemoFirebase(() => {
@@ -65,6 +81,56 @@ export default function TeacherResultsPage() {
 
     const sortedResults = viewingResultsForTest ? [...(resultsByTest.get(viewingResultsForTest.id) || [])].sort((a, b) => b.marksObtained - a.marksObtained) : [];
 
+    const testAnalytics = useMemo(() => {
+        if (!viewingAnalyticsForTest) return null;
+        const testResults = resultsByTest.get(viewingAnalyticsForTest.id) || [];
+        if (testResults.length === 0) return null;
+
+        const totalMarks = testResults[0].totalMarks;
+        let totalScore = 0;
+        let highestScore = 0;
+        let lowestScore = totalMarks;
+
+        const questionStats: QuestionStat[] = viewingAnalyticsForTest.questions.map(q => ({
+            questionText: q.questionText,
+            correct: 0,
+            incorrect: 0,
+            total: 0,
+        }));
+
+        for (const result of testResults) {
+            totalScore += result.marksObtained;
+            if (result.marksObtained > highestScore) highestScore = result.marksObtained;
+            if (result.marksObtained < lowestScore) lowestScore = result.marksObtained;
+
+            result.answers.forEach((answer, index) => {
+                if (questionStats[index]) {
+                    if (answer.selectedAnswer === answer.correctAnswer) {
+                        questionStats[index].correct += 1;
+                    } else {
+                        questionStats[index].incorrect += 1;
+                    }
+                    questionStats[index].total += 1;
+                }
+            });
+        }
+        
+        const averageScore = Math.round(totalScore / testResults.length);
+        const averagePercentage = Math.round((averageScore / totalMarks) * 100);
+
+        return {
+            averageScore,
+            averagePercentage,
+            highestScore,
+            lowestScore,
+            totalSubmissions: testResults.length,
+            totalMarks,
+            questionStats,
+        };
+
+    }, [viewingAnalyticsForTest, resultsByTest]);
+
+
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
             <DashboardHeader userName={userProfile?.name} userRole="tutor" />
@@ -77,7 +143,7 @@ export default function TeacherResultsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Student Submissions</CardTitle>
-                            <CardDescription>View the results for the tests you have created.</CardDescription>
+                            <CardDescription>View the results and performance analytics for the tests you have created.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {(testsLoading || resultsLoading) && <p>Loading test data...</p>}
@@ -96,14 +162,21 @@ export default function TeacherResultsPage() {
                                                         {submissions.length} Student(s) Submitted
                                                     </div>
                                                 </CardContent>
-                                                <CardFooter>
+                                                <CardFooter className="flex-col items-stretch gap-2">
                                                     <Button 
                                                         className="w-full" 
                                                         variant="outline"
                                                         onClick={() => setViewingResultsForTest(test)} 
                                                         disabled={submissions.length === 0}
                                                     >
-                                                        <Eye className="h-4 w-4 mr-2" /> View Results
+                                                        <Eye className="h-4 w-4 mr-2" /> View Scores
+                                                    </Button>
+                                                     <Button 
+                                                        className="w-full" 
+                                                        onClick={() => setViewingAnalyticsForTest(test)} 
+                                                        disabled={submissions.length === 0}
+                                                    >
+                                                        <BarChart2 className="h-4 w-4 mr-2" /> View Analytics
                                                     </Button>
                                                 </CardFooter>
                                             </Card>
@@ -122,9 +195,9 @@ export default function TeacherResultsPage() {
                 <Dialog open={!!viewingResultsForTest} onOpenChange={(isOpen) => !isOpen && setViewingResultsForTest(null)}>
                     <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Results for: {viewingResultsForTest.title}</DialogTitle>
+                            <DialogTitle>Scores for: {viewingResultsForTest.title}</DialogTitle>
                             <DialogDescription>
-                                Showing results for all students who completed this test.
+                                Showing scores for all students who completed this test, sorted from highest to lowest.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="mt-4 max-h-[60vh] overflow-y-auto">
@@ -156,6 +229,80 @@ export default function TeacherResultsPage() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+            )}
+
+            {viewingAnalyticsForTest && testAnalytics && (
+                 <Dialog open={!!viewingAnalyticsForTest} onOpenChange={(isOpen) => !isOpen && setViewingAnalyticsForTest(null)}>
+                    <DialogContent className="max-w-3xl">
+                         <DialogHeader>
+                            <DialogTitle>Analytics for: {viewingAnalyticsForTest.title}</DialogTitle>
+                            <DialogDescription>
+                                Performance breakdown for the {testAnalytics.totalSubmissions} student(s) who completed this test.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid grid-cols-3 gap-4 my-4">
+                            <Card className="text-center">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Average Score</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{testAnalytics.averagePercentage}%</p>
+                                    <p className="text-xs text-muted-foreground">{testAnalytics.averageScore} / {testAnalytics.totalMarks}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="text-center">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Highest Score</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{testAnalytics.highestScore}</p>
+                                    <p className="text-xs text-muted-foreground">out of {testAnalytics.totalMarks}</p>
+                                </CardContent>
+                            </Card>
+                             <Card className="text-center">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Lowest Score</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{testAnalytics.lowestScore}</p>
+                                    <p className="text-xs text-muted-foreground">out of {testAnalytics.totalMarks}</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        
+                        <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto pr-4">
+                            <h3 className="font-semibold">Question Breakdown</h3>
+                            {testAnalytics.questionStats.map((stat, index) => (
+                                <div key={index} className="text-sm">
+                                    <p className="mb-2 font-medium">Q{index + 1}: {stat.questionText}</p>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-center text-success w-6"><Check/></div>
+                                            <p className="w-24 text-muted-foreground">Correct</p>
+                                            <div className="flex-1 bg-muted rounded-full h-4">
+                                                <div className="bg-success h-4 rounded-full" style={{ width: `${(stat.correct / stat.total) * 100}%`}}></div>
+                                            </div>
+                                            <p className="w-12 text-right font-bold">{stat.correct} <span className="font-normal text-muted-foreground">({Math.round((stat.correct / stat.total) * 100)}%)</span></p>
+                                        </div>
+                                         <div className="flex items-center gap-2">
+                                             <div className="flex items-center justify-center text-destructive w-6"><X/></div>
+                                            <p className="w-24 text-muted-foreground">Incorrect</p>
+                                            <div className="flex-1 bg-muted rounded-full h-4">
+                                                <div className="bg-destructive h-4 rounded-full" style={{ width: `${(stat.incorrect / stat.total) * 100}%`}}></div>
+                                            </div>
+                                             <p className="w-12 text-right font-bold">{stat.incorrect} <span className="font-normal text-muted-foreground">({Math.round((stat.incorrect / stat.total) * 100)}%)</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" onClick={() => setViewingAnalyticsForTest(null)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                 </Dialog>
             )}
         </div>
     );
