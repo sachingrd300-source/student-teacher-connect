@@ -61,22 +61,20 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         <span>Dashboard</span>
                     </DropdownMenuItem>
-                    {userRole === 'tutor' && (
-                         <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/profile')}>
-                            <UserCircle className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
-                         </DropdownMenuItem>
-                    )}
-                     <DropdownMenuItem onClick={() => router.push(userRole === 'tutor' ? '/dashboard/teacher/materials' : '/dashboard/student/materials')}>
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        <span>Study Materials</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push(userRole === 'tutor' ? '/dashboard/teacher/attendance' : '/dashboard/student/attendance')}>
-                        <CalendarCheck className="mr-2 h-4 w-4" />
-                        <span>Attendance</span>
-                    </DropdownMenuItem>
-                     {userRole === 'tutor' && (
+                    {userRole === 'tutor' ? (
                         <>
+                             <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/profile')}>
+                                <UserCircle className="mr-2 h-4 w-4" />
+                                <span>Profile</span>
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/materials')}>
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                <span>Study Materials</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/attendance')}>
+                                <CalendarCheck className="mr-2 h-4 w-4" />
+                                <span>Attendance</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/test-generator')}>
                                 <FlaskConical className="mr-2 h-4 w-4" />
                                 <span>AI Test Generator</span>
@@ -84,6 +82,21 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                             <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/tests')}>
                                 <ClipboardList className="mr-2 h-4 w-4" />
                                 <span>Manage Tests</span>
+                            </DropdownMenuItem>
+                        </>
+                    ) : (
+                        <>
+                             <DropdownMenuItem onClick={() => router.push('/dashboard/student/materials')}>
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                <span>Study Materials</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push('/dashboard/student/attendance')}>
+                                <CalendarCheck className="mr-2 h-4 w-4" />
+                                <span>Attendance</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => router.push('/dashboard/student/tests')}>
+                                <ClipboardList className="mr-2 h-4 w-4" />
+                                <span>My Tests</span>
                             </DropdownMenuItem>
                         </>
                     )}
