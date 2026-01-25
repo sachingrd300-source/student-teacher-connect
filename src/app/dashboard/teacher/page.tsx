@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc, Timestamp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
@@ -48,7 +48,7 @@ export default function TeacherDashboard() {
     const isTutor = userProfile?.role === 'tutor';
 
     // Redirect logic
-    useState(() => {
+    useEffect(() => {
         if (isAuthLoading || isProfileLoading) return;
         if (!user) {
             router.replace('/login');

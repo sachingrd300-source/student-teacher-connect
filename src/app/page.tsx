@@ -5,7 +5,9 @@ import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Landmark, Palette, FlaskConical } from "lucide-react";
-import { placeholderImages as allImages } from "@/lib/placeholder-images.json";
+import placeholderData from "@/lib/placeholder-images.json";
+
+const { placeholderImages } = placeholderData;
 
 const features = [
   {
@@ -54,7 +56,7 @@ const testimonials = [
 export default function Home() {
 
   const getImageById = (id: string) => {
-    return allImages.find(img => img.id === id);
+    return placeholderImages.find(img => img.id === id);
   }
 
   const heroImage = getImageById('hero-section');
