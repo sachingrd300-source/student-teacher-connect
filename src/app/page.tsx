@@ -144,7 +144,7 @@ export default function Home() {
             </div>
             <div className="mx-auto grid max-w-5xl items-stretch gap-6 py-12 md:grid-cols-2 lg:gap-8">
               {features.map((feature, index) => (
-                    <Card key={index} className="flex flex-col text-center items-center justify-start p-6 transition-all hover:shadow-xl hover:-translate-y-1">
+                    <Card key={index} className="flex flex-col text-center items-center justify-start p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                         <div className="mb-4 rounded-full bg-primary/10 p-4">
                             {feature.icon}
                         </div>
@@ -173,7 +173,7 @@ export default function Home() {
               </div>
             </div>
             <div className="mx-auto grid max-w-6xl items-stretch gap-6 py-12 sm:grid-cols-2 md:grid-cols-3">
-              <Card className="flex flex-col items-center text-center p-6 transition-all hover:shadow-xl hover:-translate-y-1">
+              <Card className="flex flex-col items-center text-center p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                 <div className="mb-4 rounded-full bg-primary/10 p-4">
                   <Zap className="h-10 w-10 text-primary" />
                 </div>
@@ -184,7 +184,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground">From test generation to performance analysis, our AI tools save you hours of administrative work.</p>
                 </CardContent>
               </Card>
-              <Card className="flex flex-col items-center text-center p-6 border-2 border-primary shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
+              <Card className="flex flex-col items-center text-center p-6 border-2 border-primary shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                 <div className="mb-4 rounded-full bg-primary/10 p-4">
                   <ShieldCheck className="h-10 w-10 text-primary" />
                 </div>
@@ -195,7 +195,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground">We provide comprehensive, free materials for JAC Class 10 & 12, tailored to the official syllabus.</p>
                 </CardContent>
               </Card>
-              <Card className="flex flex-col items-center text-center p-6 transition-all hover:shadow-xl hover:-translate-y-1">
+              <Card className="flex flex-col items-center text-center p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                 <div className="mb-4 rounded-full bg-primary/10 p-4">
                   <Gift className="h-10 w-10 text-primary" />
                 </div>
@@ -362,7 +362,7 @@ export default function Home() {
               {testimonials.map((testimonial) => {
                 const avatar = getImageById(testimonial.avatarId);
                 return (
-                  <Card key={testimonial.name} className="flex flex-col p-6 bg-background">
+                  <Card key={testimonial.name} className="flex flex-col p-6 bg-background transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                     <CardContent className="p-0 flex-grow flex flex-col">
                         <Quote className="h-8 w-8 text-primary mb-4" />
                       <p className="text-muted-foreground flex-grow">"{testimonial.quote}"</p>
@@ -461,6 +461,8 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     
 
