@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School, ShieldCheck } from "lucide-react";
+import { Users, BookOpen, CalendarCheck, FlaskConical, ArrowRight, Landmark, Palette, CheckCircle, Quote, School, ShieldCheck, Zap, Gift } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
 
 const { placeholderImages } = placeholderData;
@@ -160,8 +160,58 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Why Choose Us Section */}
+        <section id="why-us" className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">The EduConnect Difference</div>
+                <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-5xl">Why Choose EduConnect Pro?</h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  We are more than just a platform. We are a partner in education, committed to providing the best tools for free.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-6xl items-stretch gap-6 py-12 sm:grid-cols-2 md:grid-cols-3">
+              <Card className="flex flex-col items-center text-center p-6 transition-all hover:shadow-xl hover:-translate-y-1">
+                <div className="mb-4 rounded-full bg-primary/10 p-4">
+                  <Zap className="h-10 w-10 text-primary" />
+                </div>
+                <CardHeader className="p-0">
+                  <CardTitle>AI-Powered Efficiency</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 mt-2">
+                  <p className="text-sm text-muted-foreground">From test generation to performance analysis, our AI tools save you hours of administrative work.</p>
+                </CardContent>
+              </Card>
+              <Card className="flex flex-col items-center text-center p-6 border-2 border-primary shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
+                <div className="mb-4 rounded-full bg-primary/10 p-4">
+                  <ShieldCheck className="h-10 w-10 text-primary" />
+                </div>
+                <CardHeader className="p-0">
+                  <CardTitle>Jharkhand Board Focus</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 mt-2">
+                  <p className="text-sm text-muted-foreground">We provide comprehensive, free materials for JAC Class 10 & 12, tailored to the official syllabus.</p>
+                </CardContent>
+              </Card>
+              <Card className="flex flex-col items-center text-center p-6 transition-all hover:shadow-xl hover:-translate-y-1">
+                <div className="mb-4 rounded-full bg-primary/10 p-4">
+                  <Gift className="h-10 w-10 text-primary" />
+                </div>
+                <CardHeader className="p-0">
+                  <CardTitle>Completely Free to Use</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 mt-2">
+                  <p className="text-sm text-muted-foreground">All our core features are completely free for teachers and students, with no hidden costs.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* Free Materials Section */}
-        <section id="resources" className="w-full py-12 md:py-24 lg:py-32">
+        <section id="resources" className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -205,7 +255,7 @@ export default function Home() {
         </section>
 
         {/* Empowering Teachers Section */}
-        <section id="platform-tour" className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
+        <section id="platform-tour" className="w-full py-12 md:py-24 lg:py-32">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
             <div className="space-y-4">
               <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">For Teachers</div>
@@ -251,7 +301,7 @@ export default function Home() {
         </section>
 
         {/* Built for Students Section */}
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
              {builtForStudentsImage && (
                 <Image
@@ -411,5 +461,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     
