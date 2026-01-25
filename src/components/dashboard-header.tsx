@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userName: string | null | undefined;
@@ -57,15 +57,19 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
                         <p className="text-sm font-normal text-muted-foreground">{userName}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Dashboard</span>
+                    </DropdownMenuItem>
                     {userRole === 'tutor' && (
                          <DropdownMenuItem onClick={() => router.push('/dashboard/teacher/profile')}>
                             <UserCircle className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                          </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => router.push('/dashboard')}>
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <span>Dashboard</span>
+                     <DropdownMenuItem onClick={() => router.push(userRole === 'tutor' ? '/dashboard/teacher/materials' : '/dashboard/student/materials')}>
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        <span>Study Materials</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>

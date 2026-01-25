@@ -62,5 +62,11 @@ service cloud.firestore {
       
       allow delete: if false;
     }
+
+    match /studyMaterials/{materialId} {
+      allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+      allow get, list: if isUser();
+      allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
+    }
   }
 }
