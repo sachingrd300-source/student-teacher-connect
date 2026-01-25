@@ -1,3 +1,40 @@
+
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-section",
+      "src": "https://picsum.photos/seed/hero/600/400",
+      "width": 600,
+      "height": 400,
+      "hint": "classroom students"
+    },
+    {
+      "id": "how-it-works",
+      "src": "https://picsum.photos/seed/howitworks/500/500",
+      "width": 500,
+      "height": 500,
+      "hint": "teacher student"
+    },
+    {
+      "id": "testimonial-1",
+      "src": "https://picsum.photos/seed/avatar1/40/40",
+      "width": 40,
+      "height": 40,
+      "hint": "male teacher"
+    },
+    {
+      "id": "testimonial-2",
+      "src": "https://picsum.photos/seed/avatar2/40/40",
+      "width": 40,
+      "height": 40,
+      "hint": "female student"
+    },
+    {
+      "id": "testimonial-3",
+      "src": "https://picsum.photos/seed/avatar3/40/40",
+      "width": 40,
+      "height": 40,
+      "hint": "female teacher"
+    }
+  ]
 }

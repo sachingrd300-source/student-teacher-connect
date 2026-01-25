@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, FlaskConical, CalendarCheck, CheckCircle, Landmark, Palette } from "lucide-react";
+import { placeholderImages as allImages } from "@/lib/placeholder-images.json";
 
 const features = [
   {
@@ -34,20 +35,31 @@ const testimonials = [
     quote: "EduConnect Pro has revolutionized how I manage my classes. The AI test generator is a game-changer!",
     name: "Rajesh Kumar",
     role: "Physics Teacher",
+    avatarId: "testimonial-1",
   },
   {
     quote: "As a student, having all my study materials and attendance in one dashboard is incredibly helpful. The platform is so easy to use.",
     name: "Priya Sharma",
     role: "Class 10 Student",
+    avatarId: "testimonial-2",
   },
   {
     quote: "The ability to manage multiple batches and enroll students seamlessly has made my life so much easier. Highly recommended!",
     name: "Anjali Mehta",
     role: "Math Tutor",
+    avatarId: "testimonial-3",
   },
 ];
 
 export default function Home() {
+
+  const heroImage = allImages.find(img => img.id === 'hero-section');
+  const howItWorksImage = allImages.find(img => img.id === 'how-it-works');
+  
+  const getAvatar = (id: string) => {
+    return allImages.find(img => img.id === id);
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <MainHeader />
@@ -81,14 +93,16 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-              <Image
-                alt="Hero"
-                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-                data-ai-hint="classroom students"
-                height="550"
-                src="https://picsum.photos/seed/hero/600/400"
-                width="600"
-              />
+              {heroImage && (
+                <Image
+                  alt="Hero"
+                  className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
+                  data-ai-hint={heroImage.hint}
+                  height={heroImage.height}
+                  src={heroImage.src}
+                  width={heroImage.width}
+                />
+              )}
             </div>
           </div>
         </section>
@@ -205,49 +219,61 @@ export default function Home() {
                 Get started in just a few easy steps.
               </p>
             </div>
-            <div className="mx-auto w-full max-w-4xl grid md:grid-cols-2 gap-8 pt-8">
-              <div className="flex flex-col items-center gap-4">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-primary-foreground text-sm">For Teachers</div>
-                <ul className="space-y-4 text-left">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Create a free account and set up your teacher profile.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Create classes for your different subjects and batches.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Enroll existing students or create new student logins in seconds.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Upload materials, track attendance, and create tests with AI.</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="flex flex-col items-center gap-4">
-                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-secondary-foreground text-sm">For Students</div>
-                <ul className="space-y-4 text-left">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Sign up with your email or get login details from your teacher.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Log in to your personal dashboard to see all your classes.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Access study materials and check your attendance records.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
-                    <span>Take tests assigned by your teachers and view your results instantly.</span>
-                  </li>
-                </ul>
-              </div>
+             <div className="mx-auto w-full max-w-6xl grid lg:grid-cols-3 items-center gap-10 pt-12">
+                <div className="flex flex-col gap-4 text-left">
+                  <div className="inline-block rounded-lg bg-primary px-3 py-1 text-primary-foreground text-sm self-start">For Teachers</div>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Create a free account and set up your teacher profile.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Create classes for your different subjects and batches.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Enroll existing students or create new student logins in seconds.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Upload materials, track attendance, and create tests with AI.</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                {howItWorksImage && (
+                  <Image
+                      alt="How it works"
+                      className="mx-auto aspect-square overflow-hidden rounded-xl object-cover"
+                      data-ai-hint={howItWorksImage.hint}
+                      height={howItWorksImage.height}
+                      src={howItWorksImage.src}
+                      width={howItWorksImage.width}
+                  />
+                )}
+
+                <div className="flex flex-col gap-4 text-left">
+                  <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-secondary-foreground text-sm self-start">For Students</div>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Sign up with your email or get login details from your teacher.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Log in to your personal dashboard to see all your classes.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Access study materials and check your attendance records.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-success mt-1 flex-shrink-0" />
+                      <span>Take tests assigned by your teachers and view your results instantly.</span>
+                    </li>
+                  </ul>
+                </div>
             </div>
           </div>
         </section>
@@ -264,18 +290,33 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-8">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index} className="p-6">
-                  <CardContent className="p-0">
-                    <p className="text-muted-foreground">"{testimonial.quote}"</p>
-                    <div className="mt-4">
-                      <p className="font-semibold">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="mx-auto grid max-w-5xl items-stretch gap-6 py-12 lg:grid-cols-3 lg:gap-8">
+              {testimonials.map((testimonial) => {
+                const avatar = getAvatar(testimonial.avatarId);
+                return (
+                  <Card key={testimonial.name} className="flex flex-col p-6">
+                    <CardContent className="p-0 flex-grow flex flex-col">
+                      <p className="text-muted-foreground flex-grow">"{testimonial.quote}"</p>
+                      <div className="mt-4 flex items-center gap-4">
+                        {avatar && (
+                           <Image
+                              src={avatar.src}
+                              alt={`Avatar of ${testimonial.name}`}
+                              width={40}
+                              height={40}
+                              className="rounded-full"
+                              data-ai-hint={avatar.hint}
+                            />
+                        )}
+                        <div>
+                          <p className="font-semibold">{testimonial.name}</p>
+                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
