@@ -33,8 +33,9 @@ service cloud.firestore {
     
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      // Allow tutors to search for students by their ID, but not to list everyone
-      allow list: if isAdmin() || isTutor();
+      // Allow any registered user to query the user list (to find tutors).
+      // Client-side queries must be used to filter for specific roles.
+      allow list: if isUser();
       // Allow user creation for anyone signing up OR a teacher creating a student
       allow create: if true;
       allow update: if isOwner(userId) || isAdmin();

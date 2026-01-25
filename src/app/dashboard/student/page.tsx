@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
@@ -7,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
+import { BookUser, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Enrollment {
     id: string;
@@ -15,6 +16,15 @@ interface Enrollment {
     teacherName: string;
     status: 'pending' | 'approved' | 'denied';
 }
+
+interface TutorProfile {
+    id: string;
+    name: string;
+    subjects?: string[];
+    address?: string;
+    coachingName?: string;
+}
+
 
 export default function StudentDashboard() {
     const firestore = useFirestore();
@@ -47,6 +57,14 @@ export default function StudentDashboard() {
     }, [firestore, user, userProfile]);
 
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const tutorsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'users'), where('role', '==', 'tutor'));
+    }, [firestore]);
+
+    const { data: tutors, isLoading: tutorsLoading } = useCollection<TutorProfile>(tutorsQuery);
+
 
     if (isAuthLoading || isProfileLoading || !userProfile) {
         return (
@@ -105,6 +123,47 @@ export default function StudentDashboard() {
                                 </div>
                             ) : (
                                 !enrollmentsLoading && <p className="text-center text-muted-foreground py-8">You haven't been enrolled in any classes yet.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="mt-8">
+                        <CardHeader>
+                            <CardTitle>Find a Teacher</CardTitle>
+                            <CardDescription>Browse available tutors on the platform.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {tutorsLoading && <p>Loading tutors...</p>}
+                            {tutors && tutors.length > 0 ? (
+                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {tutors.map((tutor) => (
+                                        <Card key={tutor.id} className="flex flex-col">
+                                            <CardHeader className="flex-1">
+                                                <CardTitle>{tutor.name}</CardTitle>
+                                                {tutor.coachingName && <CardDescription>{tutor.coachingName}</CardDescription>}
+                                            </CardHeader>
+                                            <CardContent className="space-y-3 text-sm flex-1">
+                                                {tutor.subjects && tutor.subjects.length > 0 && (
+                                                    <div className="flex items-start gap-2">
+                                                        <BookUser className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                                                        <span>{tutor.subjects.join(', ')}</span>
+                                                    </div>
+                                                )}
+                                                {tutor.address && (
+                                                    <div className="flex items-start gap-2">
+                                                        <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                                                        <span>{tutor.address}</span>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                            <CardFooter>
+                                               <Button className="w-full" variant="secondary" disabled>View Profile</Button> 
+                                            </CardFooter>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                !tutorsLoading && <p className="text-center text-muted-foreground py-8">No tutors are currently listed.</p>
                             )}
                         </CardContent>
                     </Card>
