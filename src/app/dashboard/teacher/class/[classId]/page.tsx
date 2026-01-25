@@ -463,7 +463,7 @@ export default function ClassDetailsPage() {
                                     {user && <StudentListForClass classId={classId} teacherId={user.uid} />}
                                 </CardContent>
                             </Card>
-                            {user && userProfile && <AnnouncementsForClass classId={classId} teacherId={user.uid} teacherName={userProfile.name} classTitle={classData.title} />}
+                            {user && userProfile && classData && <AnnouncementsForClass classId={classId} teacherId={user.uid} teacherName={userProfile.name} classTitle={classData.title} />}
                         </div>
                         <div className="lg:col-span-1 space-y-8">
                             <Card>
