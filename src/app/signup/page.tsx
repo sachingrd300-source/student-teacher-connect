@@ -43,7 +43,7 @@ export default function SignupPage() {
       status: 'pending_verification',
     };
     // Wait for the document to be created before proceeding
-    await setDoc(userRef, dataToSet, { merge: true });
+    await setDoc(userRef, dataToSet);
   };
 
   const handleSignUp = async (event: FormEvent) => {

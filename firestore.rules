@@ -38,8 +38,8 @@ service cloud.firestore {
       // Allow any registered user to query the user list (to find tutors or students by ID).
       // Client-side queries must be used to filter.
       allow list: if isUser();
-      // Allow user creation for anyone signing up OR a teacher creating a student
-      allow create: if true;
+      // Allow user creation for self-signup OR a teacher creating a student
+      allow create: if request.auth.uid == userId || isTutor();
       allow update: if isOwner(userId) || isAdmin() || isTutor();
       allow delete: if false;
     }

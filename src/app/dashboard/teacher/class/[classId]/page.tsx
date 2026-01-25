@@ -355,7 +355,7 @@ export default function ClassDetailsPage() {
                 createdAt: serverTimestamp(),
                 status: 'approved',
             };
-            await setDoc(userRef, userProfileData, {});
+            await setDoc(userRef, userProfileData);
 
             const enrollmentData = {
                 studentId: newUser.uid,
