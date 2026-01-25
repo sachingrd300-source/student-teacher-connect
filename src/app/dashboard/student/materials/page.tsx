@@ -7,7 +7,8 @@ import { collection, query, where, doc, Timestamp }from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { BookCopy, Search, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookCopy, Search, Users, FileText, Video, PenSquare, ClipboardList, X } from 'lucide-react';
 
 interface Enrollment {
     id: string;
@@ -27,6 +28,15 @@ interface StudyMaterial {
     className?: string;
 }
 
+const categories = [
+    { name: 'Notes', icon: <FileText className="h-6 w-6" /> },
+    { name: 'PDF', icon: <FileText className="h-6 w-6" /> },
+    { name: 'Video', icon: <Video className="h-6 w-6" /> },
+    { name: 'Homework', icon: <PenSquare className="h-6 w-6" /> },
+    { name: 'Test', icon: <ClipboardList className="h-6 w-6" /> },
+];
+
+
 export default function StudentMaterialsPage() {
     const firestore = useFirestore();
     const { user } = useUser();
@@ -37,6 +47,7 @@ export default function StudentMaterialsPage() {
     const { data: userProfile } = useDoc(userProfileRef);
     
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -58,9 +69,13 @@ export default function StudentMaterialsPage() {
     const filteredMaterials = useMemo(() => {
         if (!materials) return [];
 
-        const classFiltered = materials.filter(material => 
+        let classFiltered = materials.filter(material => 
             !material.classId || enrolledClassIds.includes(material.classId)
         );
+
+        if (selectedCategory) {
+            classFiltered = classFiltered.filter(material => material.type === selectedCategory);
+        }
 
         if (!searchTerm) {
             return classFiltered;
@@ -71,7 +86,7 @@ export default function StudentMaterialsPage() {
             material.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
             material.description.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [materials, searchTerm, enrolledClassIds]);
+    }, [materials, searchTerm, enrolledClassIds, selectedCategory]);
 
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
@@ -79,6 +94,28 @@ export default function StudentMaterialsPage() {
             <main className="flex-1">
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Study Materials</h1>
+                    
+                    {/* Category Cards Section */}
+                    <div className="mb-8">
+                        <h2 className="text-xl font-semibold mb-4">Browse by Category</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            {categories.map((category) => (
+                                <Card 
+                                    key={category.name}
+                                    className={`cursor-pointer transition-all hover:shadow-lg hover:border-primary ${selectedCategory === category.name ? 'border-primary bg-primary/10' : ''}`}
+                                    onClick={() => setSelectedCategory(category.name)}
+                                >
+                                    <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
+                                        <div className="bg-primary/10 p-3 rounded-full text-primary">
+                                            {category.icon}
+                                        </div>
+                                        <p className="font-semibold text-center">{category.name}</p>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Resource Library</CardTitle>
@@ -92,6 +129,14 @@ export default function StudentMaterialsPage() {
                                     onChange={e => setSearchTerm(e.target.value)}
                                 />
                             </div>
+                            {selectedCategory && (
+                                <div className="pt-2">
+                                    <Button variant="secondary" size="sm" onClick={() => setSelectedCategory(null)}>
+                                        Filtering by: {selectedCategory}
+                                        <X className="h-4 w-4 ml-2" />
+                                    </Button>
+                                </div>
+                            )}
                         </CardHeader>
                         <CardContent>
                             {isLoading && <p>Loading materials...</p>}
@@ -132,7 +177,7 @@ export default function StudentMaterialsPage() {
                                     ))}
                                 </div>
                             ) : (
-                                !isLoading && <p className="text-center text-muted-foreground py-8">No study materials found.</p>
+                                !isLoading && <p className="text-center text-muted-foreground py-8">No study materials found for the selected criteria.</p>
                             )}
                         </CardContent>
                     </Card>
