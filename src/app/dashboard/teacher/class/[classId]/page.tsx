@@ -121,8 +121,17 @@ export default function ClassDetailsPage() {
     const params = useParams();
     const classId = params.classId as string;
 
-    const { data: userProfile } = useDoc(doc(firestore, 'users', user?.uid || '---'));
-    const { data: classData, isLoading: isClassLoading } = useDoc<Class>(doc(firestore, 'classes', classId));
+    const userProfileRef = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user?.uid]);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+
+    const classRef = useMemoFirebase(() => {
+        if (!firestore || !classId) return null;
+        return doc(firestore, 'classes', classId);
+    }, [firestore, classId]);
+    const { data: classData, isLoading: isClassLoading } = useDoc<Class>(classRef);
 
     // State for creating a new student
     const [studentName, setStudentName] = useState('');
@@ -291,7 +300,7 @@ export default function ClassDetailsPage() {
             });
     };
     
-    if (isClassLoading || !classData) {
+    if (isClassLoading || isProfileLoading) {
          return (
              <div className="flex flex-col min-h-screen">
                 <DashboardHeader userName={userProfile?.name} userRole="tutor" />
@@ -300,6 +309,27 @@ export default function ClassDetailsPage() {
                 </div>
             </div>
         );
+    }
+
+    if (!classData) {
+        return (
+             <div className="flex flex-col min-h-screen">
+                <DashboardHeader userName={userProfile?.name} userRole="tutor" />
+                <div className="flex-1 flex items-center justify-center">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Error</CardTitle>
+                            <CardDescription>Class not found.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Button asChild>
+                                <Link href="/dashboard/teacher">Go Back to Dashboard</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        )
     }
 
     return (
