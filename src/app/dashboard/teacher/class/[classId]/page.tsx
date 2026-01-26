@@ -322,7 +322,7 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
                                         {approvedStudents.map(student => (
                                             <tr key={student.id} className="border-b last:border-0">
                                                 <td className="p-3 whitespace-nowrap font-medium">
-                                                    <Link href={`/dashboard/profile/${student.studentId}`} className="hover:underline text-primary">
+                                                    <Link href={`/dashboard/teacher/class/${classId}/student/${student.studentId}`} className="hover:underline text-primary">
                                                         {student.studentName}
                                                     </Link>
                                                 </td>
@@ -697,7 +697,3 @@ export default function ClassDetailsPage() {
         </div>
     );
 }
-
-    
-
-    
