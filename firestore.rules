@@ -56,8 +56,9 @@ service cloud.firestore {
                       (isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'pending');
       
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-
-      allow list: if isSignedIn(); 
+      
+      // Queries must be constrained by studentId or teacherId to pass the 'get' rule check
+      allow list: if false;
       
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       
@@ -79,7 +80,8 @@ service cloud.firestore {
     match /testResults/{resultId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-      allow list: if isSignedIn();
+      // Queries must be constrained by studentId or teacherId to pass the 'get' rule check
+      allow list: if false;
       allow update, delete: if false;
     }
 
@@ -94,7 +96,7 @@ service cloud.firestore {
                       request.resource.data.teacherId == request.auth.uid &&
                       get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.teacherId == request.auth.uid;
 
-      allow get, list: if true;
+      allow get, list: if isSignedIn();
 
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
       allow update: if false;

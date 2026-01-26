@@ -61,9 +61,9 @@ export default function TeacherAttendancePage() {
     const { data: classes } = useCollection<Class>(classesQuery);
 
     const enrolledStudentsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClassId) return null;
-        return query(collection(firestore, 'enrollments'), where('classId', '==', selectedClassId));
-    }, [firestore, selectedClassId]);
+        if (!firestore || !selectedClassId || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('classId', '==', selectedClassId), where('teacherId', '==', user.uid));
+    }, [firestore, selectedClassId, user]);
     const { data: enrolledStudents, isLoading: studentsLoading } = useCollection<EnrolledStudent>(enrolledStudentsQuery);
 
     // Effect to fetch existing attendance data and initialize state

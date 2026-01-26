@@ -76,9 +76,9 @@ export default function PerformanceDashboardPage() {
 
     // 1. Fetch all enrollments for this class
     const enrolledStudentsQuery = useMemoFirebase(() => {
-        if (!firestore || !classId) return null;
-        return query(collection(firestore, 'enrollments'), where('classId', '==', classId));
-    }, [firestore, classId]);
+        if (!firestore || !classId || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', user.uid));
+    }, [firestore, classId, user]);
     const { data: enrolledStudents, isLoading: studentsLoading } = useCollection<EnrolledStudent>(enrolledStudentsQuery);
 
     // 2. Fetch all attendance records for this class
@@ -95,11 +95,11 @@ export default function PerformanceDashboardPage() {
     }, [firestore, classId]);
     const { data: assignedTests, isLoading: testsLoading } = useCollection<Test>(testsQuery);
 
-    // 4. Fetch all results related to this class
+    // 4. Fetch all results related to this class for the current teacher
     const resultsQuery = useMemoFirebase(() => {
-        if (!firestore || !classId) return null;
-        return query(collection(firestore, 'testResults'), where('classId', '==', classId));
-    }, [firestore, classId]);
+        if (!firestore || !classId || !user) return null;
+        return query(collection(firestore, 'testResults'), where('classId', '==', classId), where('teacherId', '==', user.uid));
+    }, [firestore, classId, user]);
     const { data: testResults, isLoading: resultsLoading } = useCollection<TestResult>(resultsQuery);
 
 
