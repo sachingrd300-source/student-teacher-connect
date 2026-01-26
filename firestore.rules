@@ -30,9 +30,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      // Allow self-creation OR a tutor creating a student profile
-      allow create: if (request.auth.uid == userId) || 
-                      (isTutor() && request.resource.data.role == 'student');
+      // Only allow users to create their own profile document
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if false; // Keep delete restricted for now to prevent orphaned data
     }
@@ -47,8 +46,7 @@ service cloud.firestore {
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get: if isSignedIn();
-      // Allow list only for signed-in users with a valid role.
-      // This helps prevent overly broad queries from being rejected.
+      // Allow list only for tutors or students.
       allow list: if isTutor() || isStudent();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
@@ -60,9 +58,9 @@ service cloud.firestore {
       
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
       
-      // Allow list if the query is properly constrained by the calling code.
-      // The `get` rule will be checked for each document.
-      allow list: if isTutor() || isStudent();
+      // Allow list ONLY if the query is properly constrained to a single teacher or student
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
+                      (isStudent() && request.query.studentId == request.auth.uid);
       
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       
@@ -84,9 +82,8 @@ service cloud.firestore {
     match /testResults/{resultId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-      // Allow list if the query is properly constrained by the calling code.
-      // The `get` rule will be checked for each document.
-      allow list: if isSignedIn();
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
+                      (isStudent() && request.query.studentId == request.auth.uid);
       allow update, delete: if false;
     }
 
