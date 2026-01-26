@@ -45,7 +45,7 @@ service cloud.firestore {
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get: if isSignedIn();
-      allow list: if isTutor() && request.query.teacherId == request.auth.uid;
+      allow list: if isSignedIn() && request.query.teacherId != null;
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
@@ -67,14 +67,15 @@ service cloud.firestore {
     match /tests/{testId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get: if isSignedIn();
-      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || (isStudent() && request.query.classId != null);
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
+                      (isStudent() && request.query.classId != null);
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /testResults/{resultId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid && request.query.classId != null) || 
                       (isStudent() && request.query.studentId == request.auth.uid);
       allow update, delete: if false;
     }
@@ -82,7 +83,8 @@ service cloud.firestore {
     match /attendance/{attendanceId} {
       allow create, update: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get: if isSignedIn();
-      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || (isStudent() && request.query.classId != null);
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid && request.query.classId != null) || 
+                      (isStudent() && request.query.classId != null);
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
   }
