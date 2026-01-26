@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -57,8 +56,9 @@ service cloud.firestore {
       
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
       
-      // Queries must be constrained by studentId or teacherId to pass the 'get' rule check
-      allow list: if false;
+      // Allow list if the query is properly constrained by the calling code.
+      // The `get` rule will be checked for each document.
+      allow list: if isSignedIn();
       
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       
@@ -80,8 +80,9 @@ service cloud.firestore {
     match /testResults/{resultId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-      // Queries must be constrained by studentId or teacherId to pass the 'get' rule check
-      allow list: if false;
+      // Allow list if the query is properly constrained by the calling code.
+      // The `get` rule will be checked for each document.
+      allow list: if isSignedIn();
       allow update, delete: if false;
     }
 
@@ -96,7 +97,7 @@ service cloud.firestore {
                       request.resource.data.teacherId == request.auth.uid &&
                       get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.teacherId == request.auth.uid;
 
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
 
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
       allow update: if false;

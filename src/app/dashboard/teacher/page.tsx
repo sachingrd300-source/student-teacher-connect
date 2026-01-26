@@ -9,12 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Megaphone, Users } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Megaphone, Users, UserPlus, Wand2, Send, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
+import { generateAnnouncement } from '@/ai/flows/announcement-generator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 
 interface Class {
@@ -34,14 +38,18 @@ interface Enrollment {
     classTitle: string;
     classId: string;
     status: 'pending' | 'approved' | 'denied';
+    createdAt: Timestamp;
 }
 
 interface Announcement {
     id: string;
     content: string;
     classTitle: string;
+    classId: string;
     createdAt: Timestamp;
 }
+
+type ActivityItem = (Enrollment & { type: 'enrollment' }) | (Announcement & { type: 'announcement' });
 
 
 const StatCard = ({ title, value, icon, isLoading }: { title: string, value: string | number, icon: React.ReactNode, isLoading?: boolean }) => (
@@ -65,14 +73,25 @@ export default function TeacherDashboard() {
     const { user, isUserLoading: isAuthLoading } = useUser();
     const router = useRouter();
 
-    // State for Create/Edit Class form
-    const [title, setTitle] = useState('');
+    // Class form state
+    const [classTitle, setClassTitle] = useState('');
     const [subject, setSubject] = useState('');
     const [batchTime, setBatchTime] = useState('');
     const [fee, setFee] = useState('');
     const [isProcessingClass, setIsProcessingClass] = useState(false);
     const [isCreateClassOpen, setIsCreateClassOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
+
+    // Announcement state
+    const [announcementContent, setAnnouncementContent] = useState('');
+    const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
+    const [selectedClassIds, setSelectedClassIds] = useState<Record<string, boolean>>({});
+    
+    // AI Dialog state
+    const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+    const [aiKeyPoints, setAiKeyPoints] = useState('');
+    const [aiTone, setAiTone] = useState<'Formal' | 'Casual'>('Casual');
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -108,9 +127,9 @@ export default function TeacherDashboard() {
     
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(10));
     }, [firestore, user]);
-    const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    const { data: pendingEnrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
     const announcementsQuery = useMemoFirebase(() => {
         if(!firestore || !user) return null;
@@ -119,18 +138,27 @@ export default function TeacherDashboard() {
     const { data: recentAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
 
 
-    // --- Stat Calculations ---
-    const pendingEnrollments = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
+    // --- Stat & Combined Feed Calculations ---
     const approvedStudentsCount = useMemo(() => {
-        if (!enrollments) return 0;
-        const uniqueStudentIds = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.studentId));
-        return uniqueStudentIds.size;
-    }, [enrollments]);
+        // This would need another query to be accurate without listing all enrollments.
+        // For this dashboard, we'll keep it simple and maybe add it back later if needed.
+        return '...'; // Placeholder to avoid fetching all students
+    }, []);
+
+    const activityFeed: ActivityItem[] = useMemo(() => {
+        const enrollments = (pendingEnrollments || []).map(e => ({...e, type: 'enrollment' as const}));
+        const announcements = (recentAnnouncements || []).map(a => ({...a, type: 'announcement' as const}));
+        
+        const combined = [...enrollments, ...announcements];
+        combined.sort((a,b) => b.createdAt.seconds - a.createdAt.seconds);
+        
+        return combined;
+    }, [pendingEnrollments, recentAnnouncements]);
 
 
     // --- Form Handlers ---
     const resetClassForm = () => {
-        setTitle('');
+        setClassTitle('');
         setSubject('');
         setBatchTime('');
         setFee('');
@@ -144,7 +172,7 @@ export default function TeacherDashboard() {
 
     const handleOpenEditDialog = (classData: Class) => {
         setEditingClass(classData);
-        setTitle(classData.title);
+        setClassTitle(classData.title);
         setSubject(classData.subject);
         setBatchTime(classData.batchTime);
         setFee(classData.fee?.toString() || '');
@@ -173,7 +201,7 @@ export default function TeacherDashboard() {
         const newClassData = {
             teacherId: user.uid,
             teacherName: userProfile.name,
-            title,
+            title: classTitle,
             subject,
             batchTime,
             fee: Number(fee) || 0,
@@ -193,11 +221,13 @@ export default function TeacherDashboard() {
         setIsProcessingClass(true);
 
         const classRef = doc(firestore, 'classes', editingClass.id);
-        const updatedData = { title, subject, batchTime, fee: Number(fee) || 0 };
+        const updatedData = { title: classTitle, subject, batchTime, fee: Number(fee) || 0 };
 
-        updateDocumentNonBlocking(classRef, updatedData);
-        setIsProcessingClass(false);
-        handleCloseDialog();
+        updateDocumentNonBlocking(classRef, updatedData)
+            .finally(() => {
+                setIsProcessingClass(false);
+                handleCloseDialog();
+            });
     };
 
     const handleDeleteClass = (classId: string) => {
@@ -205,6 +235,55 @@ export default function TeacherDashboard() {
         if (window.confirm('Are you sure you want to delete this class? This action cannot be undone.')) {
             deleteDocumentNonBlocking(doc(firestore, 'classes', classId));
         }
+    };
+    
+    const handleGenerateAnnouncement = async () => {
+        if (!aiKeyPoints.trim()) return;
+        setIsGenerating(true);
+        try {
+            const result = await generateAnnouncement({ keyPoints: aiKeyPoints, tone: aiTone });
+            setAnnouncementContent(result.content);
+            setIsAiDialogOpen(false);
+        } catch (error) {
+            console.error("AI generation failed:", error);
+            alert("Failed to generate announcement.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handlePostAnnouncement = async () => {
+        if (!user || !userProfile || !firestore || !announcementContent.trim()) return;
+
+        const targetClassIds = Object.keys(selectedClassIds).filter(id => selectedClassIds[id]);
+        if (targetClassIds.length === 0) {
+            alert("Please select at least one class to post the announcement to.");
+            return;
+        }
+
+        setIsPostingAnnouncement(true);
+
+        const batch = targetClassIds.map(classId => {
+            const targetClass = classes?.find(c => c.id === classId);
+            if (!targetClass) return null;
+
+            const newAnnouncement = {
+                classId: classId,
+                teacherId: user.uid,
+                teacherName: userProfile.name,
+                classTitle: targetClass.title,
+                content: announcementContent,
+                createdAt: serverTimestamp(),
+            };
+            return addDocumentNonBlocking(collection(firestore, 'announcements'), newAnnouncement);
+        }).filter(Boolean);
+
+        await Promise.all(batch);
+
+        setAnnouncementContent('');
+        setSelectedClassIds({});
+        setIsPostingAnnouncement(false);
+        alert(`Announcement posted to ${targetClassIds.length} class(es).`);
     };
 
     if (isAuthLoading || isProfileLoading || !userProfile || userProfile.status !== 'approved') {
@@ -225,10 +304,10 @@ export default function TeacherDashboard() {
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Teacher Dashboard</h1>
                     
-                    <div className="grid gap-4 md:grid-cols-3 mb-8">
-                         <StatCard title="Total Classes" value={classes?.length || 0} icon={<BookUser className="h-4 w-4" />} isLoading={classesLoading} />
-                         <StatCard title="Total Students" value={approvedStudentsCount} icon={<Users className="h-4 w-4" />} isLoading={enrollmentsLoading} />
-                         <StatCard title="Pending Requests" value={pendingEnrollments.length} icon={<Clock className="h-4 w-4" />} isLoading={enrollmentsLoading} />
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                         <StatCard title="Total Classes" value={classes?.length ?? 0} icon={<BookUser className="h-4 w-4" />} isLoading={classesLoading} />
+                         <StatCard title="Pending Requests" value={pendingEnrollments?.length ?? 0} icon={<Clock className="h-4 w-4" />} isLoading={enrollmentsLoading} />
+                         <StatCard title="Recent Announcements" value={recentAnnouncements?.length ?? 0} icon={<Megaphone className="h-4 w-4" />} isLoading={announcementsLoading} />
                     </div>
                     
                     <div className="grid gap-8 lg:grid-cols-3 animate-fade-in-down">
@@ -294,52 +373,92 @@ export default function TeacherDashboard() {
                             </Card>
                         </div>
                         <div className="lg:col-span-1 space-y-8">
-                             <Card>
+                            <Card>
                                 <CardHeader>
-                                    <CardTitle>Pending Enrollment Requests</CardTitle>
+                                    <CardTitle>Quick Announcement</CardTitle>
+                                    <CardDescription>Post a message to multiple classes at once.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    {enrollmentsLoading ? <p>Loading...</p> : pendingEnrollments.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {pendingEnrollments.slice(0, 5).map(req => (
-                                                <div key={req.id} className="flex items-center justify-between text-sm">
-                                                    <div>
-                                                        <p className="font-semibold">{req.studentName}</p>
-                                                        <p className="text-xs text-muted-foreground">{req.classTitle}</p>
-                                                    </div>
-                                                     <Link href={`/dashboard/teacher/class/${req.classId}`}>
-                                                        <Button variant="outline" size="sm">View</Button>
-                                                    </Link>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-center text-muted-foreground py-4">No pending requests.</p>
-                                    )}
+                                <CardContent className="space-y-4">
+                                     <Textarea 
+                                        placeholder="Type your announcement..."
+                                        value={announcementContent}
+                                        onChange={(e) => setAnnouncementContent(e.target.value)}
+                                        rows={4}
+                                     />
+                                     <Button variant="outline" className="w-full" onClick={() => setIsAiDialogOpen(true)}>
+                                        <Wand2 className="h-4 w-4 mr-2" />
+                                        Generate with AI
+                                     </Button>
+                                     <div className="flex gap-2">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline" className="w-full">
+                                                    Select Classes ({Object.values(selectedClassIds).filter(Boolean).length})
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent className="w-56">
+                                                <DropdownMenuLabel>Your Classes</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                {classes?.map(c => (
+                                                    <DropdownMenuCheckboxItem
+                                                        key={c.id}
+                                                        checked={selectedClassIds[c.id] || false}
+                                                        onCheckedChange={(checked) => {
+                                                            setSelectedClassIds(prev => ({...prev, [c.id]: !!checked}))
+                                                        }}
+                                                    >
+                                                        {c.title}
+                                                    </DropdownMenuCheckboxItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                        <Button 
+                                            className="flex-shrink-0"
+                                            onClick={handlePostAnnouncement}
+                                            disabled={isPostingAnnouncement || announcementContent.trim().length === 0}
+                                        >
+                                            <Send className="h-4 w-4" />
+                                        </Button>
+                                     </div>
                                 </CardContent>
                             </Card>
                              <Card>
                                 <CardHeader>
-                                    <CardTitle>Recent Announcements</CardTitle>
+                                    <CardTitle>Recent Activity</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                     {announcementsLoading ? <p>Loading...</p> : recentAnnouncements && recentAnnouncements.length > 0 ? (
+                                     {(enrollmentsLoading || announcementsLoading) ? <p>Loading activity...</p> : activityFeed.length > 0 ? (
                                         <div className="space-y-4">
-                                            {recentAnnouncements.map(ann => (
-                                                <div key={ann.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
-                                                    <p className="font-semibold text-primary text-xs">{ann.classTitle}</p>
-                                                    <p className="line-clamp-2">{ann.content}</p>
+                                            {activityFeed.map(item => (
+                                                <div key={`${item.type}-${item.id}`} className="flex items-start gap-3 text-sm">
+                                                    <div className={cn("mt-1 h-5 w-5 flex-shrink-0 flex items-center justify-center rounded-full",
+                                                        item.type === 'enrollment' ? "bg-blue-100 text-blue-600" : "bg-orange-100 text-orange-600"
+                                                    )}>
+                                                        {item.type === 'enrollment' ? <UserPlus className="h-3 w-3"/> : <Megaphone className="h-3 w-3"/>}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        {item.type === 'enrollment' ? (
+                                                            <p>
+                                                                <span className="font-semibold">{item.studentName}</span> requested to join <span className="font-semibold text-primary">{item.classTitle}</span>.
+                                                                <Link href={`/dashboard/teacher/class/${item.classId}`} className="ml-2 text-xs text-primary hover:underline">View</Link>
+                                                            </p>
+                                                        ) : (
+                                                            <p>You posted in <span className="font-semibold text-primary">{item.classTitle}</span>: <span className="text-muted-foreground line-clamp-1">"{item.content}"</span></p>
+                                                        )}
+                                                         <p className="text-xs text-muted-foreground">{new Date(item.createdAt.seconds * 1000).toLocaleDateString()}</p>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-center text-muted-foreground py-4">No recent announcements.</p>
+                                        <p className="text-sm text-center text-muted-foreground py-4">No recent activity.</p>
                                     )}
                                 </CardContent>
                             </Card>
                         </div>
                     </div>
 
+                    {/* Class Create/Edit Dialog */}
                     <Dialog open={isCreateClassOpen} onOpenChange={handleCloseDialog}>
                         <DialogContent>
                             <DialogHeader>
@@ -351,7 +470,7 @@ export default function TeacherDashboard() {
                             <form onSubmit={handleSaveClass} className="space-y-4 py-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="title">Class Title</Label>
-                                    <Input id="title" placeholder="e.g., Grade 10 Physics" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                                    <Input id="title" placeholder="e.g., Grade 10 Physics" value={classTitle} onChange={(e) => setClassTitle(e.target.value)} required />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="subject">Subject</Label>
@@ -372,6 +491,35 @@ export default function TeacherDashboard() {
                                     </Button>
                                 </DialogFooter>
                             </form>
+                        </DialogContent>
+                    </Dialog>
+
+                     {/* AI Announcement Dialog */}
+                     <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>AI Announcement Assistant</DialogTitle>
+                                <DialogDescription>Provide key points and let AI write the full announcement.</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="ai-key-points">Key Points</Label>
+                                    <Textarea id="ai-key-points" placeholder="e.g., Test on Friday, Chapter 5. Bring calculator." value={aiKeyPoints} onChange={(e) => setAiKeyPoints(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Tone</Label>
+                                    <RadioGroup value={aiTone} onValueChange={(v: 'Formal' | 'Casual') => setAiTone(v)} className="flex gap-4">
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Casual" id="t-casual" /><Label htmlFor="t-casual">Casual</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Formal" id="t-formal" /><Label htmlFor="t-formal">Formal</Label></div>
+                                    </RadioGroup>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="secondary" onClick={() => setIsAiDialogOpen(false)}>Cancel</Button>
+                                <Button onClick={handleGenerateAnnouncement} disabled={isGenerating}>
+                                    {isGenerating ? 'Generating...' : 'Generate & Use'}
+                                </Button>
+                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
