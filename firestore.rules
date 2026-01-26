@@ -46,7 +46,10 @@ service cloud.firestore {
 
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if isSignedIn();
+      allow get: if isSignedIn();
+      // Allow list only for signed-in users with a valid role.
+      // This helps prevent overly broad queries from being rejected.
+      allow list: if isTutor() || isStudent();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 

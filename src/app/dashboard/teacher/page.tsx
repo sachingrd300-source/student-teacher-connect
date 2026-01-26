@@ -1,21 +1,20 @@
-
 'use client';
 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, orderBy } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Users, UserPlus } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Users, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 interface Class {
@@ -37,9 +36,6 @@ interface Enrollment {
     status: 'pending' | 'approved' | 'denied';
     createdAt: Timestamp;
 }
-
-type ActivityItem = (Enrollment & { type: 'enrollment' });
-
 
 const StatCard = ({ title, value, icon, isLoading }: { title: string, value: string | number, icon: React.ReactNode, isLoading?: boolean }) => (
     <Card>
@@ -117,18 +113,19 @@ export default function TeacherDashboard() {
         
         const pending = allEnrollments
             .filter(e => e.status === 'pending')
-            .sort((a,b) => b.createdAt.seconds - a.createdAt.seconds)
-            .slice(0, 10);
+            .sort((a,b) => b.createdAt.seconds - a.createdAt.seconds);
 
-        const approvedCount = allEnrollments.filter(e => e.status === 'approved').length;
+        const approvedCount = new Set(allEnrollments.filter(e => e.status === 'approved').map(e => e.studentId)).size;
 
         return { pendingEnrollments: pending, approvedStudentsCount: approvedCount };
     }, [allEnrollments]);
 
-    const activityFeed: ActivityItem[] = useMemo(() => {
-        return (pendingEnrollments || []).map(e => ({...e, type: 'enrollment' as const}));
-    }, [pendingEnrollments]);
-
+    // --- Action Handlers ---
+    const handleRequest = (enrollmentId: string, newStatus: 'approved' | 'denied') => {
+        if (!firestore) return;
+        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
+        updateDocumentNonBlocking(enrollmentRef, { status: newStatus });
+    };
 
     // --- Form Handlers ---
     const resetClassForm = () => {
@@ -229,14 +226,52 @@ export default function TeacherDashboard() {
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Teacher Dashboard</h1>
                     
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mb-8">
                          <StatCard title="Total Classes" value={classes?.length ?? 0} icon={<BookUser className="h-4 w-4" />} isLoading={classesLoading} />
-                         <StatCard title="Pending Requests" value={pendingEnrollments?.length ?? 0} icon={<Clock className="h-4 w-4" />} isLoading={enrollmentsLoading} />
-                         <StatCard title="Total Students" value={approvedStudentsCount} icon={<Users className="h-4 w-4" />} isLoading={enrollmentsLoading} />
+                         <StatCard title="Total Students Enrolled" value={approvedStudentsCount} icon={<Users className="h-4 w-4" />} isLoading={enrollmentsLoading} />
                     </div>
                     
-                    <div className="grid gap-8 lg:grid-cols-3 animate-fade-in-down">
-                        <div className="lg:col-span-2 space-y-8">
+                    <Tabs defaultValue="requests" className="animate-fade-in-down">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="requests">Pending Requests ({pendingEnrollments?.length ?? 0})</TabsTrigger>
+                            <TabsTrigger value="classes">My Classes ({classes?.length ?? 0})</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="requests" className="mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Student Enrollment Requests</CardTitle>
+                                    <CardDescription>Approve or deny requests from students to join your classes.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {enrollmentsLoading ? <p className="text-center py-4">Loading requests...</p> : 
+                                    pendingEnrollments.length === 0 ? <p className="text-center text-muted-foreground py-8">No pending requests.</p> :
+                                    (
+                                        <div className="space-y-4">
+                                            {pendingEnrollments.map(req => (
+                                                <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg">
+                                                    <div>
+                                                        <p><span className="font-bold">{req.studentName}</span> wants to join</p>
+                                                        <p className="text-sm font-semibold text-primary">{req.classTitle}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            Requested on: {new Date(req.createdAt.seconds * 1000).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-3 sm:mt-0">
+                                                        <Button size="sm" className="bg-success/10 text-success hover:bg-success/20 hover:text-success" onClick={() => handleRequest(req.id, 'approved')}>
+                                                            <Check className="h-4 w-4 mr-2" />Approve
+                                                        </Button>
+                                                        <Button size="sm" variant="destructive" onClick={() => handleRequest(req.id, 'denied')}>
+                                                            <X className="h-4 w-4 mr-2" />Deny
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="classes" className="mt-4">
                              <Card>
                                 <CardHeader>
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -296,41 +331,8 @@ export default function TeacherDashboard() {
                                     )}
                                 </CardContent>
                             </Card>
-                        </div>
-                        <div className="lg:col-span-1 space-y-8">
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Recent Activity</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                     {(enrollmentsLoading) ? <p>Loading activity...</p> : activityFeed.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {activityFeed.map(item => (
-                                                <div key={`${item.type}-${item.id}`} className="flex items-start gap-3 text-sm">
-                                                    <div className={cn("mt-1 h-5 w-5 flex-shrink-0 flex items-center justify-center rounded-full",
-                                                        item.type === 'enrollment' ? "bg-blue-100 text-blue-600" : ""
-                                                    )}>
-                                                        {item.type === 'enrollment' ? <UserPlus className="h-3 w-3"/> : null}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        {item.type === 'enrollment' ? (
-                                                            <p>
-                                                                <span className="font-semibold">{item.studentName}</span> requested to join <span className="font-semibold text-primary">{item.classTitle}</span>.
-                                                                <Link href={`/dashboard/teacher/class/${item.classId}`} className="ml-2 text-xs text-primary hover:underline">View</Link>
-                                                            </p>
-                                                        ) : null}
-                                                         <p className="text-xs text-muted-foreground">{new Date(item.createdAt.seconds * 1000).toLocaleDateString()}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-center text-muted-foreground py-4">No recent activity.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
+                        </TabsContent>
+                    </Tabs>
 
                     {/* Class Create/Edit Dialog */}
                     <Dialog open={isCreateClassOpen} onOpenChange={handleCloseDialog}>
