@@ -88,7 +88,7 @@ export default function TeacherPublicProfilePage() {
     const enrolledClassIds = useMemo(() => new Set(studentEnrollments?.map(e => e.classId) || []), [studentEnrollments]);
 
     const handleEnroll = (classData: ClassData) => {
-        if (!user || !currentUserProfile) {
+        if (!user || !currentUserProfile || !firestore) {
             alert("You must be logged in as a student to enroll.");
             return;
         }
@@ -104,6 +104,7 @@ export default function TeacherPublicProfilePage() {
             teacherName: classData.teacherName,
             batchTime: classData.batchTime,
             status: 'approved',
+            paymentStatus: 'unpaid',
             createdAt: serverTimestamp(),
         };
         

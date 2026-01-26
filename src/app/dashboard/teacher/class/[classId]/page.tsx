@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc, Timestamp, getDocs, limit, orderBy, addDoc, setDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { generateAnnouncement } from '@/ai/flows/announcement-generator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 
 
 interface Class {
@@ -35,6 +37,7 @@ interface EnrolledStudent {
     studentName: string;
     mobileNumber: string;
     createdAt?: Timestamp;
+    paymentStatus: 'paid' | 'unpaid';
 }
 
 interface StudentProfile {
@@ -216,10 +219,11 @@ function AnnouncementsForClass({ classId, teacherId, teacherName, classTitle }: 
 
 function StudentListForClass({ classId, teacherId }: { classId: string, teacherId: string }) {
     const firestore = useFirestore();
+    const [currentTab, setCurrentTab] = useState('all');
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', teacherId));
+        return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', teacherId), orderBy('createdAt', 'desc'));
     }, [firestore, classId, teacherId]);
 
     const { data: enrolledStudents, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
@@ -245,46 +249,86 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
             deleteDocumentNonBlocking(doc(firestore, 'enrollments', enrollmentId));
         }
     };
+    
+    const handlePaymentStatusChange = (enrollmentId: string, isPaid: boolean) => {
+        if (!firestore) return;
+        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
+        updateDocumentNonBlocking(enrollmentRef, {
+            paymentStatus: isPaid ? 'paid' : 'unpaid'
+        });
+    };
 
-    if (isLoading || profilesLoading) {
-        return <p>Loading students...</p>;
-    }
-
-    if (!enrolledStudents || enrolledStudents.length === 0) {
-        return <p className="text-center text-muted-foreground py-8">No students are enrolled in this class yet.</p>;
-    }
-
+    const studentsToDisplay = useMemo(() => {
+        if (!enrolledStudents) return [];
+        if (currentTab === 'all') return enrolledStudents;
+        return enrolledStudents.filter(s => s.paymentStatus === currentTab);
+    }, [enrolledStudents, currentTab]);
+    
     return (
-        <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full text-sm min-w-[600px]">
-                <thead className="text-left bg-muted">
-                    <tr className="border-b">
-                        <th className="p-3 font-medium">Student Name</th>
-                        <th className="p-3 font-medium">Email</th>
-                        <th className="p-3 font-medium">Mobile Number</th>
-                        <th className="p-3 font-medium">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {enrolledStudents.map(student => {
-                        const profile = studentProfileMap.get(student.studentId);
-                        return (
-                            <tr key={student.id} className="border-b last:border-0">
-                                <td className="p-3 whitespace-nowrap">{student.studentName}</td>
-                                <td className="p-3">{profile?.email || '...'}</td>
-                                <td className="p-3">{student.mobileNumber}</td>
-                                <td className="p-3">
-                                    <Button variant="destructive" size="sm" onClick={() => handleRemoveStudent(student.id)}>
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Remove
-                                    </Button>
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Enrolled Students</CardTitle>
+                <CardDescription>Manage students and their payment status for this class.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Tabs value={currentTab} onValueChange={setCurrentTab} className="mb-4">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="all">All ({enrolledStudents?.length || 0})</TabsTrigger>
+                        <TabsTrigger value="paid">Paid ({enrolledStudents?.filter(s => s.paymentStatus === 'paid').length || 0})</TabsTrigger>
+                        <TabsTrigger value="unpaid">Unpaid ({enrolledStudents?.filter(s => s.paymentStatus === 'unpaid').length || 0})</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                
+                {(isLoading || profilesLoading) ? <p className="text-center py-4">Loading students...</p> : 
+                studentsToDisplay.length === 0 ? <p className="text-center text-muted-foreground py-8">No students found in this category.</p> :
+                (
+                    <div className="border rounded-lg overflow-x-auto">
+                        <table className="w-full text-sm min-w-[800px]">
+                            <thead className="text-left bg-muted">
+                                <tr className="border-b">
+                                    <th className="p-3 font-medium">Student Name</th>
+                                    <th className="p-3 font-medium">Email</th>
+                                    <th className="p-3 font-medium">Joined On</th>
+                                    <th className="p-3 font-medium">Payment Status</th>
+                                    <th className="p-3 font-medium text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {studentsToDisplay.map(student => {
+                                    const profile = studentProfileMap.get(student.studentId);
+                                    return (
+                                        <tr key={student.id} className="border-b last:border-0">
+                                            <td className="p-3 whitespace-nowrap font-medium">
+                                                <Link href={`/dashboard/profile/${student.studentId}`} className="hover:underline text-primary">
+                                                    {student.studentName}
+                                                </Link>
+                                            </td>
+                                            <td className="p-3 text-muted-foreground">{profile?.email || '...'}</td>
+                                            <td className="p-3 text-muted-foreground">{student.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
+                                            <td className="p-3">
+                                                 <div className="flex items-center gap-2">
+                                                    <Switch 
+                                                        id={`payment-${student.id}`}
+                                                        checked={student.paymentStatus === 'paid'} 
+                                                        onCheckedChange={(isChecked) => handlePaymentStatusChange(student.id, isChecked)} 
+                                                    />
+                                                    <Label htmlFor={`payment-${student.id}`} className="capitalize font-medium">{student.paymentStatus}</Label>
+                                                </div>
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveStudent(student.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 
@@ -385,6 +429,7 @@ export default function ClassDetailsPage() {
             teacherName: userProfile.name,
             batchTime: classData.batchTime,
             status: 'approved',
+            paymentStatus: 'unpaid',
             createdAt: serverTimestamp(),
         };
 
@@ -444,6 +489,7 @@ export default function ClassDetailsPage() {
                 teacherName: userProfile.name,
                 batchTime: classData.batchTime,
                 status: 'approved',
+                paymentStatus: 'unpaid',
                 createdAt: serverTimestamp(),
             };
             const enrollmentsColRef = collection(firestore, 'enrollments');
@@ -532,15 +578,7 @@ export default function ClassDetailsPage() {
                     
                     <div className="grid gap-8 lg:grid-cols-3">
                         <div className="lg:col-span-2 space-y-8">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Enrolled Students</CardTitle>
-                                    <CardDescription>The list of students currently in this class.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {user && <StudentListForClass classId={classId} teacherId={user.uid} />}
-                                </CardContent>
-                            </Card>
+                            {user && <StudentListForClass classId={classId} teacherId={user.uid} />}
                             {user && userProfile && classData && <AnnouncementsForClass classId={classId} teacherId={user.uid} teacherName={userProfile.name} classTitle={classData.title} />}
                         </div>
                         <div className="lg:col-span-1 space-y-8">

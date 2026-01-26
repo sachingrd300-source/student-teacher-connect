@@ -23,6 +23,7 @@ interface Class {
     batchTime: string;
     classCode: string;
     createdAt?: Timestamp;
+    fee?: number;
 }
 
 export default function TeacherDashboard() {
@@ -34,6 +35,7 @@ export default function TeacherDashboard() {
     const [title, setTitle] = useState('');
     const [subject, setSubject] = useState('');
     const [batchTime, setBatchTime] = useState('');
+    const [fee, setFee] = useState('');
     const [isProcessingClass, setIsProcessingClass] = useState(false);
     const [isCreateClassOpen, setIsCreateClassOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
@@ -59,7 +61,7 @@ export default function TeacherDashboard() {
 
     const classesQuery = useMemoFirebase(() => {
         if (!isTutor || !firestore || !user) return null;
-        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid));
+        return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user, isTutor]);
 
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
@@ -68,6 +70,7 @@ export default function TeacherDashboard() {
         setTitle('');
         setSubject('');
         setBatchTime('');
+        setFee('');
         setEditingClass(null);
     };
 
@@ -81,9 +84,20 @@ export default function TeacherDashboard() {
         setTitle(classData.title);
         setSubject(classData.subject);
         setBatchTime(classData.batchTime);
+        setFee(classData.fee?.toString() || '');
+        // Note: Do not open the 'create' dialog here, open the 'edit' one
     };
+    
+    // This will now open the edit dialog directly
+    useEffect(() => {
+        if (editingClass) {
+            setIsCreateClassOpen(true); // Re-using the same dialog component for both create/edit
+        }
+    }, [editingClass]);
 
-    const handleCloseEditDialog = () => {
+
+    const handleCloseDialog = () => {
+        setIsCreateClassOpen(false);
         setEditingClass(null);
         resetClassForm();
     };
@@ -108,6 +122,7 @@ export default function TeacherDashboard() {
             title,
             subject,
             batchTime,
+            fee: Number(fee) || 0,
             classCode: nanoid(6).toUpperCase(),
             createdAt: serverTimestamp(),
         };
@@ -115,8 +130,7 @@ export default function TeacherDashboard() {
         const classesColRef = collection(firestore, 'classes');
         addDocumentNonBlocking(classesColRef, newClassData)
           .then(() => {
-              resetClassForm();
-              setIsCreateClassOpen(false);
+              handleCloseDialog();
           })
           .finally(() => {
               setIsProcessingClass(false);
@@ -132,10 +146,11 @@ export default function TeacherDashboard() {
             title,
             subject,
             batchTime,
+            fee: Number(fee) || 0,
         };
 
         updateDocumentNonBlocking(classRef, updatedData);
-        handleCloseEditDialog();
+        handleCloseDialog();
         setIsProcessingClass(false);
     };
 
@@ -202,6 +217,7 @@ export default function TeacherDashboard() {
                                                         <div className="text-sm text-muted-foreground">Class Code:</div>
                                                         <div className="font-mono text-base font-bold text-foreground">{c.classCode}</div>
                                                     </div>
+                                                     <p className="text-xs text-muted-foreground pt-2">Created on: {c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
                                                 </CardHeader>
                                                 <CardFooter className="flex justify-between items-center">
                                                     <Link href={`/dashboard/teacher/class/${c.id}`} passHref className="flex-grow">
@@ -236,12 +252,14 @@ export default function TeacherDashboard() {
                         </Card>
                     </div>
 
-                    {/* Create Class Dialog */}
-                    <Dialog open={isCreateClassOpen} onOpenChange={setIsCreateClassOpen}>
+                    {/* Create/Edit Class Dialog */}
+                    <Dialog open={isCreateClassOpen} onOpenChange={handleCloseDialog}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Create a New Class</DialogTitle>
-                                <DialogDescription>Fill in the details to create a new class batch.</DialogDescription>
+                                <DialogTitle>{editingClass ? 'Edit Class' : 'Create a New Class'}</DialogTitle>
+                                <DialogDescription>
+                                    {editingClass ? `Make changes to your class details.` : `Fill in the details to create a new class batch.`}
+                                </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSaveClass} className="space-y-4 py-4">
                                 <div className="space-y-2">
@@ -256,64 +274,19 @@ export default function TeacherDashboard() {
                                     <Label htmlFor="batch-time">Batch Timing</Label>
                                     <Input id="batch-time" placeholder="e.g., 10:00 AM - 11:30 AM" value={batchTime} onChange={(e) => setBatchTime(e.target.value)} required />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="fee">Fee (Optional)</Label>
+                                    <Input id="fee" type="number" placeholder="e.g., 500" value={fee} onChange={(e) => setFee(e.target.value)} />
+                                </div>
                                 <DialogFooter>
-                                    <Button type="button" variant="secondary" onClick={() => setIsCreateClassOpen(false)}>Cancel</Button>
+                                    <Button type="button" variant="secondary" onClick={handleCloseDialog}>Cancel</Button>
                                     <Button type="submit" disabled={isProcessingClass}>
-                                        {isProcessingClass ? 'Creating...' : 'Create Class'}
+                                        {isProcessingClass ? 'Saving...' : 'Save Changes'}
                                     </Button>
                                 </DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
-
-                    {/* Edit Class Dialog */}
-                    {editingClass && (
-                        <Dialog open={!!editingClass} onOpenChange={(isOpen) => !isOpen && handleCloseEditDialog()}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Edit Class: {editingClass.title}</DialogTitle>
-                                    <DialogDescription>
-                                        Make changes to your class details here. Click save when you're done.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleSaveClass} className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-title">Class Title</Label>
-                                        <Input
-                                            id="edit-title"
-                                            value={title}
-                                            onChange={(e) => setTitle(e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-subject">Subject</Label>
-                                        <Input
-                                            id="edit-subject"
-                                            value={subject}
-                                            onChange={(e) => setSubject(e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-batch-time">Batch Timing</Label>
-                                        <Input
-                                            id="edit-batch-time"
-                                            value={batchTime}
-                                            onChange={(e) => setBatchTime(e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="button" variant="secondary" onClick={handleCloseEditDialog}>Cancel</Button>
-                                        <Button type="submit" disabled={isProcessingClass}>
-                                            {isProcessingClass ? 'Saving...' : 'Save Changes'}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    )}
                 </div>
             </main>
         </div>

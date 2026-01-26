@@ -262,6 +262,7 @@ export default function StudentDashboard() {
             teacherName: classData.teacherName,
             batchTime: classData.batchTime,
             status: 'approved',
+            paymentStatus: 'unpaid',
             createdAt: serverTimestamp(),
         };
         
