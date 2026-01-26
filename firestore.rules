@@ -78,11 +78,10 @@ service cloud.firestore {
     match /studyMaterials/{materialId} {
       // A tutor can create materials and must be the owner
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      // Any user can get a specific material. List is more complex.
-      allow get: if true;
+      // Any user can get a specific material.
+      allow get: if isSignedIn();
       // Anyone can list materials. App-side filtering determines what is shown (public vs class-specific).
-      // This is safe because the fileUrl is just a link, and access to class-specific materials is controlled by the UI.
-      allow list: if true; 
+      allow list: if isSignedIn(); 
       // Only the tutor who created the material can update or delete it
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
@@ -127,3 +126,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

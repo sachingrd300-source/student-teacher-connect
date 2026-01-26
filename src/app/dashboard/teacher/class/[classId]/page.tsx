@@ -1,13 +1,14 @@
+
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Check, X, Users, Clock, ArrowLeft, Phone } from 'lucide-react';
+import { Check, X, Users, Clock, ArrowLeft, Phone, BarChartHorizontal, Percent } from 'lucide-react';
 import Link from 'next/link';
 
 interface EnrolledStudent {
@@ -17,6 +18,20 @@ interface EnrolledStudent {
     mobileNumber: string;
     status: 'pending' | 'approved' | 'denied';
     createdAt: Timestamp;
+}
+
+interface TestResult {
+    id: string;
+    studentId: string;
+    marksObtained: number;
+    totalMarks: number;
+}
+
+interface Attendance {
+    id: string;
+    records: {
+        [studentId: string]: boolean;
+    }
 }
 
 const StudentRow = ({ student, onApprove, onDeny }: { student: EnrolledStudent, onApprove: (id: string) => void, onDeny: (id: string) => void}) => (
@@ -38,11 +53,20 @@ const StudentRow = ({ student, onApprove, onDeny }: { student: EnrolledStudent, 
     </div>
 );
 
-const ApprovedStudentRow = ({ student, classId }: { student: EnrolledStudent, classId: string }) => (
-     <div className="flex items-center justify-between p-3 border-b last:border-0">
+const ApprovedStudentRow = ({ student, classId, attendancePercentage, avgTestScore }: { student: EnrolledStudent, classId: string, attendancePercentage: number, avgTestScore: number }) => (
+     <div className="flex items-center justify-between p-4 border-b last:border-0">
         <div>
             <p className="font-medium">{student.studentName}</p>
-            <p className="text-sm text-muted-foreground">{student.mobileNumber || 'Not provided'}</p>
+            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                    <BarChartHorizontal className="h-3 w-3" />
+                    <span>Attendance: <span className="font-bold">{attendancePercentage}%</span></span>
+                </div>
+                 <div className="flex items-center gap-1">
+                    <Percent className="h-3 w-3" />
+                    <span>Avg Score: <span className="font-bold">{avgTestScore}%</span></span>
+                </div>
+            </div>
         </div>
         <Button variant="ghost" size="sm" asChild>
             <Link href={`/dashboard/teacher/class/${classId}/student/${student.studentId}`}>View Details</Link>
@@ -69,13 +93,66 @@ export default function ManageClassPage() {
     }, [firestore, classId]);
     const { data: classData, isLoading: classLoading } = useDoc<{title:string, subject: string, classCode: string, teacherId: string}>(classRef);
 
-    // Fetch enrollments for this specific class, ensuring the teacher is the owner.
+    // Fetch enrollments for this specific class
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !classId || !user) return null;
         return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', user.uid));
     }, [firestore, classId, user]);
-
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
+
+    const attendanceQuery = useMemoFirebase(() => {
+        if (!firestore || !classId || !user) return null;
+        return query(collection(firestore, 'attendance'), where('classId', '==', classId), where('teacherId', '==', user.uid));
+    }, [firestore, classId, user]);
+    const { data: attendanceRecords, isLoading: attendanceLoading } = useCollection<Attendance>(attendanceQuery);
+
+    const testResultsQuery = useMemoFirebase(() => {
+        if (!firestore || !classId || !user) return null;
+        return query(collection(firestore, 'testResults'), where('classId', '==', classId), where('teacherId', '==', user.uid));
+    }, [firestore, classId, user]);
+    const { data: testResults, isLoading: resultsLoading } = useCollection<TestResult>(testResultsQuery);
+
+
+    const performanceData = useMemo(() => {
+        const studentData = new Map<string, { attendance: { present: number, total: number }, tests: { totalScore: number, totalMarks: number } }>();
+
+        if (!enrollments) return studentData;
+
+        enrollments.forEach(enrollment => {
+            studentData.set(enrollment.studentId, {
+                attendance: { present: 0, total: 0 },
+                tests: { totalScore: 0, totalMarks: 0 }
+            });
+        });
+
+        if (attendanceRecords) {
+            attendanceRecords.forEach(record => {
+                Object.entries(record.records).forEach(([studentId, isPresent]) => {
+                    const data = studentData.get(studentId);
+                    if (data) {
+                        data.attendance.total++;
+                        if (isPresent) {
+                            data.attendance.present++;
+                        }
+                    }
+                });
+            });
+        }
+        
+        if (testResults) {
+            testResults.forEach(result => {
+                const data = studentData.get(result.studentId);
+                if (data) {
+                    data.tests.totalScore += result.marksObtained;
+                    data.tests.totalMarks += result.totalMarks;
+                }
+            });
+        }
+
+        return studentData;
+
+    }, [enrollments, attendanceRecords, testResults]);
+
 
     const pendingStudents = useMemo(() => enrollments?.filter(s => s.status === 'pending') || [], [enrollments]);
     const approvedStudents = useMemo(() => enrollments?.filter(s => s.status === 'approved') || [], [enrollments]);
@@ -92,7 +169,7 @@ export default function ManageClassPage() {
         updateDocumentNonBlocking(enrollmentRef, { status: newStatus });
     };
 
-    if (classLoading || enrollmentsLoading) {
+    if (classLoading || enrollmentsLoading || attendanceLoading || resultsLoading) {
         return <div className="flex h-screen items-center justify-center">Loading class details...</div>
     }
 
@@ -119,9 +196,6 @@ export default function ManageClassPage() {
                                 <p className="font-mono text-xl font-bold tracking-widest text-primary bg-muted p-2 rounded-md inline-block mt-1">{classData?.classCode}</p>
                             </div>
                         </CardHeader>
-                        <CardFooter className="gap-4">
-                            <Button asChild><Link href={`/dashboard/teacher/class/${classId}/performance`}>View Student Performance</Link></Button>
-                        </CardFooter>
                     </Card>
 
                     <div className="grid gap-8 md:grid-cols-2">
@@ -151,12 +225,17 @@ export default function ManageClassPage() {
                                     <Users className="h-5 w-5 text-green-600" />
                                     Enrolled Students ({approvedStudents.length})
                                 </CardTitle>
-                                <CardDescription>The list of all students currently in this class.</CardDescription>
+                                <CardDescription>Performance snapshot of all students in this class.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
                                 {approvedStudents.length > 0 ? (
                                     <div>
-                                        {approvedStudents.map(student => <ApprovedStudentRow key={student.id} student={student} classId={classId} />)}
+                                        {approvedStudents.map(student => {
+                                            const perf = performanceData.get(student.studentId);
+                                            const attendancePercentage = perf && perf.attendance.total > 0 ? Math.round((perf.attendance.present / perf.attendance.total) * 100) : 0;
+                                            const avgTestScore = perf && perf.tests.totalMarks > 0 ? Math.round((perf.tests.totalScore / perf.tests.totalMarks) * 100) : 0;
+                                            return <ApprovedStudentRow key={student.id} student={student} classId={classId} attendancePercentage={attendancePercentage} avgTestScore={avgTestScore} />
+                                        })}
                                     </div>
                                 ) : (
                                     <p className="p-6 text-center text-muted-foreground">No students have been approved yet.</p>
@@ -169,3 +248,5 @@ export default function ManageClassPage() {
         </div>
     );
 }
+
+    
