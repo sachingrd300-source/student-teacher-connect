@@ -91,18 +91,6 @@
         "createdAt"
       ]
     },
-    "PublicTutor": {
-      "title": "PublicTutor",
-      "type": "object",
-      "description": "Publicly visible information for an approved tutor.",
-      "properties": {
-        "name": { "type": "string" },
-        "subjects": { "type": "array", "items": { "type": "string" } },
-        "address": { "type": "string" },
-        "coachingName": { "type": "string" }
-      },
-      "required": ["name"]
-    },
     "Class": {
       "title": "Class",
       "type": "object",
@@ -340,12 +328,6 @@
         "$ref": "#/entities/User"
       },
       "description": "Stores all user profiles (students, tutors, admins)."
-    },
-    "/publicTutors/{tutorId}": {
-      "schema": {
-        "$ref": "#/entities/PublicTutor"
-      },
-      "description": "Public profiles for approved tutors."
     },
     "/classes/{classId}": {
       "schema": {

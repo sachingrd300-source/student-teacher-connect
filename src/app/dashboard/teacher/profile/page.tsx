@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -84,26 +84,14 @@ export default function TeacherProfilePage() {
         e.preventDefault();
         if (!userProfileRef || !user || !firestore) return;
         
-        const subjectsArray = typeof formData.subjects === 'string'
+        const subjectsArray = (typeof formData.subjects === 'string' && formData.subjects.length > 0)
             ? formData.subjects.split(',').map(s => s.trim()).filter(Boolean)
-            : formData.subjects;
+            : Array.isArray(formData.subjects) ? formData.subjects : [];
             
         const dataToSave = { ...formData, subjects: subjectsArray };
         
-        // 1. Update the private user profile
+        // Update the private user profile
         updateDocumentNonBlocking(userProfileRef, dataToSave);
-
-        // 2. If user is an approved tutor, update the public profile too
-        if (userProfile?.role === 'tutor' && userProfile?.status === 'approved') {
-            const publicData = {
-                name: dataToSave.name || '',
-                subjects: dataToSave.subjects || [],
-                address: dataToSave.address || '',
-                coachingName: dataToSave.coachingName || '',
-            };
-            const publicTutorRef = doc(firestore, 'publicTutors', user.uid);
-            setDocumentNonBlocking(publicTutorRef, publicData, { merge: true });
-        }
         
         setIsEditing(false);
     };

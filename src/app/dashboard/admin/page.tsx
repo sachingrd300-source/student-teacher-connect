@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useMemo } from 'react';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, Timestamp, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -108,39 +107,15 @@ export default function AdminDashboardPage() {
         if (!firestore) return;
         const teacherRef = doc(firestore, 'users', teacherId);
 
-        // 1. Update user status to 'approved'
+        // Update user status to 'approved'
         updateDocumentNonBlocking(teacherRef, { status: 'approved' });
-
-        // 2. Create/update the public profile in 'publicTutors' collection
-        try {
-            const userSnap = await getDoc(teacherRef);
-            if (userSnap.exists()) {
-                const userData = userSnap.data();
-                const publicData = {
-                    name: userData.name || '',
-                    subjects: userData.subjects || [],
-                    address: userData.address || '',
-                    coachingName: userData.coachingName || '',
-                };
-                const publicTutorRef = doc(firestore, 'publicTutors', teacherId);
-                setDocumentNonBlocking(publicTutorRef, publicData, { merge: true });
-            }
-        } catch (error) {
-            console.error("Failed to create public profile:", error);
-            // Optionally, show an error to the admin
-        }
     };
 
     const handleDeny = (teacherId: string) => {
         if (!firestore) return;
         if(confirm('Are you sure you want to deny this teacher?')) {
-            // 1. Update user status to 'denied'
             const teacherRef = doc(firestore, 'users', teacherId);
             updateDocumentNonBlocking(teacherRef, { status: 'denied' });
-            
-            // 2. Delete the public profile if it exists
-            const publicTutorRef = doc(firestore, 'publicTutors', teacherId);
-            deleteDocumentNonBlocking(publicTutorRef);
         }
     };
 

@@ -37,26 +37,14 @@ service cloud.firestore {
     match /users/{userId} {
       // Any signed-in user can view any other user's profile (needed for public teacher profiles)
       allow get: if isSignedIn();
-      // Only admins can list all users
-      allow list: if isAdmin();
+      // Admins can list all users. Students/Tutors can list approved tutors.
+      allow list: if isAdmin() || (isSignedIn() && request.query.role == 'tutor' && request.query.status == 'approved');
       // A user can create their own profile document
       allow create: if isOwner(userId);
       // A user can update their own profile, or an admin can update any profile
       allow update: if isOwner(userId) || isAdmin();
       // No one can delete user profiles
       allow delete: if false; 
-    }
-
-    // --- Public Tutor Profiles (for unauthenticated users to see) ---
-    match /publicTutors/{tutorId} {
-      // Anyone can view a public tutor profile
-      allow get, list: if true;
-      // Only admins can create public profiles (during the approval process)
-      allow create: if isAdmin(); 
-      // An admin or the tutor themselves can update the public profile
-      allow update: if isAdmin() || isOwner(tutorId); 
-      // Only admins can delete public profiles
-      allow delete: if isAdmin();
     }
 
     // --- Classes ---

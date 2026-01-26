@@ -180,7 +180,7 @@ export default function StudentDashboard() {
     // 4. Tutors (for "Find a Teacher")
     const tutorsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'publicTutors'));
+        return query(collection(firestore, 'users'), where('role', '==', 'tutor'), where('status', '==', 'approved'));
     }, [firestore]);
     const { data: tutors, isLoading: tutorsLoading } = useCollection<TutorProfile>(tutorsQuery);
 
@@ -445,3 +445,4 @@ export default function StudentDashboard() {
     
 
     
+
