@@ -56,15 +56,17 @@ service cloud.firestore {
     }
 
     match /enrollments/{enrollmentId} {
-      // Allow creation by a teacher OR by a student for themselves
+      // Allow creation by a teacher OR by a student sending a request
       allow create: if (isTutor() && request.resource.data.teacherId == request.auth.uid && request.resource.data.status == 'approved') ||
-                      (isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'approved');
+                      (isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'pending');
       
       // Allow a user to get an enrollment doc if they are the student or the teacher.
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
 
       allow list: if isSignedIn(); // Client-side queries must filter enrollments.
       
+      // Teacher can update (e.g. approve/deny request, update payment)
+      // Student can't update.
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
@@ -109,3 +111,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

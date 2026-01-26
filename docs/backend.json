@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -158,7 +157,7 @@
     "Enrollment": {
       "title": "Enrollment",
       "type": "object",
-      "description": "Represents a student's enrollment in a specific class. Created during student signup.",
+      "description": "Represents a student's enrollment request for a specific class.",
       "properties": {
         "id": { "type": "string" },
         "studentId": {
@@ -193,9 +192,11 @@
         "status": {
           "type": "string",
           "enum": [
-            "approved"
+            "pending",
+            "approved",
+            "denied"
           ],
-          "description": "The status of the enrollment. Always 'approved' as it's created on signup."
+          "description": "The status of the enrollment request (pending, approved, or denied)."
         },
         "createdAt": {
             "type": "string",
@@ -404,3 +405,5 @@
     }
   }
 }
+
+    

@@ -5,7 +5,7 @@ import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection, addDocum
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, Award, Book, Briefcase, MapPin, MessageSquare, DollarSign, Percent, PlusCircle, CheckCircle } from 'lucide-react';
+import { UserCircle, Mail, Phone, Award, Book, Briefcase, MapPin, MessageSquare, DollarSign, Percent, PlusCircle, CheckCircle, Clock } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ interface ClassData {
 
 interface Enrollment {
     classId: string;
+    status: 'pending' | 'approved' | 'denied';
 }
 
 const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | string[] }) => {
@@ -79,13 +80,13 @@ export default function TeacherPublicProfilePage() {
     }, [firestore, profileUserId]);
     const { data: teacherClasses, isLoading: classesLoading } = useCollection<ClassData>(classesQuery);
     
-    // Fetch current student's enrollments to check if already enrolled
+    // Fetch current student's enrollments to check status for each class
     const studentEnrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: studentEnrollments } = useCollection<Enrollment>(studentEnrollmentsQuery);
-    const enrolledClassIds = useMemo(() => new Set(studentEnrollments?.map(e => e.classId) || []), [studentEnrollments]);
+    const enrollmentStatusMap = useMemo(() => new Map(studentEnrollments?.map(e => [e.classId, e.status]) || []), [studentEnrollments]);
 
     const handleEnroll = (classData: ClassData) => {
         if (!user || !currentUserProfile || !firestore) {
@@ -103,14 +104,14 @@ export default function TeacherPublicProfilePage() {
             classSubject: classData.subject,
             teacherName: classData.teacherName,
             batchTime: classData.batchTime,
-            status: 'approved',
+            status: 'pending', // Send a request instead of direct approval
             paymentStatus: 'unpaid',
             createdAt: serverTimestamp(),
         };
         
         const enrollmentsColRef = collection(firestore, 'enrollments');
         addDocumentNonBlocking(enrollmentsColRef, enrollmentData);
-        alert(`Successfully enrolled in ${classData.title}!`);
+        alert(`Enrollment request sent for ${classData.title}! The teacher will review it shortly.`);
     };
 
 
@@ -131,7 +132,7 @@ export default function TeacherPublicProfilePage() {
                      <div className="max-w-3xl mx-auto space-y-6">
                         <Button variant="outline" asChild className="mb-4">
                             <Link href="/dashboard/student">
-                                &larr; Back to Find a Teacher
+                                &larr; Back to Dashboard
                             </Link>
                         </Button>
                         {!teacherProfile && !isProfileLoading && (
@@ -184,14 +185,16 @@ export default function TeacherPublicProfilePage() {
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Available Classes</CardTitle>
-                                        <CardDescription>Enroll directly in any of the classes offered by {teacherProfile.name}.</CardDescription>
+                                        <CardDescription>Request to enroll in any of the classes offered by {teacherProfile.name}.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         {classesLoading ? <p>Loading classes...</p> : 
                                         teacherClasses && teacherClasses.length > 0 ? (
                                             <div className="space-y-4">
                                                 {teacherClasses.map(c => {
-                                                    const isEnrolled = enrolledClassIds.has(c.id);
+                                                    const enrollmentStatus = enrollmentStatusMap.get(c.id);
+                                                    const isEnrolled = enrollmentStatus === 'approved';
+                                                    const isPending = enrollmentStatus === 'pending';
                                                     return (
                                                         <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg">
                                                             <div>
@@ -201,15 +204,19 @@ export default function TeacherPublicProfilePage() {
                                                             <Button 
                                                                 className="mt-3 sm:mt-0"
                                                                 onClick={() => handleEnroll(c)} 
-                                                                disabled={isEnrolled}
+                                                                disabled={isEnrolled || isPending}
                                                             >
                                                                 {isEnrolled ? (
                                                                     <>
-                                                                        <CheckCircle className="h-4 w-4 mr-2" /> Already Enrolled
+                                                                        <CheckCircle className="h-4 w-4 mr-2" /> Enrolled
+                                                                    </>
+                                                                ) : isPending ? (
+                                                                     <>
+                                                                        <Clock className="h-4 w-4 mr-2" /> Request Pending
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        <PlusCircle className="h-4 w-4 mr-2" /> Enroll Now
+                                                                        <PlusCircle className="h-4 w-4 mr-2" /> Request to Enroll
                                                                     </>
                                                                 )}
                                                             </Button>
@@ -230,3 +237,5 @@ export default function TeacherPublicProfilePage() {
         </div>
     );
 }
+
+    

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Trash2, BarChartHorizontal, Megaphone, Send, Wand2 } from 'lucide-react';
+import { Search, Trash2, BarChartHorizontal, Megaphone, Send, Wand2, Check, X } from 'lucide-react';
 import { initializeApp, getApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -38,6 +38,7 @@ interface EnrolledStudent {
     mobileNumber: string;
     createdAt?: Timestamp;
     paymentStatus: 'paid' | 'unpaid';
+    status: 'pending' | 'approved' | 'denied';
 }
 
 interface StudentProfile {
@@ -219,29 +220,22 @@ function AnnouncementsForClass({ classId, teacherId, teacherName, classTitle }: 
 
 function StudentListForClass({ classId, teacherId }: { classId: string, teacherId: string }) {
     const firestore = useFirestore();
-    const [currentTab, setCurrentTab] = useState('all');
+    const [currentTab, setCurrentTab] = useState('pending');
 
     const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'enrollments'), where('classId', '==', classId), where('teacherId', '==', teacherId), orderBy('createdAt', 'desc'));
+        return query(
+            collection(firestore, 'enrollments'), 
+            where('classId', '==', classId), 
+            where('teacherId', '==', teacherId),
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore, classId, teacherId]);
 
-    const { data: enrolledStudents, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
-
-    const studentUids = useMemo(() => enrolledStudents?.map(s => s.studentId) || [], [enrolledStudents]);
-
-    const studentsProfileQuery = useMemoFirebase(() => {
-        if (!firestore || studentUids.length === 0) return null;
-        return query(collection(firestore, 'users'), where('__name__', 'in', studentUids));
-    }, [firestore, studentUids]);
-
-    const { data: studentProfiles, isLoading: profilesLoading } = useCollection<StudentProfile>(studentsProfileQuery);
+    const { data: allEnrollments, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
     
-    const studentProfileMap = useMemo(() => {
-        const map = new Map<string, StudentProfile>();
-        studentProfiles?.forEach(p => map.set(p.id, p));
-        return map;
-    }, [studentProfiles]);
+    const pendingStudents = useMemo(() => allEnrollments?.filter(s => s.status === 'pending') || [], [allEnrollments]);
+    const approvedStudents = useMemo(() => allEnrollments?.filter(s => s.status === 'approved') || [], [allEnrollments]);
 
     const handleRemoveStudent = (enrollmentId: string) => {
         if (!firestore) return;
@@ -258,75 +252,103 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
         });
     };
 
-    const studentsToDisplay = useMemo(() => {
-        if (!enrolledStudents) return [];
-        if (currentTab === 'all') return enrolledStudents;
-        return enrolledStudents.filter(s => s.paymentStatus === currentTab);
-    }, [enrolledStudents, currentTab]);
-    
+    const handleRequest = (enrollmentId: string, newStatus: 'approved' | 'denied') => {
+        if (!firestore) return;
+        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
+        updateDocumentNonBlocking(enrollmentRef, { status: newStatus });
+    };
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Enrolled Students</CardTitle>
-                <CardDescription>Manage students and their payment status for this class.</CardDescription>
+                <CardTitle>Manage Students</CardTitle>
+                <CardDescription>Review pending requests and manage currently enrolled students.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Tabs value={currentTab} onValueChange={setCurrentTab} className="mb-4">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="all">All ({enrolledStudents?.length || 0})</TabsTrigger>
-                        <TabsTrigger value="paid">Paid ({enrolledStudents?.filter(s => s.paymentStatus === 'paid').length || 0})</TabsTrigger>
-                        <TabsTrigger value="unpaid">Unpaid ({enrolledStudents?.filter(s => s.paymentStatus === 'unpaid').length || 0})</TabsTrigger>
+                <Tabs value={currentTab} onValueChange={setCurrentTab}>
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="pending">Pending Requests ({pendingStudents.length})</TabsTrigger>
+                        <TabsTrigger value="enrolled">Enrolled Students ({approvedStudents.length})</TabsTrigger>
                     </TabsList>
-                </Tabs>
-                
-                {(isLoading || profilesLoading) ? <p className="text-center py-4">Loading students...</p> : 
-                studentsToDisplay.length === 0 ? <p className="text-center text-muted-foreground py-8">No students found in this category.</p> :
-                (
-                    <div className="border rounded-lg overflow-x-auto">
-                        <table className="w-full text-sm min-w-[800px]">
-                            <thead className="text-left bg-muted">
-                                <tr className="border-b">
-                                    <th className="p-3 font-medium">Student Name</th>
-                                    <th className="p-3 font-medium">Email</th>
-                                    <th className="p-3 font-medium">Joined On</th>
-                                    <th className="p-3 font-medium">Payment Status</th>
-                                    <th className="p-3 font-medium text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {studentsToDisplay.map(student => {
-                                    const profile = studentProfileMap.get(student.studentId);
-                                    return (
-                                        <tr key={student.id} className="border-b last:border-0">
-                                            <td className="p-3 whitespace-nowrap font-medium">
-                                                <Link href={`/dashboard/profile/${student.studentId}`} className="hover:underline text-primary">
-                                                    {student.studentName}
-                                                </Link>
-                                            </td>
-                                            <td className="p-3 text-muted-foreground">{profile?.email || '...'}</td>
-                                            <td className="p-3 text-muted-foreground">{student.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
-                                            <td className="p-3">
-                                                 <div className="flex items-center gap-2">
-                                                    <Switch 
-                                                        id={`payment-${student.id}`}
-                                                        checked={student.paymentStatus === 'paid'} 
-                                                        onCheckedChange={(isChecked) => handlePaymentStatusChange(student.id, isChecked)} 
-                                                    />
-                                                    <Label htmlFor={`payment-${student.id}`} className="capitalize font-medium">{student.paymentStatus}</Label>
-                                                </div>
-                                            </td>
-                                            <td className="p-3 text-center">
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveStudent(student.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </td>
+                    <TabsContent value="pending" className="mt-4">
+                        {isLoading ? <p className="text-center py-4">Loading requests...</p> : 
+                        pendingStudents.length === 0 ? <p className="text-center text-muted-foreground py-8">No pending enrollment requests.</p> :
+                        (
+                            <div className="border rounded-lg overflow-x-auto">
+                                <table className="w-full text-sm min-w-[600px]">
+                                    <thead className="text-left bg-muted">
+                                        <tr className="border-b">
+                                            <th className="p-3 font-medium">Student Name</th>
+                                            <th className="p-3 font-medium">Requested On</th>
+                                            <th className="p-3 font-medium text-center">Actions</th>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                    </thead>
+                                    <tbody>
+                                        {pendingStudents.map(student => (
+                                            <tr key={student.id} className="border-b last:border-0">
+                                                <td className="p-3 whitespace-nowrap font-medium">{student.studentName}</td>
+                                                <td className="p-3 text-muted-foreground">{student.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
+                                                <td className="p-3 text-center flex justify-center gap-2">
+                                                    <Button size="sm" className="bg-success/10 text-success hover:bg-success/20 hover:text-success" onClick={() => handleRequest(student.id, 'approved')}>
+                                                        <Check className="h-4 w-4 mr-2" />Approve
+                                                    </Button>
+                                                    <Button size="sm" variant="destructive" onClick={() => handleRequest(student.id, 'denied')}>
+                                                        <X className="h-4 w-4 mr-2" />Deny
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="enrolled" className="mt-4">
+                         {isLoading ? <p className="text-center py-4">Loading students...</p> : 
+                        approvedStudents.length === 0 ? <p className="text-center text-muted-foreground py-8">No students are enrolled in this class yet.</p> :
+                        (
+                             <div className="border rounded-lg overflow-x-auto">
+                                <table className="w-full text-sm min-w-[800px]">
+                                    <thead className="text-left bg-muted">
+                                        <tr className="border-b">
+                                            <th className="p-3 font-medium">Student Name</th>
+                                            <th className="p-3 font-medium">Joined On</th>
+                                            <th className="p-3 font-medium">Payment Status</th>
+                                            <th className="p-3 font-medium text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {approvedStudents.map(student => (
+                                            <tr key={student.id} className="border-b last:border-0">
+                                                <td className="p-3 whitespace-nowrap font-medium">
+                                                    <Link href={`/dashboard/profile/${student.studentId}`} className="hover:underline text-primary">
+                                                        {student.studentName}
+                                                    </Link>
+                                                </td>
+                                                <td className="p-3 text-muted-foreground">{student.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch 
+                                                            id={`payment-${student.id}`}
+                                                            checked={student.paymentStatus === 'paid'} 
+                                                            onCheckedChange={(isChecked) => handlePaymentStatusChange(student.id, isChecked)} 
+                                                        />
+                                                        <Label htmlFor={`payment-${student.id}`} className="capitalize font-medium">{student.paymentStatus}</Label>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 text-center">
+                                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveStudent(student.id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </CardContent>
         </Card>
     );
@@ -671,3 +693,5 @@ export default function ClassDetailsPage() {
         </div>
     );
 }
+
+    
