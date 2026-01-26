@@ -100,19 +100,25 @@ export default function TeacherDashboard() {
     }, [firestore, user, isTutor]);
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
     
-    // Fetch pending enrollments for stats and pending list
-    const pendingEnrollmentsQuery = useMemoFirebase(() => {
+    // Fetch all enrollments for this teacher
+    const allEnrollmentsQuery = useMemoFirebase(() => {
         if (!isTutor || !firestore || !user) return null;
-        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user, isTutor]);
-    const { data: pendingEnrollments, isLoading: pendingEnrollmentsLoading } = useCollection<Enrollment>(pendingEnrollmentsQuery);
+    const { data: allEnrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
 
-    // Fetch approved enrollments for total student count
-    const approvedEnrollmentsQuery = useMemoFirebase(() => {
-        if (!isTutor || !firestore || !user) return null;
-        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'approved'));
-    }, [firestore, user, isTutor]);
-    const { data: approvedEnrollments, isLoading: approvedEnrollmentsLoading } = useCollection<Enrollment>(approvedEnrollmentsQuery);
+    // Derive pending and approved enrollments from the single source
+    const pendingEnrollments = useMemo(() => {
+        if (!allEnrollments) return [];
+        return allEnrollments
+            .filter(e => e.status === 'pending')
+            .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+    }, [allEnrollments]);
+
+    const approvedEnrollments = useMemo(() => {
+        if (!allEnrollments) return [];
+        return allEnrollments.filter(e => e.status === 'approved');
+    }, [allEnrollments]);
 
     // --- Action Handlers ---
     const handleRequest = (enrollmentId: string, newStatus: 'approved' | 'denied') => {
@@ -232,13 +238,13 @@ export default function TeacherDashboard() {
                             title="Total Students"
                             value={approvedEnrollments?.length ?? 0}
                             icon={<Users className="h-4 w-4" />}
-                            isLoading={approvedEnrollmentsLoading}
+                            isLoading={enrollmentsLoading}
                         />
                         <StatCard
                             title="Pending Requests"
                             value={pendingEnrollments?.length ?? 0}
                             icon={<Clock className="h-4 w-4" />}
-                            isLoading={pendingEnrollmentsLoading}
+                            isLoading={enrollmentsLoading}
                         />
                     </div>
                     
@@ -311,7 +317,7 @@ export default function TeacherDashboard() {
                                     <CardDescription>Approve or deny requests from students to join your classes.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {pendingEnrollmentsLoading ? <p className="text-center py-4">Loading requests...</p> : 
+                                    {enrollmentsLoading ? <p className="text-center py-4">Loading requests...</p> : 
                                     pendingEnrollments && pendingEnrollments.length > 0 ?
                                     (
                                         <div className="space-y-4">
@@ -383,5 +389,7 @@ export default function TeacherDashboard() {
         </div>
     );
 }
+
+    
 
     
