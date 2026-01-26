@@ -1,371 +1,66 @@
-
 {
   "entities": {
     "User": {
       "title": "User",
       "type": "object",
-      "description": "Represents a user in the EduConnect Pro application. Could be a teacher or student.",
+      "description": "Represents a user in the ConnectApp.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the user, typically the Firebase Auth UID."
         },
-        "role": {
-          "type": "string",
-          "enum": ["student", "tutor", "admin"],
-          "description": "The role of the user (tutor, student, admin)."
-        },
         "name": {
           "type": "string",
           "description": "The full name of the user."
-        },
-        "fatherName": {
-            "type": "string",
-            "description": "The full name of the student's father."
-        },
-        "mobileNumber": {
-            "type": "string",
-            "description": "The user's mobile phone number."
-        },
-        "address": {
-            "type": "string",
-            "description": "The user's physical address."
         },
         "email": {
           "type": "string",
           "description": "The user's email address.",
           "format": "email"
         },
-        "dateOfBirth": {
-            "type": "string",
-            "description": "The user's date of birth."
-        },
-        "classLevel": {
-            "type": "string",
-            "description": "The student's class level (e.g., 'Class 8', 'Class 12')."
-        },
-        "createdAt": {
-            "type": "string",
-            "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The verification status of the user.",
-          "enum": ["pending_verification", "approved", "denied"]
-        },
-        "coachingName": {
-            "type": "string",
-            "description": "The name of the teacher's coaching center or institute."
-        },
-        "whatsappNumber": {
-            "type": "string",
-            "description": "The teacher's WhatsApp number for student communication."
-        },
-        "subjects": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "A list of subjects the teacher specializes in."
-        },
-        "qualification": {
-            "type": "string",
-            "description": "The teacher's highest academic qualification."
-        },
-        "experience": {
-            "type": "string",
-            "description": "The teacher's years of teaching experience."
-        },
-        "fee": {
-            "type": "string",
-            "description": "The teacher's fee structure (e.g., '500/month per subject')."
-        },
-        "discount": {
-            "type": "string",
-            "description": "Details about available discounts for classes or students."
-        }
-      },
-      "required": [
-        "id",
-        "role",
-        "name",
-        "email",
-        "createdAt"
-      ]
-    },
-    "Class": {
-      "title": "Class",
-      "type": "object",
-      "description": "Represents a class created by a teacher.",
-      "properties": {
-        "id": {
-            "type": "string"
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "The ID of the teacher who created the class."
-        },
-        "teacherName": {
-            "type": "string",
-            "description": "The name of the teacher who created the class."
-        },
-        "subject": {
-          "type": "string",
-          "description": "The subject of the class."
-        },
-        "title": {
-            "type": "string",
-            "description": "The title of the class, e.g. 'Math Class 8'"
-        },
-        "batchTime": {
-            "type": "string",
-            "description": "The timing of the class batch, e.g. '10:00 AM - 11:30 AM'."
-        },
-        "fee": {
-            "type": "number",
-            "description": "The monthly fee for this class."
-        },
-        "classCode": {
-          "type": "string",
-          "description": "A unique, shareable code for students to join the class."
-        },
         "createdAt": {
             "type": "string",
             "format": "date-time"
         }
       },
-      "required": [
-        "id",
-        "teacherId",
-        "teacherName",
-        "title",
-        "subject",
-        "classCode",
-        "createdAt",
-        "batchTime"
-      ]
+      "required": [ "id", "name", "email", "createdAt" ]
     },
-    "Enrollment": {
-      "title": "Enrollment",
+    "Connection": {
+      "title": "Connection",
       "type": "object",
-      "description": "Represents a student's enrollment request for a specific class.",
+      "description": "Represents a connection request between two users.",
       "properties": {
         "id": { "type": "string" },
-        "studentId": {
-          "type": "string",
-          "description": "The ID of the student."
+        "userIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array containing the UIDs of both users in the connection."
         },
-        "studentName": {
-          "type": "string",
-          "description": "The name of the student. Denormalized for performance."
-        },
-        "mobileNumber": {
-            "type": "string",
-            "description": "The student's mobile number. Denormalized for display."
-        },
-        "classId": {
-          "type": "string",
-          "description": "The ID of the class the student is in."
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "The ID of the teacher who owns the class. Denormalized for security rules."
-        },
-        "classTitle": { "type": "string", "description": "The title of the class. Denormalized for display." },
-        "classSubject": { "type": "string", "description": "The subject of the class. Denormalized for display." },
-        "teacherName": { "type": "string", "description": "The name of the teacher. Denormalized for display." },
-        "batchTime": { "type": "string", "description": "The timing of the class batch. Denormalized for display." },
-        "paymentStatus": {
-          "type": "string",
-          "enum": ["paid", "unpaid"],
-          "description": "Fee payment status for this enrollment."
-        },
+        "requesterId": { "type": "string", "description": "The UID of the user who sent the request." },
+        "receiverId": { "type": "string", "description": "The UID of the user who received the request." },
+        "requesterName": { "type": "string" },
+        "receiverName": { "type": "string" },
         "status": {
           "type": "string",
-          "enum": [
-            "pending",
-            "approved",
-            "denied"
-          ],
-          "description": "The status of the enrollment request (pending, approved, or denied)."
-        },
-        "createdAt": {
-            "type": "string",
-            "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "studentId",
-        "studentName",
-        "mobileNumber",
-        "classId",
-        "teacherId",
-        "status",
-        "createdAt",
-        "classTitle",
-        "classSubject",
-        "teacherName",
-        "batchTime",
-        "paymentStatus"
-      ]
-    },
-    "StudyMaterial": {
-        "title": "Study Material",
-        "type": "object",
-        "description": "Represents a study material resource uploaded by a teacher or admin.",
-        "properties": {
-            "id": { "type": "string" },
-            "teacherId": { "type": "string", "description": "The ID of the teacher who uploaded the material. Can be an admin ID." },
-            "teacherName": { "type": "string", "description": "The name of the teacher who uploaded the material. Denormalized for display." },
-            "classId": { "type": "string", "description": "The ID of the class this material belongs to. Null if not class-specific." },
-            "className": { "type": "string", "description": "The name of the class this material belongs to. Denormalized for display." },
-            "title": { "type": "string" },
-            "description": { "type": "string" },
-            "subject": { "type": "string" },
-            "chapter": { "type": "string" },
-            "type": { "type": "string", "enum": ["Notes", "PDF", "Video", "Homework", "Test"] },
-            "fileUrl": { "type": "string", "description": "URL to the file in Firebase Storage." },
-            "createdAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "teacherId", "teacherName", "title", "subject", "type", "createdAt"]
-    },
-    "Attendance": {
-      "title": "Attendance",
-      "type": "object",
-      "description": "Represents a daily attendance record for a specific class.",
-      "properties": {
-        "id": { "type": "string" },
-        "teacherId": { "type": "string" },
-        "classId": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "records": {
-          "type": "object",
-          "description": "A map of student UIDs to their attendance status (true for present, false for absent).",
-          "additionalProperties": { "type": "boolean" }
+          "enum": [ "pending", "accepted" ],
+          "description": "The status of the connection request."
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "teacherId", "classId", "date", "records", "createdAt"]
-    },
-    "Test": {
-        "title": "Test",
-        "type": "object",
-        "description": "Represents a test created by a teacher.",
-        "properties": {
-            "id": { "type": "string" },
-            "teacherId": { "type": "string" },
-            "classId": { "type": "string" },
-            "title": { "type": "string" },
-            "subject": { "type": "string" },
-            "totalMarks": { "type": "number" },
-            "questions": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "questionText": { "type": "string" },
-                        "options": { "type": "array", "items": { "type": "string" }},
-                        "correctAnswer": { "type": "string" }
-                    },
-                    "required": ["questionText", "options", "correctAnswer"]
-                }
-            },
-            "createdAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "teacherId", "classId", "title", "subject", "totalMarks", "questions", "createdAt"]
-    },
-    "TestResult": {
-        "title": "Test Result",
-        "type": "object",
-        "description": "Stores a student's result for a specific test, including their answers.",
-        "properties": {
-            "id": { "type": "string" },
-            "testId": { "type": "string" },
-            "studentId": { "type": "string" },
-            "studentName": {
-                "type": "string",
-                "description": "The name of the student who took the test. Denormalized for display."
-            },
-            "teacherId": { "type": "string" },
-            "classId": { "type": "string" },
-            "testTitle": {
-                "type": "string",
-                "description": "The title of the test. Denormalized for display."
-            },
-            "testSubject": {
-                "type": "string",
-                "description": "The subject of the test. Denormalized for display."
-            },
-            "marksObtained": { "type": "number" },
-            "totalMarks": { "type": "number" },
-            "answers": {
-                "type": "array",
-                "description": "An array containing the student's answer for each question.",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "questionText": { "type": "string" },
-                        "options": { "type": "array", "items": { "type": "string" } },
-                        "selectedAnswer": { "type": "string" },
-                        "correctAnswer": { "type": "string" }
-                    },
-                    "required": ["questionText", "options", "selectedAnswer", "correctAnswer"]
-                }
-            },
-            "submittedAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "testId", "studentId", "studentName", "teacherId", "classId", "testTitle", "testSubject", "marksObtained", "totalMarks", "submittedAt", "answers"]
+      "required": [ "id", "userIds", "requesterId", "receiverId", "requesterName", "receiverName", "status", "createdAt" ]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "google.com"
-    ]
+    "providers": [ "password", "google.com" ]
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": {
-        "$ref": "#/entities/User"
-      },
-      "description": "Stores all user profiles (students, tutors, admins)."
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores all user profiles."
     },
-    "/classes/{classId}": {
-      "schema": {
-        "$ref": "#/entities/Class"
-      },
-      "description": "Stores all classes created by teachers."
-    },
-    "/enrollments/{enrollmentId}": {
-      "schema": {
-        "$ref": "#/entities/Enrollment"
-      },
-      "description": "Tracks student enrollment in classes."
-    },
-    "/studyMaterials/{materialId}": {
-      "schema": {
-        "$ref": "#/entities/StudyMaterial"
-      },
-      "description": "All study materials for all classes."
-    },
-    "/attendance/{attendanceId}": {
-        "schema": {
-            "$ref": "#/entities/Attendance"
-        },
-        "description": "Stores daily attendance records for classes."
-    },
-    "/tests/{testId}": {
-        "schema": {
-            "$ref": "#/entities/Test"
-        },
-        "description": "Stores all tests created by teachers."
-    },
-    "/testResults/{resultId}": {
-        "schema": {
-            "$ref": "#/entities/TestResult"
-        },
-        "description": "Stores all student test results."
+    "/connections/{connectionId}": {
+      "schema": { "$ref": "#/entities/Connection" },
+      "description": "Tracks connection requests and acceptances between users."
     }
   }
 }
-
-    

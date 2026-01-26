@@ -17,27 +17,15 @@ import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Common fields
-  const [role, setRole] = useState<'teacher' | 'student'>('teacher');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
-  // Student-specific fields - Now handled in profile page
-  // const [studentFatherName, setStudentFatherName] = useState('');
-  // const [studentMobileNumber, setStudentMobileNumber] = useState('');
-  // const [studentAddress, setStudentAddress] = useState('');
-  // const [studentDateOfBirth, setStudentDateOfBirth] = useState('');
-  // const [studentClassLevel, setStudentClassLevel] = useState('');
-
-  // UI state
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -56,26 +44,14 @@ export default function SignupPage() {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       const userRef = doc(firestore, `users/${user.uid}`);
       
-      let dataToSet;
-      if (role === 'teacher') {
-        dataToSet = {
+      const dataToSet = {
           id: user.uid,
-          name,
-          email,
-          role: 'tutor',
+          name: name.trim(),
+          email: email.trim(), 
+          role: 'student', // All users are students
           createdAt: serverTimestamp(),
-          status: 'pending_verification',
-        };
-      } else { // Simplified Student signup
-        dataToSet = {
-            id: user.uid,
-            name: name.trim(),
-            email: email.trim(), 
-            role: 'student',
-            createdAt: serverTimestamp(),
-            status: 'approved', // Students are auto-approved on self-signup
-        };
-      }
+      };
+      
       await setDoc(userRef, dataToSet);
       
       router.push('/dashboard');
@@ -94,38 +70,21 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-secondary py-12">
-      <div className="w-full max-w-lg p-4 sm:p-8 space-y-4">
+      <div className="w-full max-w-md p-4 sm:p-8 space-y-4">
           <div className="text-center">
               <School className="w-12 h-12 mx-auto text-primary" />
-              <h1 className="text-3xl font-bold font-serif text-foreground mt-2">EduConnect Pro</h1>
-              <p className="text-muted-foreground">Become a part of our learning community.</p>
+              <h1 className="text-3xl font-bold font-serif text-foreground mt-2">ConnectApp</h1>
+              <p className="text-muted-foreground">Join our community.</p>
           </div>
           <Card>
             <CardHeader>
               <CardTitle className="text-xl font-serif">Create an Account</CardTitle>
-              <CardDescription>
-                Select your role and fill out the form to get started.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {error && (
                 <p className="text-sm font-medium text-destructive mb-4">{error}</p>
               )}
               <form onSubmit={handleSignUp} className="grid gap-4">
-                 <div className="grid gap-2">
-                    <Label>I am a...</Label>
-                    <RadioGroup defaultValue="teacher" onValueChange={(value: 'teacher' | 'student') => setRole(value)} className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="teacher" id="r1" />
-                        <Label htmlFor="r1">Teacher</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="student" id="r2" />
-                        <Label htmlFor="r2">Student</Label>
-                    </div>
-                    </RadioGroup>
-                </div>
-
                 <div className="grid gap-2">
                   <Label htmlFor="full-name">Full name</Label>
                   <Input

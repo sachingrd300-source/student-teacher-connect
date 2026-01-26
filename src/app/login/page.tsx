@@ -18,7 +18,6 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  getAdditionalUserInfo,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
@@ -50,8 +49,8 @@ export default function LoginPage() {
       }
     }
   };
-
-  const handleGoogleSignIn = async () => {
+  
+    const handleGoogleSignIn = async () => {
     setError(null);
     if (!auth || !firestore) {
       setError('Firebase services are not available. Please try again later.');
@@ -65,7 +64,7 @@ export default function LoginPage() {
       const userRef = doc(firestore, `users/${user.uid}`);
       const userSnap = await getDoc(userRef);
 
-      // If it's a new user, create their profile as an approved student.
+      // If it's a new user, create their profile.
       if (!userSnap.exists()) {
         const userProfileData = {
           id: user.uid,
@@ -73,7 +72,6 @@ export default function LoginPage() {
           email: user.email,
           role: 'student', 
           createdAt: serverTimestamp(),
-          status: 'approved',
         };
         await setDoc(userRef, userProfileData);
       }
@@ -83,20 +81,18 @@ export default function LoginPage() {
     }
   };
 
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-secondary">
       <div className="w-full max-w-sm p-4 sm:p-8 space-y-4">
         <div className="text-center">
             <School className="w-12 h-12 mx-auto text-primary" />
-            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">EduConnect Pro</h1>
-            <p className="text-muted-foreground">Welcome back! Please sign in to continue.</p>
+            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">ConnectApp</h1>
+            <p className="text-muted-foreground">Welcome back! Sign in to continue.</p>
         </div>
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-serif">Login</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account.
-            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             {error && (
