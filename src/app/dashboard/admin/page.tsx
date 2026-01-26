@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -104,7 +103,7 @@ export default function AdminDashboardPage() {
         return null;
     }
 
-    const handleApprove = async (teacherId: string) => {
+    const handleApprove = (teacherId: string) => {
         if (!firestore) return;
         const teacherRef = doc(firestore, 'users', teacherId);
         updateDocumentNonBlocking(teacherRef, { status: 'approved' });

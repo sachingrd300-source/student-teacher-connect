@@ -1,82 +1,45 @@
-
 {
   "entities": {
     "User": {
       "title": "User",
       "type": "object",
-      "description": "Represents a user in the EduConnect Pro application. Could be a teacher or student.",
+      "description": "Represents a user, either a student or a tutor.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user, typically the Firebase Auth UID."
+          "description": "Unique identifier for the user."
         },
         "role": {
           "type": "string",
           "enum": ["student", "tutor", "admin"],
-          "description": "The role of the user (tutor, student, admin)."
+          "description": "The role of the user."
         },
         "name": {
           "type": "string",
           "description": "The full name of the user."
         },
-        "fatherName": {
-            "type": "string",
-            "description": "The full name of the student's father."
-        },
-        "mobileNumber": {
-            "type": "string",
-            "description": "The user's mobile phone number."
-        },
-        "address": {
-            "type": "string",
-            "description": "The user's physical address."
-        },
         "email": {
           "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
+          "format": "email",
+          "description": "The user's email address."
         },
-        "classLevel": {
-            "type": "string",
-            "description": "The student's class level (e.g., 'Class 8', 'Class 12')."
+        "address": {
+          "type": "string",
+          "description": "The user's physical address, used for finding nearby tutors."
+        },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "A list of subjects the teacher specializes in."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending_verification", "approved", "denied"],
+          "description": "The verification status of a teacher."
         },
         "createdAt": {
             "type": "string",
             "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The verification status of a teacher.",
-          "enum": ["pending_verification", "approved", "denied"]
-        },
-        "coachingName": {
-            "type": "string",
-            "description": "The name of the teacher's coaching center or institute."
-        },
-        "whatsappNumber": {
-            "type": "string",
-            "description": "The teacher's WhatsApp number for student communication."
-        },
-        "subjects": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "A list of subjects the teacher specializes in."
-        },
-        "qualification": {
-            "type": "string",
-            "description": "The teacher's highest academic qualification."
-        },
-        "experience": {
-            "type": "string",
-            "description": "The teacher's years of teaching experience."
-        },
-        "fee": {
-            "type": "string",
-            "description": "The teacher's fee structure (e.g., '500/month per subject')."
-        },
-        "discount": {
-            "type": "string",
-            "description": "Details about available discounts for classes or students."
         }
       },
       "required": [
@@ -87,62 +50,20 @@
         "createdAt"
       ]
     },
-    "Class": {
-      "title": "Class",
+    "Connection": {
+      "title": "Connection",
       "type": "object",
-      "description": "Represents a class created by a teacher.",
-      "properties": {
-        "id": { "type": "string" },
-        "teacherId": {
-          "type": "string",
-          "description": "The ID of the teacher who created the class."
-        },
-        "teacherName": { "type": "string" },
-        "title": { "type": "string", "description": "The title of the class, e.g. 'Math Class 8'" },
-        "subject": { "type": "string", "description": "The subject of the class." },
-        "batchTime": { "type": "string", "description": "The timing of the class batch, e.g. '10:00 AM - 11:30 AM'." },
-        "fee": { "type": "number" },
-        "classCode": { "type": "string", "description": "A unique, shareable code for students to join the class." },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "teacherId", "teacherName", "title", "subject", "classCode", "createdAt", "batchTime"]
-    },
-    "Enrollment": {
-      "title": "Enrollment",
-      "type": "object",
-      "description": "Represents a student's enrollment request or status for a specific class.",
+      "description": "Represents a connection request from a student to a teacher.",
       "properties": {
         "id": { "type": "string" },
         "studentId": { "type": "string" },
         "studentName": { "type": "string" },
-        "mobileNumber": { "type": "string" },
-        "classId": { "type": "string" },
         "teacherId": { "type": "string" },
-        "classTitle": { "type": "string" },
-        "classSubject": { "type": "string" },
         "teacherName": { "type": "string" },
-        "batchTime": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "approved", "denied"] },
-        "paymentStatus": { "type": "string", "enum": ["paid", "unpaid"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "studentId", "studentName", "classId", "teacherId", "status", "createdAt"]
-    },
-    "Connection": {
-      "title": "Connection",
-      "type": "object",
-      "description": "Represents a connection request between two students.",
-      "properties": {
-        "id": { "type": "string" },
-        "userIds": { "type": "array", "items": { "type": "string" } },
-        "requesterId": { "type": "string" },
-        "receiverId": { "type": "string" },
-        "requesterName": { "type": "string" },
-        "receiverName": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "accepted"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": [ "id", "userIds", "requesterId", "receiverId", "status", "createdAt" ]
+      "required": [ "id", "studentId", "studentName", "teacherId", "teacherName", "status", "createdAt" ]
     }
   },
   "auth": {
@@ -153,17 +74,9 @@
       "schema": { "$ref": "#/entities/User" },
       "description": "Stores all user profiles (students, tutors, admins)."
     },
-    "/classes/{classId}": {
-      "schema": { "$ref": "#/entities/Class" },
-      "description": "Stores all classes created by teachers."
-    },
-    "/enrollments/{enrollmentId}": {
-      "schema": { "$ref": "#/entities/Enrollment" },
-      "description": "Tracks student enrollment in classes."
-    },
     "/connections/{connectionId}": {
       "schema": { "$ref": "#/entities/Connection" },
-      "description": "Tracks connection requests and acceptances between students."
+      "description": "Tracks connection requests between students and teachers."
     }
   }
 }

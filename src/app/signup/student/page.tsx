@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -8,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -27,7 +25,7 @@ export default function StudentSignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [address, setAddress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -50,7 +48,7 @@ export default function StudentSignupPage() {
           id: user.uid,
           name: name.trim(),
           email: email.trim(), 
-          mobileNumber: mobileNumber.trim(),
+          address: address.trim(),
           role: 'student',
           createdAt: serverTimestamp(),
       };
@@ -97,8 +95,8 @@ export default function StudentSignupPage() {
                   <Input id="full-name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="mobile-number">Mobile Number</Label>
-                  <Input id="mobile-number" placeholder="Your mobile number" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  <Label htmlFor="address">Address / City</Label>
+                  <Input id="address" placeholder="e.g. Ranchi, Jharkhand" required value={address} onChange={(e) => setAddress(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>

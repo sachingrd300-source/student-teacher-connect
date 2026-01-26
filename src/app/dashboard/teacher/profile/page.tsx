@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
@@ -6,7 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocki
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, Badge, Book, Award, Briefcase, MapPin, MessageSquare, Edit, Save, DollarSign, Percent } from 'lucide-react';
+import { UserCircle, Mail, Book, MapPin, Edit, Save } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,16 +15,8 @@ interface UserProfile {
     name: string;
     email: string;
     role: 'tutor' | 'student';
-    status?: 'pending_verification' | 'approved' | 'denied';
-    mobileNumber?: string;
-    coachingName?: string;
     address?: string;
-    whatsappNumber?: string;
     subjects?: string[];
-    qualification?: string;
-    experience?: string;
-    fee?: string;
-    discount?: string;
 }
 
 const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | string[] }) => {
@@ -82,7 +73,7 @@ export default function TeacherProfilePage() {
 
     const handleSave = (e: FormEvent) => {
         e.preventDefault();
-        if (!userProfileRef || !user || !firestore) return;
+        if (!userProfileRef) return;
         
         const subjectsArray = (typeof formData.subjects === 'string' && formData.subjects.length > 0)
             ? formData.subjects.split(',').map(s => s.trim()).filter(Boolean)
@@ -90,9 +81,7 @@ export default function TeacherProfilePage() {
             
         const dataToSave = { ...formData, subjects: subjectsArray };
         
-        // Update the private user profile
         updateDocumentNonBlocking(userProfileRef, dataToSave);
-        
         setIsEditing(false);
     };
 
@@ -106,12 +95,7 @@ export default function TeacherProfilePage() {
     }
 
     if (userProfile.role !== 'tutor') {
-        return (
-            <div className="flex flex-col min-h-screen">
-                 <DashboardHeader userName={userProfile.name} userRole="student" />
-                <div className="flex-1 flex items-center justify-center"><p>Unauthorized. Redirecting...</p></div>
-            </div>
-        )
+        return null;
     }
 
     return (
@@ -127,7 +111,7 @@ export default function TeacherProfilePage() {
                                     {isEditing ? 'Edit Profile' : userProfile.name}
                                 </CardTitle>
                                 <CardDescription>
-                                    {isEditing ? 'Update your professional details below.' : 'Your personal and professional details.'}
+                                    {isEditing ? 'Update your professional details below.' : 'Your professional details.'}
                                 </CardDescription>
                             </div>
                             {!isEditing && (
@@ -140,21 +124,9 @@ export default function TeacherProfilePage() {
                             <form onSubmit={handleSave}>
                                 <CardContent className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 md:col-span-2">
                                             <Label htmlFor="name">Full Name</Label>
                                             <Input id="name" name="name" value={formData.name || ''} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="mobileNumber">Mobile Number</Label>
-                                            <Input id="mobileNumber" name="mobileNumber" value={formData.mobileNumber || ''} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="coachingName">Coaching Name</Label>
-                                            <Input id="coachingName" name="coachingName" value={formData.coachingName || ''} onChange={handleInputChange} placeholder="e.g., Apex Tutorials" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
-                                            <Input id="whatsappNumber" name="whatsappNumber" value={formData.whatsappNumber || ''} onChange={handleInputChange} placeholder="For student communication" />
                                         </div>
                                          <div className="space-y-2 md:col-span-2">
                                             <Label htmlFor="address">Address</Label>
@@ -164,22 +136,6 @@ export default function TeacherProfilePage() {
                                             <Label htmlFor="subjects">Subjects Taught</Label>
                                             <Input id="subjects" name="subjects" value={Array.isArray(formData.subjects) ? formData.subjects.join(', ') : ''} onChange={handleInputChange} placeholder="e.g., Physics, Mathematics, Chemistry" />
                                              <p className="text-xs text-muted-foreground">Enter subjects separated by a comma.</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="qualification">Highest Qualification</Label>
-                                            <Input id="qualification" name="qualification" value={formData.qualification || ''} onChange={handleInputChange} placeholder="e.g., M.Sc. in Physics" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="experience">Years of Experience</Label>
-                                            <Input id="experience" name="experience" value={formData.experience || ''} onChange={handleInputChange} placeholder="e.g., 5 Years" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="fee">Fee Structure</Label>
-                                            <Input id="fee" name="fee" value={formData.fee || ''} onChange={handleInputChange} placeholder="e.g., 500/month per subject" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="discount">Discount Information</Label>
-                                            <Input id="discount" name="discount" value={formData.discount || ''} onChange={handleInputChange} placeholder="e.g., 10% off for early birds" />
                                         </div>
                                     </div>
                                 </CardContent>
@@ -193,20 +149,9 @@ export default function TeacherProfilePage() {
                         ) : (
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                    <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2">Personal Details</h3>
                                     <ProfileItem icon={<Mail className="h-5 w-5" />} label="Email" value={userProfile.email} />
-                                    <ProfileItem icon={<Phone className="h-5 w-5" />} label="Mobile Number" value={userProfile.mobileNumber} />
-                                    <ProfileItem icon={<Badge className="h-5 w-5" />} label="Role" value={userProfile.role} />
-                                    
-                                    <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2 pt-4">Professional Details</h3>
-                                    <ProfileItem icon={<Briefcase className="h-5 w-5" />} label="Coaching Name" value={userProfile.coachingName} />
-                                    <ProfileItem icon={<MessageSquare className="h-5 w-5" />} label="WhatsApp Number" value={userProfile.whatsappNumber} />
                                     <ProfileItem icon={<MapPin className="h-5 w-5" />} label="Address" value={userProfile.address} />
                                     <ProfileItem icon={<Book className="h-5 w-5" />} label="Subjects" value={userProfile.subjects} />
-                                    <ProfileItem icon={<Award className="h-5 w-5" />} label="Qualification" value={userProfile.qualification} />
-                                    <ProfileItem icon={<UserCircle className="h-5 w-5" />} label="Experience" value={userProfile.experience} />
-                                    <ProfileItem icon={<DollarSign className="h-5 w-5" />} label="Fee Structure" value={userProfile.fee} />
-                                    <ProfileItem icon={<Percent className="h-5 w-5" />} label="Discounts" value={userProfile.discount} />
                                 </div>
                             </CardContent>
                         )}

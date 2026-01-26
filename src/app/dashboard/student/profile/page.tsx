@@ -5,7 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocki
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, GraduationCap, User, Home, Edit, Save } from 'lucide-react';
+import { UserCircle, Mail, Home, Edit, Save } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +15,7 @@ interface UserProfile {
     name: string;
     email: string;
     role: 'tutor' | 'student';
-    mobileNumber?: string;
-    fatherName?: string;
     address?: string;
-    classLevel?: string;
 }
 
 const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string }) => {
@@ -88,12 +85,7 @@ export default function StudentProfilePage() {
     }
     
     if (userProfile.role !== 'student') {
-        return (
-            <div className="flex flex-col min-h-screen">
-                 <DashboardHeader userName={userProfile.name} userRole="tutor" />
-                <div className="flex-1 flex items-center justify-center"><p>Unauthorized. Redirecting...</p></div>
-            </div>
-        )
+        return null;
     }
 
     return (
@@ -121,26 +113,14 @@ export default function StudentProfilePage() {
                         {isEditing ? (
                              <form onSubmit={handleSave}>
                                 <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="name">Full Name</Label>
                                             <Input id="name" name="name" value={formData.name || ''} onChange={handleInputChange} />
                                         </div>
                                          <div className="space-y-2">
-                                            <Label htmlFor="fatherName">Father's Name</Label>
-                                            <Input id="fatherName" name="fatherName" value={formData.fatherName || ''} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="mobileNumber">Mobile Number</Label>
-                                            <Input id="mobileNumber" name="mobileNumber" value={formData.mobileNumber || ''} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="classLevel">Class Level</Label>
-                                            <Input id="classLevel" name="classLevel" value={formData.classLevel || ''} onChange={handleInputChange} />
-                                        </div>
-                                         <div className="space-y-2 md:col-span-2">
                                             <Label htmlFor="address">Address</Label>
-                                            <Input id="address" name="address" value={formData.address || ''} onChange={handleInputChange} />
+                                            <Input id="address" name="address" value={formData.address || ''} onChange={handleInputChange} placeholder="e.g. Ranchi, Jharkhand"/>
                                         </div>
                                          <div className="space-y-2">
                                             <Label htmlFor="email">Email (Cannot be changed)</Label>
@@ -158,13 +138,7 @@ export default function StudentProfilePage() {
                         ) : (
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                    <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2">Account Details</h3>
                                     <ProfileItem icon={<Mail className="h-5 w-5" />} label="Email" value={userProfile.email} />
-                                    <ProfileItem icon={<Phone className="h-5 w-5" />} label="Mobile Number" value={userProfile.mobileNumber} />
-                                    
-                                    <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2 pt-4">Personal Information</h3>
-                                    <ProfileItem icon={<User className="h-5 w-5" />} label="Father's Name" value={userProfile.fatherName} />
-                                    <ProfileItem icon={<GraduationCap className="h-5 w-5" />} label="Class Level" value={userProfile.classLevel} />
                                     <ProfileItem icon={<Home className="h-5 w-5" />} label="Address" value={userProfile.address} />
                                 </div>
                             </CardContent>

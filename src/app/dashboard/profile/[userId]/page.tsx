@@ -3,9 +3,9 @@
 import { useMemo, useState } from 'react';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection, addDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, Award, Book, Briefcase, MapPin, MessageSquare, DollarSign, Percent, PlusCircle, CheckCircle, Clock } from 'lucide-react';
+import { UserCircle, Mail, MapPin, Book, PlusCircle, CheckCircle, Clock } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -14,29 +14,14 @@ interface TeacherProfile {
     id: string;
     name: string;
     email: string;
-    role: 'tutor' | 'student' | 'admin';
-    mobileNumber?: string;
-    coachingName?: string;
+    role: 'tutor' | 'student';
     address?: string;
-    whatsappNumber?: string;
     subjects?: string[];
-    qualification?: string;
-    experience?: string;
-    fee?: string;
-    discount?: string;
 }
 
-interface ClassData {
-    id: string;
-    title: string;
-    subject: string;
-    batchTime: string;
+interface Connection {
+    studentId: string;
     teacherId: string;
-    teacherName: string;
-}
-
-interface Enrollment {
-    classId: string;
     status: 'pending' | 'approved' | 'denied';
 }
 
@@ -56,7 +41,6 @@ const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: str
 export default function TeacherPublicProfilePage() {
     const { user, isUserLoading: isAuthLoading } = useUser();
     const firestore = useFirestore();
-    const router = useRouter();
     const params = useParams();
     const profileUserId = params.userId as string;
 
@@ -64,7 +48,7 @@ export default function TeacherPublicProfilePage() {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
-    const { data: currentUserProfile } = useDoc<{name: string, role: 'student' | 'tutor', mobileNumber?: string}>(currentUserProfileRef);
+    const { data: currentUserProfile } = useDoc<{name: string, role: 'student' | 'tutor'}>(currentUserProfileRef);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !profileUserId) return null;
@@ -72,50 +56,38 @@ export default function TeacherPublicProfilePage() {
     }, [firestore, profileUserId]);
     
     const { data: teacherProfile, isLoading: isProfileLoading } = useDoc<TeacherProfile>(userProfileRef);
-
-    // Fetch the teacher's classes
-    const classesQuery = useMemoFirebase(() => {
-        if (!firestore || !profileUserId) return null;
-        return query(collection(firestore, 'classes'), where('teacherId', '==', profileUserId));
-    }, [firestore, profileUserId]);
-    const { data: teacherClasses, isLoading: classesLoading } = useCollection<ClassData>(classesQuery);
     
-    // Fetch current student's enrollments to check status for each class
-    const studentEnrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
-    }, [firestore, user?.uid]);
-    const { data: studentEnrollments } = useCollection<Enrollment>(studentEnrollmentsQuery);
-    const enrollmentStatusMap = useMemo(() => new Map(studentEnrollments?.map(e => [e.classId, e.status]) || []), [studentEnrollments]);
+    // Fetch connection status between current user and this teacher
+    const connectionQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid || !profileUserId) return null;
+        return query(collection(firestore, 'connections'), where('studentId', '==', user.uid), where('teacherId', '==', profileUserId));
+    }, [firestore, user?.uid, profileUserId]);
+    const { data: connections } = useCollection<Connection>(connectionQuery);
+    const connectionStatus = useMemo(() => connections?.[0]?.status, [connections]);
 
-    const handleEnroll = (classData: ClassData) => {
-        if (!user || !currentUserProfile || !firestore) {
-            alert("You must be logged in as a student to enroll.");
+    const handleConnect = () => {
+        if (!user || !currentUserProfile || !teacherProfile || !firestore || currentUserProfile.role !== 'student') {
+            alert("You must be logged in as a student to connect.");
             return;
         }
 
-        const enrollmentData = {
+        const connectionData = {
             studentId: user.uid,
             studentName: currentUserProfile.name,
-            mobileNumber: currentUserProfile.mobileNumber ?? '',
-            classId: classData.id,
-            teacherId: classData.teacherId,
-            classTitle: classData.title,
-            classSubject: classData.subject,
-            teacherName: classData.teacherName,
-            batchTime: classData.batchTime,
-            status: 'pending', // Send a request instead of direct approval
-            paymentStatus: 'unpaid',
+            teacherId: teacherProfile.id,
+            teacherName: teacherProfile.name,
+            status: 'pending',
             createdAt: serverTimestamp(),
         };
         
-        const enrollmentsColRef = collection(firestore, 'enrollments');
-        addDocumentNonBlocking(enrollmentsColRef, enrollmentData);
-        alert(`Enrollment request sent for ${classData.title}! The teacher will review it shortly.`);
+        const connectionsColRef = collection(firestore, 'connections');
+        addDocumentNonBlocking(connectionsColRef, connectionData);
+        alert(`Connection request sent to ${teacherProfile.name}!`);
     };
 
+    const isLoading = isAuthLoading || isProfileLoading || !currentUserProfile;
 
-    if (isAuthLoading || isProfileLoading || !currentUserProfile) {
+    if (isLoading) {
         return (
             <div className="flex flex-col min-h-screen">
                 <DashboardHeader userName="Loading..." userRole="student" />
@@ -126,7 +98,7 @@ export default function TeacherPublicProfilePage() {
     
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
-            <DashboardHeader userName={currentUserProfile.name} userRole={currentUserProfile.role} />
+            <DashboardHeader userName={currentUserProfile?.name} userRole={currentUserProfile?.role} />
             <main className="flex-1">
                  <div className="container mx-auto p-4 md:p-8">
                      <div className="max-w-3xl mx-auto space-y-6">
@@ -152,84 +124,47 @@ export default function TeacherPublicProfilePage() {
                             </Card>
                         )}
                          {teacherProfile && teacherProfile.role === 'tutor' && (
-                            <>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-3 text-2xl">
-                                            <UserCircle className="h-8 w-8 text-primary" />
-                                            {teacherProfile.name}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Professional profile on EduConnect Pro.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                            <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2">Contact & Location</h3>
-                                            <ProfileItem icon={<Mail className="h-5 w-5" />} label="Email" value={teacherProfile.email} />
-                                            <ProfileItem icon={<Phone className="h-5 w-5" />} label="Mobile Number" value={teacherProfile.mobileNumber} />
-                                            <ProfileItem icon={<MessageSquare className="h-5 w-5" />} label="WhatsApp Number" value={teacherProfile.whatsappNumber} />
-                                            <ProfileItem icon={<MapPin className="h-5 w-5" />} label="Address / Location" value={teacherProfile.address} />
-                                            
-                                            <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2 pt-4">Professional Details</h3>
-                                            <ProfileItem icon={<Briefcase className="h-5 w-5" />} label="Coaching Name" value={teacherProfile.coachingName} />
-                                            <ProfileItem icon={<Book className="h-5 w-5" />} label="Subjects Taught" value={teacherProfile.subjects} />
-                                            <ProfileItem icon={<Award className="h-5 w-5" />} label="Highest Qualification" value={teacherProfile.qualification} />
-                                            <ProfileItem icon={<UserCircle className="h-5 w-5" />} label="Experience" value={teacherProfile.experience} />
-                                            <ProfileItem icon={<DollarSign className="h-5 w-5" />} label="Fee Structure" value={teacherProfile.fee} />
-                                            <ProfileItem icon={<Percent className="h-5 w-5" />} label="Discounts Available" value={teacherProfile.discount} />
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-3 text-2xl">
+                                        <UserCircle className="h-8 w-8 text-primary" />
+                                        {teacherProfile.name}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Professional teacher profile on EduConnect Pro.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        <ProfileItem icon={<Mail className="h-5 w-5" />} label="Email" value={teacherProfile.email} />
+                                        <ProfileItem icon={<MapPin className="h-5 w-5" />} label="Address / Location" value={teacherProfile.address} />
+                                        <ProfileItem icon={<Book className="h-5 w-5" />} label="Subjects Taught" value={teacherProfile.subjects} />
+                                    </div>
+                                    {currentUserProfile?.role === 'student' && user?.uid !== profileUserId && (
+                                        <div className="border-t pt-6">
+                                             <Button 
+                                                className="w-full"
+                                                onClick={handleConnect} 
+                                                disabled={!!connectionStatus}
+                                            >
+                                                {connectionStatus === 'approved' ? (
+                                                    <>
+                                                        <CheckCircle className="h-4 w-4 mr-2" /> Connected
+                                                    </>
+                                                ) : connectionStatus === 'pending' ? (
+                                                     <>
+                                                        <Clock className="h-4 w-4 mr-2" /> Request Pending
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <PlusCircle className="h-4 w-4 mr-2" /> Request to Connect
+                                                    </>
+                                                )}
+                                            </Button>
                                         </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Available Classes</CardTitle>
-                                        <CardDescription>Request to enroll in any of the classes offered by {teacherProfile.name}.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {classesLoading ? <p>Loading classes...</p> : 
-                                        teacherClasses && teacherClasses.length > 0 ? (
-                                            <div className="space-y-4">
-                                                {teacherClasses.map(c => {
-                                                    const enrollmentStatus = enrollmentStatusMap.get(c.id);
-                                                    const isEnrolled = enrollmentStatus === 'approved';
-                                                    const isPending = enrollmentStatus === 'pending';
-                                                    return (
-                                                        <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg">
-                                                            <div>
-                                                                <p className="font-semibold">{c.title}</p>
-                                                                <p className="text-sm text-muted-foreground">{c.subject} - {c.batchTime}</p>
-                                                            </div>
-                                                            <Button 
-                                                                className="mt-3 sm:mt-0"
-                                                                onClick={() => handleEnroll(c)} 
-                                                                disabled={isEnrolled || isPending}
-                                                            >
-                                                                {isEnrolled ? (
-                                                                    <>
-                                                                        <CheckCircle className="h-4 w-4 mr-2" /> Enrolled
-                                                                    </>
-                                                                ) : isPending ? (
-                                                                     <>
-                                                                        <Clock className="h-4 w-4 mr-2" /> Request Pending
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <PlusCircle className="h-4 w-4 mr-2" /> Request to Enroll
-                                                                    </>
-                                                                )}
-                                                            </Button>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <p className="text-center text-muted-foreground py-4">This teacher has not listed any classes yet.</p>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </>
+                                    )}
+                                </CardContent>
+                            </Card>
                          )}
                     </div>
                 </div>
@@ -237,5 +172,3 @@ export default function TeacherPublicProfilePage() {
         </div>
     );
 }
-
-    

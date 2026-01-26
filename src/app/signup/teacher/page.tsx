@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -27,7 +26,8 @@ export default function TeacherSignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [address, setAddress] = useState('');
+  const [subjects, setSubjects] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -46,19 +46,22 @@ export default function TeacherSignupPage() {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       const userRef = doc(firestore, `users/${user.uid}`);
       
+      const subjectsArray = subjects.split(',').map(s => s.trim()).filter(Boolean);
+
       const dataToSet = {
           id: user.uid,
           name: name.trim(),
           email: email.trim(), 
-          mobileNumber: mobileNumber.trim(),
+          address: address.trim(),
+          subjects: subjectsArray,
           role: 'tutor',
-          status: 'pending_verification', // Teachers need admin approval
+          status: 'pending_verification',
           createdAt: serverTimestamp(),
       };
       
       await setDoc(userRef, dataToSet);
       
-      router.push('/dashboard'); // Redirect to dashboard, which will route to status page
+      router.push('/dashboard');
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setError('This email is already in use. Please try another email or log in.');
@@ -87,7 +90,7 @@ export default function TeacherSignupPage() {
               <CardTitle className="text-xl font-serif flex items-center gap-2">
                 <UserCheck className="h-5 w-5" /> Teacher Registration
               </CardTitle>
-              <CardDescription>Your account will be reviewed by an admin before you can access all features.</CardDescription>
+              <CardDescription>Your account will be reviewed by an admin before you can connect with students.</CardDescription>
             </CardHeader>
             <CardContent>
               {error && (
@@ -99,8 +102,13 @@ export default function TeacherSignupPage() {
                   <Input id="full-name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                  <div className="grid gap-2">
-                  <Label htmlFor="mobile-number">Mobile Number</Label>
-                  <Input id="mobile-number" placeholder="Your primary contact number" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  <Label htmlFor="address">Address / City</Label>
+                  <Input id="address" placeholder="e.g. Ranchi, Jharkhand" required value={address} onChange={(e) => setAddress(e.target.value)} />
+                </div>
+                 <div className="grid gap-2">
+                  <Label htmlFor="subjects">Subjects</Label>
+                  <Input id="subjects" placeholder="e.g. Physics, Maths" required value={subjects} onChange={(e) => setSubjects(e.target.value)} />
+                   <p className="text-xs text-muted-foreground">Enter subjects separated by a comma.</p>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>

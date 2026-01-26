@@ -1,50 +1,32 @@
-
 'use client'
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
-import { BookCopy, BrainCircuit, CalendarCheck, Users } from "lucide-react";
+import { BookCopy, BrainCircuit, Users, Search } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
 
 const { placeholderImages } = placeholderData;
 
-const teacherFeatures = [
+const appFeatures = [
+  {
+    icon: <Search className="h-8 w-8" />,
+    title: "Find Local Tutors",
+    description: "Easily search and find verified teachers near your location.",
+  },
+  {
+    icon: <Users className="h-8 w-8" />,
+    title: "Connect Directly",
+    description: "Send connection requests to teachers and manage your connections.",
+  },
   {
     icon: <BookCopy className="h-8 w-8" />,
-    title: "Class Management",
-    description: "Easily create and manage your classes, subjects, and batch timings.",
-  },
-  {
-    icon: <CalendarCheck className="h-8 w-8" />,
-    title: "Attendance Tracking",
-    description: "Take daily attendance and view detailed reports for each class.",
-  },
-  {
-    icon: <BrainCircuit className="h-8 w-8" />,
-    title: "AI-Powered Tools",
-    description: "Generate lesson plans, tests, and study guides with our smart assistants.",
+    title: "Simple & Focused",
+    description: "A clean, straightforward platform to connect students and teachers.",
   },
 ];
 
-const studentFeatures = [
-    {
-      icon: <Users className="h-8 w-8" />,
-      title: "Find Tutors & Classes",
-      description: "Browse profiles of verified teachers and enroll in their classes.",
-    },
-    {
-      icon: <Users className="h-8 w-8" />,
-      title: "Connect with Peers",
-      description: "Connect with other students on the platform to study together and share knowledge.",
-    },
-    {
-      icon: <BrainCircuit className="h-8 w-8" />,
-      title: "AI Learning Aids",
-      description: "Use AI to solve questions, generate study guides, and improve your English.",
-    },
-  ];
 
 const getImageById = (id: string) => {
   return placeholderImages.find(img => img.id === id);
@@ -53,7 +35,6 @@ const getImageById = (id: string) => {
 export default function Home() {
   const heroImage = getImageById('hero-section');
   const teachersImage = getImageById('empowering-teachers');
-  const studentsImage = getImageById('built-for-students');
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -75,41 +56,53 @@ export default function Home() {
             <div className="relative container h-full px-4 md:px-6 flex flex-col items-center justify-center text-center">
                 <div className="max-w-3xl">
                     <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-serif text-foreground">
-                        Empowering Teachers, Inspiring Students
+                        Find the Best Local Tutors, Simply
                     </h1>
                     <p className="mt-4 max-w-2xl mx-auto text-foreground/80 md:text-xl">
-                       The all-in-one platform for coaching centers to manage classes, engage students, and leverage the power of AI.
+                       The simplest way for students to find and connect with trusted teachers in their area.
                     </p>
                     <div className="mt-6 flex flex-col gap-2 min-[400px]:flex-row justify-center">
                         <Link
                             className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-base font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             href="/signup"
                         >
-                            Get Started for Free
+                            Get Started
                         </Link>
                          <Link
                             className="inline-flex h-12 items-center justify-center rounded-md border border-input bg-background/80 backdrop-blur-sm px-8 text-base font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                             href="/tutors"
                         >
-                            Find a Tutor
+                            Browse Tutors
                         </Link>
                     </div>
                 </div>
             </div>
         </section>
 
-        {/* For Teachers Section */}
-        <section id="teachers" className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
+        {/* Features Section */}
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-muted/40">
           <div className="container px-4 md:px-6">
-            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
-                <div className="space-y-4">
-                    <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">For Teachers</div>
-                    <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-4xl">Tools to Empower Your Teaching</h2>
-                    <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed">
-                        Streamline your administrative tasks and focus on what you do best: teaching. Our platform provides everything you need to run your coaching center efficiently.
+             <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="space-y-2">
+                    <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Key Features</div>
+                    <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-5xl">A Better Way to Connect</h2>
+                    <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                        We've removed the complexity. Our platform focuses on one thing: connecting students with the right teachers.
                     </p>
-                    <div className="grid gap-6 mt-6">
-                        {teacherFeatures.map((feature, index) => (
+                </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
+                {teachersImage && <Image
+                    alt="Teacher using a laptop"
+                    className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last lg:col-span-2 shadow-xl"
+                    data-ai-hint={teachersImage.hint}
+                    src={teachersImage.src}
+                    width={teachersImage.width}
+                    height={teachersImage.height}
+                />}
+                <div className="flex flex-col justify-center space-y-4 lg:col-span-1">
+                    <div className="grid gap-6">
+                        {appFeatures.map((feature, index) => (
                              <div key={index} className="flex gap-4">
                                 <div className="p-1">{feature.icon}</div>
                                 <div>
@@ -119,64 +112,18 @@ export default function Home() {
                             </div>
                         ))}
                     </div>
-                </div>
-                <div className="flex items-center justify-center">
-                    {teachersImage && <Image
-                        alt="Teacher using a laptop"
-                        className="rounded-xl object-cover shadow-xl"
-                        data-ai-hint={teachersImage.hint}
-                        src={teachersImage.src}
-                        width={teachersImage.width}
-                        height={teachersImage.height}
-                    />}
                 </div>
             </div>
           </div>
         </section>
 
-        {/* For Students Section */}
-         <section id="students" className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
-                 <div className="flex items-center justify-center lg:order-last">
-                    {studentsImage && <Image
-                        alt="Student studying"
-                        className="rounded-xl object-cover shadow-xl"
-                        data-ai-hint={studentsImage.hint}
-                        src={studentsImage.src}
-                        width={studentsImage.width}
-                        height={studentsImage.height}
-                    />}
-                </div>
-                <div className="space-y-4">
-                    <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">For Students</div>
-                    <h2 className="text-3xl font-bold font-serif tracking-tighter sm:text-4xl">Your Partner in Learning</h2>
-                    <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed">
-                        Find the best tutors, access helpful resources, and connect with a community of learners to excel in your studies.
-                    </p>
-                    <div className="grid gap-6 mt-6">
-                        {studentFeatures.map((feature, index) => (
-                             <div key={index} className="flex gap-4">
-                                <div className="p-1">{feature.icon}</div>
-                                <div>
-                                    <h3 className="text-lg font-bold">{feature.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-          </div>
-        </section>
-        
         {/* CTA Section */}
-        <section className="w-full py-12 md:py-24 lg:py-32 border-t bg-muted/40">
+        <section className="w-full py-12 md:py-24 lg:py-32 border-t">
           <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
             <div className="space-y-3">
-              <h2 className="text-3xl font-bold font-serif tracking-tighter md:text-4xl/tight">Join the Future of Coaching</h2>
+              <h2 className="text-3xl font-bold font-serif tracking-tighter md:text-4xl/tight">Get Started Today</h2>
               <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl/relaxed">
-                Whether you're a teacher looking to grow or a student aiming for the top, EduConnect Pro is for you.
+                Whether you're a teacher looking for students or a student looking for a teacher, sign up now to get connected.
               </p>
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
@@ -190,7 +137,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-       <footer className="bg-background border-t">
+       <footer className="bg-muted border-t">
         <div className="container mx-auto py-6 px-4 md:px-6 flex justify-between items-center text-sm text-muted-foreground">
              <p>&copy; 2024 EduConnect Pro. All rights reserved.</p>
              <div className="flex items-center gap-4">
