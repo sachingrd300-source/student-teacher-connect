@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { collection, query, where, doc, Timestamp, orderBy } from 'firebase/fire
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Trash2, BarChartHorizontal, Check, X } from 'lucide-react';
+import { Trash2, BarChartHorizontal, Check, X, Percent } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
@@ -32,6 +33,18 @@ interface EnrolledStudent {
     status: 'pending' | 'approved' | 'denied';
 }
 
+interface Attendance {
+    id: string;
+    records: { [studentId: string]: boolean };
+}
+
+interface TestResult {
+    id: string;
+    studentId: string;
+    marksObtained: number;
+    totalMarks: number;
+}
+
 function StudentListForClass({ classId, teacherId }: { classId: string, teacherId: string }) {
     const firestore = useFirestore();
 
@@ -46,6 +59,19 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
     }, [firestore, classId, teacherId]);
 
     const { data: allEnrollments, isLoading } = useCollection<EnrolledStudent>(enrollmentsQuery);
+    
+    // Fetch all attendance and test results for this class
+    const classAttendanceQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'attendance'), where('classId', '==', classId));
+    }, [firestore, classId]);
+    const { data: attendanceRecords } = useCollection<Attendance>(classAttendanceQuery);
+
+    const classResultsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'testResults'), where('classId', '==', classId));
+    }, [firestore, classId]);
+    const { data: testResults } = useCollection<TestResult>(classResultsQuery);
     
     const pendingStudents = useMemo(() => allEnrollments?.filter(s => s.status === 'pending') || [], [allEnrollments]);
     const approvedStudents = useMemo(() => allEnrollments?.filter(s => s.status === 'approved') || [], [allEnrollments]);
@@ -125,37 +151,79 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
                                     <thead className="text-left bg-muted">
                                         <tr className="border-b">
                                             <th className="p-3 font-medium">Student Name</th>
-                                            <th className="p-3 font-medium">Joined On</th>
+                                            <th className="p-3 font-medium">Attendance</th>
+                                            <th className="p-3 font-medium">Avg. Score</th>
                                             <th className="p-3 font-medium">Payment Status</th>
                                             <th className="p-3 font-medium text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {approvedStudents.map(student => (
-                                            <tr key={student.id} className="border-b last:border-0">
-                                                <td className="p-3 whitespace-nowrap font-medium">
-                                                    <Link href={`/dashboard/teacher/class/${classId}/student/${student.studentId}`} className="hover:underline text-primary">
-                                                        {student.studentName}
-                                                    </Link>
-                                                </td>
-                                                <td className="p-3 text-muted-foreground">{student.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
-                                                <td className="p-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <Switch 
-                                                            id={`payment-${student.id}`}
-                                                            checked={student.paymentStatus === 'paid'} 
-                                                            onCheckedChange={(isChecked) => handlePaymentStatusChange(student.id, isChecked)} 
-                                                        />
-                                                        <Label htmlFor={`payment-${student.id}`} className="capitalize font-medium">{student.paymentStatus}</Label>
-                                                    </div>
-                                                </td>
-                                                <td className="p-3 text-center">
-                                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveStudent(student.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {approvedStudents.map(student => {
+                                            const studentAttendance = useMemo(() => {
+                                                if (!attendanceRecords) return { percentage: 0 };
+                                                let present = 0;
+                                                let totalLectures = 0;
+                                                attendanceRecords.forEach(record => {
+                                                    if (record.records.hasOwnProperty(student.studentId)) {
+                                                        totalLectures++;
+                                                        if (record.records[student.studentId]) {
+                                                            present++;
+                                                        }
+                                                    }
+                                                });
+                                                return { percentage: totalLectures > 0 ? Math.round((present / totalLectures) * 100) : 0 };
+                                            }, [attendanceRecords, student.studentId]);
+
+                                            const studentTestPerf = useMemo(() => {
+                                                if (!testResults) return { avgScore: 0 };
+                                                const resultsForStudent = testResults.filter(r => r.studentId === student.studentId);
+                                                if (resultsForStudent.length === 0) return { avgScore: 0 };
+                                                const totalMarksObtained = resultsForStudent.reduce((acc, r) => acc + r.marksObtained, 0);
+                                                const totalMaxMarks = resultsForStudent.reduce((acc, r) => acc + r.totalMarks, 0);
+                                                return { avgScore: totalMaxMarks > 0 ? Math.round((totalMarksObtained / totalMaxMarks) * 100) : 0 };
+                                            }, [testResults, student.studentId]);
+
+                                            return (
+                                                <tr key={student.id} className="border-b last:border-0">
+                                                    <td className="p-3 whitespace-nowrap font-medium">
+                                                        <Link href={`/dashboard/teacher/class/${classId}/student/${student.studentId}`} className="hover:underline text-primary">
+                                                            {student.studentName}
+                                                        </Link>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-full max-w-[100px] bg-muted rounded-full h-2.5">
+                                                              <div className="bg-primary h-2.5 rounded-full" style={{ width: `${studentAttendance.percentage}%` }}></div>
+                                                            </div>
+                                                            <span className="font-bold text-xs w-10 text-right">{studentAttendance.percentage}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-full max-w-[100px] bg-muted rounded-full h-2.5">
+                                                              <div className="bg-success h-2.5 rounded-full" style={{ width: `${studentTestPerf.avgScore}%` }}></div>
+                                                            </div>
+                                                            <span className="font-bold text-xs w-10 text-right">{studentTestPerf.avgScore}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Switch 
+                                                                id={`payment-${student.id}`}
+                                                                checked={student.paymentStatus === 'paid'} 
+                                                                onCheckedChange={(isChecked) => handlePaymentStatusChange(student.id, isChecked)} 
+                                                            />
+                                                            <Label htmlFor={`payment-${student.id}`} className="capitalize font-medium">{student.paymentStatus}</Label>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveStudent(student.id)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

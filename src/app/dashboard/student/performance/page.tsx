@@ -1,8 +1,9 @@
+
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, doc, Timestamp, getDocs } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { BarChartHorizontal, CheckCircle, Percent, ClipboardCheck, CalendarCheck, XCircle } from 'lucide-react';
@@ -63,11 +64,37 @@ export default function StudentPerformancePage() {
 
     const enrolledClassIds = useMemo(() => enrollments?.map(e => e.classId) || [], [enrollments]);
 
-    const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore || enrolledClassIds.length === 0) return null;
-        return query(collection(firestore, 'attendance'), where('classId', 'in', enrolledClassIds));
+    const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
+    const [attendanceLoading, setAttendanceLoading] = useState(true);
+
+    useEffect(() => {
+        if (!firestore || !enrolledClassIds || enrolledClassIds.length === 0) {
+            setAttendanceRecords([]);
+            setAttendanceLoading(false);
+            return;
+        }
+
+        const fetchAttendance = async () => {
+            setAttendanceLoading(true);
+            const allRecords: Attendance[] = [];
+            try {
+                for (const classId of enrolledClassIds) {
+                    const q = query(collection(firestore, 'attendance'), where('classId', '==', classId));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach((doc) => {
+                        allRecords.push({ id: doc.id, ...doc.data() } as Attendance);
+                    });
+                }
+                setAttendanceRecords(allRecords);
+            } catch (err) {
+                console.error("Error fetching attendance records:", err);
+            } finally {
+                setAttendanceLoading(false);
+            }
+        };
+
+        fetchAttendance();
     }, [firestore, enrolledClassIds]);
-    const { data: attendanceRecords, isLoading: attendanceLoading } = useCollection<Attendance>(attendanceQuery);
 
     const resultsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;

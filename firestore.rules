@@ -30,7 +30,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if isTutor() && request.resource.data.role == 'student' || isOwner(userId);
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if false; 
     }
@@ -45,38 +45,29 @@ service cloud.firestore {
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get: if isSignedIn();
-      // Allow list only if the query is constrained by a specific teacher's ID.
-      // This prevents broad queries and solves the permission error.
-      allow list: if isSignedIn() && request.query.teacherId != null;
+      allow list: if isTutor() && request.query.teacherId == request.auth.uid;
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /enrollments/{enrollmentId} {
-      // Allow a student to create a 'pending' enrollment request for themselves.
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'pending';
-      
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-      
-      // Allow list ONLY if the query is properly constrained to a single teacher or student
       allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
                       (isStudent() && request.query.studentId == request.auth.uid);
-      
-      // Allow a teacher to approve/deny a request, or update payment status.
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
-      
-      // Allow a teacher to remove a student, or a student to cancel their own request.
       allow delete: if (isTutor() && resource.data.teacherId == request.auth.uid) || (isStudent() && isOwner(resource.data.studentId));
     }
 
     match /studyMaterials/{materialId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if true; // All materials are public
+      allow get, list: if true;
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /tests/{testId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || (isStudent() && request.query.classId != null);
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
@@ -90,7 +81,8 @@ service cloud.firestore {
 
     match /attendance/{attendanceId} {
       allow create, update: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || (isStudent() && request.query.classId != null);
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
   }

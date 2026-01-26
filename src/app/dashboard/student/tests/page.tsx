@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,11 +73,37 @@ export default function StudentTestsPage() {
         return enrollments.map(e => e.classId);
     }, [enrollments]);
 
-    const testsQuery = useMemoFirebase(() => {
-        if (!firestore || enrolledClassIds.length === 0) return null;
-        return query(collection(firestore, 'tests'), where('classId', 'in', enrolledClassIds));
+    const [tests, setTests] = useState<Test[]>([]);
+    const [testsLoading, setTestsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!firestore || !enrolledClassIds || enrolledClassIds.length === 0) {
+            setTestsLoading(false);
+            setTests([]);
+            return;
+        }
+    
+        const fetchTests = async () => {
+            setTestsLoading(true);
+            const allTests: Test[] = [];
+            try {
+                for (const classId of enrolledClassIds) {
+                    const q = query(collection(firestore, 'tests'), where('classId', '==', classId));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach((doc) => {
+                        allTests.push({ id: doc.id, ...doc.data() } as Test);
+                    });
+                }
+                setTests(allTests.sort((a,b) => b.createdAt.seconds - a.createdAt.seconds));
+            } catch (error) {
+                console.error("Error fetching tests:", error);
+            } finally {
+                setTestsLoading(false);
+            }
+        };
+    
+        fetchTests();
     }, [firestore, enrolledClassIds]);
-    const { data: tests, isLoading: testsLoading } = useCollection<Test>(testsQuery);
 
     const resultsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
