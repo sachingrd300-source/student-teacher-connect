@@ -40,7 +40,7 @@ interface EnrolledStudent {
 interface StudentProfile {
     id: string; // Auth UID
     name: string;
-    studentLoginId: string; // The short ID for login
+    email: string;
     mobileNumber: string;
 }
 
@@ -231,7 +231,7 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
         return query(collection(firestore, 'users'), where('__name__', 'in', studentUids));
     }, [firestore, studentUids]);
 
-    const { data: studentProfiles } = useCollection<StudentProfile>(studentsProfileQuery);
+    const { data: studentProfiles, isLoading: profilesLoading } = useCollection<StudentProfile>(studentsProfileQuery);
     
     const studentProfileMap = useMemo(() => {
         const map = new Map<string, StudentProfile>();
@@ -246,7 +246,7 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
         }
     };
 
-    if (isLoading) {
+    if (isLoading || profilesLoading) {
         return <p>Loading students...</p>;
     }
 
@@ -260,8 +260,8 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
                 <thead className="text-left bg-muted">
                     <tr className="border-b">
                         <th className="p-3 font-medium">Student Name</th>
+                        <th className="p-3 font-medium">Email</th>
                         <th className="p-3 font-medium">Mobile Number</th>
-                        <th className="p-3 font-medium">Student Login ID</th>
                         <th className="p-3 font-medium">Actions</th>
                     </tr>
                 </thead>
@@ -271,8 +271,8 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
                         return (
                             <tr key={student.id} className="border-b last:border-0">
                                 <td className="p-3 whitespace-nowrap">{student.studentName}</td>
+                                <td className="p-3">{profile?.email || '...'}</td>
                                 <td className="p-3">{student.mobileNumber}</td>
-                                <td className="p-3 font-mono">{profile?.studentLoginId || '...'}</td>
                                 <td className="p-3">
                                     <Button variant="destructive" size="sm" onClick={() => handleRemoveStudent(student.id)}>
                                         <Trash2 className="h-4 w-4 mr-2" />
@@ -310,16 +310,14 @@ export default function ClassDetailsPage() {
     // State for creating a new student
     const [studentName, setStudentName] = useState('');
     const [studentEmail, setStudentEmail] = useState('');
-    const [studentFatherName, setStudentFatherName] = useState('');
+    const [studentPassword, setStudentPassword] = useState('');
     const [studentMobileNumber, setStudentMobileNumber] = useState('');
-    const [studentAddress, setStudentAddress] = useState('');
-    const [studentDateOfBirth, setStudentDateOfBirth] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [studentCreationError, setStudentCreationError] = useState<string | null>(null);
-    const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, id: string, pass: string} | null>(null);
+    const [newlyAddedStudent, setNewlyAddedStudent] = useState<{name: string, email: string, pass: string} | null>(null);
 
     // State for enrolling an existing student
-    const [searchStudentId, setSearchStudentId] = useState('');
+    const [searchStudentEmail, setSearchStudentEmail] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [foundStudent, setFoundStudent] = useState<StudentProfile | null>(null);
     const [searchMessage, setSearchMessage] = useState<string | null>(null);
@@ -329,12 +327,12 @@ export default function ClassDetailsPage() {
     useEffect(() => {
         setFoundStudent(null);
         setSearchMessage(null);
-        setSearchStudentId('');
+        setSearchStudentEmail('');
         setEnrollMessage(null);
     }, [classId]);
 
     const handleSearchStudent = async () => {
-        if (!firestore || !searchStudentId.trim()) return;
+        if (!firestore || !searchStudentEmail.trim()) return;
 
         setIsSearching(true);
         setFoundStudent(null);
@@ -342,12 +340,12 @@ export default function ClassDetailsPage() {
         setEnrollMessage(null);
 
         const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, where('studentLoginId', '==', searchStudentId.trim()), limit(1));
+        const q = query(usersRef, where('email', '==', searchStudentEmail.trim()), where('role', '==', 'student'), limit(1));
         
         try {
             const querySnapshot = await getDocs(q);
             if (querySnapshot.empty) {
-                setSearchMessage('No student found with this Login ID.');
+                setSearchMessage('No student found with this email address.');
             } else {
                 const studentDoc = querySnapshot.docs[0];
                 setFoundStudent({ id: studentDoc.id, ...studentDoc.data() } as StudentProfile);
@@ -394,20 +392,19 @@ export default function ClassDetailsPage() {
         setEnrollMessage(`Successfully enrolled ${foundStudent.name} in ${classData.title}.`);
         setIsEnrolling(false);
         setFoundStudent(null);
-        setSearchStudentId('');
+        setSearchStudentEmail('');
     };
 
     const handleCreateStudentLogin = async (e: FormEvent) => {
         e.preventDefault();
-        if (!user || !userProfile || !classId || !studentName.trim() || !studentEmail.trim() || !firestore || !studentDateOfBirth || !classData) return;
+        if (!user || !userProfile || !classId || !studentName.trim() || !studentEmail.trim() || !firestore || !studentPassword.trim() || !classData) return;
         
         setIsAddingStudent(true);
         setNewlyAddedStudent(null);
         setStudentCreationError(null);
 
-        const studentLoginId = nanoid(8);
         const email = studentEmail.trim(); 
-        const password = studentDateOfBirth; 
+        const password = studentPassword.trim(); 
 
         let secondaryApp;
         const appName = 'student-creator';
@@ -427,14 +424,10 @@ export default function ClassDetailsPage() {
             const userRef = doc(firestore, `users/${newUser.uid}`);
             const userProfileData = {
                 id: newUser.uid,
-                studentLoginId: studentLoginId, 
                 name: studentName.trim(),
-                fatherName: studentFatherName.trim(),
                 mobileNumber: studentMobileNumber.trim(),
-                address: studentAddress.trim(),
                 email: email, 
                 role: 'student',
-                dateOfBirth: studentDateOfBirth,
                 createdAt: serverTimestamp(),
                 status: 'approved',
             };
@@ -456,18 +449,20 @@ export default function ClassDetailsPage() {
             const enrollmentsColRef = collection(firestore, 'enrollments');
             await addDoc(enrollmentsColRef, enrollmentData);
             
-            setNewlyAddedStudent({ name: studentName.trim(), id: studentLoginId, pass: studentDateOfBirth });
+            setNewlyAddedStudent({ name: studentName.trim(), email: email, pass: password });
             setStudentName('');
             setStudentEmail('');
-            setStudentFatherName('');
             setStudentMobileNumber('');
-            setStudentAddress('');
-            setStudentDateOfBirth('');
+            setStudentPassword('');
+
         } catch (error: any) {
             console.error("Error creating student auth user:", error);
             if (error.code === 'auth/email-already-in-use') {
                 setStudentCreationError(`This email is already in use by another account.`);
-            } else {
+            } else if (error.code === 'auth/weak-password') {
+                setStudentCreationError('Password is too weak. It must be at least 6 characters long.');
+            }
+             else {
                 setStudentCreationError(`Failed to create student login: ${error.message}`);
             }
         } finally {
@@ -559,9 +554,9 @@ export default function ClassDetailsPage() {
                                         <h3 className='text-base font-semibold'>Enroll an Existing Student</h3>
                                         <div className="flex gap-2">
                                             <Input
-                                                placeholder="Enter Student Login ID"
-                                                value={searchStudentId}
-                                                onChange={(e) => setSearchStudentId(e.target.value)}
+                                                placeholder="Enter Student Email"
+                                                value={searchStudentEmail}
+                                                onChange={(e) => setSearchStudentEmail(e.target.value)}
                                             />
                                             <Button onClick={handleSearchStudent} disabled={isSearching}>
                                                 <Search className="mr-2 h-4 w-4" /> {isSearching ? '...' : 'Find'}
@@ -594,22 +589,13 @@ export default function ClassDetailsPage() {
                                                 <Label htmlFor="student-email">Student Email</Label>
                                                 <Input id="student-email" type="email" placeholder="e.g., student@example.com" value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} required />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-father-name">Father's Name</Label>
-                                                <Input id="student-father-name" placeholder="e.g., John Doe" value={studentFatherName} onChange={(e) => setStudentFatherName(e.target.value)} required />
+                                             <div className="space-y-2">
+                                                <Label htmlFor="student-password">Set Password</Label>
+                                                <Input id="student-password" type="text" placeholder="Set a temporary password" value={studentPassword} onChange={(e) => setStudentPassword(e.target.value)} required />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="student-mobile">Mobile Number</Label>
-                                                <Input id="student-mobile" placeholder="e.g., 9876543210" value={studentMobileNumber} onChange={(e) => setStudentMobileNumber(e.target.value)} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-address">Address</Label>
-                                                <Input id="student-address" placeholder="e.g., 123 Main St, Anytown" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-dob">Student's Date of Birth (Password)</Label>
-                                                <Input id="student-dob" type="date" value={studentDateOfBirth} onChange={(e) => setStudentDateOfBirth(e.target.value)} required />
-                                                <p className="text-xs text-muted-foreground">The student will use this as their password to log in. Format: YYYY-MM-DD.</p>
+                                                <Input id="student-mobile" placeholder="e.g., 9876543210" value={studentMobileNumber} onChange={(e) => setStudentMobileNumber(e.target.value)} />
                                             </div>
                                             <Button type="submit" disabled={isAddingStudent} className="w-full">
                                                 {isAddingStudent ? 'Creating Login...' : 'Create & Enroll'}
@@ -626,8 +612,8 @@ export default function ClassDetailsPage() {
                                                     <p className="text-sm">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
                                                     <div className="mt-3 space-y-2 bg-success/20 p-3 rounded-md">
                                                         <div>
-                                                            <p className="text-xs font-semibold">Login ID:</p> 
-                                                            <p className="font-mono text-base font-bold">{newlyAddedStudent.id}</p>
+                                                            <p className="text-xs font-semibold">Email:</p> 
+                                                            <p className="font-mono text-base font-bold">{newlyAddedStudent.email}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-xs font-semibold">Password:</p> 

@@ -5,7 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocki
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { UserCircle, Mail, Phone, GraduationCap, User, Home, KeyRound, Edit, Save } from 'lucide-react';
+import { UserCircle, Mail, Phone, GraduationCap, User, Home, Edit, Save } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,6 @@ interface UserProfile {
     fatherName?: string;
     address?: string;
     classLevel?: string;
-    studentLoginId?: string;
 }
 
 const ProfileItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string }) => {
@@ -147,10 +146,6 @@ export default function StudentProfilePage() {
                                             <Label htmlFor="email">Email (Cannot be changed)</Label>
                                             <Input id="email" name="email" value={formData.email || ''} disabled />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="studentLoginId">Student Login ID (Cannot be changed)</Label>
-                                            <Input id="studentLoginId" name="studentLoginId" value={formData.studentLoginId || 'N/A'} disabled />
-                                        </div>
                                     </div>
                                 </CardContent>
                                 <CardFooter className="justify-end gap-2">
@@ -164,12 +159,11 @@ export default function StudentProfilePage() {
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                     <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2">Account Details</h3>
-                                    <ProfileItem icon={<KeyRound className="h-5 w-5" />} label="Student Login ID" value={userProfile.studentLoginId} />
                                     <ProfileItem icon={<Mail className="h-5 w-5" />} label="Email" value={userProfile.email} />
-
+                                    <ProfileItem icon={<Phone className="h-5 w-5" />} label="Mobile Number" value={userProfile.mobileNumber} />
+                                    
                                     <h3 className="md:col-span-2 text-lg font-semibold border-b pb-2 pt-4">Personal Information</h3>
                                     <ProfileItem icon={<User className="h-5 w-5" />} label="Father's Name" value={userProfile.fatherName} />
-                                    <ProfileItem icon={<Phone className="h-5 w-5" />} label="Mobile Number" value={userProfile.mobileNumber} />
                                     <ProfileItem icon={<GraduationCap className="h-5 w-5" />} label="Class Level" value={userProfile.classLevel} />
                                     <ProfileItem icon={<Home className="h-5 w-5" />} label="Address" value={userProfile.address} />
                                 </div>

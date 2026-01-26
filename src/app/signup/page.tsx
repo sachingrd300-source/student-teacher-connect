@@ -18,7 +18,6 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { nanoid } from 'nanoid';
 
 export default function SignupPage() {
   const auth = useAuth();
@@ -57,8 +56,9 @@ export default function SignupPage() {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       const userRef = doc(firestore, `users/${user.uid}`);
       
+      let dataToSet;
       if (role === 'teacher') {
-        const dataToSet = {
+        dataToSet = {
           id: user.uid,
           name,
           email,
@@ -66,10 +66,8 @@ export default function SignupPage() {
           createdAt: serverTimestamp(),
           status: 'pending_verification',
         };
-        await setDoc(userRef, dataToSet);
       } else { // Student signup
-        const studentLoginId = nanoid(8);
-        const dataToSet = {
+        dataToSet = {
             id: user.uid,
             name: name.trim(),
             fatherName: studentFatherName.trim(),
@@ -79,12 +77,11 @@ export default function SignupPage() {
             role: 'student',
             dateOfBirth: studentDateOfBirth,
             classLevel: studentClassLevel,
-            studentLoginId,
             createdAt: serverTimestamp(),
             status: 'approved', // Students are auto-approved on self-signup
         };
-        await setDoc(userRef, dataToSet);
       }
+      await setDoc(userRef, dataToSet);
       
       router.push('/dashboard');
     } catch (error: any) {
@@ -195,7 +192,7 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                   {role === 'student' && <p className="text-xs text-muted-foreground">Your password must be at least 6 characters long.</p>}
+                   <p className="text-xs text-muted-foreground">Your password must be at least 6 characters long.</p>
                 </div>
                 
                 <Button type="submit" className="w-full" disabled={isSigningUp}>

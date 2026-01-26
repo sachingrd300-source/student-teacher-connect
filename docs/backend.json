@@ -10,10 +10,6 @@
           "type": "string",
           "description": "Unique identifier for the user, typically the Firebase Auth UID."
         },
-        "studentLoginId": {
-            "type": "string",
-            "description": "The custom, shorter ID students use to log in."
-        },
         "role": {
           "type": "string",
           "enum": ["student", "tutor", "admin"],
@@ -42,7 +38,7 @@
         },
         "dateOfBirth": {
             "type": "string",
-            "description": "The user's date of birth, used as initial password for students."
+            "description": "The user's date of birth."
         },
         "classLevel": {
             "type": "string",

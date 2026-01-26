@@ -20,7 +20,7 @@ import {
   signInWithPopup,
   getAdditionalUserInfo,
 } from 'firebase/auth';
-import { collection, query, where, getDocs, limit, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { School } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -28,8 +28,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const [role, setRole] = useState<'teacher' | 'student'>('teacher');
-  const [credential, setCredential] = useState(''); // Used for both email and student ID
+  const [isTeacher, setIsTeacher] = useState(true);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -41,50 +41,12 @@ export default function LoginPage() {
       return;
     }
 
-    let emailToLogin: string | undefined;
-
-    // Teacher login remains the same, using email
-    if (role === 'teacher') {
-      emailToLogin = credential;
-    } 
-    // Student login has special handling for Student Login ID
-    else {
-      const isEmail = credential.includes('@');
-      if (isEmail) {
-        // If it's an email, use it directly
-        emailToLogin = credential;
-      } else {
-        // If it's not an email, assume it's a Student Login ID and find the user's email
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, where('studentLoginId', '==', credential.trim()), limit(1));
-        
-        try {
-          const querySnapshot = await getDocs(q);
-          if (querySnapshot.empty) {
-            setError('Invalid Student Login ID. Please check the ID and try again.');
-            return;
-          }
-          const studentDoc = querySnapshot.docs[0];
-          emailToLogin = studentDoc.data().email;
-        } catch (err) {
-            console.error("Error looking up student by Login ID:", err);
-            setError("An error occurred while trying to log in.");
-            return;
-        }
-      }
-    }
-    
-    if (!emailToLogin) {
-        setError('Could not find a user with the provided credentials.');
-        return;
-    }
-
     try {
-      await signInWithEmailAndPassword(auth, emailToLogin, password);
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard'); 
     } catch (error: any) {
        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        setError('Invalid login credentials. Please check your ID/Email and password.');
+        setError('Invalid login credentials. Please check your email and password.');
       } else {
         setError(error.message);
       }
@@ -102,14 +64,13 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       const additionalInfo = getAdditionalUserInfo(result);
       
-      // If it's a new user, create their profile document in Firestore
       if (additionalInfo?.isNewUser && result.user.email) {
         const userRef = doc(firestore, `users/${result.user.uid}`);
         const userProfileData = {
           id: result.user.uid,
           name: result.user.displayName || result.user.email.split('@')[0],
           email: result.user.email,
-          role: 'tutor', // Google Sign-In on this page is for tutors
+          role: 'tutor', 
           createdAt: serverTimestamp(),
           status: 'pending_verification',
         };
@@ -143,7 +104,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="grid gap-4">
               <div className="grid gap-2">
                 <Label>I am a...</Label>
-                <RadioGroup defaultValue="teacher" onValueChange={(value: 'teacher' | 'student') => setRole(value)} className="flex gap-4">
+                <RadioGroup defaultValue="teacher" onValueChange={(value) => setIsTeacher(value === 'teacher')} className="flex gap-4">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="teacher" id="r1" />
                     <Label htmlFor="r1">Teacher</Label>
@@ -156,14 +117,14 @@ export default function LoginPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="credential">{role === 'teacher' ? 'Email' : 'Email or Student Login ID'}</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="credential"
-                  type="text"
-                  placeholder={role === 'teacher' ? 'm@example.com' : 'your@email.com or Login ID'}
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
                   required
-                  value={credential}
-                  onChange={(e) => setCredential(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
@@ -172,7 +133,6 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   required
-                  placeholder={role === 'student' ? 'Password is your Date of Birth (YYYY-MM-DD)' : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -181,7 +141,7 @@ export default function LoginPage() {
                 Login
               </Button>
             </form>
-            {role === 'teacher' && (
+            {isTeacher && (
               <>
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
