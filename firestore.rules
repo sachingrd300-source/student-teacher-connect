@@ -65,8 +65,8 @@ service cloud.firestore {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       // The student who owns the enrollment or the teacher of the class can view it
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
-      // A user can list enrollments, but the query MUST be filtered by studentId or teacherId
-      allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
+      // An Admin can list any enrollments. A user can list enrollments, but the query MUST be filtered by studentId or teacherId
+      allow list: if isAdmin() || (isTutor() && request.query.teacherId == request.auth.uid) || 
                       (isStudent() && request.query.studentId == request.auth.uid);
       // Only the teacher of the class can approve/deny (update) an enrollment
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
@@ -126,5 +126,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
