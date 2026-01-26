@@ -62,15 +62,15 @@ function StudentListForClass({ classId, teacherId }: { classId: string, teacherI
     
     // Fetch all attendance and test results for this class
     const classAttendanceQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'attendance'), where('classId', '==', classId));
-    }, [firestore, classId]);
+        if (!firestore || !teacherId) return null;
+        return query(collection(firestore, 'attendance'), where('classId', '==', classId), where('teacherId', '==', teacherId));
+    }, [firestore, classId, teacherId]);
     const { data: attendanceRecords } = useCollection<Attendance>(classAttendanceQuery);
 
     const classResultsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'testResults'), where('classId', '==', classId));
-    }, [firestore, classId]);
+        if (!firestore || !teacherId) return null;
+        return query(collection(firestore, 'testResults'), where('classId', '==', classId), where('teacherId', '==', teacherId));
+    }, [firestore, classId, teacherId]);
     const { data: testResults } = useCollection<TestResult>(classResultsQuery);
     
     const pendingStudents = useMemo(() => allEnrollments?.filter(s => s.status === 'pending') || [], [allEnrollments]);
