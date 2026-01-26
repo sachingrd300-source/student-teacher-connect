@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -14,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, User, BookOpen, CalendarCheck, ClipboardCheck, FlaskConical, BarChart3, Settings, BookMarked, Wand2, Languages, MessageSquare, Briefcase, FileText } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, User, BookOpen, CalendarCheck, ClipboardCheck, FlaskConical, BarChart3, Settings, BookMarked, Wand2, Languages, MessageSquare, Briefcase, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
