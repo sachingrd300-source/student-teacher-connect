@@ -59,7 +59,7 @@ service cloud.firestore {
       
       // Allow list if the query is properly constrained by the calling code.
       // The `get` rule will be checked for each document.
-      allow list: if isSignedIn();
+      allow list: if isTutor() || isStudent();
       
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       

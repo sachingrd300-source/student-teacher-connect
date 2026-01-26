@@ -103,25 +103,30 @@ export default function TeacherDashboard() {
     }, [firestore, user, isTutor]);
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
     
-    const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(10));
-    }, [firestore, user]);
-    const { data: pendingEnrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    // Fetch all enrollments for stats and pending list
+    const allEnrollmentsQuery = useMemoFirebase(() => {
+        if (!isTutor || !firestore || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
+    }, [firestore, user, isTutor]);
+    const { data: allEnrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
+
 
     // --- Stat & Combined Feed Calculations ---
-    const approvedStudentsCount = useMemo(() => {
-        // This would need another query to be accurate without listing all enrollments.
-        // For this dashboard, we'll keep it simple and maybe add it back later if needed.
-        return '...'; // Placeholder to avoid fetching all students
-    }, []);
+    const { pendingEnrollments, approvedStudentsCount } = useMemo(() => {
+        if (!allEnrollments) return { pendingEnrollments: [], approvedStudentsCount: 0 };
+        
+        const pending = allEnrollments
+            .filter(e => e.status === 'pending')
+            .sort((a,b) => b.createdAt.seconds - a.createdAt.seconds)
+            .slice(0, 10);
+
+        const approvedCount = allEnrollments.filter(e => e.status === 'approved').length;
+
+        return { pendingEnrollments: pending, approvedStudentsCount: approvedCount };
+    }, [allEnrollments]);
 
     const activityFeed: ActivityItem[] = useMemo(() => {
-        const enrollments = (pendingEnrollments || []).map(e => ({...e, type: 'enrollment' as const}));
-        
-        enrollments.sort((a,b) => b.createdAt.seconds - a.createdAt.seconds);
-        
-        return enrollments;
+        return (pendingEnrollments || []).map(e => ({...e, type: 'enrollment' as const}));
     }, [pendingEnrollments]);
 
 
