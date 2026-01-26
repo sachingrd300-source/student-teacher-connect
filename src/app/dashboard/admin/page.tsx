@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, Timestamp, getDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -106,8 +107,6 @@ export default function AdminDashboardPage() {
     const handleApprove = async (teacherId: string) => {
         if (!firestore) return;
         const teacherRef = doc(firestore, 'users', teacherId);
-
-        // Update user status to 'approved'
         updateDocumentNonBlocking(teacherRef, { status: 'approved' });
     };
 

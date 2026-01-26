@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -29,12 +30,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (!auth || !firestore) {
-      setError('Firebase services are not available. Please try again later.');
+    setIsLoading(true);
+    if (!auth) {
+      setError('Firebase services are not available.');
+      setIsLoading(false);
       return;
     }
 
@@ -47,13 +51,18 @@ export default function LoginPage() {
       } else {
         setError(error.message);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
   
-    const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     setError(null);
+    setIsLoading(true);
+
     if (!auth || !firestore) {
-      setError('Firebase services are not available. Please try again later.');
+      setError('Firebase services are not available.');
+      setIsLoading(false);
       return;
     }
     const provider = new GoogleAuthProvider();
@@ -64,13 +73,12 @@ export default function LoginPage() {
       const userRef = doc(firestore, `users/${user.uid}`);
       const userSnap = await getDoc(userRef);
 
-      // If it's a new user, create their profile.
       if (!userSnap.exists()) {
         const userProfileData = {
           id: user.uid,
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
-          role: 'student', 
+          role: 'student', // Google Sign-in defaults to student
           createdAt: serverTimestamp(),
         };
         await setDoc(userRef, userProfileData);
@@ -78,17 +86,21 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-secondary">
-      <div className="w-full max-w-sm p-4 sm:p-8 space-y-4">
-        <div className="text-center">
-            <School className="w-12 h-12 mx-auto text-primary" />
-            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">ConnectApp</h1>
-            <p className="text-muted-foreground">Welcome back! Sign in to continue.</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40">
+      <div className="w-full max-w-md p-4 sm:p-0">
+        <div className="text-center mb-6">
+            <Link href="/" className="inline-block">
+              <School className="w-12 h-12 mx-auto text-primary" />
+            </Link>
+            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to access your dashboard.</p>
         </div>
         <Card>
           <CardHeader>
@@ -120,8 +132,8 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Signing In...' : 'Login'}
               </Button>
             </form>
             
@@ -130,18 +142,18 @@ export default function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-card px-2 text-muted-foreground">
                   Or continue with
                 </span>
               </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
               Sign in with Google
             </Button>
             
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline">
+              <Link href="/signup" className="underline font-semibold">
                 Sign up
               </Link>
             </div>

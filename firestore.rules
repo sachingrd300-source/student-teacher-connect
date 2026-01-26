@@ -1,4 +1,6 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
@@ -9,28 +11,53 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function getUserData(userId) {
+        return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+    
+    function isRole(role) {
+        return isSignedIn() && getUserData(request.auth.uid).role == role;
+    }
 
-    // --- User Profiles ---
+    function isAdmin() {
+      return isRole('admin');
+    }
+
+    function isTutor() {
+      return isRole('tutor');
+    }
+
+    function isStudent() {
+      return isRole('student');
+    }
+
     match /users/{userId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if false; 
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if false;
     }
 
-    // --- Connections ---
-    match /connections/{connectionId} {
-      // Allow create if user is the requester
-      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
-      
-      // Allow read/delete if user is part of the connection
-      allow get, delete: if isSignedIn() && request.auth.uid in resource.data.userIds;
+    match /classes/{classId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && request.query.keys().hasAny(['teacherId']);
+      allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
+    }
 
-      // Allow receiver to accept the request
-      allow update: if isSignedIn() && request.auth.uid == resource.data.receiverId;
-      
-      // Allow anyone signed in to list connections, queries MUST be filtered on the client.
-      allow list: if isSignedIn();
+    match /enrollments/{enrollmentId} {
+      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId || isAdmin());
+      allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
+      allow list: if isAdmin() || (isSignedIn() && (request.query.get('teacherId') == request.auth.uid || request.query.get('studentId') == request.auth.uid));
+    }
+    
+    match /connections/{connectionId} {
+      allow create: if isStudent() && request.resource.data.requesterId == request.auth.uid;
+      allow get, delete: if isStudent() && request.auth.uid in resource.data.userIds;
+      allow update: if isStudent() && request.auth.uid == resource.data.receiverId;
+      allow list: if isStudent() && request.query.keys().hasAny(['userIds', 'receiverId']);
     }
   }
 }

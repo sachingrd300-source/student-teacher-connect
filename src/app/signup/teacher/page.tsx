@@ -17,9 +17,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { School, User } from 'lucide-react';
+import { School, UserCheck } from 'lucide-react';
 
-export default function StudentSignupPage() {
+export default function TeacherSignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -51,13 +51,14 @@ export default function StudentSignupPage() {
           name: name.trim(),
           email: email.trim(), 
           mobileNumber: mobileNumber.trim(),
-          role: 'student',
+          role: 'tutor',
+          status: 'pending_verification', // Teachers need admin approval
           createdAt: serverTimestamp(),
       };
       
       await setDoc(userRef, dataToSet);
       
-      router.push('/dashboard');
+      router.push('/dashboard'); // Redirect to dashboard, which will route to status page
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setError('This email is already in use. Please try another email or log in.');
@@ -78,14 +79,15 @@ export default function StudentSignupPage() {
             <Link href="/" className="inline-block">
                 <School className="w-12 h-12 mx-auto text-primary" />
             </Link>
-            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Create Student Account</h1>
-            <p className="text-muted-foreground">Join our community of learners.</p>
+            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Create Teacher Account</h1>
+            <p className="text-muted-foreground">Join our community of educators.</p>
           </div>
           <Card>
             <CardHeader>
               <CardTitle className="text-xl font-serif flex items-center gap-2">
-                <User className="h-5 w-5" /> Student Registration
+                <UserCheck className="h-5 w-5" /> Teacher Registration
               </CardTitle>
+              <CardDescription>Your account will be reviewed by an admin before you can access all features.</CardDescription>
             </CardHeader>
             <CardContent>
               {error && (
@@ -96,9 +98,9 @@ export default function StudentSignupPage() {
                   <Label htmlFor="full-name">Full Name</Label>
                   <Input id="full-name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
-                <div className="grid gap-2">
+                 <div className="grid gap-2">
                   <Label htmlFor="mobile-number">Mobile Number</Label>
-                  <Input id="mobile-number" placeholder="Your mobile number" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  <Input id="mobile-number" placeholder="Your primary contact number" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
