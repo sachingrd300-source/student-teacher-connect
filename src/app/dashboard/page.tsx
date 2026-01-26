@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, serverTimestamp, getDocs, writeBatch, limit, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,13 @@ export default function DashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
+
+    // --- Auth Redirect ---
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            router.replace('/login');
+        }
+    }, [isUserLoading, user, router]);
 
     // --- Data Hooks ---
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -104,14 +111,8 @@ export default function DashboardPage() {
         }
     };
     
-    // --- Auth Redirect ---
-    if (!isUserLoading && !user) {
-        router.replace('/login');
-        return <div className="flex h-screen items-center justify-center">Redirecting to login...</div>;
-    }
-
     const isLoading = isUserLoading || isProfileLoading || usersLoading || connectionsLoading;
-     if (isLoading) {
+     if (isLoading || !user) {
         return <div className="flex h-screen items-center justify-center">Loading dashboard...</div>;
     }
 
