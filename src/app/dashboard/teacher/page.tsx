@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Megaphone } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Megaphone, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -79,7 +79,7 @@ export default function TeacherDashboard() {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string, name: string}>(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<{role: string, name: string, status: 'pending_verification' | 'approved' | 'denied'}>(userProfileRef);
 
     const isTutor = userProfile?.role === 'tutor';
 
@@ -88,8 +88,14 @@ export default function TeacherDashboard() {
         if (isAuthLoading || isProfileLoading) return;
         if (!user) {
             router.replace('/login');
-        } else if (userProfile && !isTutor) {
-            router.replace('/dashboard/student');
+            return;
+        }
+        if (userProfile) {
+             if (!isTutor) {
+                router.replace('/dashboard/student');
+            } else if (userProfile.status !== 'approved') {
+                router.replace('/dashboard/teacher/status');
+            }
         }
     }, [user, isAuthLoading, userProfile, isProfileLoading, isTutor, router]);
     
@@ -115,7 +121,12 @@ export default function TeacherDashboard() {
 
     // --- Stat Calculations ---
     const pendingEnrollments = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
-    const approvedStudentsCount = useMemo(() => enrollments?.filter(e => e.status === 'approved').length || 0, [enrollments]);
+    const approvedStudentsCount = useMemo(() => {
+        if (!enrollments) return 0;
+        const uniqueStudentIds = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.studentId));
+        return uniqueStudentIds.size;
+    }, [enrollments]);
+
 
     // --- Form Handlers ---
     const resetClassForm = () => {
@@ -196,7 +207,7 @@ export default function TeacherDashboard() {
         }
     };
 
-    if (isAuthLoading || isProfileLoading || !userProfile) {
+    if (isAuthLoading || isProfileLoading || !userProfile || userProfile.status !== 'approved') {
         return (
              <div className="flex flex-col min-h-screen">
                 <DashboardHeader userName="Loading..." userRole="tutor" />
@@ -206,18 +217,7 @@ export default function TeacherDashboard() {
             </div>
         );
     }
-
-    if (!isTutor) {
-        return (
-             <div className="flex flex-col min-h-screen">
-                <DashboardHeader userName={userProfile.name} userRole={userProfile.role as any} />
-                <div className="flex-1 flex items-center justify-center">
-                    <p>Unauthorized. Redirecting...</p>
-                </div>
-            </div>
-        )
-    }
-
+    
     return (
         <div className="flex flex-col min-h-screen bg-muted/40">
             <DashboardHeader userName={userProfile.name} userRole="tutor" />

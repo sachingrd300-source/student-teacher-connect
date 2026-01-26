@@ -30,14 +30,18 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if request.auth.uid == userId;
+      // Allow self-creation OR a tutor creating a student profile
+      allow create: if (request.auth.uid == userId) || 
+                      (isTutor() && request.resource.data.role == 'student');
       allow update: if isOwner(userId) || isAdmin();
-      allow delete: if false;
+      allow delete: if false; // Keep delete restricted for now to prevent orphaned data
     }
 
     match /publicTutors/{tutorId} {
       allow get, list: if true;
-      allow write, delete: if isAdmin() || isOwner(tutorId);
+      allow create: if isAdmin(); // Only admins can create a public profile (on approval)
+      allow update: if isAdmin() || isOwner(tutorId); // Admin or owner can update
+      allow delete: if isAdmin(); // Only admins can delete a public profile
     }
 
     match /classes/{classId} {
@@ -47,6 +51,7 @@ service cloud.firestore {
     }
 
     match /enrollments/{enrollmentId} {
+      // Allow teacher to create an 'approved' enrollment, or a student to create a 'pending' one
       allow create: if (isTutor() && request.resource.data.teacherId == request.auth.uid && request.resource.data.status == 'approved') ||
                       (isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'pending');
       
@@ -56,14 +61,12 @@ service cloud.firestore {
       
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       
-      allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
+      allow delete: if (isTutor() && resource.data.teacherId == request.auth.uid) || isOwner(resource.data.studentId);
     }
 
     match /studyMaterials/{materialId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      // Allow public read for all materials.
-      // Client-side code is responsible for filtering appropriately.
-      allow get, list: if true;
+      allow get, list: if true; // All materials are public
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
@@ -98,5 +101,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
