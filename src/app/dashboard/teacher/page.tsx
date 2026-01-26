@@ -1,15 +1,15 @@
 
 'use client';
 
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, useState, useEffect, useMemo } from 'react';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, PlusCircle, MoreVertical } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Megaphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -26,6 +26,39 @@ interface Class {
     createdAt?: Timestamp;
     fee?: number;
 }
+
+interface Enrollment {
+    id: string;
+    studentId: string;
+    studentName: string;
+    classTitle: string;
+    classId: string;
+    status: 'pending' | 'approved' | 'denied';
+}
+
+interface Announcement {
+    id: string;
+    content: string;
+    classTitle: string;
+    createdAt: Timestamp;
+}
+
+
+const StatCard = ({ title, value, icon, isLoading }: { title: string, value: string | number, icon: React.ReactNode, isLoading?: boolean }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <div className="text-muted-foreground">{icon}</div>
+        </CardHeader>
+        <CardContent>
+            {isLoading ? (
+                <div className="h-8 w-1/2 bg-muted rounded-md animate-pulse" />
+            ) : (
+                <div className="text-2xl font-bold">{value}</div>
+            )}
+        </CardContent>
+    </Card>
+);
 
 export default function TeacherDashboard() {
     const firestore = useFirestore();
@@ -59,14 +92,32 @@ export default function TeacherDashboard() {
             router.replace('/dashboard/student');
         }
     }, [user, isAuthLoading, userProfile, isProfileLoading, isTutor, router]);
-
+    
+    // --- Data Fetching ---
     const classesQuery = useMemoFirebase(() => {
         if (!isTutor || !firestore || !user) return null;
         return query(collection(firestore, 'classes'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user, isTutor]);
-
     const { data: classes, isLoading: classesLoading } = useCollection<Class>(classesQuery);
+    
+    const enrollmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'));
+    }, [firestore, user]);
+    const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
+    const announcementsQuery = useMemoFirebase(() => {
+        if(!firestore || !user) return null;
+        return query(collection(firestore, 'announcements'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'), limit(5));
+    }, [firestore, user]);
+    const { data: recentAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
+
+    // --- Stat Calculations ---
+    const pendingEnrollments = useMemo(() => enrollments?.filter(e => e.status === 'pending') || [], [enrollments]);
+    const approvedStudentsCount = useMemo(() => enrollments?.filter(e => e.status === 'approved').length || 0, [enrollments]);
+
+    // --- Form Handlers ---
     const resetClassForm = () => {
         setTitle('');
         setSubject('');
@@ -86,17 +137,9 @@ export default function TeacherDashboard() {
         setSubject(classData.subject);
         setBatchTime(classData.batchTime);
         setFee(classData.fee?.toString() || '');
-        // Note: Do not open the 'create' dialog here, open the 'edit' one
+        setIsCreateClassOpen(true);
     };
     
-    // This will now open the edit dialog directly
-    useEffect(() => {
-        if (editingClass) {
-            setIsCreateClassOpen(true); // Re-using the same dialog component for both create/edit
-        }
-    }, [editingClass]);
-
-
     const handleCloseDialog = () => {
         setIsCreateClassOpen(false);
         setEditingClass(null);
@@ -114,7 +157,6 @@ export default function TeacherDashboard() {
     
     const handleCreateClass = () => {
         if (!user || !userProfile || !firestore) return;
-
         setIsProcessingClass(true);
         
         const newClassData = {
@@ -128,13 +170,10 @@ export default function TeacherDashboard() {
             createdAt: serverTimestamp(),
         };
 
-        const classesColRef = collection(firestore, 'classes');
-        addDocumentNonBlocking(classesColRef, newClassData)
-          .then(() => {
-              handleCloseDialog();
-          })
+        addDocumentNonBlocking(collection(firestore, 'classes'), newClassData)
           .finally(() => {
               setIsProcessingClass(false);
+              handleCloseDialog();
           });
     };
 
@@ -143,23 +182,17 @@ export default function TeacherDashboard() {
         setIsProcessingClass(true);
 
         const classRef = doc(firestore, 'classes', editingClass.id);
-        const updatedData = {
-            title,
-            subject,
-            batchTime,
-            fee: Number(fee) || 0,
-        };
+        const updatedData = { title, subject, batchTime, fee: Number(fee) || 0 };
 
         updateDocumentNonBlocking(classRef, updatedData);
-        handleCloseDialog();
         setIsProcessingClass(false);
+        handleCloseDialog();
     };
 
     const handleDeleteClass = (classId: string) => {
         if (!firestore) return;
-        if (window.confirm('Are you sure you want to delete this class? This will not delete the students, but it will remove the class itself. This action cannot be undone.')) {
-            const classRef = doc(firestore, 'classes', classId);
-            deleteDocumentNonBlocking(classRef);
+        if (window.confirm('Are you sure you want to delete this class? This action cannot be undone.')) {
+            deleteDocumentNonBlocking(doc(firestore, 'classes', classId));
         }
     };
 
@@ -177,7 +210,7 @@ export default function TeacherDashboard() {
     if (!isTutor) {
         return (
              <div className="flex flex-col min-h-screen">
-                <DashboardHeader userName={userProfile.name} userRole="student" />
+                <DashboardHeader userName={userProfile.name} userRole={userProfile.role as any} />
                 <div className="flex-1 flex items-center justify-center">
                     <p>Unauthorized. Redirecting...</p>
                 </div>
@@ -191,69 +224,122 @@ export default function TeacherDashboard() {
             <main className="flex-1">
                 <div className="container mx-auto p-4 md:p-8">
                     <h1 className="text-3xl font-bold mb-6">Teacher Dashboard</h1>
-                    <div className="grid gap-8 animate-fade-in-down">
-                        <Card>
-                            <CardHeader>
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                                    <div className='mb-4 sm:mb-0'>
-                                        <CardTitle>Your Classes</CardTitle>
-                                        <CardDescription>Select a class to manage students and view details.</CardDescription>
+                    
+                    <div className="grid gap-4 md:grid-cols-3 mb-8">
+                         <StatCard title="Total Classes" value={classes?.length || 0} icon={<BookUser className="h-4 w-4" />} isLoading={classesLoading} />
+                         <StatCard title="Total Students" value={approvedStudentsCount} icon={<Users className="h-4 w-4" />} isLoading={enrollmentsLoading} />
+                         <StatCard title="Pending Requests" value={pendingEnrollments.length} icon={<Clock className="h-4 w-4" />} isLoading={enrollmentsLoading} />
+                    </div>
+                    
+                    <div className="grid gap-8 lg:grid-cols-3 animate-fade-in-down">
+                        <div className="lg:col-span-2 space-y-8">
+                             <Card>
+                                <CardHeader>
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                        <div className='mb-4 sm:mb-0'>
+                                            <CardTitle>Your Classes</CardTitle>
+                                            <CardDescription>Select a class to manage students and view details.</CardDescription>
+                                        </div>
+                                        <Button onClick={handleOpenCreateDialog}>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Create New Class
+                                        </Button>
                                     </div>
-                                    <Button onClick={handleOpenCreateDialog}>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Create New Class
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {classesLoading && <p>Loading classes...</p>}
-                                {classes && classes.length > 0 ? (
-                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        {classes.map((c) => (
-                                            <Card key={c.id} className="flex flex-col">
-                                                <CardHeader className="flex-grow">
-                                                    <CardTitle className="text-lg">{c.title}</CardTitle>
-                                                    <CardDescription>{c.subject} ({c.batchTime})</CardDescription>
-                                                    <div className="pt-2">
-                                                        <div className="text-sm text-muted-foreground">Class Code:</div>
-                                                        <div className="font-mono text-base font-bold text-foreground">{c.classCode}</div>
+                                </CardHeader>
+                                <CardContent>
+                                    {classesLoading && <p>Loading classes...</p>}
+                                    {classes && classes.length > 0 ? (
+                                        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                                            {classes.map((c) => (
+                                                <Card key={c.id} className="flex flex-col">
+                                                    <CardHeader className="flex-grow">
+                                                        <CardTitle className="text-lg">{c.title}</CardTitle>
+                                                        <CardDescription>{c.subject} ({c.batchTime})</CardDescription>
+                                                        <div className="pt-2">
+                                                            <div className="text-sm text-muted-foreground">Class Code:</div>
+                                                            <div className="font-mono text-base font-bold text-foreground">{c.classCode}</div>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground pt-2">Created on: {c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
+                                                    </CardHeader>
+                                                    <CardFooter className="flex justify-between items-center">
+                                                        <Link href={`/dashboard/teacher/class/${c.id}`} passHref className="flex-grow">
+                                                            <Button className="w-full">Manage</Button>
+                                                        </Link>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="ml-2 flex-shrink-0">
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                    <span className="sr-only">More options</span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => handleOpenEditDialog(c)}>
+                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                    <span>Edit</span>
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleDeleteClass(c.id)} className="text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    <span>Delete</span>
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </CardFooter>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        !classesLoading && <p className="text-center text-muted-foreground py-8">You haven't created any classes yet.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="lg:col-span-1 space-y-8">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Pending Enrollment Requests</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {enrollmentsLoading ? <p>Loading...</p> : pendingEnrollments.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {pendingEnrollments.slice(0, 5).map(req => (
+                                                <div key={req.id} className="flex items-center justify-between text-sm">
+                                                    <div>
+                                                        <p className="font-semibold">{req.studentName}</p>
+                                                        <p className="text-xs text-muted-foreground">{req.classTitle}</p>
                                                     </div>
-                                                     <p className="text-xs text-muted-foreground pt-2">Created on: {c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
-                                                </CardHeader>
-                                                <CardFooter className="flex justify-between items-center">
-                                                    <Link href={`/dashboard/teacher/class/${c.id}`} passHref className="flex-grow">
-                                                        <Button className="w-full">Manage</Button>
+                                                     <Link href={`/dashboard/teacher/class/${req.classId}`}>
+                                                        <Button variant="outline" size="sm">View</Button>
                                                     </Link>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="ml-2 flex-shrink-0">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                                <span className="sr-only">More options</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => handleOpenEditDialog(c)}>
-                                                                <Edit className="mr-2 h-4 w-4" />
-                                                                <span>Edit</span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleDeleteClass(c.id)} className="text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                <span>Delete</span>
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </CardFooter>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    !classesLoading && <p className="text-center text-muted-foreground py-8">You haven't created any classes yet.</p>
-                                )}
-                            </CardContent>
-                        </Card>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-center text-muted-foreground py-4">No pending requests.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Recent Announcements</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                     {announcementsLoading ? <p>Loading...</p> : recentAnnouncements && recentAnnouncements.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {recentAnnouncements.map(ann => (
+                                                <div key={ann.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
+                                                    <p className="font-semibold text-primary text-xs">{ann.classTitle}</p>
+                                                    <p className="line-clamp-2">{ann.content}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-center text-muted-foreground py-4">No recent announcements.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
 
-                    {/* Create/Edit Class Dialog */}
                     <Dialog open={isCreateClassOpen} onOpenChange={handleCloseDialog}>
                         <DialogContent>
                             <DialogHeader>
