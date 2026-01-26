@@ -8,6 +8,7 @@ export function MainHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
     const navLinks = [
+        { href: '/tutors', label: 'Find a Tutor' },
         { href: '/materials', label: 'Free Materials' },
         { href: '#features', label: 'Features' },
         { href: '#platform-tour', label: 'Platform Tour' },
