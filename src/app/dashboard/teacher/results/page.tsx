@@ -120,6 +120,35 @@ export default function TeacherResultsPage() {
         const averageScore = Math.round(totalScore / testResults.length);
         const averagePercentage = Math.round((averageScore / totalMarks) * 100);
 
+        let easiestQuestion: { text: string, percentage: number } | null = null;
+        let hardestQuestion: { text: string, percentage: number } | null = null;
+
+        if (questionStats.length > 0) {
+            const statsWithPercentages = questionStats.map(stat => ({
+                ...stat,
+                percentage: stat.total > 0 ? (stat.correct / stat.total) * 100 : 0,
+            }));
+
+            statsWithPercentages.sort((a, b) => b.percentage - a.percentage);
+
+            const easiest = statsWithPercentages[0];
+            const hardest = statsWithPercentages[statsWithPercentages.length - 1];
+
+            if (easiest) {
+                easiestQuestion = {
+                    text: easiest.questionText,
+                    percentage: Math.round(easiest.percentage)
+                };
+            }
+            // Only show hardest if it's different from the easiest and there's more than one question
+            if (hardest && statsWithPercentages.length > 1 && easiest.percentage !== hardest.percentage) {
+                hardestQuestion = {
+                    text: hardest.questionText,
+                    percentage: Math.round(hardest.percentage)
+                };
+            }
+        }
+
         return {
             averageScore,
             averagePercentage,
@@ -128,6 +157,8 @@ export default function TeacherResultsPage() {
             totalSubmissions: testResults.length,
             totalMarks,
             questionStats,
+            easiestQuestion,
+            hardestQuestion
         };
 
     }, [viewingAnalyticsForTest, resultsByTest]);
@@ -250,7 +281,7 @@ export default function TeacherResultsPage() {
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="grid grid-cols-3 gap-4 my-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
                             <Card className="text-center">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Average Score</CardTitle>
@@ -280,7 +311,40 @@ export default function TeacherResultsPage() {
                             </Card>
                         </div>
                         
-                        <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto pr-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            {testAnalytics.easiestQuestion && (
+                                <Card className="bg-success/10 border-success/20">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-base font-semibold flex items-center gap-2 text-success">
+                                            <Star className="h-5 w-5" />
+                                            Easiest Question
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm font-medium line-clamp-2">{testAnalytics.easiestQuestion.text}</p>
+                                        <p className="text-2xl font-bold text-success mt-2">{testAnalytics.easiestQuestion.percentage}%</p>
+                                        <p className="text-xs text-muted-foreground">Success Rate</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+                            {testAnalytics.hardestQuestion && (
+                                <Card className="bg-destructive/10 border-destructive/20">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-base font-semibold flex items-center gap-2 text-destructive">
+                                            <TrendingDown className="h-5 w-5" />
+                                            Hardest Question
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm font-medium line-clamp-2">{testAnalytics.hardestQuestion.text}</p>
+                                        <p className="text-2xl font-bold text-destructive mt-2">{testAnalytics.hardestQuestion.percentage}%</p>
+                                        <p className="text-xs text-muted-foreground">Success Rate</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        <div className="space-y-4 py-4 max-h-[40vh] overflow-y-auto pr-4">
                             <h3 className="font-semibold">Question Breakdown</h3>
                             {testAnalytics.questionStats.map((stat, index) => (
                                 <div key={index} className="text-sm">
@@ -290,17 +354,17 @@ export default function TeacherResultsPage() {
                                             <div className="flex items-center justify-center text-success w-6"><Check/></div>
                                             <p className="w-24 text-muted-foreground">Correct</p>
                                             <div className="flex-1 bg-muted rounded-full h-4">
-                                                <div className="bg-success h-4 rounded-full" style={{ width: `${(stat.correct / stat.total) * 100}%`}}></div>
+                                                <div className="bg-success h-4 rounded-full" style={{ width: `${(stat.total > 0 ? stat.correct / stat.total : 0) * 100}%`}}></div>
                                             </div>
-                                            <p className="w-12 text-right font-bold">{stat.correct} <span className="font-normal text-muted-foreground">({Math.round((stat.correct / stat.total) * 100)}%)</span></p>
+                                            <p className="w-12 text-right font-bold">{stat.correct} <span className="font-normal text-muted-foreground">({Math.round(stat.total > 0 ? (stat.correct / stat.total) * 100 : 0)}%)</span></p>
                                         </div>
                                          <div className="flex items-center gap-2">
                                              <div className="flex items-center justify-center text-destructive w-6"><X/></div>
                                             <p className="w-24 text-muted-foreground">Incorrect</p>
                                             <div className="flex-1 bg-muted rounded-full h-4">
-                                                <div className="bg-destructive h-4 rounded-full" style={{ width: `${(stat.incorrect / stat.total) * 100}%`}}></div>
+                                                <div className="bg-destructive h-4 rounded-full" style={{ width: `${(stat.total > 0 ? stat.incorrect / stat.total : 0) * 100}%`}}></div>
                                             </div>
-                                             <p className="w-12 text-right font-bold">{stat.incorrect} <span className="font-normal text-muted-foreground">({Math.round((stat.incorrect / stat.total) * 100)}%)</span></p>
+                                             <p className="w-12 text-right font-bold">{stat.incorrect} <span className="font-normal text-muted-foreground">({Math.round(stat.total > 0 ? (stat.incorrect / stat.total) * 100 : 0)}%)</span></p>
                                         </div>
                                     </div>
                                 </div>
@@ -373,4 +437,3 @@ export default function TeacherResultsPage() {
         </div>
     );
 }
-
