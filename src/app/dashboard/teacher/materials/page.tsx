@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, FormEvent, useMemo } from 'react';
@@ -10,8 +11,11 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Users } from 'lucide-react';
+import { Trash2, Users, Wand2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { generateStudyGuide } from '@/ai/flows/study-guide-generator';
+
 
 interface StudyMaterial {
     id: string;
@@ -53,6 +57,13 @@ export default function TeacherMaterialsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
+    // AI Generator state
+    const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+    const [aiTopic, setAiTopic] = useState('');
+    const [aiSubject, setAiSubject] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+
+
     const materialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'studyMaterials'), where('teacherId', '==', user.uid));
@@ -77,6 +88,33 @@ export default function TeacherMaterialsPage() {
         setFile(null);
         setUploadProgress(0);
     };
+
+    const handleGenerateMaterial = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!aiTopic.trim() || !aiSubject.trim()) return;
+
+        setIsGenerating(true);
+        try {
+            const result = await generateStudyGuide({ topic: aiTopic, subject: aiSubject });
+            
+            // Populate the main form
+            setTitle(aiTopic);
+            setSubject(aiSubject);
+            setDescription(result.guide); // The generated HTML goes here
+            setType('Notes'); // Set type to Notes
+            
+            setIsAiDialogOpen(false); // Close dialog on success
+            setAiTopic('');
+            setAiSubject('');
+
+        } catch (error) {
+            console.error("AI material generation failed:", error);
+            alert("An error occurred while generating the material. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -122,7 +160,6 @@ export default function TeacherMaterialsPage() {
                         const materialsColRef = collection(firestore, 'studyMaterials');
                         addDocumentNonBlocking(materialsColRef, newMaterial);
 
-                        // Optimistic UI update
                         resetForm();
                         setIsSubmitting(false);
                     });
@@ -133,7 +170,6 @@ export default function TeacherMaterialsPage() {
              const materialsColRef = collection(firestore, 'studyMaterials');
              addDocumentNonBlocking(materialsColRef, newMaterial);
              
-             // Optimistic UI update
              resetForm();
              setIsSubmitting(false);
         }
@@ -199,11 +235,26 @@ export default function TeacherMaterialsPage() {
                         <div className="lg:col-span-1 space-y-8">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Upload New Material</CardTitle>
-                                    <CardDescription>Fill the form to add a new resource.</CardDescription>
+                                    <CardTitle>Add New Material</CardTitle>
+                                    <CardDescription>Fill the form to add a new resource, or generate one with AI.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <form onSubmit={handleSubmit} className="space-y-4">
+                                         <Button type="button" variant="outline" className="w-full" onClick={() => setIsAiDialogOpen(true)}>
+                                            <Wand2 className="mr-2 h-4 w-4" />
+                                            Generate Notes with AI
+                                        </Button>
+                                        <div className="relative">
+                                            <div className="absolute inset-0 flex items-center">
+                                                <span className="w-full border-t" />
+                                            </div>
+                                            <div className="relative flex justify-center text-xs uppercase">
+                                                <span className="bg-card px-2 text-muted-foreground">
+                                                Or fill manually
+                                                </span>
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-2">
                                             <Label htmlFor="material-title">Title</Label>
                                             <Input id="material-title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Chapter 5: Thermodynamics" required />
@@ -244,8 +295,8 @@ export default function TeacherMaterialsPage() {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="material-description">Description</Label>
-                                            <Textarea id="material-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief description of the material." />
+                                            <Label htmlFor="material-description">Description / Notes Content</Label>
+                                            <Textarea id="material-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief description, or paste generated notes here." rows={5} />
                                         </div>
 
                                         {showUrlInput && (
@@ -272,7 +323,7 @@ export default function TeacherMaterialsPage() {
                                         )}
 
                                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                            {isSubmitting ? (uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : 'Saving...') : 'Upload Material'}
+                                            {isSubmitting ? (uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : 'Saving...') : 'Save Material'}
                                         </Button>
                                     </form>
                                 </CardContent>
@@ -281,6 +332,46 @@ export default function TeacherMaterialsPage() {
                     </div>
                 </div>
             </main>
+            
+            <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>AI Notes Generator</DialogTitle>
+                        <DialogDescription>
+                            Provide a topic and subject, and the AI will generate study notes for you.
+                            The generated content will populate the main form.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleGenerateMaterial} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="ai-topic">Topic</Label>
+                            <Input
+                                id="ai-topic"
+                                placeholder="e.g., The Indian Rebellion of 1857"
+                                value={aiTopic}
+                                onChange={(e) => setAiTopic(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="ai-subject">Subject</Label>
+                            <Input
+                                id="ai-subject"
+                                placeholder="e.g., History"
+                                value={aiSubject}
+                                onChange={(e) => setAiSubject(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="secondary" onClick={() => setIsAiDialogOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isGenerating}>
+                                {isGenerating ? 'Generating...' : 'Generate & Use'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
