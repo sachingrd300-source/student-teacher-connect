@@ -1,3 +1,4 @@
+
 'use client';
 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
@@ -526,7 +527,7 @@ export default function ClassDetailsPage() {
         } catch (error: any) {
             console.error("Error creating student auth user:", error);
             if (error.code === 'auth/email-already-in-use') {
-                setStudentCreationError(`This email is already in use by another account.`);
+                setStudentCreationError(`This email is already in use. Please try another email or log in.`);
             } else if (error.code === 'auth/weak-password') {
                 setStudentCreationError('Password is too weak. It must be at least 6 characters long.');
             }
@@ -609,81 +610,84 @@ export default function ClassDetailsPage() {
                                     <CardTitle>Add Students</CardTitle>
                                     <CardDescription>Enroll an existing student or create a new account.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-6">
-                                     <div className="space-y-4">
-                                        <h3 className='text-base font-semibold'>Enroll an Existing Student</h3>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                placeholder="Enter Student Email"
-                                                value={searchStudentEmail}
-                                                onChange={(e) => setSearchStudentEmail(e.target.value)}
-                                            />
-                                            <Button onClick={handleSearchStudent} disabled={isSearching}>
-                                                <Search className="mr-2 h-4 w-4" /> {isSearching ? '...' : 'Find'}
-                                            </Button>
-                                        </div>
-                                        {searchMessage && <p className="text-sm text-muted-foreground">{searchMessage}</p>}
-                                        {foundStudent && (
-                                            <Card className='bg-muted/50'>
-                                                <CardContent className="p-4 space-y-3">
-                                                        <p>Found student: <span className="font-bold">{foundStudent.name}</span></p>
-                                                    <Button className="w-full" onClick={handleEnrollExistingStudent} disabled={isEnrolling}>
-                                                        {isEnrolling ? 'Enrolling...' : `Enroll ${foundStudent.name}`}
+                                <CardContent>
+                                    <Tabs defaultValue="enroll">
+                                        <TabsList className="grid w-full grid-cols-2">
+                                            <TabsTrigger value="enroll">Enroll Existing</TabsTrigger>
+                                            <TabsTrigger value="create">Create New</TabsTrigger>
+                                        </TabsList>
+                                        <TabsContent value="enroll" className="mt-4">
+                                            <div className="space-y-4">
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        placeholder="Enter Student Email"
+                                                        value={searchStudentEmail}
+                                                        onChange={(e) => setSearchStudentEmail(e.target.value)}
+                                                    />
+                                                    <Button onClick={handleSearchStudent} disabled={isSearching}>
+                                                        <Search className="mr-2 h-4 w-4" /> {isSearching ? '...' : 'Find'}
                                                     </Button>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                            {enrollMessage && <p className="text-sm font-semibold text-success">{enrollMessage}</p>}
-                                    </div>
-
-                                    <div className="my-6 border-t"></div>
-
-                                    <div className="space-y-4">
-                                        <h3 className='text-base font-semibold'>Create a New Student & Enroll</h3>
-                                        <form onSubmit={handleCreateStudentLogin} className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-name">Student Full Name</Label>
-                                                <Input id="student-name" placeholder="e.g., Jane Doe" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
-                                            </div>
-                                             <div className="space-y-2">
-                                                <Label htmlFor="student-email">Student Email</Label>
-                                                <Input id="student-email" type="email" placeholder="e.g., student@example.com" value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} required />
-                                            </div>
-                                             <div className="space-y-2">
-                                                <Label htmlFor="student-password">Set Password</Label>
-                                                <Input id="student-password" type="text" placeholder="Set a temporary password" value={studentPassword} onChange={(e) => setStudentPassword(e.target.value)} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student-mobile">Mobile Number</Label>
-                                                <Input id="student-mobile" placeholder="e.g., 9876543210" value={studentMobileNumber} onChange={(e) => setStudentMobileNumber(e.target.value)} />
-                                            </div>
-                                            <Button type="submit" disabled={isAddingStudent} className="w-full">
-                                                {isAddingStudent ? 'Creating Login...' : 'Create & Enroll'}
-                                            </Button>
-                                            {studentCreationError && (
-                                                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg">
-                                                    <p className="font-bold">Error</p>
-                                                    <p>{studentCreationError}</p>
                                                 </div>
-                                            )}
-                                            {newlyAddedStudent && (
-                                                <div className="mt-4 p-4 bg-success/10 border border-success/20 rounded-lg">
-                                                    <p className="font-bold text-success">Student Login Created & Enrolled!</p>
-                                                    <p className="text-sm">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
-                                                    <div className="mt-3 space-y-2 bg-success/20 p-3 rounded-md">
-                                                        <div>
-                                                            <p className="text-xs font-semibold">Email:</p> 
-                                                            <p className="font-mono text-base font-bold">{newlyAddedStudent.email}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-semibold">Password:</p> 
-                                                            <p className="font-mono text-base font-bold">{newlyAddedStudent.pass}</p>
+                                                {searchMessage && <p className="text-sm text-muted-foreground">{searchMessage}</p>}
+                                                {foundStudent && (
+                                                    <Card className='bg-muted/50'>
+                                                        <CardContent className="p-4 space-y-3">
+                                                                <p>Found student: <span className="font-bold">{foundStudent.name}</span></p>
+                                                            <Button className="w-full" onClick={handleEnrollExistingStudent} disabled={isEnrolling}>
+                                                                {isEnrolling ? 'Enrolling...' : `Enroll ${foundStudent.name}`}
+                                                            </Button>
+                                                        </CardContent>
+                                                    </Card>
+                                                )}
+                                                {enrollMessage && <p className="text-sm font-semibold text-success">{enrollMessage}</p>}
+                                            </div>
+                                        </TabsContent>
+                                        <TabsContent value="create" className="mt-4">
+                                            <form onSubmit={handleCreateStudentLogin} className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="student-name">Student Full Name</Label>
+                                                    <Input id="student-name" placeholder="e.g., Jane Doe" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="student-email">Student Email</Label>
+                                                    <Input id="student-email" type="email" placeholder="e.g., student@example.com" value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} required />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="student-password">Set Password</Label>
+                                                    <Input id="student-password" type="text" placeholder="Set a temporary password" value={studentPassword} onChange={(e) => setStudentPassword(e.target.value)} required />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="student-mobile">Mobile Number</Label>
+                                                    <Input id="student-mobile" placeholder="e.g., 9876543210" value={studentMobileNumber} onChange={(e) => setStudentMobileNumber(e.target.value)} />
+                                                </div>
+                                                <Button type="submit" disabled={isAddingStudent} className="w-full">
+                                                    {isAddingStudent ? 'Creating Login...' : 'Create & Enroll'}
+                                                </Button>
+                                                {studentCreationError && (
+                                                    <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg">
+                                                        <p className="font-bold">Error</p>
+                                                        <p>{studentCreationError}</p>
+                                                    </div>
+                                                )}
+                                                {newlyAddedStudent && (
+                                                    <div className="mt-4 p-4 bg-success/10 border border-success/20 rounded-lg">
+                                                        <p className="font-bold text-success">Student Login Created & Enrolled!</p>
+                                                        <p className="text-sm">Please share these credentials with <span className="font-semibold">{newlyAddedStudent.name}</span>.</p>
+                                                        <div className="mt-3 space-y-2 bg-success/20 p-3 rounded-md">
+                                                            <div>
+                                                                <p className="text-xs font-semibold">Email:</p> 
+                                                                <p className="font-mono text-base font-bold">{newlyAddedStudent.email}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-semibold">Password:</p> 
+                                                                <p className="font-mono text-base font-bold">{newlyAddedStudent.pass}</p>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </form>
-                                    </div>
+                                                )}
+                                            </form>
+                                        </TabsContent>
+                                    </Tabs>
                                 </CardContent>
                             </Card>
                         </div>
@@ -693,5 +697,7 @@ export default function ClassDetailsPage() {
         </div>
     );
 }
+
+    
 
     

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -20,15 +21,13 @@ import {
   signInWithPopup,
   getAdditionalUserInfo,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const [isTeacher, setIsTeacher] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -62,14 +61,18 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const additionalInfo = getAdditionalUserInfo(result);
+      const user = result.user;
       
-      if (additionalInfo?.isNewUser && result.user.email) {
-        const userRef = doc(firestore, `users/${result.user.uid}`);
+      const userRef = doc(firestore, `users/${user.uid}`);
+      const userSnap = await getDoc(userRef);
+
+      // If it's a new user, create their profile.
+      // Default new Google signups to Tutor role, pending verification.
+      if (!userSnap.exists()) {
         const userProfileData = {
-          id: result.user.uid,
-          name: result.user.displayName || result.user.email.split('@')[0],
-          email: result.user.email,
+          id: user.uid,
+          name: user.displayName || user.email?.split('@')[0],
+          email: user.email,
           role: 'tutor', 
           createdAt: serverTimestamp(),
           status: 'pending_verification',
@@ -94,7 +97,7 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-serif">Login</CardTitle>
             <CardDescription>
-              Select your role and enter your credentials to access your account.
+              Enter your credentials to access your account.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -102,20 +105,6 @@ export default function LoginPage() {
               <p className="text-sm font-medium text-destructive">{error}</p>
             )}
             <form onSubmit={handleLogin} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label>I am a...</Label>
-                <RadioGroup defaultValue="teacher" onValueChange={(value) => setIsTeacher(value === 'teacher')} className="flex gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="teacher" id="r1" />
-                    <Label htmlFor="r1">Teacher</Label>
-                  </div>
-                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="student" id="r2" />
-                    <Label htmlFor="r2">Student</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -141,31 +130,26 @@ export default function LoginPage() {
                 Login
               </Button>
             </form>
-            {isTeacher && (
-              <>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or continue with
-                    </span>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
-                  Sign in with Google
-                </Button>
-              </>
-            )}
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+              Sign in with Google
+            </Button>
+            
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="underline">
                 Sign up
               </Link>
-            </div>
-            <div className="mt-2 text-center text-xs text-muted-foreground px-4">
-              Students: If your teacher already created an account for you, please use the login form above.
             </div>
           </CardContent>
         </Card>
@@ -173,4 +157,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
     

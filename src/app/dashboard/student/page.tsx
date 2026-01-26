@@ -32,6 +32,7 @@ interface ClassData {
     title: string;
     subject: string;
     batchTime: string;
+    classCode: string;
 }
 
 interface TutorProfile {
@@ -179,7 +180,7 @@ export default function StudentDashboard() {
     // 4. Tutors (for "Find a Teacher")
     const tutorsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'users'), where('role', '==', 'tutor'));
+        return query(collection(firestore, 'publicTutors'));
     }, [firestore]);
     const { data: tutors, isLoading: tutorsLoading } = useCollection<TutorProfile>(tutorsQuery);
 
@@ -246,7 +247,7 @@ export default function StudentDashboard() {
         const enrollSnapshot = await getDocs(enrollQuery);
 
         if (!enrollSnapshot.empty) {
-            setJoinMessage({ type: 'error', text: 'You are already enrolled in this class.' });
+            setJoinMessage({ type: 'error', text: 'You have already sent a request or are enrolled in this class.' });
             setIsJoining(false);
             return;
         }
@@ -261,14 +262,14 @@ export default function StudentDashboard() {
             classSubject: classData.subject,
             teacherName: classData.teacherName,
             batchTime: classData.batchTime,
-            status: 'approved',
+            status: 'pending',
             paymentStatus: 'unpaid',
             createdAt: serverTimestamp(),
         };
         
         addDocumentNonBlocking(enrollmentsRef, enrollmentData);
         
-        setJoinMessage({ type: 'success', text: `Successfully joined ${classData.title}!` });
+        setJoinMessage({ type: 'success', text: `Enrollment request sent for ${classData.title}!` });
         setClassCode('');
         setIsJoining(false);
     };
@@ -329,7 +330,7 @@ export default function StudentDashboard() {
                     <Card className="mb-8">
                         <CardHeader>
                             <CardTitle>Join a New Class</CardTitle>
-                            <CardDescription>Enter the class code provided by your teacher to enroll in their class.</CardDescription>
+                            <CardDescription>Enter the class code provided by your teacher to request enrollment.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col sm:flex-row gap-2 max-w-md">
@@ -341,7 +342,7 @@ export default function StudentDashboard() {
                                 />
                                 <Button onClick={handleJoinClass} disabled={isJoining || !classCode.trim()} className="w-full sm:w-auto">
                                     <PlusCircle className="mr-2 h-4 w-4" /> 
-                                    {isJoining ? 'Joining...' : 'Join Class'}
+                                    {isJoining ? 'Sending...' : 'Send Request'}
                                 </Button>
                             </div>
                             {joinMessage && (
@@ -356,7 +357,7 @@ export default function StudentDashboard() {
                     <Card className="mb-8">
                         <CardHeader>
                             <CardTitle>My Classes</CardTitle>
-                            <CardDescription>Here are the classes you are enrolled in.</CardDescription>
+                            <CardDescription>Here are the classes you are enrolled in or have requested to join.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {enrollmentsLoading && <p>Loading your classes...</p>}
@@ -438,6 +439,8 @@ export default function StudentDashboard() {
         </div>
     );
 }
+
+    
 
     
 
