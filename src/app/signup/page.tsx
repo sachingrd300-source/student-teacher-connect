@@ -30,12 +30,12 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // Student-specific fields
-  const [studentFatherName, setStudentFatherName] = useState('');
-  const [studentMobileNumber, setStudentMobileNumber] = useState('');
-  const [studentAddress, setStudentAddress] = useState('');
-  const [studentDateOfBirth, setStudentDateOfBirth] = useState('');
-  const [studentClassLevel, setStudentClassLevel] = useState('');
+  // Student-specific fields - Now handled in profile page
+  // const [studentFatherName, setStudentFatherName] = useState('');
+  // const [studentMobileNumber, setStudentMobileNumber] = useState('');
+  // const [studentAddress, setStudentAddress] = useState('');
+  // const [studentDateOfBirth, setStudentDateOfBirth] = useState('');
+  // const [studentClassLevel, setStudentClassLevel] = useState('');
 
   // UI state
   const [error, setError] = useState<string | null>(null);
@@ -66,17 +66,12 @@ export default function SignupPage() {
           createdAt: serverTimestamp(),
           status: 'pending_verification',
         };
-      } else { // Student signup
+      } else { // Simplified Student signup
         dataToSet = {
             id: user.uid,
             name: name.trim(),
-            fatherName: studentFatherName.trim(),
-            mobileNumber: studentMobileNumber.trim(),
-            address: studentAddress.trim(),
             email: email.trim(), 
             role: 'student',
-            dateOfBirth: studentDateOfBirth,
-            classLevel: studentClassLevel,
             createdAt: serverTimestamp(),
             status: 'approved', // Students are auto-approved on self-signup
         };
@@ -153,35 +148,6 @@ export default function SignupPage() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-
-                 {role === 'student' && (
-                    <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="fatherName">Father's Name</Label>
-                            <Input id="fatherName" value={studentFatherName} onChange={(e) => setStudentFatherName(e.target.value)} required placeholder="e.g., Robert Doe" />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="mobileNumber">Mobile Number</Label>
-                            <Input id="mobileNumber" value={studentMobileNumber} onChange={(e) => setStudentMobileNumber(e.target.value)} required placeholder="e.g., 9876543210" />
-                        </div>
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="address">Address</Label>
-                        <Input id="address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} required placeholder="e.g., 123 Main St, Ranchi" />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                            <Input id="dateOfBirth" type="date" value={studentDateOfBirth} onChange={(e) => setStudentDateOfBirth(e.target.value)} required />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="classLevel">Class Level</Label>
-                            <Input id="classLevel" value={studentClassLevel} onChange={(e) => setStudentClassLevel(e.target.value)} required placeholder="e.g., Class 10" />
-                        </div>
-                    </div>
-                    </>
-                )}
                 
                 <div className="grid gap-2">
                   <Label htmlFor="password">Password</Label>
