@@ -1,7 +1,106 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
+    
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function getUserData(userId) {
+        return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+    
+    function isRole(role) {
+        return isSignedIn() && getUserData(request.auth.uid).role == role;
+    }
+
+    function isAdmin() {
+      return isRole('admin');
+    }
+
+    function isTutor() {
+      return isRole('tutor');
+    }
+
+    function isStudent() {
+      return isRole('student');
+    }
+    
+    // --- Collection Rules ---
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if false;
+    }
+
+    // --- Classes Collection ---
+    match /classes/{classId} {
+      // Any signed-in user can view class details or list classes.
+      // This is needed for students to browse classes.
+      // Client queries MUST be constrained (e.g., by teacherId) for security.
+      allow get, list: if isSignedIn();
+
+      // Only a tutor can create a class for themselves.
+      allow create: if isTutor() && request.auth.uid == request.resource.data.teacherId;
+
+      // Only the tutor who owns the class can update or delete it.
+      allow update, delete: if isTutor() && request.auth.uid == resource.data.teacherId;
+    }
+
+    // --- Enrollments Collection ---
+    match /enrollments/{enrollmentId} {
+      // A student can create their own enrollment request.
+      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
+
+      // The student, the teacher, or an admin can view an enrollment document.
+      allow get: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId));
+      
+      // Teachers can update enrollments for their classes (e.g., approve/deny).
+      allow update: if isTutor() && request.auth.uid == resource.data.teacherId;
+
+      // A teacher or student can delete/cancel an enrollment.
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId);
+      
+      // Listing must be constrained by studentId or teacherId. Admins can list without constraints.
+      allow list: if isAdmin() || (isSignedIn() && (request.query.get('teacherId') == request.auth.uid || request.query.get('studentId') == request.auth.uid));
+    }
+
+    // --- Study Materials Collection ---
+    match /studyMaterials/{materialId} {
+        allow read: if isSignedIn();
+        allow write: if isTutor() && request.auth.uid == request.resource.data.teacherId;
+    }
+    
+    // --- Attendance Collection ---
+    match /attendance/{attendanceId} {
+        allow read: if (isSignedIn() && (request.auth.uid == resource.data.teacherId || getUserData(request.auth.uid).enrolledClassIds.hasAny([resource.data.classId])));
+        allow write: if isTutor() && request.auth.uid == request.resource.data.teacherId;
+    }
+    
+    // --- Tests Collection ---
+    match /tests/{testId} {
+        allow read: if isSignedIn();
+        allow write: if isTutor() && request.auth.uid == resource.data.teacherId;
+    }
+    
+    // --- Test Results Collection ---
+    match /testResults/{resultId} {
+        allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
+        allow read: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId));
+    }
+    
+    // This rule is a leftover from a previous app version and is not used.
+    // It can be safely removed if the connection feature is not being used.
+    match /connections/{connectionId} {
       allow read, write: if false;
     }
   }
