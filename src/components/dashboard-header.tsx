@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck, Megaphone, Wand2, Languages } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck, Megaphone, Wand2, Languages, BookMarked } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +74,7 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
        { href: '/dashboard/student/announcements', label: 'Announcements', icon: <Megaphone className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/ai-solver', label: 'AI Question Solver', icon: <Wand2 className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/english-tutor', label: 'AI English Tutor', icon: <Languages className="mr-2 h-4 w-4" /> },
+       { href: '/dashboard/student/study-guide', label: 'AI Study Guide', icon: <BookMarked className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/materials', label: 'Study Materials', icon: <BookOpen className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/attendance', label: 'Attendance', icon: <CalendarCheck className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/tests', label: 'My Tests', icon: <ClipboardList className="mr-2 h-4 w-4" /> },
