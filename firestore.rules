@@ -52,8 +52,10 @@ service cloud.firestore {
 
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      // Allow students to list classes to find one by class code
-      allow get, list: if isUser();
+      // Allow any signed-in user to get or list classes.
+      // Client-side code is responsible for filtering to the correct classes.
+      // This prevents a race condition on signup where the user document may not exist yet.
+      allow get, list: if isSignedIn();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
