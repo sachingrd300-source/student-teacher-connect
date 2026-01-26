@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -66,16 +65,15 @@ export default function LoginPage() {
       const userRef = doc(firestore, `users/${user.uid}`);
       const userSnap = await getDoc(userRef);
 
-      // If it's a new user, create their profile.
-      // Default new Google signups to Tutor role, pending verification.
+      // If it's a new user, create their profile as an approved student.
       if (!userSnap.exists()) {
         const userProfileData = {
           id: user.uid,
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
-          role: 'tutor', 
+          role: 'student', 
           createdAt: serverTimestamp(),
-          status: 'pending_verification',
+          status: 'approved',
         };
         await setDoc(userRef, userProfileData);
       }
@@ -157,5 +155,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

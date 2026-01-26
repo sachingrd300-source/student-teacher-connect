@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Button } from "@/components/ui/button";
@@ -174,7 +173,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-stretch gap-8 py-12 sm:grid-cols-2">
+            <div className="mx-auto grid max-w-5xl items-stretch gap-8 py-12 sm:grid-cols-2 lg:grid-cols-2">
               <Card className="flex flex-col items-center text-center p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl">
                 <div className="mb-4 rounded-full bg-primary/10 p-4">
                   <Zap className="h-10 w-10 text-primary" />
