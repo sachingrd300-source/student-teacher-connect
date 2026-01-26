@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -90,17 +91,6 @@ service cloud.firestore {
       allow create, update: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       allow get, list: if isSignedIn();
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
-    }
-
-    match /announcements/{announcementId} {
-      allow create: if isTutor() &&
-                      request.resource.data.teacherId == request.auth.uid &&
-                      get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.teacherId == request.auth.uid;
-
-      allow read: if isSignedIn();
-
-      allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
-      allow update: if false;
     }
   }
 }

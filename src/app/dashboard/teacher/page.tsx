@@ -9,15 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Megaphone, Users, UserPlus, Wand2, Send, Check } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, MoreVertical, BookUser, Clock, Users, UserPlus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
-import { generateAnnouncement } from '@/ai/flows/announcement-generator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 
@@ -41,15 +38,7 @@ interface Enrollment {
     createdAt: Timestamp;
 }
 
-interface Announcement {
-    id: string;
-    content: string;
-    classTitle: string;
-    classId: string;
-    createdAt: Timestamp;
-}
-
-type ActivityItem = (Enrollment & { type: 'enrollment' }) | (Announcement & { type: 'announcement' });
+type ActivityItem = (Enrollment & { type: 'enrollment' });
 
 
 const StatCard = ({ title, value, icon, isLoading }: { title: string, value: string | number, icon: React.ReactNode, isLoading?: boolean }) => (
@@ -81,17 +70,6 @@ export default function TeacherDashboard() {
     const [isProcessingClass, setIsProcessingClass] = useState(false);
     const [isCreateClassOpen, setIsCreateClassOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
-
-    // Announcement state
-    const [announcementContent, setAnnouncementContent] = useState('');
-    const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
-    const [selectedClassIds, setSelectedClassIds] = useState<Record<string, boolean>>({});
-    
-    // AI Dialog state
-    const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
-    const [aiKeyPoints, setAiKeyPoints] = useState('');
-    const [aiTone, setAiTone] = useState<'Formal' | 'Casual'>('Casual');
-    const [isGenerating, setIsGenerating] = useState(false);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -131,13 +109,6 @@ export default function TeacherDashboard() {
     }, [firestore, user]);
     const { data: pendingEnrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
-    const announcementsQuery = useMemoFirebase(() => {
-        if(!firestore || !user) return null;
-        return query(collection(firestore, 'announcements'), where('teacherId', '==', user.uid), orderBy('createdAt', 'desc'), limit(5));
-    }, [firestore, user]);
-    const { data: recentAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
-
-
     // --- Stat & Combined Feed Calculations ---
     const approvedStudentsCount = useMemo(() => {
         // This would need another query to be accurate without listing all enrollments.
@@ -147,13 +118,11 @@ export default function TeacherDashboard() {
 
     const activityFeed: ActivityItem[] = useMemo(() => {
         const enrollments = (pendingEnrollments || []).map(e => ({...e, type: 'enrollment' as const}));
-        const announcements = (recentAnnouncements || []).map(a => ({...a, type: 'announcement' as const}));
         
-        const combined = [...enrollments, ...announcements];
-        combined.sort((a,b) => b.createdAt.seconds - a.createdAt.seconds);
+        enrollments.sort((a,b) => b.createdAt.seconds - a.createdAt.seconds);
         
-        return combined;
-    }, [pendingEnrollments, recentAnnouncements]);
+        return enrollments;
+    }, [pendingEnrollments]);
 
 
     // --- Form Handlers ---
@@ -237,55 +206,6 @@ export default function TeacherDashboard() {
         }
     };
     
-    const handleGenerateAnnouncement = async () => {
-        if (!aiKeyPoints.trim()) return;
-        setIsGenerating(true);
-        try {
-            const result = await generateAnnouncement({ keyPoints: aiKeyPoints, tone: aiTone });
-            setAnnouncementContent(result.content);
-            setIsAiDialogOpen(false);
-        } catch (error) {
-            console.error("AI generation failed:", error);
-            alert("Failed to generate announcement.");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
-    const handlePostAnnouncement = async () => {
-        if (!user || !userProfile || !firestore || !announcementContent.trim()) return;
-
-        const targetClassIds = Object.keys(selectedClassIds).filter(id => selectedClassIds[id]);
-        if (targetClassIds.length === 0) {
-            alert("Please select at least one class to post the announcement to.");
-            return;
-        }
-
-        setIsPostingAnnouncement(true);
-
-        const batch = targetClassIds.map(classId => {
-            const targetClass = classes?.find(c => c.id === classId);
-            if (!targetClass) return null;
-
-            const newAnnouncement = {
-                classId: classId,
-                teacherId: user.uid,
-                teacherName: userProfile.name,
-                classTitle: targetClass.title,
-                content: announcementContent,
-                createdAt: serverTimestamp(),
-            };
-            return addDocumentNonBlocking(collection(firestore, 'announcements'), newAnnouncement);
-        }).filter(Boolean);
-
-        await Promise.all(batch);
-
-        setAnnouncementContent('');
-        setSelectedClassIds({});
-        setIsPostingAnnouncement(false);
-        alert(`Announcement posted to ${targetClassIds.length} class(es).`);
-    };
-
     if (isAuthLoading || isProfileLoading || !userProfile || userProfile.status !== 'approved') {
         return (
              <div className="flex flex-col min-h-screen">
@@ -307,7 +227,7 @@ export default function TeacherDashboard() {
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
                          <StatCard title="Total Classes" value={classes?.length ?? 0} icon={<BookUser className="h-4 w-4" />} isLoading={classesLoading} />
                          <StatCard title="Pending Requests" value={pendingEnrollments?.length ?? 0} icon={<Clock className="h-4 w-4" />} isLoading={enrollmentsLoading} />
-                         <StatCard title="Recent Announcements" value={recentAnnouncements?.length ?? 0} icon={<Megaphone className="h-4 w-4" />} isLoading={announcementsLoading} />
+                         <StatCard title="Total Students" value={approvedStudentsCount} icon={<Users className="h-4 w-4" />} isLoading={enrollmentsLoading} />
                     </div>
                     
                     <div className="grid gap-8 lg:grid-cols-3 animate-fade-in-down">
@@ -373,68 +293,19 @@ export default function TeacherDashboard() {
                             </Card>
                         </div>
                         <div className="lg:col-span-1 space-y-8">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Quick Announcement</CardTitle>
-                                    <CardDescription>Post a message to multiple classes at once.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                     <Textarea 
-                                        placeholder="Type your announcement..."
-                                        value={announcementContent}
-                                        onChange={(e) => setAnnouncementContent(e.target.value)}
-                                        rows={4}
-                                     />
-                                     <Button variant="outline" className="w-full" onClick={() => setIsAiDialogOpen(true)}>
-                                        <Wand2 className="h-4 w-4 mr-2" />
-                                        Generate with AI
-                                     </Button>
-                                     <div className="flex gap-2">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" className="w-full">
-                                                    Select Classes ({Object.values(selectedClassIds).filter(Boolean).length})
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-56">
-                                                <DropdownMenuLabel>Your Classes</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                {classes?.map(c => (
-                                                    <DropdownMenuCheckboxItem
-                                                        key={c.id}
-                                                        checked={selectedClassIds[c.id] || false}
-                                                        onCheckedChange={(checked) => {
-                                                            setSelectedClassIds(prev => ({...prev, [c.id]: !!checked}))
-                                                        }}
-                                                    >
-                                                        {c.title}
-                                                    </DropdownMenuCheckboxItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        <Button 
-                                            className="flex-shrink-0"
-                                            onClick={handlePostAnnouncement}
-                                            disabled={isPostingAnnouncement || announcementContent.trim().length === 0}
-                                        >
-                                            <Send className="h-4 w-4" />
-                                        </Button>
-                                     </div>
-                                </CardContent>
-                            </Card>
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Recent Activity</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                     {(enrollmentsLoading || announcementsLoading) ? <p>Loading activity...</p> : activityFeed.length > 0 ? (
+                                     {(enrollmentsLoading) ? <p>Loading activity...</p> : activityFeed.length > 0 ? (
                                         <div className="space-y-4">
                                             {activityFeed.map(item => (
                                                 <div key={`${item.type}-${item.id}`} className="flex items-start gap-3 text-sm">
                                                     <div className={cn("mt-1 h-5 w-5 flex-shrink-0 flex items-center justify-center rounded-full",
-                                                        item.type === 'enrollment' ? "bg-blue-100 text-blue-600" : "bg-orange-100 text-orange-600"
+                                                        item.type === 'enrollment' ? "bg-blue-100 text-blue-600" : ""
                                                     )}>
-                                                        {item.type === 'enrollment' ? <UserPlus className="h-3 w-3"/> : <Megaphone className="h-3 w-3"/>}
+                                                        {item.type === 'enrollment' ? <UserPlus className="h-3 w-3"/> : null}
                                                     </div>
                                                     <div className="flex-1">
                                                         {item.type === 'enrollment' ? (
@@ -442,9 +313,7 @@ export default function TeacherDashboard() {
                                                                 <span className="font-semibold">{item.studentName}</span> requested to join <span className="font-semibold text-primary">{item.classTitle}</span>.
                                                                 <Link href={`/dashboard/teacher/class/${item.classId}`} className="ml-2 text-xs text-primary hover:underline">View</Link>
                                                             </p>
-                                                        ) : (
-                                                            <p>You posted in <span className="font-semibold text-primary">{item.classTitle}</span>: <span className="text-muted-foreground line-clamp-1">"{item.content}"</span></p>
-                                                        )}
+                                                        ) : null}
                                                          <p className="text-xs text-muted-foreground">{new Date(item.createdAt.seconds * 1000).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
@@ -491,35 +360,6 @@ export default function TeacherDashboard() {
                                     </Button>
                                 </DialogFooter>
                             </form>
-                        </DialogContent>
-                    </Dialog>
-
-                     {/* AI Announcement Dialog */}
-                     <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>AI Announcement Assistant</DialogTitle>
-                                <DialogDescription>Provide key points and let AI write the full announcement.</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="ai-key-points">Key Points</Label>
-                                    <Textarea id="ai-key-points" placeholder="e.g., Test on Friday, Chapter 5. Bring calculator." value={aiKeyPoints} onChange={(e) => setAiKeyPoints(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Tone</Label>
-                                    <RadioGroup value={aiTone} onValueChange={(v: 'Formal' | 'Casual') => setAiTone(v)} className="flex gap-4">
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Casual" id="t-casual" /><Label htmlFor="t-casual">Casual</Label></div>
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Formal" id="t-formal" /><Label htmlFor="t-formal">Formal</Label></div>
-                                    </RadioGroup>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button type="button" variant="secondary" onClick={() => setIsAiDialogOpen(false)}>Cancel</Button>
-                                <Button onClick={handleGenerateAnnouncement} disabled={isGenerating}>
-                                    {isGenerating ? 'Generating...' : 'Generate & Use'}
-                                </Button>
-                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>

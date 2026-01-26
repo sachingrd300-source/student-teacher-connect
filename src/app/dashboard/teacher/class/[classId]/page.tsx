@@ -9,17 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Trash2, BarChartHorizontal, Megaphone, Send, Wand2, Check, X } from 'lucide-react';
+import { Search, Trash2, BarChartHorizontal, Check, X } from 'lucide-react';
 import { initializeApp, getApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import Link from 'next/link';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { generateAnnouncement } from '@/ai/flows/announcement-generator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 
@@ -48,176 +44,6 @@ interface StudentProfile {
     email: string;
     mobileNumber: string;
 }
-
-interface Announcement {
-    id: string;
-    content: string;
-    createdAt: Timestamp;
-}
-
-function AnnouncementsForClass({ classId, teacherId, teacherName, classTitle }: { classId: string; teacherId: string; teacherName: string; classTitle: string }) {
-    const firestore = useFirestore();
-    const [newAnnouncement, setNewAnnouncement] = useState('');
-    const [isPosting, setIsPosting] = useState(false);
-
-    // State for AI generator
-    const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
-    const [aiKeyPoints, setAiKeyPoints] = useState('');
-    const [aiTone, setAiTone] = useState<'Formal' | 'Casual'>('Casual');
-    const [isGenerating, setIsGenerating] = useState(false);
-
-
-    const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'announcements'), where('classId', '==', classId), orderBy('createdAt', 'desc'));
-    }, [firestore, classId]);
-
-    const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
-
-    const handlePostAnnouncement = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!newAnnouncement.trim() || !firestore) return;
-        setIsPosting(true);
-
-        const announcementsColRef = collection(firestore, 'announcements');
-        await addDocumentNonBlocking(announcementsColRef, {
-            classId,
-            teacherId,
-            teacherName,
-            classTitle,
-            content: newAnnouncement,
-            createdAt: serverTimestamp(),
-        });
-
-        setNewAnnouncement('');
-        setIsPosting(false);
-    };
-
-    const handleDeleteAnnouncement = (announcementId: string) => {
-        if (!firestore) return;
-        if (window.confirm("Are you sure you want to delete this announcement?")) {
-            deleteDocumentNonBlocking(doc(firestore, 'announcements', announcementId));
-        }
-    };
-
-    const handleGenerateAnnouncement = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!aiKeyPoints.trim()) return;
-        setIsGenerating(true);
-        try {
-            const result = await generateAnnouncement({ keyPoints: aiKeyPoints, tone: aiTone });
-            setNewAnnouncement(result.content);
-            setIsAiDialogOpen(false);
-            setAiKeyPoints('');
-        } catch (error) {
-            console.error("Failed to generate announcement:", error);
-            alert("An error occurred while generating the announcement.");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Class Announcements</CardTitle>
-                <CardDescription>Post updates and messages for your students here.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handlePostAnnouncement} className="space-y-2 mb-6">
-                     <Label htmlFor="announcement-text">Your message</Label>
-                    <div className="flex gap-2">
-                        <Textarea
-                            id="announcement-text"
-                            placeholder="Type your announcement here, or generate one with AI."
-                            value={newAnnouncement}
-                            onChange={(e) => setNewAnnouncement(e.target.value)}
-                            required
-                            rows={3}
-                        />
-                        <Button type="submit" disabled={isPosting}>
-                            <Send className="h-4 w-4" />
-                        </Button>
-                    </div>
-                     <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setIsAiDialogOpen(true)}>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        Generate with AI
-                    </Button>
-                </form>
-                <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
-                    {isLoading && <p>Loading announcements...</p>}
-                    {announcements && announcements.length > 0 ? (
-                        announcements.map(announcement => (
-                            <div key={announcement.id} className="text-sm p-3 rounded-lg bg-muted relative group">
-                                <p>{announcement.content}</p>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    {new Date(announcement.createdAt?.seconds * 1000).toLocaleString()}
-                                </p>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute top-1 right-1 h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => handleDeleteAnnouncement(announcement.id)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))
-                    ) : (
-                        !isLoading && <p className="text-center text-muted-foreground py-4">No announcements yet.</p>
-                    )}
-                </div>
-            </CardContent>
-
-             <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>AI Announcement Assistant</DialogTitle>
-                        <DialogDescription>
-                            Provide a few key points and let the AI write the full announcement for you.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleGenerateAnnouncement} className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="ai-key-points">Key Points</Label>
-                            <Textarea
-                                id="ai-key-points"
-                                placeholder="e.g., Test on Friday, Chapter 5. Bring calculator."
-                                value={aiKeyPoints}
-                                onChange={(e) => setAiKeyPoints(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Tone</Label>
-                            <RadioGroup
-                                value={aiTone}
-                                onValueChange={(value: 'Formal' | 'Casual') => setAiTone(value)}
-                                className="flex gap-4"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Casual" id="tone-casual" />
-                                    <Label htmlFor="tone-casual">Casual</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Formal" id="tone-formal" />
-                                    <Label htmlFor="tone-formal">Formal</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="secondary" onClick={() => setIsAiDialogOpen(false)}>Cancel</Button>
-                            <Button type="submit" disabled={isGenerating}>
-                                {isGenerating ? 'Generating...' : 'Generate'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        </Card>
-    );
-}
-
 
 function StudentListForClass({ classId, teacherId }: { classId: string, teacherId: string }) {
     const firestore = useFirestore();
@@ -602,7 +428,6 @@ export default function ClassDetailsPage() {
                     <div className="grid gap-8 lg:grid-cols-3">
                         <div className="lg:col-span-2 space-y-8">
                             {user && <StudentListForClass classId={classId} teacherId={user.uid} />}
-                            {user && userProfile && classData && <AnnouncementsForClass classId={classId} teacherId={user.uid} teacherName={userProfile.name} classTitle={classData.title} />}
                         </div>
                         <div className="lg:col-span-1 space-y-8">
                             <Card>

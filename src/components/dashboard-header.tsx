@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck, Megaphone, Wand2, Languages, BookMarked, ClipboardEdit } from 'lucide-react';
+import { School, UserCircle, LogOut, LayoutDashboard, BookOpen, FlaskConical, CalendarCheck, ClipboardList, Menu, X, ClipboardCheck as ResultsIcon, BarChart3, ChevronDown, ShieldCheck, Wand2, Languages, BookMarked, ClipboardEdit } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -72,7 +73,6 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
   const studentLinks: NavLink[] = [
        ...commonLinks,
        { href: '/dashboard/student/profile', label: 'My Profile', icon: <UserCircle className="mr-2 h-4 w-4" /> },
-       { href: '/dashboard/student/announcements', label: 'Announcements', icon: <Megaphone className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/ai-solver', label: 'AI Question Solver', icon: <Wand2 className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/english-tutor', label: 'AI English Tutor', icon: <Languages className="mr-2 h-4 w-4" /> },
        { href: '/dashboard/student/study-guide', label: 'AI Study Guide', icon: <BookMarked className="mr-2 h-4 w-4" /> },
