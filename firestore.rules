@@ -44,6 +44,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /publicTutors/{tutorId} {
+      allow get, list: if true;
+      // Allow writes only by the admin (for approval) or the tutor themselves (for profile updates)
+      allow write, delete: if isAdmin() || isOwner(tutorId);
+    }
+
     match /classes/{classId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       // Allow students to list classes to find one by class code

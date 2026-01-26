@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -16,6 +16,7 @@ interface UserProfile {
     name: string;
     email: string;
     role: 'tutor' | 'student';
+    status?: 'pending_verification' | 'approved' | 'denied';
     mobileNumber?: string;
     coachingName?: string;
     address?: string;
@@ -81,7 +82,7 @@ export default function TeacherProfilePage() {
 
     const handleSave = (e: FormEvent) => {
         e.preventDefault();
-        if (!userProfileRef) return;
+        if (!userProfileRef || !user || !firestore) return;
         
         const subjectsArray = typeof formData.subjects === 'string'
             ? formData.subjects.split(',').map(s => s.trim()).filter(Boolean)
@@ -89,7 +90,21 @@ export default function TeacherProfilePage() {
             
         const dataToSave = { ...formData, subjects: subjectsArray };
         
+        // 1. Update the private user profile
         updateDocumentNonBlocking(userProfileRef, dataToSave);
+
+        // 2. If user is an approved tutor, update the public profile too
+        if (userProfile?.role === 'tutor' && userProfile?.status === 'approved') {
+            const publicData = {
+                name: dataToSave.name || '',
+                subjects: dataToSave.subjects || [],
+                address: dataToSave.address || '',
+                coachingName: dataToSave.coachingName || '',
+            };
+            const publicTutorRef = doc(firestore, 'publicTutors', user.uid);
+            setDocumentNonBlocking(publicTutorRef, publicData, { merge: true });
+        }
+        
         setIsEditing(false);
     };
 

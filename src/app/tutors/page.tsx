@@ -2,7 +2,7 @@
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { useState, useMemo } from 'react';
 import { MainHeader } from '@/components/main-header';
@@ -18,7 +18,6 @@ interface TutorProfile {
     subjects?: string[];
     address?: string;
     coachingName?: string;
-    status: 'pending_verification' | 'approved' | 'denied';
 }
 
 export default function TutorsPage() {
@@ -27,8 +26,8 @@ export default function TutorsPage() {
 
     const tutorsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Only show approved tutors on the public page
-        return query(collection(firestore, 'users'), where('role', '==', 'tutor'), where('status', '==', 'approved'));
+        // Query the new, public collection
+        return query(collection(firestore, 'publicTutors'));
     }, [firestore]);
 
     const { data: tutors, isLoading: tutorsLoading } = useCollection<TutorProfile>(tutorsQuery);
