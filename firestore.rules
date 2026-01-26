@@ -11,33 +11,30 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isUser() {
-        return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
     function userRole() {
+        // Note: This function should only be used in rules where the user's existence is already confirmed (e.g., write rules).
         return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     function isAdmin() {
-        return isUser() && userRole() == 'admin';
+        return isSignedIn() && userRole() == 'admin';
     }
 
     function isStudent() {
-        return isUser() && userRole() == 'student';
+        return isSignedIn() && userRole() == 'student';
     }
 
     function isTutor() {
-        return isUser() && userRole() == 'tutor';
+        return isSignedIn() && userRole() == 'tutor';
     }
     
     match /users/{userId} {
       // Allow any authenticated user to view any other user's profile.
       // This is necessary for students to view teacher profiles.
-      allow get: if isUser();
+      allow get: if isSignedIn();
       // Allow any registered user to query the user list (to find tutors or students by ID).
       // Client-side queries must be used to filter.
-      allow list: if isUser();
+      allow list: if isSignedIn();
       // Allow user creation for self-signup OR a teacher creating a student
       allow create: if request.auth.uid == userId || isTutor();
       allow update: if isOwner(userId) || isAdmin() || isTutor();
@@ -54,7 +51,6 @@ service cloud.firestore {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
       // Allow any signed-in user to get or list classes.
       // Client-side code is responsible for filtering to the correct classes.
-      // This prevents a race condition on signup where the user document may not exist yet.
       allow get, list: if isSignedIn();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
@@ -64,10 +60,10 @@ service cloud.firestore {
       allow create: if (isTutor() && request.resource.data.teacherId == request.auth.uid && request.resource.data.status == 'approved') ||
                       (isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'approved');
       
-      allow get: if (isStudent() && resource.data.studentId == request.auth.uid)
-                 || (isTutor() && resource.data.teacherId == request.auth.uid);
+      // Allow a user to get an enrollment doc if they are the student or the teacher.
+      allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
 
-      allow list: if isTutor() || isStudent();
+      allow list: if isSignedIn(); // Client-side queries must filter enrollments.
       
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       
@@ -76,26 +72,26 @@ service cloud.firestore {
 
     match /studyMaterials/{materialId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if isUser();
+      allow get, list: if isSignedIn();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /tests/{testId} {
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if isUser();
+      allow get, list: if isSignedIn();
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
     match /testResults/{resultId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
-      allow get: if (isStudent() && request.auth.uid == resource.data.studentId) || (isTutor() && request.auth.uid == resource.data.teacherId);
-      allow list: if isTutor() || isStudent(); // Allow list for client-side queries
+      allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
+      allow list: if isSignedIn(); // Allow list for client-side queries
       allow update, delete: if false;
     }
 
     match /attendance/{attendanceId} {
       allow create, update: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if isUser();
+      allow get, list: if isSignedIn();
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
@@ -106,7 +102,7 @@ service cloud.firestore {
 
       // Allow reads if user is the teacher of the class, or any student.
       // Student-side queries must be filtered to only show announcements for their enrolled classes.
-      allow get, list: if isUser();
+      allow get, list: if isSignedIn();
 
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
       allow update: if false;
