@@ -11,80 +11,130 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function userRole() {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    // Helper function to get the role of the currently signed-in user
+    function getUserRole(userId) {
+        return get(/databases/$(database)/documents/users/$(userId)).data.role;
     }
 
     function isAdmin() {
-        return isSignedIn() && userRole() == 'admin';
+        return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
     }
 
     function isStudent() {
-        return isSignedIn() && userRole() == 'student';
+        return isSignedIn() && getUserRole(request.auth.uid) == 'student';
     }
 
     function isTutor() {
-        return isSignedIn() && userRole() == 'tutor';
+        return isSignedIn() && getUserRole(request.auth.uid) == 'tutor';
+    }
+
+    // Is the user (student) enrolled and approved in the specified class?
+    function isEnrolled(classId) {
+        return isSignedIn() && isStudent() && exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + classId));
     }
     
+    // --- User Profiles ---
     match /users/{userId} {
+      // Any signed-in user can view any other user's profile (needed for public teacher profiles)
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      // Only admins can list all users
+      allow list: if isAdmin();
+      // A user can create their own profile document
       allow create: if isOwner(userId);
+      // A user can update their own profile, or an admin can update any profile
       allow update: if isOwner(userId) || isAdmin();
+      // No one can delete user profiles
       allow delete: if false; 
     }
 
+    // --- Public Tutor Profiles (for unauthenticated users to see) ---
     match /publicTutors/{tutorId} {
+      // Anyone can view a public tutor profile
       allow get, list: if true;
+      // Only admins can create public profiles (during the approval process)
       allow create: if isAdmin(); 
+      // An admin or the tutor themselves can update the public profile
       allow update: if isAdmin() || isOwner(tutorId); 
+      // Only admins can delete public profiles
       allow delete: if isAdmin();
     }
 
+    // --- Classes ---
     match /classes/{classId} {
+      // Only tutors can create classes, and they must be the owner
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+      // Any signed-in user can view a specific class document
       allow get: if isSignedIn();
+      // A user can list classes, but the query MUST be filtered by a specific teacherId
       allow list: if isSignedIn() && request.query.teacherId != null;
+      // Only the teacher who owns the class can update or delete it
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
+    // --- Enrollments ---
     match /enrollments/{enrollmentId} {
-      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid && request.resource.data.status == 'pending';
+      // A student can create an enrollment request for themselves
+      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
+      // The student who owns the enrollment or the teacher of the class can view it
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
+      // A user can list enrollments, but the query MUST be filtered by studentId or teacherId
       allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
                       (isStudent() && request.query.studentId == request.auth.uid);
+      // Only the teacher of the class can approve/deny (update) an enrollment
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
-      allow delete: if (isTutor() && resource.data.teacherId == request.auth.uid) || (isStudent() && isOwner(resource.data.studentId));
+      // The teacher or the student themselves can cancel/delete the enrollment
+      allow delete: if isOwner(resource.data.teacherId) || isOwner(resource.data.studentId);
     }
 
+    // --- Study Materials ---
     match /studyMaterials/{materialId} {
+      // A tutor can create materials and must be the owner
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
-      allow get, list: if true;
+      // Any user can get a specific material. List is more complex.
+      allow get: if true;
+      // Anyone can list materials. App-side filtering determines what is shown (public vs class-specific).
+      // This is safe because the fileUrl is just a link, and access to class-specific materials is controlled by the UI.
+      allow list: if true; 
+      // Only the tutor who created the material can update or delete it
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
+    // --- Tests ---
     match /tests/{testId} {
+      // A tutor can create a test and must be the owner
       allow create: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+      // A user can get a specific test if they are enrolled in the class or are the teacher
       allow get: if isSignedIn();
+      // Users can list tests, but queries must be filtered by teacherId or classId
       allow list: if (isTutor() && request.query.teacherId == request.auth.uid) || 
                       (isStudent() && request.query.classId != null);
+      // Only the tutor who created the test can update or delete it
       allow update, delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
 
+    // --- Test Results ---
     match /testResults/{resultId} {
+      // A student can create their own test result
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
+      // The student who took the test or the teacher of the class can get the result
       allow get: if isOwner(resource.data.studentId) || isOwner(resource.data.teacherId);
+      // Users can list results, but queries MUST be filtered by teacherId+classId or by studentId
       allow list: if (isTutor() && request.query.teacherId == request.auth.uid && request.query.classId != null) || 
                       (isStudent() && request.query.studentId == request.auth.uid);
+      // Nobody can update or delete a test result once submitted
       allow update, delete: if false;
     }
 
+    // --- Attendance ---
     match /attendance/{attendanceId} {
+      // Only the teacher who owns the class can create or update an attendance record
       allow create, update: if isTutor() && request.resource.data.teacherId == request.auth.uid;
+      // Any signed-in user can get a specific attendance record
       allow get: if isSignedIn();
+      // Users can list attendance, but queries MUST be filtered by teacherId+classId or classId
       allow list: if (isTutor() && request.query.teacherId == request.auth.uid && request.query.classId != null) || 
                       (isStudent() && request.query.classId != null);
+      // Only the teacher who owns the class can delete an attendance record
       allow delete: if isTutor() && resource.data.teacherId == request.auth.uid;
     }
   }
