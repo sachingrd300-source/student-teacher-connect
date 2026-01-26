@@ -81,7 +81,7 @@ export default function SignupPage() {
             <CardHeader>
               <CardTitle className="text-xl font-serif">Create a Teacher Account</CardTitle>
               <CardDescription>
-                Fill out the form below to get started. Note: Student accounts can only be created by teachers from their dashboard.
+                Fill out the form below to get started.
               </CardDescription>
             </CardHeader>
             <CardContent>
