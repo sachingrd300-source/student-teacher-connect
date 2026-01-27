@@ -102,18 +102,18 @@ export default function Home() {
              <div className="container px-4 md:px-6 flex flex-col items-center justify-center text-center space-y-6">
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-serif">Ready to Join?</h2>
                 <p className="max-w-2xl mx-auto text-foreground/80 md:text-xl">
-                    Choose your role and sign in to our vibrant learning community today. Your journey starts here.
+                    Create an account and start your learning or teaching journey with us today.
                 </p>
                 <div className="w-full max-w-md mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <Link href="/login" className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:bg-muted/50 transition-colors shadow-sm">
+                    <Link href="/signup" className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:bg-muted/50 transition-colors shadow-sm">
                         <User className="h-12 w-12 mb-4 text-primary" />
-                        <h3 className="text-2xl font-bold font-serif mb-2">Student Login</h3>
-                        <p className="text-muted-foreground text-center">Sign in to your student account.</p>
+                        <h3 className="text-2xl font-bold font-serif mb-2">Join as a Student</h3>
+                        <p className="text-muted-foreground text-center">Create your student account.</p>
                     </Link>
-                    <Link href="/signup/student" className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:bg-muted/50 transition-colors shadow-sm">
+                    <Link href="/signup/teacher" className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:bg-muted/50 transition-colors shadow-sm">
                         <Briefcase className="h-12 w-12 mb-4 text-primary" />
-                        <h3 className="text-2xl font-bold font-serif mb-2">Teacher Login</h3>
-                        <p className="text-muted-foreground text-center">Sign in to your teacher account.</p>
+                        <h3 className="text-2xl font-bold font-serif mb-2">Join as a Teacher</h3>
+                        <p className="text-muted-foreground text-center">Create your teacher account.</p>
                     </Link>
                 </div>
             </div>
