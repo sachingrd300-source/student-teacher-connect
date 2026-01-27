@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from 'next/image';
 import { MainHeader } from "@/components/main-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BookOpen, Users, FileText, ArrowRight, Loader2, User, Briefcase, Star } from "lucide-react";
+import { BookOpen, Users, FileText, ArrowRight, Loader2, User, Briefcase, Star, School } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import placeholderImages from '@/lib/placeholder-images.json';
