@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, Wallet } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, Wallet, ListCollapse } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -241,6 +241,12 @@ export default function StudentDashboardPage() {
                                             <div className="flex items-center gap-2">
                                                 <Button asChild variant="outline" size="sm">
                                                     <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                </Button>
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}?tab=activity`}>
+                                                        <ListCollapse className="mr-2 h-4 w-4" />
+                                                        Updates
+                                                    </Link>
                                                 </Button>
                                                 <Button asChild variant="outline" size="sm">
                                                     <Link href={`/dashboard/student/batch/${enrollment.batchId}?tab=fees`}>
