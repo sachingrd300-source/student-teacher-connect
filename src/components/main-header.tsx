@@ -29,7 +29,7 @@ export function MainHeader() {
                             <Link href="/login">Student</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                            <Link href="/signup/student">Teacher</Link>
+                            <Link href="/login/teacher">Teacher</Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

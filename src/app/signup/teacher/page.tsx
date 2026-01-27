@@ -118,7 +118,7 @@ export default function TeacherSignupPage() {
               </form>
               <div className="mt-4 text-center text-sm">
                 Already have an account?{' '}
-                <Link href="/signup/student" className="underline font-semibold">
+                <Link href="/login/teacher" className="underline font-semibold">
                   Login
                 </Link>
               </div>
