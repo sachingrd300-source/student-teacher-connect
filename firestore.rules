@@ -46,6 +46,9 @@ service cloud.firestore {
       
       // A user can get a connection doc if they are the student or the teacher involved
       allow get: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId);
+      
+      // Allow students and teachers to query the connections collection.
+      allow list: if isStudent() || isTeacher();
     }
   }
 }
