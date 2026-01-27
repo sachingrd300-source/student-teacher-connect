@@ -135,8 +135,9 @@ export default function StudentDashboardPage() {
 
     if (isLoading || !userProfile) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-screen items-center justify-center flex-col gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Verifying access...</p>
             </div>
         );
     }

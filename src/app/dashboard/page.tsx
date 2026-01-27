@@ -47,5 +47,5 @@ export default function DashboardPage() {
 
 
     // Show a loading screen while we determine where to redirect.
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center">Redirecting...</div>;
 }
