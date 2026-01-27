@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -149,6 +149,21 @@ export default function StudentDashboardPage() {
             <DashboardHeader userName={userProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Discover New Teachers</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           <p className="text-muted-foreground mb-4">Browse profiles and find the right teacher for you.</p>
+                           <Button asChild>
+                                <Link href="/dashboard/student/find-teachers">
+                                    <Search className="mr-2 h-4 w-4" />
+                                    Find Teachers
+                                </Link>
+                           </Button>
+                        </CardContent>
+                    </Card>
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Join a New Batch</CardTitle>
