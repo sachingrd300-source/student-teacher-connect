@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle, Clock } from 'lucide-react';
+import Link from 'next/link';
 
 interface UserProfile {
     name: string;
@@ -199,7 +200,9 @@ export default function StudentDashboardPage() {
                                                 Cancel Request
                                             </Button>
                                         ) : (
-                                            <span className="text-sm font-semibold text-green-600">Approved</span>
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`/teachers/${enrollment.teacherId}`}>View Profile</Link>
+                                            </Button>
                                         )}
                                     </div>
                                 ))
