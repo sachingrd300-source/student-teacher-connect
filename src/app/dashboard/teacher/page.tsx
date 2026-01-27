@@ -99,6 +99,18 @@ export default function TeacherDashboardPage() {
         return [pending, approved];
     }, [enrollments]);
 
+    const studentCountsByBatch = useMemo(() => {
+        const counts: { [key: string]: number } = {};
+        approvedStudents.forEach(enrollment => {
+            if (counts[enrollment.batchId]) {
+                counts[enrollment.batchId]++;
+            } else {
+                counts[enrollment.batchId] = 1;
+            }
+        });
+        return counts;
+    }, [approvedStudents]);
+
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
         if (!user) {
@@ -228,11 +240,17 @@ export default function TeacherDashboardPage() {
                                                     </div>
                                                      <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
                                                 </div>
-                                                <Button asChild>
-                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                        <Settings className="mr-2 h-4 w-4" /> Manage
-                                                    </Link>
-                                                </Button>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-center">
+                                                        <p className="font-bold text-lg">{studentCountsByBatch[batch.id] || 0}</p>
+                                                        <p className="text-xs text-muted-foreground">Students</p>
+                                                    </div>
+                                                    <Button asChild>
+                                                        <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                            <Settings className="mr-2 h-4 w-4" /> Manage
+                                                        </Link>
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))
                                     ) : (
