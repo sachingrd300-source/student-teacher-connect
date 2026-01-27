@@ -30,9 +30,9 @@ interface Enrollment {
     id: string;
     studentId: string;
     teacherId: string;
-    teacherName: string;
     batchId: string;
     batchName: string;
+    teacherName: string;
     status: 'pending' | 'approved';
 }
 
@@ -215,9 +215,14 @@ export default function StudentDashboardPage() {
                                                 Cancel Request
                                             </Button>
                                         ) : (
-                                            <Button asChild variant="outline" size="sm">
-                                                <Link href={`/teachers/${enrollment.teacherId}`}>View Profile</Link>
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                </Button>
+                                                <Button asChild size="sm">
+                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>View Batch</Link>
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
                                 ))
