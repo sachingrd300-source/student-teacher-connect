@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
 
 export default function StudentSignupPage() {
@@ -56,7 +56,7 @@ export default function StudentSignupPage() {
           name: name.trim(),
           email: email.trim(), 
           role: 'student', // Automatically set role
-          createdAt: serverTimestamp(),
+          createdAt: new Date().toISOString(),
       };
       
       await setDoc(userRef, dataToSet);

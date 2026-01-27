@@ -18,7 +18,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Briefcase } from 'lucide-react';
 
 export default function TeacherLoginPage() {
@@ -85,7 +85,7 @@ export default function TeacherLoginPage() {
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
           role: 'teacher', // Default to teacher for Google sign-in on teacher page
-          createdAt: serverTimestamp(),
+          createdAt: new Date().toISOString(),
         };
         await setDoc(userRef, userProfileData);
       } else {

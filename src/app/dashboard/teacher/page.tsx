@@ -2,7 +2,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -108,7 +108,7 @@ export default function TeacherDashboardPage() {
                 teacherId: user.uid,
                 teacherName: userProfile.name,
                 code: batchCode,
-                createdAt: serverTimestamp(),
+                createdAt: new Date().toISOString(),
                 approvedStudents: [],
             });
             setNewBatchName('');

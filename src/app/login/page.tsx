@@ -20,7 +20,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
 
 export default function StudentLoginPage() {
@@ -87,7 +87,7 @@ export default function StudentLoginPage() {
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
           role: 'student', // Default to student for Google sign-in on student page
-          createdAt: serverTimestamp(),
+          createdAt: new Date().toISOString(),
         };
         await setDoc(userRef, userProfileData);
       } else {

@@ -2,7 +2,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, serverTimestamp, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -109,7 +109,7 @@ export default function StudentDashboardPage() {
                 batchId: batchData.id,
                 batchName: batchData.name,
                 status: 'pending',
-                createdAt: serverTimestamp(),
+                createdAt: new Date().toISOString(),
             });
             setJoinMessage({ type: 'success', text: `Request sent to join "${batchData.name}"!` });
             setBatchCode('');
