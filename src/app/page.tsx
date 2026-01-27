@@ -1,11 +1,30 @@
 'use client'
 
-import { Button } from "@/components/ui/button";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { School, User, Briefcase } from "lucide-react";
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || user) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
