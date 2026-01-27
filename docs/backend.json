@@ -23,10 +23,6 @@
           "description": "The role of the user.",
           "enum": ["student", "teacher", "admin"]
         },
-        "subject": {
-          "type": "string",
-          "description": "The subject taught by the teacher."
-        },
         "bio": {
           "type": "string",
           "description": "A short biography of the user."
@@ -35,13 +31,13 @@
             "type": "string",
             "format": "date-time"
         },
+        "subject": {
+          "type": "string",
+          "description": "The subject taught by the teacher."
+        },
         "coachingCenterName": {
             "type": "string",
             "description": "The name of the teacher's coaching center."
-        },
-        "address": {
-            "type": "string",
-            "description": "The address of the coaching center."
         },
         "whatsappNumber": {
             "type": "string",
@@ -50,6 +46,22 @@
         "fee": {
             "type": "string",
             "description": "The fee structure for the teacher's classes."
+        },
+        "fatherName": {
+            "type": "string",
+            "description": "The student's father's name."
+        },
+        "class": {
+            "type": "string",
+            "description": "The class or grade the student is in."
+        },
+        "mobileNumber": {
+            "type": "string",
+            "description": "The student's mobile phone number."
+        },
+        "address": {
+            "type": "string",
+            "description": "The user's physical address."
         }
       },
       "required": [

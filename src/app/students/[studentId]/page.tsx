@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, User as UserIcon, ArrowLeft } from 'lucide-react';
+import { Loader2, Mail, User as UserIcon, ArrowLeft, Phone, MapPin, GraduationCap } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface StudentProfile {
@@ -15,6 +15,10 @@ interface StudentProfile {
     email: string;
     role: 'student';
     bio?: string;
+    mobileNumber?: string;
+    address?: string;
+    fatherName?: string;
+    class?: string;
 }
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
@@ -83,6 +87,10 @@ export default function StudentProfilePage() {
                         </CardHeader>
                         <CardContent className="mt-6 grid gap-4">
                             <InfoItem icon={<Mail className="w-5 h-5 text-primary" />} label="Email" value={studentProfile.email} />
+                            <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="Mobile Number" value={studentProfile.mobileNumber} />
+                            <InfoItem icon={<UserIcon className="w-5 h-5 text-primary" />} label="Father's Name" value={studentProfile.fatherName} />
+                            <InfoItem icon={<GraduationCap className="w-5 h-5 text-primary" />} label="Class" value={studentProfile.class} />
+                            <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Address" value={studentProfile.address} />
                             
                             {studentProfile.bio && (
                                 <div className="border-t pt-4">

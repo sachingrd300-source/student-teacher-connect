@@ -22,6 +22,9 @@ interface UserProfile {
     address?: string;
     whatsappNumber?: string;
     fee?: string;
+    mobileNumber?: string;
+    fatherName?: string;
+    class?: string;
 }
 
 export default function ProfilePage() {
@@ -34,12 +37,19 @@ export default function ProfilePage() {
     
     // Form state
     const [name, setName] = useState('');
-    const [subject, setSubject] = useState('');
     const [bio, setBio] = useState('');
-    const [coachingCenterName, setCoachingCenterName] = useState('');
     const [address, setAddress] = useState('');
+    
+    // Teacher state
+    const [subject, setSubject] = useState('');
+    const [coachingCenterName, setCoachingCenterName] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [fee, setFee] = useState('');
+
+    // Student state
+    const [mobileNumber, setMobileNumber] = useState('');
+    const [fatherName, setFatherName] = useState('');
+    const [studentClass, setStudentClass] = useState('');
 
 
     const userProfileRef = useMemoFirebase(() => {
@@ -59,12 +69,19 @@ export default function ProfilePage() {
     useEffect(() => {
         if (userProfile) {
             setName(userProfile.name || '');
-            setSubject(userProfile.subject || '');
             setBio(userProfile.bio || '');
-            setCoachingCenterName(userProfile.coachingCenterName || '');
             setAddress(userProfile.address || '');
-            setWhatsappNumber(userProfile.whatsappNumber || '');
-            setFee(userProfile.fee || '');
+
+            if (userProfile.role === 'teacher') {
+                setSubject(userProfile.subject || '');
+                setCoachingCenterName(userProfile.coachingCenterName || '');
+                setWhatsappNumber(userProfile.whatsappNumber || '');
+                setFee(userProfile.fee || '');
+            } else if (userProfile.role === 'student') {
+                setMobileNumber(userProfile.mobileNumber || '');
+                setFatherName(userProfile.fatherName || '');
+                setStudentClass(userProfile.class || '');
+            }
         }
     }, [userProfile]);
 
@@ -75,14 +92,18 @@ export default function ProfilePage() {
             const dataToUpdate: { [key: string]: any } = {
                 name: name.trim(),
                 bio: bio.trim(),
+                address: address.trim(),
             };
 
             if (userProfile.role === 'teacher') {
                 dataToUpdate.subject = subject.trim();
                 dataToUpdate.coachingCenterName = coachingCenterName.trim();
-                dataToUpdate.address = address.trim();
                 dataToUpdate.whatsappNumber = whatsappNumber.trim();
                 dataToUpdate.fee = fee.trim();
+            } else if (userProfile.role === 'student') {
+                dataToUpdate.mobileNumber = mobileNumber.trim();
+                dataToUpdate.fatherName = fatherName.trim();
+                dataToUpdate.class = studentClass.trim();
             }
             
             await updateDoc(userProfileRef, dataToUpdate);
@@ -99,12 +120,19 @@ export default function ProfilePage() {
         // Reset state to original profile data
         if (userProfile) {
             setName(userProfile.name || '');
-            setSubject(userProfile.subject || '');
             setBio(userProfile.bio || '');
-            setCoachingCenterName(userProfile.coachingCenterName || '');
             setAddress(userProfile.address || '');
-            setWhatsappNumber(userProfile.whatsappNumber || '');
-            setFee(userProfile.fee || '');
+
+            if (userProfile.role === 'teacher') {
+                setSubject(userProfile.subject || '');
+                setCoachingCenterName(userProfile.coachingCenterName || '');
+                setWhatsappNumber(userProfile.whatsappNumber || '');
+                setFee(userProfile.fee || '');
+            } else if (userProfile.role === 'student') {
+                setMobileNumber(userProfile.mobileNumber || '');
+                setFatherName(userProfile.fatherName || '');
+                setStudentClass(userProfile.class || '');
+            }
         }
         setIsEditing(false);
     };
@@ -154,6 +182,54 @@ export default function ProfilePage() {
                                 <Label htmlFor="role">Role</Label>
                                 <p className="text-sm font-medium capitalize">{userProfile.role}</p>
                             </div>
+                            
+                            <div className="grid gap-2">
+                                <Label htmlFor="bio">Bio</Label>
+                                {isEditing ? (
+                                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us a little about yourself" />
+                                ) : (
+                                    <p className="text-sm font-medium whitespace-pre-wrap">{bio || <span className="text-muted-foreground">Not set</span>}</p>
+                                )}
+                            </div>
+                            
+                             <div className="grid gap-2">
+                                <Label htmlFor="address">Address</Label>
+                                {isEditing ? (
+                                    <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your full address" />
+                                ) : (
+                                    <p className="text-sm font-medium whitespace-pre-wrap">{address || <span className="text-muted-foreground">Not set</span>}</p>
+                                )}
+                            </div>
+
+                             {userProfile.role === 'student' && (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="mobileNumber">Mobile Number</Label>
+                                        {isEditing ? (
+                                            <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="e.g., +91..." />
+                                        ) : (
+                                            <p className="text-sm font-medium">{mobileNumber || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="fatherName">Father's Name</Label>
+                                        {isEditing ? (
+                                            <Input id="fatherName" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Enter your father's name" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{fatherName || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="studentClass">Class</Label>
+                                        {isEditing ? (
+                                            <Input id="studentClass" value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="e.g., 12th Grade" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{studentClass || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                </>
+                             )}
+
                              {userProfile.role === 'teacher' && (
                                 <>
                                     <div className="grid gap-2">
@@ -170,14 +246,6 @@ export default function ProfilePage() {
                                             <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Physics, Mathematics" />
                                         ) : (
                                             <p className="text-sm font-medium">{subject || <span className="text-muted-foreground">Not set</span>}</p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="address">Address</Label>
-                                        {isEditing ? (
-                                            <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your full address" />
-                                        ) : (
-                                            <p className="text-sm font-medium whitespace-pre-wrap">{address || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
                                     </div>
                                     <div className="grid gap-2">
@@ -198,15 +266,6 @@ export default function ProfilePage() {
                                     </div>
                                 </>
                              )}
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="bio">Bio</Label>
-                                {isEditing ? (
-                                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us a little about yourself" />
-                                ) : (
-                                    <p className="text-sm font-medium whitespace-pre-wrap">{bio || <span className="text-muted-foreground">Not set</span>}</p>
-                                )}
-                            </div>
                         </CardContent>
                         {isEditing && (
                             <CardFooter className="justify-end gap-2">
