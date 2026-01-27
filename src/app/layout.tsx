@@ -1,24 +1,18 @@
 
 import type { Metadata } from "next";
-import { PT_Sans, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { cn } from "@/lib/utils";
 
-const ptSans = PT_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-pt-sans",
-});
-
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
-  title: "My App",
-  description: "A fresh start",
+  title: "EduConnect Pro - Modern Education Platform",
+  description: "The ultimate platform connecting dedicated teachers with eager students. Join a community of learners and educators today.",
 };
 
 export default function RootLayout({
@@ -31,8 +25,7 @@ export default function RootLayout({
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
-          ptSans.variable,
-          playfairDisplay.variable
+          inter.variable
         )}
       >
         <FirebaseClientProvider>{children}</FirebaseClientProvider>

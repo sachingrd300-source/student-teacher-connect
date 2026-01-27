@@ -1,18 +1,30 @@
-'use client'
+'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import Link from "next/link";
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { MainHeader } from "@/components/main-header";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BookOpen, Users, FileText, ArrowRight, Loader2, User, Briefcase, Star, School } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowRight, Wallet, Loader2, Zap, ShieldCheck, BarChart, Users, FileText, School } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import placeholderImages from '@/lib/placeholder-images.json';
-import { cn } from '@/lib/utils';
 
+const fadeIn = (delay = 0, duration = 0.5) => ({
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay,
+      duration,
+      ease: "easeOut",
+    },
+  },
+});
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -26,227 +38,327 @@ export default function Home() {
 
   if (isUserLoading || user) {
     return (
-        <div className="flex h-screen items-center justify-center">
-             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex h-screen items-center justify-center bg-background">
+             <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     );
   }
 
-  const { hero, expertTeachers, interactiveBatches, organizedMaterials } = placeholderImages;
+  const { hero, dashboardPreview } = placeholderImages;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <MainHeader />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative h-[60vh] md:h-[80vh] flex items-center justify-center text-center text-white">
-            <Image
-                src={hero.src}
-                alt={hero.alt}
-                fill
-                className="object-cover"
-                data-ai-hint={hero.hint}
-                priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent" />
-            <div className="relative z-10 p-4 animate-fade-in-down max-w-4xl">
-                <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none font-serif shadow-lg">
-                    Unlock Your Potential, Together.
-                </h1>
-                <p className="mt-6 max-w-2xl mx-auto md:text-xl text-primary-foreground/90">
-                    The ultimate platform connecting dedicated teachers with eager students. Join a community of learners and educators today.
-                </p>
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button asChild size="lg" className="font-semibold shadow-md hover:shadow-lg transition-all hover:scale-105">
-                       <Link href="/signup">
-                         Join as a Student
-                         <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
-                    </Button>
-                    <Button asChild size="lg" variant="secondary" className="font-semibold shadow-md hover:shadow-lg transition-all hover:scale-105">
-                         <Link href="/signup/teacher">
-                            Teach on Our Platform
-                        </Link>
-                    </Button>
-                </div>
+        <section className="py-20 md:py-32">
+            <div className="container px-4 md:px-6 grid md:grid-cols-2 gap-16 items-center">
+                <motion.div 
+                    initial="hidden"
+                    animate="visible"
+                    variants={fadeIn()}
+                    className="space-y-6 text-center md:text-left"
+                >
+                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-foreground">
+                        Modern Education, <span className="text-primary">Seamlessly Connected.</span>
+                    </h1>
+                    <p className="max-w-xl mx-auto md:mx-0 text-lg text-muted-foreground">
+                        EduConnect Pro is the ultimate platform connecting dedicated teachers with eager students. Manage batches, share materials, and track progress, all in one place.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                        <Button asChild size="lg" className="font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-105 transition-all">
+                           <Link href="/signup">
+                             Get Started Free
+                             <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                        <Button asChild size="lg" variant="outline" className="font-semibold transition-all hover:scale-105">
+                             <Link href="/login/teacher">
+                                I'm a Teacher
+                            </Link>
+                        </Button>
+                    </div>
+                </motion.div>
+                 <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={fadeIn(0.2)}
+                 >
+                    <Image
+                        src={hero.src}
+                        alt={hero.alt}
+                        width={hero.width}
+                        height={hero.height}
+                        className="rounded-xl shadow-2xl"
+                        data-ai-hint={hero.hint}
+                        priority
+                    />
+                </motion.div>
             </div>
         </section>
         
         {/* Features Section */}
-        <section id="features" className="py-16 md:py-24 bg-white dark:bg-gray-900">
-            <div className="container px-4 md:px-6 space-y-20">
-                 <div className="text-center space-y-4 animate-fade-in-up">
-                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-serif">A Platform Built for Connection and Growth</h2>
-                     <p className="max-w-3xl mx-auto text-foreground/80 md:text-xl">
+        <section id="features" className="py-16 md:py-24 bg-muted/50">
+            <div className="container px-4 md:px-6">
+                 <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    variants={fadeIn()}
+                    className="text-center space-y-4 mb-12"
+                >
+                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">A Platform Built for Connection and Growth</h2>
+                     <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
                         We provide the tools and community to foster growth and learning for everyone.
                      </p>
-                </div>
-                {/* Feature 1 */}
-                <div className="grid md:grid-cols-2 gap-12 items-center group animate-fade-in-up">
-                    <div className="space-y-4">
-                        <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm font-semibold text-primary">Expert Teachers</div>
-                        <h3 className="text-3xl font-bold font-serif">Learn from the Best</h3>
-                        <p className="text-muted-foreground">Our platform attracts experienced and passionate educators dedicated to your success. Find a mentor who can guide you on your learning journey.</p>
-                         <ul className="grid gap-2 py-2">
-                          <li className="flex items-center"><Star className="w-4 h-4 mr-2 text-accent" /> Verified Educator Profiles</li>
-                          <li className="flex items-center"><Star className="w-4 h-4 mr-2 text-accent" /> Diverse Subject Expertise</li>
-                          <li className="flex items-center"><Star className="w-4 h-4 mr-2 text-accent" /> Direct Communication Channels</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <Image src={expertTeachers.src} alt={expertTeachers.alt} width={expertTeachers.width} height={expertTeachers.height} className="rounded-xl shadow-2xl group-hover:scale-105 transition-transform duration-500" data-ai-hint={expertTeachers.hint} />
-                    </div>
-                </div>
-
-                {/* Feature 2 */}
-                <div className="grid md:grid-cols-2 gap-12 items-center group animate-fade-in-up [animation-delay:200ms]">
-                    <div className="order-last md:order-first">
-                         <Image src={interactiveBatches.src} alt={interactiveBatches.alt} width={interactiveBatches.width} height={interactiveBatches.height} className="rounded-xl shadow-2xl group-hover:scale-105 transition-transform duration-500" data-ai-hint={interactiveBatches.hint} />
-                    </div>
-                     <div className="space-y-4 md:text-right md:items-end flex flex-col">
-                        <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm font-semibold text-primary">Interactive Batches</div>
-                        <h3 className="text-3xl font-bold font-serif">Collaborate and Grow</h3>
-                        <p className="text-muted-foreground">Join focused learning groups, interact with peers, and get personalized attention from your teacher. Learning is better when it's a shared experience.</p>
-                        <ul className="grid gap-2 py-2">
-                          <li className="flex items-center md:justify-end"><Star className="w-4 h-4 mr-2 md:mr-0 md:ml-2 text-accent order-first md:order-last" /> Small, Focused Group Sizes</li>
-                          <li className="flex items-center md:justify-end"><Star className="w-4 h-4 mr-2 md:mr-0 md:ml-2 text-accent order-first md:order-last" /> Peer-to-Peer Learning</li>
-                          <li className="flex items-center md:justify-end"><Star className="w-4 h-4 mr-2 md:mr-0 md:ml-2 text-accent order-first md:order-last" /> Live Announcements & Updates</li>
-                        </ul>
-                    </div>
-                </div>
-
-                 {/* Feature 3 */}
-                <div className="grid md:grid-cols-2 gap-12 items-center group animate-fade-in-up [animation-delay:400ms]">
-                    <div className="space-y-4">
-                        <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm font-semibold text-primary">Seamless Organization</div>
-                        <h3 className="text-3xl font-bold font-serif">Everything in One Place</h3>
-                        <p className="text-muted-foreground">Forget scattered notes and missed deadlines. Access all your study materials, announcements, and updates in one unified dashboard for each batch.</p>
-                         <ul className="grid gap-2 py-2">
-                          <li className="flex items-center"><Star className="w-4 h-4 mr-2 text-accent" /> Easy Material Uploads & Downloads</li>
-                          <li className="flex items-center"><Star className="w-4 h-4 mr-2 text-accent" /> Centralized Announcement Feed</li>
-                          <li className="flex items-center"><Star className="w-4 h-4 mr-2 text-accent" /> Clear and Simple Interface</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <Image src={organizedMaterials.src} alt={organizedMaterials.alt} width={organizedMaterials.width} height={organizedMaterials.height} className="rounded-xl shadow-2xl group-hover:scale-105 transition-transform duration-500" data-ai-hint={organizedMaterials.hint} />
-                    </div>
+                </motion.div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {features.map((feature, i) => (
+                    <motion.div
+                      key={feature.title}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, amount: 0.5 }}
+                      variants={fadeIn(i * 0.1)}
+                    >
+                      <Card className="h-full hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                          <div className="bg-primary/10 p-3 rounded-full">
+                            <feature.icon className="w-6 h-6 text-primary" />
+                          </div>
+                          <CardTitle className="text-xl">{feature.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground">{feature.description}</p>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
                 </div>
             </div>
         </section>
 
+        {/* How it Works Section */}
+        <section id="how-it-works" className="py-16 md:py-24">
+             <div className="container px-4 md:px-6">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    variants={fadeIn()}
+                    className="text-center space-y-4 mb-16"
+                >
+                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Get Started in Minutes</h2>
+                     <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
+                        Joining our platform is simple and straightforward for both students and teachers.
+                     </p>
+                </motion.div>
+                <div className="relative grid md:grid-cols-3 gap-8">
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block"></div>
+                    {steps.map((step, i) => (
+                      <motion.div
+                        key={step.title}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.5 }}
+                        variants={fadeIn(i * 0.15)}
+                        className="relative"
+                      >
+                        <div className="relative z-10 flex flex-col items-center text-center p-6 bg-background">
+                            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground font-bold text-2xl mb-6 ring-8 ring-background">{i + 1}</div>
+                            <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                            <p className="text-muted-foreground">{step.description}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                </div>
+             </div>
+        </section>
+
+        {/* Dashboard Preview Section */}
+        <section id="dashboard-preview" className="py-16 md:py-24 bg-muted/50">
+            <div className="container px-4 md:px-6">
+                 <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    variants={fadeIn()}
+                    className="text-center space-y-4 mb-12"
+                >
+                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Your All-in-One Dashboard</h2>
+                     <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
+                        A single, powerful interface to manage everything. No more juggling between apps.
+                     </p>
+                </motion.div>
+                <motion.div
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                    variants={fadeIn()}
+                    className="max-w-5xl mx-auto"
+                >
+                  <div className="rounded-xl shadow-2xl overflow-hidden border">
+                    <Image src={dashboardPreview.src} alt={dashboardPreview.alt} width={dashboardPreview.width} height={dashboardPreview.height} className="w-full" data-ai-hint={dashboardPreview.hint} />
+                  </div>
+                </motion.div>
+            </div>
+        </section>
+
+
         {/* Testimonials */}
-        <section className="py-16 md:py-24 bg-muted/30">
+        <section id="testimonials" className="py-16 md:py-24">
           <div className="container px-4 md:px-6">
-            <div className="text-center space-y-4 mb-12 animate-fade-in-up">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-serif">Loved by Students and Teachers</h2>
-              <p className="max-w-3xl mx-auto text-foreground/80 md:text-xl">
+            <motion.div 
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={fadeIn()}
+                className="text-center space-y-4 mb-12"
+            >
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Loved by Students and Teachers</h2>
+              <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
                 See what members of our community are saying about their experience.
               </p>
-            </div>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 animate-fade-in-up [animation-delay:200ms]">
-              <Card className="transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Avatar className="h-10 w-10 mr-4">
-                      <AvatarFallback>AS</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">Anjali Sharma</p>
-                      <p className="text-sm text-muted-foreground">Student</p>
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground">"This platform completely changed how I study. The batch system helps me stay focused, and my teacher is always available to help. I'm finally understanding complex topics!"</p>
-                </CardContent>
-              </Card>
-              <Card className="transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Avatar className="h-10 w-10 mr-4">
-                      <AvatarFallback>RK</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">Ravi Kumar</p>
-                      <p className="text-sm text-muted-foreground">Teacher</p>
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground">"As a teacher, managing multiple student groups was always a challenge. Now, with dedicated batches and easy material sharing, I can focus on what I do best: teaching."</p>
-                </CardContent>
-              </Card>
-               <Card className="md:col-span-2 lg:col-span-1 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Avatar className="h-10 w-10 mr-4">
-                      <AvatarFallback>PM</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">Priya Mehta</p>
-                      <p className="text-sm text-muted-foreground">Student</p>
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground">"The announcement feature is a lifesaver! I never miss an update about class cancellations or test schedules. It's so much better than checking multiple WhatsApp groups."</p>
-                </CardContent>
-              </Card>
+            </motion.div>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {testimonials.map((testimonial, i) => (
+                <motion.div
+                  key={testimonial.name}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.5 }}
+                  variants={fadeIn(i * 0.1)}
+                >
+                  <Card className="h-full flex flex-col">
+                    <CardContent className="p-6 flex-grow">
+                      <p className="text-muted-foreground mb-6">"{testimonial.quote}"</p>
+                    </CardContent>
+                    <CardHeader className="flex flex-row items-center gap-4 pt-0">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback>{testimonial.initials}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold">{testimonial.name}</p>
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
 
-        {/* Call to Action Section */}
-        <section className="py-16 md:py-24 bg-background">
-             <div className="container px-4 md:px-6 flex flex-col items-center justify-center text-center space-y-6 animate-fade-in-up">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-serif">Ready to Join?</h2>
-                <p className="max-w-2xl mx-auto text-foreground/80 md:text-xl">
-                    Create an account and start your learning or teaching journey with us today. It's free to get started.
-                </p>
-                <div className="w-full max-w-lg mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <Link href="/signup" className="group flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:shadow-2xl hover:scale-105 hover:border-primary transition-all duration-300">
-                        <User className="h-12 w-12 mb-4 text-primary transition-transform group-hover:scale-110" />
-                        <h3 className="text-2xl font-bold font-serif mb-2">Join as a Student</h3>
-                        <p className="text-muted-foreground text-center">Find teachers, join batches, and start learning.</p>
-                    </Link>
-                    <Link href="/signup/teacher" className="group flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:shadow-2xl hover:scale-105 hover:border-primary transition-all duration-300">
-                        <Briefcase className="h-12 w-12 mb-4 text-primary transition-transform group-hover:scale-110" />
-                        <h3 className="text-2xl font-bold font-serif mb-2">Join as a Teacher</h3>
-                        <p className="text-muted-foreground text-center">Create batches, manage students, and share your knowledge.</p>
-                    </Link>
-                </div>
-            </div>
-        </section>
-      </main>
-       <footer className="bg-muted border-t">
-        <div className="container mx-auto py-8 px-4 md:px-6 text-sm text-muted-foreground">
-            <div className="grid md:grid-cols-3 gap-8">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2">
+        {/* Footer */}
+       <footer className="bg-muted border-t mt-16">
+        <div className="container mx-auto py-12 px-4 md:px-6">
+            <div className="grid md:grid-cols-12 gap-8">
+                <div className="md:col-span-4 space-y-4">
+                     <Link className="flex items-center gap-2 font-semibold" href="/">
                         <School className="h-6 w-6 text-primary" />
-                        <span className="text-lg font-semibold font-serif text-foreground">My App</span>
-                    </div>
-                    <p>Connecting teachers and students for a better learning experience.</p>
+                        <span className="text-lg font-semibold">EduConnect Pro</span>
+                    </Link>
+                    <p className="text-muted-foreground">Connecting teachers and students for a better learning experience.</p>
+                     <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} EduConnect Pro. All rights reserved.</p>
                 </div>
-                <div className="grid grid-cols-2 md:col-span-2 gap-8">
+                <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
                     <div>
-                        <h4 className="font-semibold text-foreground mb-3">Platform</h4>
-                        <ul className="space-y-2">
-                            <li><Link href="#features" className="hover:text-primary">Features</Link></li>
-                            <li><Link href="/signup/teacher" className="hover:text-primary">For Teachers</Link></li>
-                            <li><Link href="/signup" className="hover:text-primary">For Students</Link></li>
+                        <h4 className="font-semibold text-foreground mb-4">Platform</h4>
+                        <ul className="space-y-3">
+                            <li><Link href="#features" className="text-muted-foreground hover:text-primary">Features</Link></li>
+                            <li><Link href="/signup/teacher" className="text-muted-foreground hover:text-primary">For Teachers</Link></li>
+                            <li><Link href="/signup" className="text-muted-foreground hover:text-primary">For Students</Link></li>
                         </ul>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground mb-3">Legal</h4>
-                        <ul className="space-y-2">
-                            <li><Link href="#" className="hover:text-primary">Terms of Service</Link></li>
-                            <li><Link href="#" className="hover:text-primary">Privacy Policy</Link></li>
+                        <h4 className="font-semibold text-foreground mb-4">Account</h4>
+                        <ul className="space-y-3">
+                            <li><Link href="/login" className="text-muted-foreground hover:text-primary">Student Login</Link></li>
+                            <li><Link href="/login/teacher" className="text-muted-foreground hover:text-primary">Teacher Login</Link></li>
+                            <li><Link href="/signup" className="text-muted-foreground hover:text-primary">Sign Up</Link></li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+                        <ul className="space-y-3">
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
                         </ul>
                     </div>
                 </div>
             </div>
-             <div className="mt-8 border-t pt-6 flex flex-col sm:flex-row justify-between items-center">
-                <p>&copy; 2024 My App. All rights reserved.</p>
-                 {/* Social links placeholder */}
-             </div>
         </div>
       </footer>
     </div>
   );
 }
+
+const features = [
+  {
+    icon: Users,
+    title: "Batch Management",
+    description: "Teachers can create and manage batches, control student enrollment, and streamline communication."
+  },
+  {
+    icon: FileText,
+    title: "Study Materials",
+    description: "Easily upload, organize, and share study materials like notes, DPPs, and solutions with your students."
+  },
+  {
+    icon: BarChart,
+    title: "Performance Tracking",
+    description: "Conduct tests and track student performance with a simple and intuitive marks management system."
+  },
+  {
+    icon: Zap,
+    title: "Real-Time Updates",
+    description: "Post announcements and updates that are instantly available to all students in a batch."
+  },
+  {
+    icon: Wallet,
+    title: "Fee Management",
+    description: "Keep track of monthly fee payments for each student with an easy-to-use status system."
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure & Role-Based",
+    description: "Secure access for teachers, students, and parents with role-based permissions."
+  }
+];
+
+const steps = [
+    {
+        title: "Create an Account",
+        description: "Sign up in seconds as either a student or a teacher. It's completely free to get started."
+    },
+    {
+        title: "Join or Create a Batch",
+        description: "Students can join a batch using a unique code. Teachers can create and customize their batches."
+    },
+    {
+        title: "Start Learning/Teaching",
+        description: "Access all your materials, announcements, and tools in one organized dashboard."
+    }
+];
+
+const testimonials = [
+  {
+    name: "Anjali Sharma",
+    initials: "AS",
+    role: "Student",
+    quote: "This platform completely changed how I study. The batch system helps me stay focused, and my teacher is always available to help. I'm finally understanding complex topics!"
+  },
+  {
+    name: "Ravi Kumar",
+    initials: "RK",
+    role: "Teacher",
+    quote: "As a teacher, managing multiple student groups was always a challenge. Now, with dedicated batches and easy material sharing, I can focus on what I do best: teaching."
+  },
+  {
+    name: "Priya Mehta",
+    initials: "PM",
+    role: "Student",
+    quote: "The announcement feature is a lifesaver! I never miss an update about class cancellations or test schedules. It's so much better than checking multiple WhatsApp groups."
+  }
+];
