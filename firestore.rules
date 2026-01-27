@@ -10,44 +10,13 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    function getUserData(userId) {
-        return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-    
-    function isRole(role) {
-        return isSignedIn() && getUserData(request.auth.uid).role == role;
-    }
-
-    function isAdmin() {
-      return isRole('admin');
-    }
-
-    function isTutor() {
-      return isRole('tutor');
-    }
-
-    function isStudent() {
-      return isRole('student');
-    }
 
     match /users/{userId} {
-      allow get, list: if isSignedIn();
+      allow get: if isOwner(userId);
+      allow list: if isSignedIn();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId);
       allow delete: if false;
-    }
-
-    match /connections/{connectionId} {
-      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
-      allow get: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId);
-      
-      // Allow list operations only for students and tutors.
-      // The 'get' rule is then applied to each document in the result set, ensuring users only see their own connections.
-      allow list: if isStudent() || isTutor();
-      
-      allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
-      allow delete: if isOwner(resource.data.studentId);
     }
   }
 }

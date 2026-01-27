@@ -1,75 +1,11 @@
-
 {
   "placeholderImages": [
     {
       "id": "hero-section",
-      "src": "https://picsum.photos/seed/hero2/1280/720",
+      "src": "https://picsum.photos/seed/welcome/1280/720",
       "width": 1280,
       "height": 720,
-      "hint": "teacher classroom"
-    },
-    {
-      "id": "feature-class-management",
-      "src": "https://picsum.photos/seed/feature1/500/300",
-      "width": 500,
-      "height": 300,
-      "hint": "teacher with students"
-    },
-    {
-      "id": "feature-study-materials",
-      "src": "https://picsum.photos/seed/feature2/500/300",
-      "width": 500,
-      "height": 300,
-      "hint": "stack of books"
-    },
-    {
-      "id": "feature-attendance",
-      "src": "https://picsum.photos/seed/feature3/500/300",
-      "width": 500,
-      "height": 300,
-      "hint": "checklist on clipboard"
-    },
-    {
-      "id": "feature-ai-tests",
-      "src": "https://picsum.photos/seed/feature4/500/300",
-      "width": 500,
-      "height": 300,
-      "hint": "robot using computer"
-    },
-    {
-      "id": "testimonial-1",
-      "src": "https://picsum.photos/seed/avatar1/40/40",
-      "width": 40,
-      "height": 40,
-      "hint": "male teacher"
-    },
-    {
-      "id": "testimonial-2",
-      "src": "https://picsum.photos/seed/avatar2/40/40",
-      "width": 40,
-      "height": 40,
-      "hint": "female student"
-    },
-    {
-      "id": "testimonial-3",
-      "src": "https://picsum.photos/seed/avatar3/40/40",
-      "width": 40,
-      "height": 40,
-      "hint": "female teacher"
-    },
-    {
-      "id": "empowering-teachers",
-      "src": "https://picsum.photos/seed/teacher-laptop/600/400",
-      "width": 600,
-      "height": 400,
-      "hint": "teacher laptop"
-    },
-    {
-      "id": "built-for-students",
-      "src": "https://picsum.photos/seed/student-studying/600/400",
-      "width": 600,
-      "height": 400,
-      "hint": "student studying"
+      "hint": "abstract background"
     }
   ]
 }

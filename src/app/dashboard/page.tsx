@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -8,12 +7,10 @@ import { useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 
 interface UserProfile {
-    role: 'student' | 'tutor' | 'admin';
     name: string;
-    status?: 'pending_verification' | 'approved' | 'denied';
 }
 
-export default function DashboardRedirectPage() {
+export default function DashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
@@ -27,7 +24,7 @@ export default function DashboardRedirectPage() {
 
     useEffect(() => {
         if (isUserLoading || profileLoading) {
-            return; // Wait until user and profile data are loaded
+            return;
         }
         
         if (!user) {
@@ -35,36 +32,19 @@ export default function DashboardRedirectPage() {
             return;
         }
 
-        if (userProfile) {
-            switch(userProfile.role) {
-                case 'admin':
-                    router.replace('/dashboard/admin');
-                    break;
-                case 'tutor':
-                    if (userProfile.status === 'approved') {
-                        router.replace('/dashboard/teacher');
-                    } else {
-                        // Redirect to a status page if not approved
-                        router.replace('/dashboard/teacher/status');
-                    }
-                    break;
-                case 'student':
-                    router.replace('/dashboard/student');
-                    break;
-                default:
-                    router.replace('/login'); // Fallback
-                    break;
-            }
-        }
-    }, [user, userProfile, isUserLoading, profileLoading, router]);
+    }, [user, isUserLoading, profileLoading, router]);
 
 
-    // Render a loading state while we determine the redirect.
+    if (isUserLoading || profileLoading || !user) {
+        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    }
+
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} userRole={userProfile?.role} />
-            <div className="flex-1 flex items-center justify-center">
-                <p>Loading your dashboard...</p>
+            <DashboardHeader userName={userProfile?.name} />
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <h1 className="text-4xl font-bold font-serif">Welcome, {userProfile?.name || 'User'}!</h1>
+                <p className="mt-4 text-lg text-muted-foreground">You are now logged in.</p>
             </div>
         </div>
     );

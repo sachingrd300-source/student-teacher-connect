@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
@@ -26,11 +26,19 @@ import { School } from 'lucide-react';
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -44,7 +52,7 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard'); 
+      // The useEffect will handle the redirect
     } catch (error: any) {
        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setError('Invalid login credentials. Please check your email and password.');
@@ -78,29 +86,34 @@ export default function LoginPage() {
           id: user.uid,
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
-          role: 'student', // Google Sign-in defaults to student
           createdAt: serverTimestamp(),
         };
         await setDoc(userRef, userProfileData);
       }
-      router.push('/dashboard');
-    } catch (error: any) {
-      setError(error.message);
+      // The useEffect will handle the redirect
+    } catch (error: any)
+    {
+        if (error.code !== 'auth/popup-closed-by-user') {
+            setError(error.message);
+        }
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isUserLoading || user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40">
-      <div className="w-full max-w-md p-4 sm:p-0">
+      <div className="w-full max-w-sm p-4 sm:p-0">
         <div className="text-center mb-6">
             <Link href="/" className="inline-block">
               <School className="w-12 h-12 mx-auto text-primary" />
             </Link>
             <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Welcome Back</h1>
-            <p className="text-muted-foreground">Sign in to access your dashboard.</p>
+            <p className="text-muted-foreground">Sign in to continue.</p>
         </div>
         <Card>
           <CardHeader>

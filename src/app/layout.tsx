@@ -17,8 +17,8 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "EduConnect Pro",
-  description: "A Teacher and Student Connectivity Platform",
+  title: "My App",
+  description: "A fresh start",
 };
 
 export default function RootLayout({

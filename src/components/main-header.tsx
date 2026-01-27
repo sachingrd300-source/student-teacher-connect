@@ -10,14 +10,11 @@ export function MainHeader() {
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center" href="/">
                 <School className="h-6 w-6 mr-2 text-primary" />
-                <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
+                <span className="text-lg font-semibold font-serif">My App</span>
             </Link>
-            <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
-                 <Link href="/tutors">
-                    <Button variant="ghost">Find Tutors</Button>
-                </Link>
+            <nav className="ml-auto flex gap-2 sm:gap-4 items-center">
                  <Link href="/login">
-                    <Button variant="outline">Login</Button>
+                    <Button variant="ghost">Login</Button>
                 </Link>
                 <Link href="/signup">
                     <Button>Sign Up</Button>

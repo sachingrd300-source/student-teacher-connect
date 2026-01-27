@@ -13,34 +13,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { School, UserCircle, LogOut } from 'lucide-react';
 
 
 interface DashboardHeaderProps {
   userName: string | null | undefined;
-  userRole?: 'student' | 'tutor' | 'admin';
 }
 
-const navItems = {
-    tutor: [
-        { href: '/dashboard/teacher', label: 'Dashboard' },
-        { href: '/dashboard/teacher/profile', label: 'My Profile' },
-    ],
-    student: [
-        { href: '/dashboard/student', label: 'Dashboard' },
-        { href: '/dashboard/student/profile', label: 'My Profile' },
-    ],
-    admin: [
-        { href: '/dashboard/admin', label: 'Dashboard' },
-    ]
-}
-
-
-export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
+export function DashboardHeader({ userName }: DashboardHeaderProps) {
   const auth = useAuth();
   const router = useRouter();
-
-  const currentNavItems = userRole ? navItems[userRole] : [];
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -56,17 +38,9 @@ export function DashboardHeader({ userName, userRole }: DashboardHeaderProps) {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Link className="flex items-center gap-2 font-semibold" href="/dashboard">
             <School className="h-6 w-6 mr-1 text-primary" />
-            <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
+            <span className="text-lg font-semibold font-serif">My App</span>
         </Link>
         
-        <nav className="hidden md:flex md:items-center md:gap-5 lg:gap-6 text-sm font-medium mx-auto">
-             {currentNavItems.map(item => (
-                <Link key={item.href} href={item.href} className="transition-colors hover:text-foreground text-muted-foreground">
-                    {item.label}
-                </Link>
-             ))}
-        </nav>
-
         <div className="flex items-center gap-2 ml-auto">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
