@@ -130,6 +130,24 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["message", "createdAt"]
+    },
+    "Fee": {
+      "title": "Fee",
+      "type": "object",
+      "description": "Represents a student's monthly fee payment status for a batch.",
+      "properties": {
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "batchName": { "type": "string" },
+        "feeMonth": { "type": "number", "description": "The month of the fee (1-12)." },
+        "feeYear": { "type": "number", "description": "The year of the fee." },
+        "status": { "type": "string", "enum": ["paid", "unpaid"] },
+        "paidOn": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "studentName", "teacherId", "batchId", "batchName", "feeMonth", "feeYear", "status", "createdAt"]
     }
   },
   "auth": {
@@ -155,6 +173,10 @@
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
       "description": "Stores a log of recent activities for a batch."
+    },
+    "/fees/{feeId}": {
+      "schema": { "$ref": "#/entities/Fee" },
+      "description": "Stores monthly fee records for students in batches."
     }
   }
 }

@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, X, PlusCircle, Clipboard, Settings } from 'lucide-react';
+import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
+import { FeeManagementDialog } from '@/components/fee-management-dialog';
 
 
 interface UserProfile {
@@ -65,6 +66,7 @@ export default function TeacherDashboardPage() {
     const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
     const [newBatchName, setNewBatchName] = useState('');
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
+    const [studentForFees, setStudentForFees] = useState<Enrollment | null>(null);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -314,7 +316,12 @@ export default function TeacherDashboardPage() {
                                                          <p className="text-xs text-muted-foreground mt-1">Approved: {formatDate(student.approvedAt)}</p>
                                                     </div>
                                                 </div>
-                                                <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                                <div className='flex items-center gap-2'>
+                                                    <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
+                                                        <Wallet className="mr-2 h-4 w-4" /> Fees
+                                                    </Button>
+                                                    <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                                </div>
                                             </div>
                                         ))
                                     ) : (
@@ -325,6 +332,13 @@ export default function TeacherDashboardPage() {
                         </TabsContent>
                     </Tabs>
                 </div>
+                 {studentForFees && (
+                    <FeeManagementDialog 
+                        isOpen={!!studentForFees} 
+                        onClose={() => setStudentForFees(null)} 
+                        student={studentForFees} 
+                    />
+                )}
             </main>
 
             <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
