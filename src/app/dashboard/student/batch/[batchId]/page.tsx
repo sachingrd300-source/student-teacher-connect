@@ -2,14 +2,14 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface UserProfile {
     name: string;
@@ -21,6 +21,11 @@ interface Batch {
     teacherId: string;
     teacherName: string;
     approvedStudents: string[];
+}
+
+interface Enrollment {
+    id: string;
+    approvedAt?: string;
 }
 
 interface StudyMaterial {
@@ -38,6 +43,13 @@ interface Activity {
     createdAt: string;
 }
 
+interface Fee {
+    id: string;
+    feeMonth: number;
+    feeYear: number;
+    status: 'paid' | 'unpaid';
+    paidOn?: string;
+}
 
 const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -50,6 +62,17 @@ const formatDate = (dateString: string) => {
         minute: '2-digit',
         hour12: true,
     });
+};
+
+const getMonthsInRange = (startDate: Date, endDate: Date) => {
+    const months = [];
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+    while (currentDate <= endDate) {
+        months.push({ month: currentDate.getMonth() + 1, year: currentDate.getFullYear() });
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    return months;
 };
 
 
@@ -84,10 +107,50 @@ export default function StudentBatchPage() {
     }, [firestore, batchId, user]);
     const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
 
+    const enrollmentQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId || !user?.uid) return null;
+        return query(
+            collection(firestore, 'enrollments'),
+            where('studentId', '==', user.uid),
+            where('batchId', '==', batchId),
+            where('status', '==', 'approved')
+        );
+    }, [firestore, batchId, user?.uid]);
+    const { data: enrollments, isLoading: enrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
+    const enrollment = enrollments?.[0];
+
+    const feesQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId || !user?.uid) return null;
+        return query(
+            collection(firestore, 'fees'),
+            where('studentId', '==', user.uid),
+            where('batchId', '==', batchId)
+        );
+    }, [firestore, batchId, user?.uid]);
+    const { data: feesData, isLoading: feesLoading } = useCollection<Fee>(feesQuery);
+
+    const feeStatusByMonth = useMemo(() => {
+        const statusMap = new Map<string, { status: 'paid' | 'unpaid', paidOn?: string }>();
+        feesData?.forEach(fee => {
+            const key = `${fee.feeYear}-${fee.feeMonth}`;
+            statusMap.set(key, { status: fee.status, paidOn: fee.paidOn });
+        });
+        return statusMap;
+    }, [feesData]);
+
+    const allMonths = useMemo(() => {
+        if (!enrollment?.approvedAt) return [];
+        const startDate = new Date(enrollment.approvedAt);
+        const endDate = new Date(); // today
+        return getMonthsInRange(startDate, endDate);
+    }, [enrollment?.approvedAt]);
+
+    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+
 
     // Security check
     const isEnrolled = batch?.approvedStudents?.includes(user?.uid ?? '');
-    const isLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading;
+    const isLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading || enrollmentLoading || feesLoading;
 
     useEffect(() => {
         // If done loading and not enrolled, or no batch found, redirect
@@ -131,9 +194,10 @@ export default function StudentBatchPage() {
                         </Card>
 
                          <Tabs defaultValue="activity" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
+                            <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="activity">Recent Activity ({activities?.length || 0})</TabsTrigger>
                                 <TabsTrigger value="materials">Study Materials ({materials?.length || 0})</TabsTrigger>
+                                <TabsTrigger value="fees">Fee Status</TabsTrigger>
                             </TabsList>
                             
                              <TabsContent value="activity" className="mt-6">
@@ -183,6 +247,39 @@ export default function StudentBatchPage() {
                                             ))
                                         ) : (
                                             <p className="text-muted-foreground text-center py-4">The teacher has not uploaded any study materials yet.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            <TabsContent value="fees" className="mt-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center">
+                                            <Wallet className="mr-2 h-5 w-5 text-primary"/> My Fee Status
+                                        </CardTitle>
+                                        <CardDescription>View your monthly fee payment history for this batch.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="grid gap-4">
+                                        {allMonths.length > 0 ? (
+                                            allMonths.reverse().map(({ month, year }) => {
+                                                const key = `${year}-${month}`;
+                                                const feeInfo = feeStatusByMonth.get(key);
+                                                const isPaid = feeInfo?.status === 'paid';
+                                                
+                                                return (
+                                                    <div key={key} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                        <p className="font-medium">
+                                                            {monthFormatter.format(new Date(year, month - 1))}
+                                                        </p>
+                                                        <div className={`px-3 py-1 text-xs font-bold rounded-full ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                                                            {isPaid ? 'PAID' : 'DUE'}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="text-muted-foreground text-center py-4">Fee information will be available here once you are approved for the batch.</p>
                                         )}
                                     </CardContent>
                                 </Card>
