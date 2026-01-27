@@ -26,8 +26,9 @@ interface Batch {
 interface StudyMaterial {
     id: string;
     title: string;
+    description?: string;
     fileURL: string;
-    fileName: string;
+    fileType: string;
     createdAt: string;
 }
 
@@ -66,21 +67,21 @@ export default function StudentBatchPage() {
     const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
 
     const batchRef = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
+        if (!firestore || !batchId || !user) return null;
         return doc(firestore, 'batches', batchId);
-    }, [firestore, batchId]);
+    }, [firestore, batchId, user]);
     const { data: batch, isLoading: batchLoading } = useDoc<Batch>(batchRef);
     
     const materialsRef = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
+        if (!firestore || !batchId || !user) return null;
         return collection(firestore, 'batches', batchId, 'materials');
-    }, [firestore, batchId]);
+    }, [firestore, batchId, user]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
     
     const activityQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
+        if (!firestore || !batchId || !user) return null;
         return query(collection(firestore, 'batches', batchId, 'activity'), orderBy('createdAt', 'desc'));
-    }, [firestore, batchId]);
+    }, [firestore, batchId, user]);
     const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
 
 
@@ -170,7 +171,8 @@ export default function StudentBatchPage() {
                                                 <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
                                                     <div>
                                                         <p className="font-semibold">{material.title}</p>
-                                                        <p className="text-xs text-muted-foreground">Uploaded: {formatDate(material.createdAt)}</p>
+                                                         <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
                                                     </div>
                                                     <Button asChild size="sm">
                                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer">

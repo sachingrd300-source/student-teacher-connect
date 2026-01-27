@@ -39,8 +39,10 @@ interface Enrollment {
 interface StudyMaterial {
     id: string;
     title: string;
+    description?: string;
     fileURL: string;
     fileName: string; // Store fileName to delete from storage
+    fileType: string;
     createdAt: string;
 }
 
@@ -83,6 +85,7 @@ export default function BatchManagementPage() {
     
     // Material form state
     const [materialTitle, setMaterialTitle] = useState('');
+    const [materialDescription, setMaterialDescription] = useState('');
     const [materialFile, setMaterialFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -94,22 +97,28 @@ export default function BatchManagementPage() {
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
-    const batchRef = useMemoFirebase(() => batchId ? doc(firestore, 'batches', batchId) : null, [firestore, batchId]);
+    const batchRef = useMemoFirebase(() => {
+        if (!firestore || !batchId || !user) return null;
+        return doc(firestore, 'batches', batchId);
+    }, [firestore, batchId, user]);
     const { data: batch, isLoading: isBatchLoading } = useDoc<Batch>(batchRef);
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
+        if (!firestore || !batchId || !user) return null;
         return query(collection(firestore, 'enrollments'), where('batchId', '==', batchId), where('status', '==', 'approved'));
-    }, [firestore, batchId]);
+    }, [firestore, batchId, user]);
     const { data: enrolledStudents, isLoading: areStudentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
-    const materialsRef = useMemoFirebase(() => collection(firestore, 'batches', batchId, 'materials'), [firestore, batchId]);
+    const materialsRef = useMemoFirebase(() => {
+        if (!firestore || !batchId || !user) return null;
+        return collection(firestore, 'batches', batchId, 'materials');
+    }, [firestore, batchId, user]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
     
     const activityQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
+        if (!firestore || !batchId || !user) return null;
         return query(collection(firestore, 'batches', batchId, 'activity'), orderBy('createdAt', 'desc'));
-    }, [firestore, batchId]);
+    }, [firestore, batchId, user]);
     const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
 
 
@@ -194,6 +203,7 @@ export default function BatchManagementPage() {
 
             firestoreBatch.set(doc(materialsColRef), {
                 title: materialTitle.trim(),
+                description: materialDescription.trim(),
                 fileURL: downloadURL,
                 fileName: fileName,
                 fileType: materialFile.type,
@@ -210,6 +220,7 @@ export default function BatchManagementPage() {
             await firestoreBatch.commit();
 
             setMaterialTitle('');
+            setMaterialDescription('');
             setMaterialFile(null);
             if (document.getElementById('material-file')) {
                 (document.getElementById('material-file') as HTMLInputElement).value = '';
@@ -358,6 +369,10 @@ export default function BatchManagementPage() {
                                             <Label htmlFor="material-title">Material Title</Label>
                                             <Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} placeholder="e.g., Chapter 1 Notes" required />
                                         </div>
+                                         <div className="grid gap-2">
+                                            <Label htmlFor="material-description">Description (Optional)</Label>
+                                            <Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} placeholder="A short description of the material." />
+                                        </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="material-file">File</Label>
                                             <Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required />
@@ -378,7 +393,8 @@ export default function BatchManagementPage() {
                                                     <FileText className="h-5 w-5 text-muted-foreground" />
                                                     <div>
                                                         <p className="font-semibold">{material.title}</p>
-                                                        <p className="text-xs text-muted-foreground">Uploaded: {formatDate(material.createdAt)}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -455,7 +471,7 @@ export default function BatchManagementPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Are you sure?</DialogTitle>
-                        <DialogDescription>This will permanently delete the "{batch.name}" batch. This action cannot be undone.</DialogDescription>
+                        <DialogDescription>This will permanently delete the "{batch?.name}" batch. This action cannot be undone.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
