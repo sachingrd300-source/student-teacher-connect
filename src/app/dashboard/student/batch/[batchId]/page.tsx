@@ -25,6 +25,9 @@ interface Batch {
 
 interface Enrollment {
     id: string;
+    studentId: string;
+    batchId: string;
+    status: 'pending' | 'approved';
     approvedAt?: string;
 }
 
@@ -106,21 +109,21 @@ export default function StudentBatchPage() {
     const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
 
     const batchRef = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user) return null;
+        if (!firestore || !batchId) return null;
         return doc(firestore, 'batches', batchId);
-    }, [firestore, batchId, user]);
+    }, [firestore, batchId]);
     const { data: batch, isLoading: batchLoading } = useDoc<Batch>(batchRef);
     
     const materialsRef = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user) return null;
+        if (!firestore || !batchId) return null;
         return collection(firestore, 'batches', batchId, 'materials');
-    }, [firestore, batchId, user]);
+    }, [firestore, batchId]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
     
     const activityQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user) return null;
+        if (!firestore || !batchId) return null;
         return query(collection(firestore, 'batches', batchId, 'activity'), orderBy('createdAt', 'desc'));
-    }, [firestore, batchId, user]);
+    }, [firestore, batchId]);
     const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
 
     const enrollmentQuery = useMemoFirebase(() => {
@@ -134,6 +137,7 @@ export default function StudentBatchPage() {
     }, [firestore, batchId, user?.uid]);
     const { data: enrollments, isLoading: enrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
     const enrollment = enrollments?.[0];
+    const isEnrolledAndApproved = !!enrollment;
 
     const feesQuery = useMemoFirebase(() => {
         if (!firestore || !batchId || !user?.uid) return null;
@@ -186,23 +190,21 @@ export default function StudentBatchPage() {
 
     const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
 
-
     // Security check
-    const isEnrolled = batch?.approvedStudents?.includes(user?.uid ?? '');
-    const isLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading || enrollmentLoading || feesLoading || testsLoading || testResultsLoading;
-
+    const isSecurityLoading = isUserLoading || batchLoading || enrollmentLoading;
     useEffect(() => {
-        // If done loading and not enrolled, or no batch found, redirect
-        if (!isLoading && (!batch || !isEnrolled)) {
+        if (!isSecurityLoading && (!batch || !isEnrolledAndApproved)) {
             router.replace('/dashboard/student');
         }
-    }, [isLoading, batch, isEnrolled, router]);
+    }, [isSecurityLoading, batch, isEnrolledAndApproved, router]);
     
     const handlePayNow = () => {
         alert('Payment gateway integration is pending. Please contact your teacher to complete the payment.');
     };
 
-    if (isLoading) {
+    const isPageLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading || enrollmentLoading || feesLoading || testsLoading || testResultsLoading;
+
+    if (isPageLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -210,8 +212,7 @@ export default function StudentBatchPage() {
         );
     }
     
-    // If done loading and not enrolled, or no batch found, show redirecting message
-    if (!batch || !isEnrolled) {
+    if (!batch || !isEnrolledAndApproved) {
         return (
              <div className="flex h-screen items-center justify-center">
                 <p>Access Denied. Redirecting...</p>
