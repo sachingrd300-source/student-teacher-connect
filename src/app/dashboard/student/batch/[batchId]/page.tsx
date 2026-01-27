@@ -287,13 +287,18 @@ export default function StudentBatchPage() {
                                                         </div>
 
                                                         {isPaid ? (
-                                                            <div className="px-3 py-1 text-xs font-bold rounded-full bg-success/10 text-success">
+                                                            <div className="px-3 py-1 text-xs font-semibold rounded-full bg-success/10 text-success">
                                                                 PAID
                                                             </div>
                                                         ) : (
-                                                            <Button size="sm" variant="outline" onClick={handlePayNow}>
-                                                                <CreditCard className="mr-2 h-4 w-4" /> Pay Now
-                                                            </Button>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="px-3 py-1 text-xs font-semibold rounded-full bg-destructive/10 text-destructive">
+                                                                    DUE
+                                                                </div>
+                                                                <Button size="sm" variant="outline" onClick={handlePayNow}>
+                                                                    <CreditCard className="mr-2 h-4 w-4" /> Pay Now
+                                                                </Button>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 );
