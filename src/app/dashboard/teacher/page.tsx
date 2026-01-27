@@ -2,7 +2,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, arrayUnion, arrayRemove, writeBatch } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -122,26 +122,36 @@ export default function TeacherDashboardPage() {
 
     const handleApprove = async (enrollment: Enrollment) => {
         if (!firestore) return;
+        
+        const batch = writeBatch(firestore);
+
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        await updateDoc(enrollmentRef, { status: 'approved' });
+        batch.update(enrollmentRef, { status: 'approved' });
 
         const batchRef = doc(firestore, 'batches', enrollment.batchId);
-        await updateDoc(batchRef, {
+        batch.update(batchRef, {
             approvedStudents: arrayUnion(enrollment.studentId)
         });
+
+        await batch.commit();
     };
 
     const handleRemoveStudent = async (enrollment: Enrollment) => {
         if (!firestore) return;
         
+        const batch = writeBatch(firestore);
+        
         // Remove from batch's approved list
         const batchRef = doc(firestore, 'batches', enrollment.batchId);
-        await updateDoc(batchRef, {
+        batch.update(batchRef, {
             approvedStudents: arrayRemove(enrollment.studentId)
         });
 
         // Delete the enrollment document
-        await deleteDoc(doc(firestore, 'enrollments', enrollment.id));
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        batch.delete(enrollmentRef);
+
+        await batch.commit();
     };
     
     const handleDeclineRequest = async (enrollmentId: string) => {

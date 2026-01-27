@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, query, where, arrayRemove, addDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, arrayRemove, addDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import Link from 'next/link';
 
@@ -160,12 +160,17 @@ export default function BatchManagementPage() {
     const handleRemoveStudent = async (enrollment: Enrollment) => {
         if (!firestore) return;
         
+        const batch = writeBatch(firestore);
+
         const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
-        await updateDoc(currentBatchRef, {
+        batch.update(currentBatchRef, {
             approvedStudents: arrayRemove(enrollment.studentId)
         });
 
-        await deleteDoc(doc(firestore, 'enrollments', enrollment.id));
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        batch.delete(enrollmentRef);
+
+        await batch.commit();
     };
 
     const handleFileUpload = async (e: React.FormEvent) => {
