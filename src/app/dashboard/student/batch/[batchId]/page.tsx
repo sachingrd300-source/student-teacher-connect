@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -81,7 +81,9 @@ export default function StudentBatchPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const batchId = params.batchId as string;
+    const defaultTab = searchParams.get('tab') || 'activity';
 
     const currentUserProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -193,7 +195,7 @@ export default function StudentBatchPage() {
                             </CardHeader>
                         </Card>
 
-                         <Tabs defaultValue="activity" className="w-full">
+                         <Tabs defaultValue={defaultTab} className="w-full">
                             <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="activity">Recent Activity ({activities?.length || 0})</TabsTrigger>
                                 <TabsTrigger value="materials">Study Materials ({materials?.length || 0})</TabsTrigger>
