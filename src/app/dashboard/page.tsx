@@ -4,6 +4,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -51,5 +52,10 @@ export default function DashboardPage() {
 
 
     // Show a loading screen while we determine where to redirect.
-    return <div className="flex h-screen items-center justify-center">Redirecting...</div>;
+    return (
+        <div className="flex h-screen flex-col items-center justify-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Redirecting to your dashboard... 🚀</p>
+        </div>
+    );
 }

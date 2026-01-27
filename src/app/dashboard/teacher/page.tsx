@@ -58,6 +58,13 @@ const formatDate = (dateString?: string) => {
     });
 };
 
+const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+};
+
 export default function TeacherDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -195,12 +202,13 @@ export default function TeacherDashboardPage() {
     };
 
     const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
+    const greeting = getGreeting();
 
     if (isLoading || !userProfile) {
         return (
              <div className="flex h-screen items-center justify-center flex-col gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground">Verifying access...</p>
+                <p className="text-muted-foreground">Preparing your dashboard...</p>
             </div>
         );
     }
@@ -211,7 +219,7 @@ export default function TeacherDashboardPage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto">
                     <div className="mb-8">
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Teacher Dashboard</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold font-serif">{greeting}, {userProfile?.name}! ☀️</h1>
                         <p className="text-muted-foreground mt-2">Manage your batches, students, and requests all in one place.</p>
                     </div>
                     
@@ -260,7 +268,7 @@ export default function TeacherDashboardPage() {
                                         ))
                                     ) : (
                                         <div className="text-center py-12">
-                                            <p className="text-muted-foreground">You haven't created any batches yet.</p>
+                                            <p className="text-muted-foreground">You haven't created any batches yet. Let's create your first one! 🎉</p>
                                              <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
                                                 <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
                                             </Button>
@@ -300,7 +308,7 @@ export default function TeacherDashboardPage() {
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-muted-foreground text-center py-12">No pending requests.</p>
+                                        <p className="text-muted-foreground text-center py-12">No new student requests right now. We'll notify you when someone wants to join. 👍</p>
                                     )}
                                 </CardContent>
                             </Card>
@@ -333,7 +341,7 @@ export default function TeacherDashboardPage() {
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-muted-foreground text-center py-12">You have no students yet.</p>
+                                        <p className="text-muted-foreground text-center py-12">No students have joined yet. Share your batch codes to get them enrolled! 🚀</p>
                                     )}
                                 </CardContent>
                             </Card>

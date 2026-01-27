@@ -426,7 +426,7 @@ export default function BatchManagementPage() {
                                                 </div>
                                             </div>
                                         ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No students are enrolled.</p>}
+                                    ) : <p className="text-muted-foreground text-center py-8">No students have joined this batch yet. Share the code to get started!</p>}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -474,7 +474,7 @@ export default function BatchManagementPage() {
                                                 </Button>
                                             </div>
                                         ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No tests created yet.</p>}
+                                    ) : <p className="text-muted-foreground text-center py-8">No tests have been scheduled for this batch yet. Create one to get started.</p>}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -524,7 +524,7 @@ export default function BatchManagementPage() {
                                                 </div>
                                             </div>
                                         ))
-                                     ) : <p className="text-muted-foreground text-center py-8">No materials uploaded yet.</p>}
+                                     ) : <p className="text-muted-foreground text-center py-8">No study materials have been uploaded. Upload your first file to help your students learn.</p>}
                                  </CardContent>
                             </Card>
                         </TabsContent>
@@ -560,7 +560,7 @@ export default function BatchManagementPage() {
                                                 <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
                                             </div>
                                         ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No announcements posted yet.</p>}
+                                    ) : <p className="text-muted-foreground text-center py-8">No announcements have been posted. Share an update with your students!</p>}
                                 </CardContent>
                             </Card>
                         </TabsContent>

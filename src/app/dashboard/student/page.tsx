@@ -48,6 +48,13 @@ const formatDate = (dateString?: string) => {
     });
 };
 
+const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Let\'s learn something new today ✨';
+    if (hour < 18) return 'Keep up the great work! 👍';
+    return 'Time to revise what you learned 🌙';
+};
+
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -123,7 +130,7 @@ export default function StudentDashboardPage() {
                 status: 'pending',
                 createdAt: new Date().toISOString(),
             });
-            setJoinMessage({ type: 'success', text: `Request sent to join "${batchData.name}"!` });
+            setJoinMessage({ type: 'success', text: `Request sent to join "${batchData.name}"! 🎉` });
             setBatchCode('');
         } catch (error) {
             console.error("Error creating enrollment request:", error);
@@ -144,7 +151,7 @@ export default function StudentDashboardPage() {
         return (
             <div className="flex h-screen items-center justify-center flex-col gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground">Verifying access...</p>
+                <p className="text-muted-foreground">Loading your courses...</p>
             </div>
         );
     }
@@ -161,6 +168,11 @@ export default function StudentDashboardPage() {
             <DashboardHeader userName={userProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
+                    <div className="mb-4">
+                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
+                        <p className="text-muted-foreground mt-2">{getGreeting()}</p>
+                    </div>
+
                      <Card>
                         <CardHeader>
                             <CardTitle>Discover New Teachers</CardTitle>
@@ -248,7 +260,7 @@ export default function StudentDashboardPage() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-muted-foreground text-center py-8">You are not enrolled in any batches yet.</p>
+                                <p className="text-muted-foreground text-center py-8">You haven't joined any batches yet. Find a teacher or enter a batch code to begin! 🚀</p>
                             )}
                         </CardContent>
                     </Card>
