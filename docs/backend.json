@@ -23,6 +23,14 @@
           "description": "The role of the user.",
           "enum": ["student", "teacher"]
         },
+        "subject": {
+          "type": "string",
+          "description": "The subject taught by the teacher."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biography of the user."
+        },
         "createdAt": {
             "type": "string",
             "format": "date-time"

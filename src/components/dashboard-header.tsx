@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut } from 'lucide-react';
+import { School, UserCircle, LogOut, User as UserIcon } from 'lucide-react';
 
 
 interface DashboardHeaderProps {
@@ -55,6 +55,12 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                         <p className="text-sm font-normal text-muted-foreground">{userName}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/dashboard/profile">
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Logout</span>
