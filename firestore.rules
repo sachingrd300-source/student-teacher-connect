@@ -61,6 +61,11 @@ service cloud.firestore {
         allow read: if isAdmin() || isEnrolledInBatch(batchId) || isTeacherOwnerOfBatch(batchId);
         allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
+      
+      match /tests/{testId} {
+        allow read: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
+        allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+      }
     }
     
     match /enrollments/{enrollmentId} {
@@ -80,17 +85,25 @@ service cloud.firestore {
     }
 
     match /fees/{feeId} {
+       allow get: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid) || (isStudent() && resource.data.studentId == request.auth.uid);
+       allow list: if isAdmin() || isTeacher() || isStudent();
+       allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+       allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
+       allow delete: if isAdmin();
+    }
+    
+    match /testResults/{resultId} {
       allow get: if isAdmin() || 
-                   (isTeacher() && resource.data.teacherId == request.auth.uid) || 
+                   (isTeacher() && resource.data.teacherId == request.auth.uid) ||
                    (isStudent() && resource.data.studentId == request.auth.uid);
 
       allow list: if isAdmin() || isTeacher() || isStudent();
 
-      allow create: if isAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow create: if isAdmin() || 
+                      (isTeacher() && request.resource.data.teacherId == request.auth.uid);
 
-      allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
-      
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin() ||
+                      (isTeacher() && resource.data.teacherId == request.auth.uid);
     }
   }
 }

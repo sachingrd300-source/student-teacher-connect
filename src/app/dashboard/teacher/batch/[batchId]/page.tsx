@@ -14,10 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
+import { TestMarksDialog } from '@/components/test-marks-dialog';
 
 interface UserProfile {
     name: string;
@@ -58,6 +59,17 @@ interface Activity {
     createdAt: string;
 }
 
+interface Test {
+    id: string;
+    title: string;
+    subject: string;
+    testDate: string;
+    maxMarks: number;
+    batchId: string;
+    teacherId: string;
+    createdAt: string;
+}
+
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 const formatDate = (dateString: string) => {
@@ -85,6 +97,7 @@ export default function BatchManagementPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [studentForFees, setStudentForFees] = useState<Enrollment | null>(null);
+    const [selectedTest, setSelectedTest] = useState<Test | null>(null);
     
     // Batch form state
     const [batchName, setBatchName] = useState('');
@@ -99,6 +112,13 @@ export default function BatchManagementPage() {
     // Announcement form state
     const [announcement, setAnnouncement] = useState('');
     const [isPosting, setIsPosting] = useState(false);
+
+    // Test form state
+    const [testTitle, setTestTitle] = useState('');
+    const [testSubject, setTestSubject] = useState('');
+    const [testDate, setTestDate] = useState('');
+    const [maxMarks, setMaxMarks] = useState('');
+    const [isCreatingTest, setIsCreatingTest] = useState(false);
 
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -127,6 +147,12 @@ export default function BatchManagementPage() {
         return query(collection(firestore, 'batches', batchId, 'activity'), orderBy('createdAt', 'desc'));
     }, [firestore, batchId, user]);
     const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
+    
+    const testsQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'batches', batchId, 'tests'), orderBy('testDate', 'desc'));
+    }, [firestore, batchId]);
+    const { data: tests, isLoading: testsLoading } = useCollection<Test>(testsQuery);
 
 
     useEffect(() => {
@@ -246,10 +272,8 @@ export default function BatchManagementPage() {
         const activityColRef = collection(firestore, 'batches', batchId, 'activity');
         
         try {
-            // Delete file from storage first
             await deleteObject(fileRef);
             
-            // Use a batch for firestore operations
             const firestoreBatch = writeBatch(firestore);
             firestoreBatch.delete(materialDocRef);
             firestoreBatch.set(doc(activityColRef), {
@@ -259,8 +283,6 @@ export default function BatchManagementPage() {
             await firestoreBatch.commit();
 
         } catch (error) {
-            // If deleting file fails, we might not want to delete the doc.
-            // For simplicity, we log the error. In a real app, might need more robust handling.
             console.error("Error deleting material: ", error);
         }
     };
@@ -276,7 +298,7 @@ export default function BatchManagementPage() {
                 message: announcement.trim(),
                 createdAt: new Date().toISOString(),
             });
-            setAnnouncement(''); // Clear the textarea
+            setAnnouncement('');
         } catch (error) {
             console.error("Error posting announcement:", error);
         } finally {
@@ -284,11 +306,38 @@ export default function BatchManagementPage() {
         }
     };
 
+    const handleCreateTest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!testTitle.trim() || !testSubject.trim() || !testDate || !maxMarks || !firestore || !batchId || !user) return;
+        
+        setIsCreatingTest(true);
+        try {
+            const testsColRef = collection(firestore, 'batches', batchId, 'tests');
+            await addDoc(testsColRef, {
+                title: testTitle.trim(),
+                subject: testSubject.trim(),
+                testDate: new Date(testDate).toISOString(),
+                maxMarks: Number(maxMarks),
+                batchId,
+                teacherId: user.uid,
+                createdAt: new Date().toISOString(),
+            });
+            setTestTitle('');
+            setTestSubject('');
+            setTestDate('');
+            setMaxMarks('');
+        } catch (error) {
+            console.error("Error creating test:", error);
+        } finally {
+            setIsCreatingTest(false);
+        }
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading;
+    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading;
 
     if (isLoading || !batch) {
         return (
@@ -335,8 +384,9 @@ export default function BatchManagementPage() {
                     </div>
 
                     <Tabs defaultValue="students" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="tests">Tests ({tests?.length || 0})</TabsTrigger>
                             <TabsTrigger value="materials">Materials ({materials?.length || 0})</TabsTrigger>
                             <TabsTrigger value="announcements">Announcements</TabsTrigger>
                         </TabsList>
@@ -356,7 +406,7 @@ export default function BatchManagementPage() {
                                                 </div>
                                                 <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
                                                     <Button asChild variant="outline" size="sm">
-                                                        <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />View Profile</Link>
+                                                        <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
                                                     </Button>
                                                      <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
                                                         <Wallet className="mr-2 h-4 w-4" /> Fees
@@ -366,6 +416,54 @@ export default function BatchManagementPage() {
                                             </div>
                                         ))
                                     ) : <p className="text-muted-foreground text-center py-8">No students are enrolled.</p>}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="tests" className="mt-4 grid gap-6">
+                             <Card>
+                                <CardHeader><CardTitle>Create a New Test</CardTitle></CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleCreateTest} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="test-title">Test Title</Label>
+                                            <Input id="test-title" value={testTitle} onChange={(e) => setTestTitle(e.target.value)} placeholder="e.g., Mid-Term Exam" required />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="test-subject">Subject</Label>
+                                            <Input id="test-subject" value={testSubject} onChange={(e) => setTestSubject(e.target.value)} placeholder="e.g., Physics" required />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="test-date">Test Date</Label>
+                                            <Input id="test-date" type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} required />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="max-marks">Max Marks</Label>
+                                            <Input id="max-marks" type="number" value={maxMarks} onChange={(e) => setMaxMarks(e.target.value)} placeholder="e.g., 100" required />
+                                        </div>
+                                        <Button type="submit" disabled={isCreatingTest} className="w-full lg:w-auto lg:col-start-4">
+                                            {isCreatingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />} Create Test
+                                        </Button>
+                                    </form>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader><CardTitle>Conducted Tests</CardTitle></CardHeader>
+                                <CardContent className="grid gap-4">
+                                    {tests && tests.length > 0 ? (
+                                        tests.map(test => (
+                                            <div key={test.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                <div>
+                                                    <p className="font-semibold">{test.title} <span className="font-normal text-muted-foreground">- {test.subject}</span></p>
+                                                    <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Max Marks: {test.maxMarks}</p>
+                                                </div>
+                                                <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Manage Marks
+                                                </Button>
+                                            </div>
+                                        ))
+                                    ) : <p className="text-muted-foreground text-center py-8">No tests created yet.</p>}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -464,6 +562,15 @@ export default function BatchManagementPage() {
                     isOpen={!!studentForFees} 
                     onClose={() => setStudentForFees(null)} 
                     student={studentForFees} 
+                />
+            )}
+
+            {selectedTest && (
+                <TestMarksDialog
+                    isOpen={!!selectedTest}
+                    onClose={() => setSelectedTest(null)}
+                    test={selectedTest}
+                    students={enrolledStudents || []}
                 />
             )}
 

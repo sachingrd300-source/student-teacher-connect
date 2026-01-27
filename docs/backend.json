@@ -148,6 +148,36 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["studentId", "studentName", "teacherId", "batchId", "batchName", "feeMonth", "feeYear", "status", "createdAt"]
+    },
+    "Test": {
+      "title": "Test",
+      "type": "object",
+      "description": "Represents a test created by a teacher for a batch.",
+      "properties": {
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "testDate": { "type": "string", "format": "date-time" },
+        "maxMarks": { "type": "number" },
+        "batchId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "subject", "testDate", "maxMarks", "batchId", "teacherId", "createdAt"]
+    },
+    "TestResult": {
+      "title": "Test Result",
+      "type": "object",
+      "description": "Represents a student's marks for a specific test.",
+      "properties": {
+        "testId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "batchId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "marksObtained": { "type": "number" },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["testId", "studentId", "studentName", "batchId", "teacherId", "marksObtained", "uploadedAt"]
     }
   },
   "auth": {
@@ -174,9 +204,17 @@
       "schema": { "$ref": "#/entities/Activity" },
       "description": "Stores a log of recent activities for a batch."
     },
+    "/batches/{batchId}/tests/{testId}": {
+      "schema": { "$ref": "#/entities/Test" },
+      "description": "Stores tests for a specific batch."
+    },
     "/fees/{feeId}": {
       "schema": { "$ref": "#/entities/Fee" },
       "description": "Stores monthly fee records for students in batches."
+    },
+    "/testResults/{resultId}": {
+      "schema": { "$ref": "#/entities/TestResult" },
+      "description": "Stores student marks for tests."
     }
   }
 }

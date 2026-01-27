@@ -6,7 +6,7 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
@@ -49,6 +49,20 @@ interface Fee {
     feeYear: number;
     status: 'paid' | 'unpaid';
     paidOn?: string;
+}
+
+interface Test {
+    id: string;
+    title: string;
+    subject: string;
+    testDate: string;
+    maxMarks: number;
+}
+
+interface TestResult {
+    id: string;
+    testId: string;
+    marksObtained: number;
 }
 
 const formatDate = (dateString: string) => {
@@ -131,6 +145,29 @@ export default function StudentBatchPage() {
     }, [firestore, batchId, user?.uid]);
     const { data: feesData, isLoading: feesLoading } = useCollection<Fee>(feesQuery);
 
+    const testsQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'batches', batchId, 'tests'), orderBy('testDate', 'desc'));
+    }, [firestore, batchId]);
+    const { data: tests, isLoading: testsLoading } = useCollection<Test>(testsQuery);
+    
+    const testResultsQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId || !user?.uid) return null;
+        return query(
+            collection(firestore, 'testResults'),
+            where('studentId', '==', user.uid),
+            where('batchId', '==', batchId)
+        );
+    }, [firestore, batchId, user?.uid]);
+    const { data: testResults, isLoading: testResultsLoading } = useCollection<TestResult>(testResultsQuery);
+
+    const resultsByTestId = useMemo(() => {
+        const map = new Map<string, TestResult>();
+        testResults?.forEach(result => map.set(result.testId, result));
+        return map;
+    }, [testResults]);
+
+
     const feeStatusByMonth = useMemo(() => {
         const statusMap = new Map<string, { status: 'paid' | 'unpaid', paidOn?: string }>();
         feesData?.forEach(fee => {
@@ -152,7 +189,7 @@ export default function StudentBatchPage() {
 
     // Security check
     const isEnrolled = batch?.approvedStudents?.includes(user?.uid ?? '');
-    const isLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading || enrollmentLoading || feesLoading;
+    const isLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading || enrollmentLoading || feesLoading || testsLoading || testResultsLoading;
 
     useEffect(() => {
         // If done loading and not enrolled, or no batch found, redirect
@@ -200,10 +237,11 @@ export default function StudentBatchPage() {
                         </Card>
 
                          <Tabs defaultValue={defaultTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="activity">Recent Activity ({activities?.length || 0})</TabsTrigger>
-                                <TabsTrigger value="materials">Study Materials ({materials?.length || 0})</TabsTrigger>
-                                <TabsTrigger value="fees">Fee Status</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-4">
+                                <TabsTrigger value="activity">Activity</TabsTrigger>
+                                <TabsTrigger value="materials">Materials</TabsTrigger>
+                                <TabsTrigger value="tests">Tests</TabsTrigger>
+                                <TabsTrigger value="fees">Fees</TabsTrigger>
                             </TabsList>
                             
                              <TabsContent value="activity" className="mt-6">
@@ -253,6 +291,44 @@ export default function StudentBatchPage() {
                                             ))
                                         ) : (
                                             <p className="text-muted-foreground text-center py-4">The teacher has not uploaded any study materials yet.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            
+                            <TabsContent value="tests" className="mt-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center">
+                                            <ClipboardCheck className="mr-2 h-5 w-5 text-primary"/> Test Results
+                                        </CardTitle>
+                                        <CardDescription>View your performance in all tests conducted in this batch.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="grid gap-4">
+                                        {tests && tests.length > 0 ? (
+                                            tests.map((test) => {
+                                                const result = resultsByTestId.get(test.id);
+                                                return (
+                                                    <div key={test.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                        <div>
+                                                            <p className="font-semibold">{test.title}</p>
+                                                            <p className="text-sm text-muted-foreground mt-1">{test.subject}</p>
+                                                            <p className="text-xs text-muted-foreground mt-2">Date: {new Date(test.testDate).toLocaleDateString()}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            {result ? (
+                                                                <>
+                                                                    <p className="text-xl font-bold text-primary">{result.marksObtained} <span className="text-sm font-normal text-muted-foreground">/ {test.maxMarks}</span></p>
+                                                                </>
+                                                            ) : (
+                                                                <p className="text-sm text-muted-foreground">Not graded</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="text-muted-foreground text-center py-4">No tests have been conducted yet.</p>
                                         )}
                                     </CardContent>
                                 </Card>
