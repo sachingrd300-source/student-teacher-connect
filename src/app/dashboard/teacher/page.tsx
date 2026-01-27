@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, X, PlusCircle, Clipboard } from 'lucide-react';
+import { Loader2, Check, X, PlusCircle, Clipboard, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
+import Link from 'next/link';
 
 
 interface UserProfile {
@@ -200,6 +201,11 @@ export default function TeacherDashboardPage() {
                                                         </Button>
                                                     </div>
                                                 </div>
+                                                <Button asChild>
+                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                        <Settings className="mr-2 h-4 w-4" /> Manage
+                                                    </Link>
+                                                </Button>
                                             </div>
                                         ))
                                     ) : (
