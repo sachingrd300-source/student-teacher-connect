@@ -4,10 +4,10 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { useEffect } from 'react';
-import { DashboardHeader } from '@/components/dashboard-header';
 
 interface UserProfile {
     name: string;
+    role: 'student' | 'teacher';
 }
 
 export default function DashboardPage() {
@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (isUserLoading || profileLoading) {
-            return;
+            return; // Still loading, do nothing.
         }
         
         if (!user) {
@@ -32,20 +32,20 @@ export default function DashboardPage() {
             return;
         }
 
-    }, [user, isUserLoading, profileLoading, router]);
+        if (userProfile) {
+            if (userProfile.role === 'teacher') {
+                router.replace('/dashboard/teacher');
+            } else if (userProfile.role === 'student') {
+                router.replace('/dashboard/student');
+            } else {
+                // Handle cases where role might not be set, maybe redirect to a role selection page or default
+                // For now, we'll just log an error and they'll see the loading screen.
+                console.error('User role not found.');
+            }
+        }
+    }, [user, userProfile, isUserLoading, profileLoading, router]);
 
 
-    if (isUserLoading || profileLoading || !user) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
-    }
-
-    return (
-        <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                <h1 className="text-4xl font-bold font-serif">Welcome, {userProfile?.name || 'User'}!</h1>
-                <p className="mt-4 text-lg text-muted-foreground">You are now logged in.</p>
-            </div>
-        </div>
-    );
+    // Show a loading screen while we determine where to redirect.
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
 }
