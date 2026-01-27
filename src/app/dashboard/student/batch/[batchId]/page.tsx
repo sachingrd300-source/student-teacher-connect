@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 interface UserProfile {
     name: string;
@@ -44,6 +45,13 @@ export default function StudentBatchPage() {
     const isEnrolled = batch?.approvedStudents?.includes(user?.uid ?? '');
     const isLoading = isUserLoading || batchLoading;
 
+    useEffect(() => {
+        // If done loading and not enrolled, or no batch found, redirect
+        if (!isLoading && (!batch || !isEnrolled)) {
+            router.replace('/dashboard/student');
+        }
+    }, [isLoading, batch, isEnrolled, router]);
+
     if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
@@ -52,9 +60,8 @@ export default function StudentBatchPage() {
         );
     }
     
-    // If done loading and not enrolled, or no batch found, redirect
-    if (!isLoading && (!batch || !isEnrolled)) {
-        router.replace('/dashboard/student');
+    // If done loading and not enrolled, or no batch found, show redirecting message
+    if (!batch || !isEnrolled) {
         return (
              <div className="flex h-screen items-center justify-center">
                 <p>Access Denied. Redirecting...</p>
