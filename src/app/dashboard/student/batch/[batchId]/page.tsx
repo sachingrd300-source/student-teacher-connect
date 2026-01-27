@@ -145,12 +145,34 @@ export default function StudentBatchPage() {
                             </CardHeader>
                         </Card>
 
-                         <Tabs defaultValue="materials" className="w-full">
+                         <Tabs defaultValue="activity" className="w-full">
                             <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="activity">Recent Activity ({activities?.length || 0})</TabsTrigger>
                                 <TabsTrigger value="materials">Study Materials ({materials?.length || 0})</TabsTrigger>
                                 <TabsTrigger value="schedules">Class Schedules ({classes?.length || 0})</TabsTrigger>
-                                <TabsTrigger value="activity">Recent Activity ({activities?.length || 0})</TabsTrigger>
                             </TabsList>
+                            
+                             <TabsContent value="activity" className="mt-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center">
+                                            <ListCollapse className="mr-2 h-5 w-5 text-primary"/> Recent Activity
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="grid gap-4">
+                                        {activities && activities.length > 0 ? (
+                                            activities.map(activity => (
+                                                <div key={activity.id} className="p-3 rounded-lg border bg-background">
+                                                    <p className="font-medium">{activity.message}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-muted-foreground text-center py-4">No recent activity in this batch.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
 
                             <TabsContent value="materials" className="mt-6">
                                  <Card>
@@ -213,27 +235,6 @@ export default function StudentBatchPage() {
                                             ))
                                         ) : (
                                             <p className="text-muted-foreground text-center py-4">No classes scheduled yet.</p>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                             <TabsContent value="activity" className="mt-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center">
-                                            <ListCollapse className="mr-2 h-5 w-5 text-primary"/> Recent Activity
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="grid gap-4">
-                                        {activities && activities.length > 0 ? (
-                                            activities.map(activity => (
-                                                <div key={activity.id} className="p-3 rounded-lg border bg-background">
-                                                    <p className="font-medium">{activity.message}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-muted-foreground text-center py-4">No recent activity in this batch.</p>
                                         )}
                                     </CardContent>
                                 </Card>

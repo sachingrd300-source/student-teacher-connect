@@ -220,7 +220,7 @@ export default function StudentDashboardPage() {
                                                     <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
                                                 </Button>
                                                 <Button asChild size="sm">
-                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>View Batch</Link>
+                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>View Updates</Link>
                                                 </Button>
                                             </div>
                                         )}
