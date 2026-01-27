@@ -216,7 +216,7 @@ export default function TeacherDashboardPage() {
                     </div>
                     
                     <Tabs defaultValue="requests" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
                             <TabsTrigger value="batches">My Batches ({batches?.length || 0})</TabsTrigger>
                             <TabsTrigger value="requests">Requests ({pendingRequests.length})</TabsTrigger>
                             <TabsTrigger value="students">Students ({approvedStudents.length})</TabsTrigger>

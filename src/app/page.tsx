@@ -248,7 +248,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-
+      </main>
 
         {/* Footer */}
        <footer className="bg-muted border-t mt-16">

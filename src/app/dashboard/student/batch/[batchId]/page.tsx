@@ -238,7 +238,7 @@ export default function StudentBatchPage() {
                         </Card>
 
                          <Tabs defaultValue={defaultTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-4">
+                            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                                 <TabsTrigger value="announcements">Announcements</TabsTrigger>
                                 <TabsTrigger value="materials">Materials</TabsTrigger>
                                 <TabsTrigger value="tests">Tests</TabsTrigger>
@@ -364,12 +364,12 @@ export default function StudentBatchPage() {
                                                         </div>
 
                                                         {isPaid ? (
-                                                            <div className="px-3 py-1 text-xs font-semibold rounded-full bg-success/10 text-success">
+                                                            <div className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                                                                 PAID
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center gap-4">
-                                                                <div className="px-3 py-1 text-xs font-semibold rounded-full bg-destructive/10 text-destructive">
+                                                                <div className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
                                                                     DUE
                                                                 </div>
                                                                 <Button size="sm" variant="outline" onClick={handlePayNow}>
