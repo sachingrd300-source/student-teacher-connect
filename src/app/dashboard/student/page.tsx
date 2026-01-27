@@ -9,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, Clock } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -35,11 +34,6 @@ interface Enrollment {
     batchName: string;
     status: 'pending' | 'approved';
 }
-
-const getInitials = (name: string) => {
-    if (!name) return '';
-    return name.split(' ').map((n) => n[0]).join('');
-};
 
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
