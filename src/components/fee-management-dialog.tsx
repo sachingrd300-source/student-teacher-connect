@@ -28,6 +28,7 @@ interface Fee {
     feeMonth: number; // 1-12
     feeYear: number;
     status: 'paid' | 'unpaid';
+    paidOn?: string;
 }
 
 interface FeeManagementDialogProps {
@@ -63,10 +64,10 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
     const { data: feesData, isLoading: feesLoading } = useCollection<Fee>(feesQuery);
 
     const feeStatusByMonth = useMemo(() => {
-        const statusMap = new Map<string, { status: 'paid' | 'unpaid', feeId: string }>();
+        const statusMap = new Map<string, { status: 'paid' | 'unpaid', feeId: string, paidOn?: string }>();
         feesData?.forEach(fee => {
             const key = `${fee.feeYear}-${fee.feeMonth}`;
-            statusMap.set(key, { status: fee.status, feeId: fee.id });
+            statusMap.set(key, { status: fee.status, feeId: fee.id, paidOn: fee.paidOn });
         });
         return statusMap;
     }, [feesData]);
@@ -141,12 +142,20 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                                 const key = `${year}-${month}`;
                                 const feeInfo = feeStatusByMonth.get(key);
                                 const isPaid = feeInfo?.status === 'paid';
+                                const paidOnDate = feeInfo?.paidOn ? new Date(feeInfo.paidOn) : null;
                                 
                                 return (
                                     <div key={key} className="flex items-center justify-between p-3 rounded-lg border">
-                                        <p className="font-medium">
-                                            {monthFormatter.format(new Date(year, month - 1))}
-                                        </p>
+                                        <div>
+                                            <p className="font-medium">
+                                                {monthFormatter.format(new Date(year, month - 1))}
+                                            </p>
+                                             {isPaid && paidOnDate && (
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Paid on: {paidOnDate.toLocaleDateString()}
+                                                </p>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-3">
                                             <span className={`text-sm font-semibold ${isPaid ? 'text-green-600' : 'text-destructive'}`}>
                                                 {isPaid ? 'Paid' : 'Unpaid'}

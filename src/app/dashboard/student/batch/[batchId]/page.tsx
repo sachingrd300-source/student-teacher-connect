@@ -6,7 +6,7 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
@@ -160,6 +160,10 @@ export default function StudentBatchPage() {
             router.replace('/dashboard/student');
         }
     }, [isLoading, batch, isEnrolled, router]);
+    
+    const handlePayNow = () => {
+        alert('Payment gateway integration is pending. Please contact your teacher to complete the payment.');
+    };
 
     if (isLoading) {
         return (
@@ -271,12 +275,26 @@ export default function StudentBatchPage() {
                                                 
                                                 return (
                                                     <div key={key} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                        <p className="font-medium">
-                                                            {monthFormatter.format(new Date(year, month - 1))}
-                                                        </p>
-                                                        <div className={`px-3 py-1 text-xs font-bold rounded-full ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                                                            {isPaid ? 'PAID' : 'DUE'}
+                                                        <div>
+                                                            <p className="font-medium">
+                                                                {monthFormatter.format(new Date(year, month - 1))}
+                                                            </p>
+                                                            {isPaid && feeInfo?.paidOn ? (
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    Paid on: {new Date(feeInfo.paidOn).toLocaleDateString()}
+                                                                </p>
+                                                            ) : null}
                                                         </div>
+
+                                                        {isPaid ? (
+                                                            <div className="px-3 py-1 text-xs font-bold rounded-full bg-success/10 text-success">
+                                                                PAID
+                                                            </div>
+                                                        ) : (
+                                                            <Button size="sm" variant="outline" onClick={handlePayNow}>
+                                                                <CreditCard className="mr-2 h-4 w-4" /> Pay Now
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 );
                                             })
