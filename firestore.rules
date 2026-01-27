@@ -23,19 +23,24 @@ service cloud.firestore {
       return isSignedIn() && getUserRole(request.auth.uid) == 'teacher';
     }
 
+    function isAdmin() {
+      return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
+    }
+
     match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow read: if isAdmin() || isSignedIn();
+      allow list: if isAdmin() || isSignedIn();
       allow create: if request.auth.uid == userId;
-      allow update: if isOwner(userId);
-      allow delete: if false;
+      allow update: if isAdmin() || isOwner(userId);
+      allow delete: if isAdmin();
     }
 
     match /batches/{batchId} {
-      allow get: if isSignedIn();
-      allow list: if isTeacher();
+      allow get: if isAdmin() || isSignedIn();
+      allow list: if isAdmin() || isTeacher();
       allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
-      allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+      allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
     }
     
     match /enrollments/{enrollmentId} {
@@ -43,14 +48,15 @@ service cloud.firestore {
                     && request.resource.data.studentId == request.auth.uid
                     && request.resource.data.status == 'pending';
       
-      allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
       
-      allow delete: if (isStudent() && resource.data.studentId == request.auth.uid) 
+      allow delete: if isAdmin() 
+                    || (isStudent() && resource.data.studentId == request.auth.uid) 
                     || (isTeacher() && resource.data.teacherId == request.auth.uid);
       
-      allow get: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId);
+      allow get: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId));
       
-      allow list: if isStudent() || isTeacher();
+      allow list: if isAdmin() || isStudent() || isTeacher();
     }
   }
 }

@@ -2,7 +2,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -108,6 +108,7 @@ export default function TeacherDashboardPage() {
                 teacherName: userProfile.name,
                 code: batchCode,
                 createdAt: serverTimestamp(),
+                approvedStudents: [],
             });
             setNewBatchName('');
             setCreateBatchOpen(false);
@@ -118,17 +119,35 @@ export default function TeacherDashboardPage() {
         }
     };
 
-    const handleApprove = async (enrollmentId: string) => {
+    const handleApprove = async (enrollment: Enrollment) => {
         if (!firestore) return;
-        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         await updateDoc(enrollmentRef, { status: 'approved' });
+
+        const batchRef = doc(firestore, 'batches', enrollment.batchId);
+        await updateDoc(batchRef, {
+            approvedStudents: arrayUnion(enrollment.studentId)
+        });
     };
 
-    const handleDecline = async (enrollmentId: string) => {
+    const handleRemoveStudent = async (enrollment: Enrollment) => {
+        if (!firestore) return;
+        
+        // Remove from batch's approved list
+        const batchRef = doc(firestore, 'batches', enrollment.batchId);
+        await updateDoc(batchRef, {
+            approvedStudents: arrayRemove(enrollment.studentId)
+        });
+
+        // Delete the enrollment document
+        await deleteDoc(doc(firestore, 'enrollments', enrollment.id));
+    };
+    
+    const handleDeclineRequest = async (enrollmentId: string) => {
         if (!firestore) return;
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
-    
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         // Maybe show a toast notification here
@@ -209,10 +228,10 @@ export default function TeacherDashboardPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req.id)}>
+                                                    <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req)}>
                                                         <Check className="h-4 w-4" />
                                                     </Button>
-                                                    <Button size="icon" variant="outline" className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={() => handleDecline(req.id)}>
+                                                    <Button size="icon" variant="outline" className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={() => handleDeclineRequest(req.id)}>
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -242,7 +261,7 @@ export default function TeacherDashboardPage() {
                                                          <p className="text-sm text-muted-foreground">Batch: <span className="font-medium">{student.batchName}</span></p>
                                                     </div>
                                                 </div>
-                                                <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleDecline(student.id)}>Remove</Button>
+                                                <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
                                             </div>
                                         ))
                                     ) : (

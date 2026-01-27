@@ -21,7 +21,7 @@
         "role": {
           "type": "string",
           "description": "The role of the user.",
-          "enum": ["student", "teacher"]
+          "enum": ["student", "teacher", "admin"]
         },
         "subject": {
           "type": "string",
@@ -69,7 +69,12 @@
         "teacherId": { "type": "string", "description": "The UID of the teacher who created the batch." },
         "teacherName": { "type": "string", "description": "The name of the teacher." },
         "code": { "type": "string", "description": "A unique, shareable code for students to join the batch." },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "approvedStudents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of UIDs of students approved for this batch."
+        }
       },
       "required": ["name", "teacherId", "teacherName", "code", "createdAt"]
     },
