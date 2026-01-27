@@ -80,15 +80,17 @@ service cloud.firestore {
     }
 
     match /fees/{feeId} {
-      function isFeeOwner() {
-        return isTeacher() && resource.data.teacherId == request.auth.uid;
-      }
-      function isFeeStudent() {
-        return isStudent() && resource.data.studentId == request.auth.uid;
-      }
+      allow get: if isAdmin() || 
+                   (isTeacher() && resource.data.teacherId == request.auth.uid) || 
+                   (isStudent() && resource.data.studentId == request.auth.uid);
+
+      allow list: if isAdmin() || isTeacher() || isStudent();
+
+      allow create: if isAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+
+      allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
       
-      allow read: if isAdmin() || isFeeOwner() || isFeeStudent();
-      allow write: if isAdmin() || isFeeOwner();
+      allow delete: if isAdmin();
     }
   }
 }
