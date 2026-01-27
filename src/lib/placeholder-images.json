@@ -5,5 +5,26 @@
     "height": 1080,
     "alt": "A vibrant classroom with students and a teacher.",
     "hint": "education classroom"
+  },
+  "expertTeachers": {
+    "src": "https://picsum.photos/seed/expert-teachers/800/600",
+    "width": 800,
+    "height": 600,
+    "alt": "A teacher passionately explaining a concept to a small group of students.",
+    "hint": "teacher students"
+  },
+  "interactiveBatches": {
+    "src": "https://picsum.photos/seed/interactive-batches/800/600",
+    "width": 800,
+    "height": 600,
+    "alt": "A diverse group of students collaborating on a project using a laptop.",
+    "hint": "students collaboration"
+  },
+  "organizedMaterials": {
+    "src": "https://picsum.photos/seed/organized-materials/800/600",
+    "width": 800,
+    "height": 600,
+    "alt": "A student's desk with a laptop open to an online portal, a notebook, and a textbook.",
+    "hint": "online learning"
   }
 }
