@@ -11,20 +11,30 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    function getUserRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
     function isStudent() {
-      return isSignedIn() && getUserRole(request.auth.uid) == 'student';
+      return isSignedIn() && getUserData(request.auth.uid).role == 'student';
     }
 
     function isTeacher() {
-      return isSignedIn() && getUserRole(request.auth.uid) == 'teacher';
+      return isSignedIn() && getUserData(request.auth.uid).role == 'teacher';
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
+      return isSignedIn() && getUserData(request.auth.uid).role == 'admin';
+    }
+
+    function isTeacherOwnerOfBatch(batchId) {
+      let batchData = get(/databases/$(database)/documents/batches/$(batchId)).data;
+      return isTeacher() && batchData.teacherId == request.auth.uid;
+    }
+
+    function isEnrolledInBatch(batchId) {
+      let batchData = get(/databases/$(database)/documents/batches/$(batchId)).data;
+      return isStudent() && request.auth.uid in batchData.approvedStudents;
     }
 
     match /users/{userId} {
@@ -41,6 +51,16 @@ service cloud.firestore {
       allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
       allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
       allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+
+      match /materials/{materialId} {
+        allow read: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
+        allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+      }
+
+      match /classes/{classId} {
+        allow read: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
+        allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+      }
     }
     
     match /enrollments/{enrollmentId} {

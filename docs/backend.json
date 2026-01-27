@@ -76,7 +76,7 @@
           "description": "List of UIDs of students approved for this batch."
         }
       },
-      "required": ["name", "teacherId", "teacherName", "code", "createdAt"]
+      "required": ["name", "teacherId", "teacherName", "code", "createdAt", "approvedStudents"]
     },
     "Enrollment": {
         "title": "Enrollment",
@@ -92,6 +92,36 @@
             "createdAt": { "type": "string", "format": "date-time" }
         },
         "required": ["studentId", "studentName", "teacherId", "batchId", "batchName", "status", "createdAt"]
+    },
+    "StudyMaterial": {
+      "title": "Study Material",
+      "type": "object",
+      "description": "Represents study material uploaded by a teacher for a batch.",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "fileURL": { "type": "string", "format": "uri" },
+        "fileType": { "type": "string", "description": "e.g., pdf, png, jpg" },
+        "batchId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "fileURL", "fileType", "batchId", "teacherId", "createdAt"]
+    },
+    "Class": {
+      "title": "Class",
+      "type": "object",
+      "description": "Represents a class schedule created by a teacher for a batch.",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "batchId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "batchId", "teacherId", "startTime", "endTime", "createdAt"]
     }
   },
   "auth": {
@@ -109,6 +139,14 @@
     "/enrollments/{enrollmentId}": {
         "schema": { "$ref": "#/entities/Enrollment" },
         "description": "Stores student enrollment requests for batches."
+    },
+    "/batches/{batchId}/materials/{materialId}": {
+      "schema": { "$ref": "#/entities/StudyMaterial" },
+      "description": "Stores study materials for a specific batch."
+    },
+    "/batches/{batchId}/classes/{classId}": {
+      "schema": { "$ref": "#/entities/Class" },
+      "description": "Stores class schedules for a specific batch."
     }
   }
 }

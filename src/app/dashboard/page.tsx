@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 
 interface UserProfile {
     name: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin';
 }
 
 export default function DashboardPage() {
@@ -37,10 +37,14 @@ export default function DashboardPage() {
                 router.replace('/dashboard/teacher');
             } else if (userProfile.role === 'student') {
                 router.replace('/dashboard/student');
-            } else {
+            } else if (userProfile.role === 'admin') {
+                router.replace('/dashboard/admin');
+            }
+            else {
                 // Handle cases where role might not be set, maybe redirect to a role selection page or default
                 // For now, we'll just log an error and they'll see the loading screen.
-                console.error('User role not found.');
+                console.error('User role not found or is invalid.');
+                 router.replace('/login');
             }
         }
     }, [user, userProfile, isUserLoading, profileLoading, router]);
