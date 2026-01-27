@@ -168,7 +168,7 @@ export default function StudentBatchPage() {
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-muted-foreground text-center py-4">No recent activity in this batch.</p>
+                                            <p className="text-muted-foreground text-center py-4">The teacher has not posted any updates for this batch yet.</p>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -197,7 +197,7 @@ export default function StudentBatchPage() {
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-muted-foreground text-center py-4">No study materials uploaded yet.</p>
+                                            <p className="text-muted-foreground text-center py-4">The teacher has not uploaded any study materials yet.</p>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -234,7 +234,7 @@ export default function StudentBatchPage() {
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-muted-foreground text-center py-4">No classes scheduled yet.</p>
+                                            <p className="text-muted-foreground text-center py-4">The teacher has not scheduled any classes yet.</p>
                                         )}
                                     </CardContent>
                                 </Card>
