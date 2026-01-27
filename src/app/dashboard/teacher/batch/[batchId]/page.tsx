@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
