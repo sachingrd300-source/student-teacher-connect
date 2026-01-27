@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -149,8 +149,8 @@ export default function StudentDashboardPage() {
 
     if (isLoading || !userProfile) {
         return (
-            <div className="flex h-screen items-center justify-center flex-col gap-2">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen items-center justify-center flex-col gap-4">
+                <School className="h-12 w-12 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Loading your courses...</p>
             </div>
         );

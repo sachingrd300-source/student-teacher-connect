@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet } from 'lucide-react';
+import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet, School } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
@@ -206,8 +206,8 @@ export default function TeacherDashboardPage() {
 
     if (isLoading || !userProfile) {
         return (
-             <div className="flex h-screen items-center justify-center flex-col gap-2">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             <div className="flex h-screen items-center justify-center flex-col gap-4">
+                <School className="h-12 w-12 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Preparing your dashboard...</p>
             </div>
         );
