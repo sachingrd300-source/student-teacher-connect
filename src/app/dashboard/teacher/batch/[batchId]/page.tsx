@@ -37,7 +37,6 @@ interface Enrollment {
     studentName: string;
     teacherId: string;
     batchId: string;
-    batchName: string;
     status: 'pending' | 'approved';
     createdAt: string;
     approvedAt?: string;
@@ -313,7 +312,11 @@ export default function BatchManagementPage() {
         setIsCreatingTest(true);
         try {
             const testsColRef = collection(firestore, 'batches', batchId, 'tests');
-            await addDoc(testsColRef, {
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+            
+            const firestoreBatch = writeBatch(firestore);
+
+            firestoreBatch.set(doc(testsColRef), {
                 title: testTitle.trim(),
                 subject: testSubject.trim(),
                 testDate: new Date(testDate).toISOString(),
@@ -322,6 +325,14 @@ export default function BatchManagementPage() {
                 teacherId: user.uid,
                 createdAt: new Date().toISOString(),
             });
+
+            firestoreBatch.set(doc(activityColRef), {
+                message: `New test scheduled: "${testTitle.trim()}" on ${new Date(testDate).toLocaleDateString()}`,
+                createdAt: new Date().toISOString(),
+            });
+
+            await firestoreBatch.commit();
+
             setTestTitle('');
             setTestSubject('');
             setTestDate('');
