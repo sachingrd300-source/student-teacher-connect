@@ -18,6 +18,11 @@
           "format": "email",
           "description": "The user's email address."
         },
+        "role": {
+          "type": "string",
+          "description": "The role of the user.",
+          "enum": ["student", "teacher"]
+        },
         "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -27,6 +32,7 @@
         "id",
         "name",
         "email",
+        "role",
         "createdAt"
       ]
     }

@@ -16,6 +16,7 @@ import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { School } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function SignupPage() {
   const auth = useAuth();
@@ -26,6 +27,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('student');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -54,6 +56,7 @@ export default function SignupPage() {
           id: user.uid,
           name: name.trim(),
           email: email.trim(), 
+          role: role,
           createdAt: serverTimestamp(),
       };
       
@@ -110,6 +113,19 @@ export default function SignupPage() {
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                    <p className="text-xs text-muted-foreground">Password must be at least 6 characters long.</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Role</Label>
+                  <RadioGroup defaultValue="student" onValueChange={setRole} value={role} className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="student" id="role-student" />
+                      <Label htmlFor="role-student">Student</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="teacher" id="role-teacher" />
+                      <Label htmlFor="role-teacher">Teacher</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
                 
                 <Button type="submit" className="w-full" disabled={isSigningUp}>
