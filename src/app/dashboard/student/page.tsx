@@ -218,7 +218,13 @@ export default function StudentDashboardPage() {
                                         <div className="flex items-center gap-4">
                                             {renderStatusIcon(enrollment.status)}
                                             <div>
-                                                <p className="font-semibold text-lg">{enrollment.batchName}</p>
+                                                {enrollment.status === 'approved' ? (
+                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`} className="font-semibold text-lg text-primary hover:underline">
+                                                        {enrollment.batchName}
+                                                    </Link>
+                                                ) : (
+                                                    <p className="font-semibold text-lg">{enrollment.batchName}</p>
+                                                )}
                                                 <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     {enrollment.status === 'pending' 
@@ -232,14 +238,9 @@ export default function StudentDashboardPage() {
                                                 Cancel Request
                                             </Button>
                                         ) : (
-                                            <div className="flex gap-2">
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
-                                                </Button>
-                                                <Button asChild size="sm">
-                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>View Updates</Link>
-                                                </Button>
-                                            </div>
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                            </Button>
                                         )}
                                     </div>
                                 ))
