@@ -97,7 +97,7 @@ export default function StudentBatchPage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const batchId = params.batchId as string;
-    const defaultTab = searchParams.get('tab') || 'activity';
+    const defaultTab = searchParams.get('tab') || 'announcements';
 
     const currentUserProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -238,17 +238,17 @@ export default function StudentBatchPage() {
 
                          <Tabs defaultValue={defaultTab} className="w-full">
                             <TabsList className="grid w-full grid-cols-4">
-                                <TabsTrigger value="activity">Activity</TabsTrigger>
+                                <TabsTrigger value="announcements">Announcements</TabsTrigger>
                                 <TabsTrigger value="materials">Materials</TabsTrigger>
                                 <TabsTrigger value="tests">Tests</TabsTrigger>
                                 <TabsTrigger value="fees">Fees</TabsTrigger>
                             </TabsList>
                             
-                             <TabsContent value="activity" className="mt-6">
+                             <TabsContent value="announcements" className="mt-6">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center">
-                                            <ListCollapse className="mr-2 h-5 w-5 text-primary"/> Recent Activity
+                                            <ListCollapse className="mr-2 h-5 w-5 text-primary"/> Announcements
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="grid gap-4">

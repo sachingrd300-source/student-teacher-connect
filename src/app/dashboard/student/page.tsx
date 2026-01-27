@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, Wallet, ListCollapse } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -214,17 +214,11 @@ export default function StudentDashboardPage() {
                         <CardContent className="grid gap-4">
                             {enrollments && enrollments.length > 0 ? (
                                 enrollments.map((enrollment) => (
-                                    <div key={enrollment.id} className="p-4 flex items-center justify-between rounded-lg border bg-background">
+                                    <div key={enrollment.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-background">
                                         <div className="flex items-center gap-4">
                                             {renderStatusIcon(enrollment.status)}
                                             <div>
-                                                {enrollment.status === 'approved' ? (
-                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`} className="font-semibold text-lg text-primary hover:underline">
-                                                        {enrollment.batchName}
-                                                    </Link>
-                                                ) : (
-                                                    <p className="font-semibold text-lg">{enrollment.batchName}</p>
-                                                )}
+                                                <p className="font-semibold text-lg">{enrollment.batchName}</p>
                                                 <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     {enrollment.status === 'pending' 
@@ -233,29 +227,24 @@ export default function StudentDashboardPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        {enrollment.status === 'pending' ? (
-                                            <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                Cancel Request
-                                            </Button>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                        <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                            {enrollment.status === 'pending' ? (
+                                                <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                    Cancel Request
                                                 </Button>
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}?tab=activity`}>
-                                                        <ListCollapse className="mr-2 h-4 w-4" />
-                                                        Updates
-                                                    </Link>
-                                                </Button>
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}?tab=fees`}>
-                                                        <Wallet className="mr-2 h-4 w-4" />
-                                                        Fees
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <>
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                    </Button>
+                                                    <Button asChild size="sm">
+                                                        <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
+                                                            View Batch
+                                                        </Link>
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 ))
                             ) : (
