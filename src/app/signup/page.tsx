@@ -9,17 +9,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { School, User } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { User as UserIcon } from 'lucide-react';
 
-export default function SignupPage() {
+export default function StudentSignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -28,7 +26,6 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'student' | 'teacher' | ''>('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -40,10 +37,6 @@ export default function SignupPage() {
 
   const handleSignUp = async (event: FormEvent) => {
     event.preventDefault();
-    if (!role) {
-      setError('Please select a role.');
-      return;
-    }
     setError(null);
     setIsSigningUp(true);
 
@@ -62,7 +55,7 @@ export default function SignupPage() {
           id: user.uid,
           name: name.trim(),
           email: email.trim(), 
-          role: role,
+          role: 'student', // Automatically set role
           createdAt: serverTimestamp(),
       };
       
@@ -91,14 +84,14 @@ export default function SignupPage() {
       <div className="w-full max-w-sm p-4 sm:p-0">
           <div className="text-center mb-6">
             <Link href="/" className="inline-block">
-                <School className="w-12 h-12 mx-auto text-primary" />
+                <UserIcon className="w-12 h-12 mx-auto text-primary" />
             </Link>
-            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Create an Account</h1>
-            <p className="text-muted-foreground">Join our community to get started.</p>
+            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Student Account</h1>
+            <p className="text-muted-foreground">Create your student account to get started.</p>
           </div>
           <Card>
             <CardHeader>
-                <CardTitle className="text-xl font-serif">Sign Up</CardTitle>
+                <CardTitle className="text-xl font-serif">Student Sign Up</CardTitle>
             </CardHeader>
             <CardContent>
               {error && (
@@ -117,20 +110,6 @@ export default function SignupPage() {
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                    <p className="text-xs text-muted-foreground">Password must be at least 6 characters long.</p>
-                </div>
-
-                <div className="grid gap-2">
-                    <Label>I am a...</Label>
-                    <RadioGroup value={role} onValueChange={(value) => setRole(value as 'student' | 'teacher')} className="flex gap-4 pt-1">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="student" id="role-student" />
-                            <Label htmlFor="role-student" className="font-normal">Student</Label>
-                        </div>
-                         <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="teacher" id="role-teacher" />
-                            <Label htmlFor="role-teacher" className="font-normal">Teacher</Label>
-                        </div>
-                    </RadioGroup>
                 </div>
                 
                 <Button type="submit" className="w-full mt-2" disabled={isSigningUp}>

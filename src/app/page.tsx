@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
-import { School } from "lucide-react";
+import { School, User, Briefcase } from "lucide-react";
 
 export default function Home() {
 
@@ -11,20 +11,26 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background">
       <MainHeader />
       <main className="flex-1 flex items-center justify-center">
-        <div className="container px-4 md:px-6 flex flex-col items-center justify-center text-center space-y-6">
-            <School className="h-16 w-16 text-primary" />
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-serif text-foreground">
-                Welcome to Your App
-            </h1>
-            <p className="mt-4 max-w-2xl mx-auto text-foreground/80 md:text-xl">
-                This is a fresh start. Login or sign up to continue.
-            </p>
-            <div className="mt-6 flex flex-col gap-4 min-[400px]:flex-row justify-center">
-                <Link href="/signup">
-                    <Button size="lg">Get Started</Button>
+        <div className="container px-4 md:px-6 flex flex-col items-center justify-center text-center space-y-10">
+            <div className="space-y-4">
+                <School className="h-16 w-16 text-primary mx-auto" />
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-serif text-foreground">
+                    Welcome to Your Learning Community
+                </h1>
+                <p className="mt-4 max-w-2xl mx-auto text-foreground/80 md:text-xl">
+                    Connecting students and teachers. Choose your path to get started.
+                </p>
+            </div>
+            <div className="w-full max-w-md mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Link href="/login" className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <User className="h-12 w-12 mb-4 text-primary" />
+                    <h2 className="text-2xl font-bold font-serif mb-2">For Students</h2>
+                    <p className="text-muted-foreground text-center">Login or sign up to find teachers and join batches.</p>
                 </Link>
-                 <Link href="/login">
-                    <Button size="lg" variant="secondary">Login</Button>
+                 <Link href="/signup/student" className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <Briefcase className="h-12 w-12 mb-4 text-primary" />
+                    <h2 className="text-2xl font-bold font-serif mb-2">For Teachers</h2>
+                    <p className="text-muted-foreground text-center">Login or sign up to manage batches and students.</p>
                 </Link>
             </div>
         </div>

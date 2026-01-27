@@ -13,11 +13,8 @@ export function MainHeader() {
                 <span className="text-lg font-semibold font-serif">My App</span>
             </Link>
             <nav className="ml-auto flex gap-2 sm:gap-4 items-center">
-                 <Link href="/login">
-                    <Button variant="ghost">Login</Button>
-                </Link>
-                <Link href="/signup">
-                    <Button>Sign Up</Button>
+                 <Link href="/">
+                    <Button variant="ghost">Home</Button>
                 </Link>
             </nav>
         </header>

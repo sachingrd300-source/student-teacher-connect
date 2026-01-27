@@ -21,9 +21,9 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { School } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 
-export default function LoginPage() {
+export default function StudentLoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -86,9 +86,20 @@ export default function LoginPage() {
           id: user.uid,
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
+          role: 'student', // Default to student for Google sign-in on student page
           createdAt: serverTimestamp(),
         };
         await setDoc(userRef, userProfileData);
+      } else {
+        const userData = userSnap.data();
+        if (userData.role !== 'student') {
+            setError('This account is registered as a teacher. Please use the teacher login.');
+            if (auth) {
+                await auth.signOut();
+            }
+            setIsLoading(false);
+            return;
+        }
       }
       // The useEffect will handle the redirect
     } catch (error: any)
@@ -110,14 +121,14 @@ export default function LoginPage() {
       <div className="w-full max-w-sm p-4 sm:p-0">
         <div className="text-center mb-6">
             <Link href="/" className="inline-block">
-              <School className="w-12 h-12 mx-auto text-primary" />
+              <UserIcon className="w-12 h-12 mx-auto text-primary" />
             </Link>
-            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Welcome Back</h1>
-            <p className="text-muted-foreground">Sign in to continue.</p>
+            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Student Portal</h1>
+            <p className="text-muted-foreground">Sign in to your student account.</p>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-serif">Login</CardTitle>
+            <CardTitle className="text-2xl font-serif">Student Login</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             {error && (
