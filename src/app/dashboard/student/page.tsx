@@ -34,7 +34,19 @@ interface Enrollment {
     batchName: string;
     teacherName: string;
     status: 'pending' | 'approved';
+    createdAt: string;
+    approvedAt?: string;
 }
+
+const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
 
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -208,6 +220,11 @@ export default function StudentDashboardPage() {
                                             <div>
                                                 <p className="font-semibold text-lg">{enrollment.batchName}</p>
                                                 <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {enrollment.status === 'pending' 
+                                                        ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                        : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                </p>
                                             </div>
                                         </div>
                                         {enrollment.status === 'pending' ? (

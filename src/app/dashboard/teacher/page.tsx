@@ -27,6 +27,7 @@ interface Batch {
     id: string;
     name: string;
     code: string;
+    createdAt: string;
 }
 
 interface Enrollment {
@@ -37,11 +38,23 @@ interface Enrollment {
     batchId: string;
     batchName: string;
     status: 'pending' | 'approved';
+    createdAt: string;
+    approvedAt?: string;
 }
 
 const getInitials = (name: string) => {
     if (!name) return '';
     return name.split(' ').map((n) => n[0]).join('');
+};
+
+const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
 };
 
 export default function TeacherDashboardPage() {
@@ -126,7 +139,10 @@ export default function TeacherDashboardPage() {
         const batch = writeBatch(firestore);
 
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        batch.update(enrollmentRef, { status: 'approved' });
+        batch.update(enrollmentRef, { 
+            status: 'approved',
+            approvedAt: new Date().toISOString()
+        });
 
         const batchRef = doc(firestore, 'batches', enrollment.batchId);
         batch.update(batchRef, {
@@ -210,6 +226,7 @@ export default function TeacherDashboardPage() {
                                                             <Clipboard className="h-4 w-4" />
                                                         </Button>
                                                     </div>
+                                                     <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
                                                 </div>
                                                 <Button asChild>
                                                     <Link href={`/dashboard/teacher/batch/${batch.id}`}>
@@ -241,6 +258,7 @@ export default function TeacherDashboardPage() {
                                                     <div>
                                                         <p className="font-semibold">{req.studentName}</p>
                                                         <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -275,6 +293,7 @@ export default function TeacherDashboardPage() {
                                                     <div>
                                                         <p className="font-semibold">{student.studentName}</p>
                                                          <p className="text-sm text-muted-foreground">Batch: <span className="font-medium">{student.batchName}</span></p>
+                                                         <p className="text-xs text-muted-foreground mt-1">Approved: {formatDate(student.approvedAt)}</p>
                                                     </div>
                                                 </div>
                                                 <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
