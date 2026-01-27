@@ -61,6 +61,11 @@ service cloud.firestore {
         allow read: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
         allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
+
+      match /activity/{activityId} {
+        allow read: if isAdmin() || isEnrolledInBatch(batchId);
+        allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+      }
     }
     
     match /enrollments/{enrollmentId} {

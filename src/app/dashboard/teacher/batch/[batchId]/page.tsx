@@ -158,19 +158,25 @@ export default function BatchManagementPage() {
     };
     
     const handleRemoveStudent = async (enrollment: Enrollment) => {
-        if (!firestore) return;
+        if (!firestore || !batchId) return;
         
-        const batch = writeBatch(firestore);
+        const firestoreBatch = writeBatch(firestore);
 
         const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
-        batch.update(currentBatchRef, {
+        firestoreBatch.update(currentBatchRef, {
             approvedStudents: arrayRemove(enrollment.studentId)
         });
 
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        batch.delete(enrollmentRef);
+        firestoreBatch.delete(enrollmentRef);
 
-        await batch.commit();
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        firestoreBatch.set(doc(activityColRef), {
+            message: `Student "${enrollment.studentName}" was removed from the batch.`,
+            createdAt: new Date().toISOString(),
+        });
+
+        await firestoreBatch.commit();
     };
 
     const handleFileUpload = async (e: React.FormEvent) => {
@@ -185,7 +191,12 @@ export default function BatchManagementPage() {
             await uploadBytes(fileRef, materialFile);
             const downloadURL = await getDownloadURL(fileRef);
 
-            await addDoc(collection(firestore, 'batches', batchId, 'materials'), {
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+            const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
+            
+            const firestoreBatch = writeBatch(firestore);
+
+            firestoreBatch.set(doc(materialsColRef), {
                 title: materialTitle.trim(),
                 fileURL: downloadURL,
                 fileName: fileName,
@@ -194,6 +205,13 @@ export default function BatchManagementPage() {
                 teacherId: user.uid,
                 createdAt: new Date().toISOString(),
             });
+
+            firestoreBatch.set(doc(activityColRef), {
+                message: `New material uploaded: "${materialTitle.trim()}"`,
+                createdAt: new Date().toISOString(),
+            });
+
+            await firestoreBatch.commit();
 
             setMaterialTitle('');
             setMaterialFile(null);
@@ -208,12 +226,27 @@ export default function BatchManagementPage() {
     };
     
     const handleDeleteMaterial = async (material: StudyMaterial) => {
-        if (!firestore || !storage) return;
+        if (!firestore || !storage || !batchId) return;
         const fileRef = ref(storage, `materials/${batchId}/${material.fileName}`);
+        const materialDocRef = doc(firestore, 'batches', batchId, 'materials', material.id);
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        
         try {
+            // Delete file from storage first
             await deleteObject(fileRef);
-            await deleteDoc(doc(firestore, 'batches', batchId, 'materials', material.id));
+            
+            // Use a batch for firestore operations
+            const firestoreBatch = writeBatch(firestore);
+            firestoreBatch.delete(materialDocRef);
+            firestoreBatch.set(doc(activityColRef), {
+                message: `Material "${material.title}" was deleted.`,
+                createdAt: new Date().toISOString(),
+            });
+            await firestoreBatch.commit();
+
         } catch (error) {
+            // If deleting file fails, we might not want to delete the doc.
+            // For simplicity, we log the error. In a real app, might need more robust handling.
             console.error("Error deleting material: ", error);
         }
     };
@@ -224,7 +257,11 @@ export default function BatchManagementPage() {
 
         setIsCreatingClass(true);
         try {
-            await addDoc(collection(firestore, 'batches', batchId, 'classes'), {
+            const firestoreBatch = writeBatch(firestore);
+            const classesColRef = collection(firestore, 'batches', batchId, 'classes');
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+
+            firestoreBatch.set(doc(classesColRef), {
                 title: classTitle.trim(),
                 description: classDescription.trim(),
                 startTime: classStartTime,
@@ -233,6 +270,13 @@ export default function BatchManagementPage() {
                 teacherId: user.uid,
                 createdAt: new Date().toISOString(),
             });
+
+            firestoreBatch.set(doc(activityColRef), {
+                message: `New class scheduled: "${classTitle.trim()}"`,
+                createdAt: new Date().toISOString(),
+            });
+
+            await firestoreBatch.commit();
 
             setClassTitle('');
             setClassDescription('');
@@ -245,9 +289,23 @@ export default function BatchManagementPage() {
         }
     };
 
-    const handleDeleteClass = async (classId: string) => {
-        if (!firestore) return;
-        await deleteDoc(doc(firestore, 'batches', batchId, 'classes', classId));
+    const handleDeleteClass = async (classToDelete: ClassSchedule) => {
+        if (!firestore || !batchId) return;
+        
+        const classDocRef = doc(firestore, 'batches', batchId, 'classes', classToDelete.id);
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+
+        try {
+            const firestoreBatch = writeBatch(firestore);
+            firestoreBatch.delete(classDocRef);
+            firestoreBatch.set(doc(activityColRef), {
+                message: `Class "${classToDelete.title}" was deleted.`,
+                createdAt: new Date().toISOString()
+            });
+            await firestoreBatch.commit();
+        } catch (error) {
+            console.error("Error deleting class:", error);
+        }
     };
 
     const copyToClipboard = (text: string) => {
@@ -422,7 +480,7 @@ export default function BatchManagementPage() {
                                                             <span>{formatDate(c.startTime)} to {formatDate(c.endTime)}</span>
                                                         </div>
                                                     </div>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c.id)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                                 </div>
                                             </div>
                                         ))

@@ -134,6 +134,16 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "batchId", "teacherId", "startTime", "endTime", "createdAt"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "type": "object",
+      "description": "Represents a logged action within a batch, like an upload or schedule change.",
+      "properties": {
+        "message": { "type": "string", "description": "A human-readable message describing the activity." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["message", "createdAt"]
     }
   },
   "auth": {
@@ -159,6 +169,10 @@
     "/batches/{batchId}/classes/{classId}": {
       "schema": { "$ref": "#/entities/Class" },
       "description": "Stores class schedules for a specific batch."
+    },
+    "/batches/{batchId}/activity/{activityId}": {
+      "schema": { "$ref": "#/entities/Activity" },
+      "description": "Stores a log of recent activities for a batch."
     }
   }
 }
