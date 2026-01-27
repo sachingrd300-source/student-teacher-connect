@@ -18,6 +18,10 @@ interface UserProfile {
     role: 'student' | 'teacher';
     subject?: string;
     bio?: string;
+    coachingCenterName?: string;
+    address?: string;
+    whatsappNumber?: string;
+    fee?: string;
 }
 
 export default function ProfilePage() {
@@ -32,6 +36,11 @@ export default function ProfilePage() {
     const [name, setName] = useState('');
     const [subject, setSubject] = useState('');
     const [bio, setBio] = useState('');
+    const [coachingCenterName, setCoachingCenterName] = useState('');
+    const [address, setAddress] = useState('');
+    const [whatsappNumber, setWhatsappNumber] = useState('');
+    const [fee, setFee] = useState('');
+
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -52,18 +61,31 @@ export default function ProfilePage() {
             setName(userProfile.name || '');
             setSubject(userProfile.subject || '');
             setBio(userProfile.bio || '');
+            setCoachingCenterName(userProfile.coachingCenterName || '');
+            setAddress(userProfile.address || '');
+            setWhatsappNumber(userProfile.whatsappNumber || '');
+            setFee(userProfile.fee || '');
         }
     }, [userProfile]);
 
     const handleSave = async () => {
-        if (!userProfileRef) return;
+        if (!userProfileRef || !userProfile) return;
         setIsSaving(true);
         try {
-            await updateDoc(userProfileRef, {
+            const dataToUpdate: { [key: string]: any } = {
                 name: name.trim(),
-                subject: subject.trim(),
                 bio: bio.trim(),
-            });
+            };
+
+            if (userProfile.role === 'teacher') {
+                dataToUpdate.subject = subject.trim();
+                dataToUpdate.coachingCenterName = coachingCenterName.trim();
+                dataToUpdate.address = address.trim();
+                dataToUpdate.whatsappNumber = whatsappNumber.trim();
+                dataToUpdate.fee = fee.trim();
+            }
+            
+            await updateDoc(userProfileRef, dataToUpdate);
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating profile: ", error);
@@ -79,6 +101,10 @@ export default function ProfilePage() {
             setName(userProfile.name || '');
             setSubject(userProfile.subject || '');
             setBio(userProfile.bio || '');
+            setCoachingCenterName(userProfile.coachingCenterName || '');
+            setAddress(userProfile.address || '');
+            setWhatsappNumber(userProfile.whatsappNumber || '');
+            setFee(userProfile.fee || '');
         }
         setIsEditing(false);
     };
@@ -129,14 +155,48 @@ export default function ProfilePage() {
                                 <p className="text-sm font-medium capitalize">{userProfile.role}</p>
                             </div>
                              {userProfile.role === 'teacher' && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="subject">Subject</Label>
-                                    {isEditing ? (
-                                        <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Physics, Mathematics" />
-                                    ) : (
-                                        <p className="text-sm font-medium">{subject || <span className="text-muted-foreground">Not set</span>}</p>
-                                    )}
-                                </div>
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="coachingCenterName">Coaching Center Name</Label>
+                                        {isEditing ? (
+                                            <Input id="coachingCenterName" value={coachingCenterName} onChange={(e) => setCoachingCenterName(e.target.value)} placeholder="e.g., Success Tutorials" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{coachingCenterName || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="subject">Subject</Label>
+                                        {isEditing ? (
+                                            <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Physics, Mathematics" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{subject || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="address">Address</Label>
+                                        {isEditing ? (
+                                            <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your full address" />
+                                        ) : (
+                                            <p className="text-sm font-medium whitespace-pre-wrap">{address || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+                                        {isEditing ? (
+                                            <Input id="whatsappNumber" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g., +91..." />
+                                        ) : (
+                                            <p className="text-sm font-medium">{whatsappNumber || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="fee">Fee Structure</Label>
+                                        {isEditing ? (
+                                            <Input id="fee" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="e.g., 500/month" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{fee || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                </>
                              )}
 
                             <div className="grid gap-2">
