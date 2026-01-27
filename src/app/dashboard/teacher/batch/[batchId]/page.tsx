@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, query, where, arrayRemove, addDoc, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, arrayRemove, addDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import Link from 'next/link';
 
@@ -14,11 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, CalendarPlus, Clock, Download, Trash } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from '@/components/ui/switch';
-
 
 interface UserProfile {
     name: string;
@@ -46,14 +44,10 @@ interface StudyMaterial {
     createdAt: string;
 }
 
-interface ClassSchedule {
+interface Activity {
     id: string;
-    title: string;
-    description: string;
-    startTime: string;
-    endTime: string;
+    message: string;
     createdAt: string;
-    status?: 'scheduled' | 'cancelled';
 }
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
@@ -92,12 +86,9 @@ export default function BatchManagementPage() {
     const [materialFile, setMaterialFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
-    // Class form state
-    const [classTitle, setClassTitle] = useState('');
-    const [classDescription, setClassDescription] = useState('');
-    const [classStartTime, setClassStartTime] = useState('');
-    const [classEndTime, setClassEndTime] = useState('');
-    const [isCreatingClass, setIsCreatingClass] = useState(false);
+    // Announcement form state
+    const [announcement, setAnnouncement] = useState('');
+    const [isPosting, setIsPosting] = useState(false);
 
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -115,8 +106,11 @@ export default function BatchManagementPage() {
     const materialsRef = useMemoFirebase(() => collection(firestore, 'batches', batchId, 'materials'), [firestore, batchId]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
     
-    const classesRef = useMemoFirebase(() => collection(firestore, 'batches', batchId, 'classes'), [firestore, batchId]);
-    const { data: classes, isLoading: classesLoading } = useCollection<ClassSchedule>(classesRef);
+    const activityQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'batches', batchId, 'activity'), orderBy('createdAt', 'desc'));
+    }, [firestore, batchId]);
+    const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
 
 
     useEffect(() => {
@@ -252,82 +246,23 @@ export default function BatchManagementPage() {
             console.error("Error deleting material: ", error);
         }
     };
-    
-    const handleCreateClass = async (e: React.FormEvent) => {
+
+    const handlePostAnnouncement = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!classTitle.trim() || !classStartTime || !classEndTime || !firestore || !batchId || !user) return;
-
-        setIsCreatingClass(true);
+        if (!announcement.trim() || !firestore || !batchId) return;
+    
+        setIsPosting(true);
         try {
-            const firestoreBatch = writeBatch(firestore);
-            const classesColRef = collection(firestore, 'batches', batchId, 'classes');
             const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-
-            firestoreBatch.set(doc(classesColRef), {
-                title: classTitle.trim(),
-                description: classDescription.trim(),
-                startTime: classStartTime,
-                endTime: classEndTime,
-                batchId: batchId,
-                teacherId: user.uid,
-                createdAt: new Date().toISOString(),
-                status: 'scheduled',
-            });
-
-            firestoreBatch.set(doc(activityColRef), {
-                message: `New class scheduled: "${classTitle.trim()}"`,
+            await addDoc(activityColRef, {
+                message: announcement.trim(),
                 createdAt: new Date().toISOString(),
             });
-
-            await firestoreBatch.commit();
-
-            setClassTitle('');
-            setClassDescription('');
-            setClassStartTime('');
-            setClassEndTime('');
+            setAnnouncement(''); // Clear the textarea
         } catch (error) {
-            console.error("Error creating class: ", error);
+            console.error("Error posting announcement:", error);
         } finally {
-            setIsCreatingClass(false);
-        }
-    };
-
-    const handleToggleClassStatus = async (classToUpdate: ClassSchedule) => {
-        if (!firestore || !batchId) return;
-    
-        const newStatus = classToUpdate.status === 'scheduled' ? 'cancelled' : 'scheduled';
-        const classDocRef = doc(firestore, 'batches', batchId, 'classes', classToUpdate.id);
-        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-    
-        try {
-            const firestoreBatch = writeBatch(firestore);
-            firestoreBatch.update(classDocRef, { status: newStatus });
-            firestoreBatch.set(doc(activityColRef), {
-                message: `Class "${classToUpdate.title}" status changed to ${newStatus}.`,
-                createdAt: new Date().toISOString()
-            });
-            await firestoreBatch.commit();
-        } catch (error) {
-            console.error("Error updating class status:", error);
-        }
-    };
-
-    const handleDeleteClass = async (classToDelete: ClassSchedule) => {
-        if (!firestore || !batchId) return;
-        
-        const classDocRef = doc(firestore, 'batches', batchId, 'classes', classToDelete.id);
-        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-
-        try {
-            const firestoreBatch = writeBatch(firestore);
-            firestoreBatch.delete(classDocRef);
-            firestoreBatch.set(doc(activityColRef), {
-                message: `Class "${classToDelete.title}" was deleted.`,
-                createdAt: new Date().toISOString()
-            });
-            await firestoreBatch.commit();
-        } catch (error) {
-            console.error("Error deleting class:", error);
+            setIsPosting(false);
         }
     };
 
@@ -335,7 +270,7 @@ export default function BatchManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || classesLoading;
+    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading;
 
     if (isLoading || !batch) {
         return (
@@ -385,7 +320,7 @@ export default function BatchManagementPage() {
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
                             <TabsTrigger value="materials">Materials ({materials?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="classes">Classes ({classes?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="announcements">Announcements</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="students" className="mt-4">
@@ -459,68 +394,38 @@ export default function BatchManagementPage() {
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="classes" className="mt-4 grid gap-6">
+                        <TabsContent value="announcements" className="mt-4 grid gap-6">
                             <Card>
-                                <CardHeader><CardTitle>Schedule a New Class</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Post an Announcement</CardTitle></CardHeader>
                                 <CardContent>
-                                    <form onSubmit={handleCreateClass} className="grid gap-4">
+                                    <form onSubmit={handlePostAnnouncement} className="grid gap-4">
                                         <div className="grid gap-2">
-                                            <Label htmlFor="class-title">Class Title</Label>
-                                            <Input id="class-title" value={classTitle} onChange={(e) => setClassTitle(e.target.value)} placeholder="e.g., Live Q&A Session" required />
+                                            <Label htmlFor="announcement-text">Notification Message</Label>
+                                            <Textarea 
+                                                id="announcement-text"
+                                                value={announcement} 
+                                                onChange={(e) => setAnnouncement(e.target.value)}
+                                                placeholder="e.g., The test for Chapter 5 will be on Friday. or Today's class is cancelled."
+                                                required 
+                                            />
                                         </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="class-desc">Description (Optional)</Label>
-                                            <Textarea id="class-desc" value={classDescription} onChange={(e) => setClassDescription(e.target.value)} placeholder="e.g., We will cover topics from Chapter 5." />
-                                        </div>
-                                        <div className="grid sm:grid-cols-2 gap-4">
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="class-start">Start Time</Label>
-                                                <Input id="class-start" type="datetime-local" value={classStartTime} onChange={(e) => setClassStartTime(e.target.value)} required />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="class-end">End Time</Label>
-                                                <Input id="class-end" type="datetime-local" value={classEndTime} onChange={(e) => setClassEndTime(e.target.value)} required />
-                                            </div>
-                                        </div>
-                                        <Button type="submit" disabled={isCreatingClass || !classTitle.trim() || !classStartTime || !classEndTime} className="w-fit">
-                                            {isCreatingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CalendarPlus className="mr-2 h-4 w-4" />} Schedule Class
+                                        <Button type="submit" disabled={isPosting || !announcement.trim()} className="w-fit">
+                                            {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />} Post Notification
                                         </Button>
                                     </form>
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardHeader><CardTitle>Scheduled Classes</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
                                 <CardContent className="grid gap-4">
-                                    {classes && classes.length > 0 ? (
-                                        classes.map(c => (
-                                            <div key={c.id} className="p-3 rounded-lg border bg-background">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <p className={`font-semibold ${c.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>{c.title}</p>
-                                                        {c.description && <p className="text-sm text-muted-foreground my-1">{c.description}</p>}
-                                                        <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                                            <Clock className="h-3 w-3" />
-                                                            <span>{formatDate(c.startTime)} to {formatDate(c.endTime)}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="flex items-center space-x-2">
-                                                            <Switch
-                                                                id={`status-switch-${c.id}`}
-                                                                checked={c.status === 'scheduled'}
-                                                                onCheckedChange={() => handleToggleClassStatus(c)}
-                                                                aria-label="Toggle class status"
-                                                            />
-                                                            <Label htmlFor={`status-switch-${c.id}`} className="text-sm font-medium">
-                                                                {c.status === 'scheduled' ? 'Open' : 'Closed'}
-                                                            </Label>
-                                                        </div>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                                                    </div>
-                                                </div>
+                                    {activities && activities.length > 0 ? (
+                                        activities.map(activity => (
+                                            <div key={activity.id} className="p-3 rounded-lg border bg-background">
+                                                <p className="font-medium">{activity.message}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
                                             </div>
                                         ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No classes scheduled yet.</p>}
+                                    ) : <p className="text-muted-foreground text-center py-8">No announcements posted yet.</p>}
                                 </CardContent>
                             </Card>
                         </TabsContent>

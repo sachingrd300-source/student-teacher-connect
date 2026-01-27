@@ -6,7 +6,7 @@ import { doc, collection, query, orderBy } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, Clock, Calendar, ListCollapse } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -29,16 +29,6 @@ interface StudyMaterial {
     fileURL: string;
     fileName: string;
     createdAt: string;
-}
-
-interface ClassSchedule {
-    id: string;
-    title: string;
-    description: string;
-    startTime: string;
-    endTime: string;
-    createdAt: string;
-    status?: 'scheduled' | 'cancelled';
 }
 
 interface Activity {
@@ -86,12 +76,6 @@ export default function StudentBatchPage() {
         return collection(firestore, 'batches', batchId, 'materials');
     }, [firestore, batchId]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
-
-    const classesRef = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
-        return collection(firestore, 'batches', batchId, 'classes');
-    }, [firestore, batchId]);
-    const { data: classes, isLoading: classesLoading } = useCollection<ClassSchedule>(classesRef);
     
     const activityQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
@@ -102,7 +86,7 @@ export default function StudentBatchPage() {
 
     // Security check
     const isEnrolled = batch?.approvedStudents?.includes(user?.uid ?? '');
-    const isLoading = isUserLoading || batchLoading || materialsLoading || classesLoading || activitiesLoading;
+    const isLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading;
 
     useEffect(() => {
         // If done loading and not enrolled, or no batch found, redirect
@@ -146,10 +130,9 @@ export default function StudentBatchPage() {
                         </Card>
 
                          <Tabs defaultValue="activity" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
+                            <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="activity">Recent Activity ({activities?.length || 0})</TabsTrigger>
                                 <TabsTrigger value="materials">Study Materials ({materials?.length || 0})</TabsTrigger>
-                                <TabsTrigger value="schedules">Class Schedules ({classes?.length || 0})</TabsTrigger>
                             </TabsList>
                             
                              <TabsContent value="activity" className="mt-6">
@@ -198,43 +181,6 @@ export default function StudentBatchPage() {
                                             ))
                                         ) : (
                                             <p className="text-muted-foreground text-center py-4">The teacher has not uploaded any study materials yet.</p>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-
-                            <TabsContent value="schedules" className="mt-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center">
-                                            <Calendar className="mr-2 h-5 w-5 text-primary" /> Class Schedules
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="grid gap-4">
-                                        {classes && classes.length > 0 ? (
-                                            classes.map(c => (
-                                                <div key={c.id} className="p-3 rounded-lg border bg-background relative overflow-hidden">
-                                                    {c.status === 'cancelled' && (
-                                                        <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-full">
-                                                            CANCELLED
-                                                        </div>
-                                                    )}
-                                                    <p className={`font-semibold ${c.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>{c.title}</p>
-                                                    {c.description && <p className="text-sm text-muted-foreground my-1">{c.description}</p>}
-                                                    <div className="text-xs text-muted-foreground mt-2 flex items-center gap-4">
-                                                        <div className="flex items-center gap-1">
-                                                            <Clock className="h-3 w-3" />
-                                                            <span>{formatDate(c.startTime)}</span>
-                                                        </div>
-                                                        <span>-</span>
-                                                        <div className="flex items-center gap-1">
-                                                            <span>{formatDate(c.endTime)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-muted-foreground text-center py-4">The teacher has not scheduled any classes yet.</p>
                                         )}
                                     </CardContent>
                                 </Card>

@@ -120,22 +120,6 @@
       },
       "required": ["title", "fileURL", "fileType", "batchId", "teacherId", "createdAt"]
     },
-    "Class": {
-      "title": "Class",
-      "type": "object",
-      "description": "Represents a class schedule created by a teacher for a batch.",
-      "properties": {
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "batchId": { "type": "string" },
-        "teacherId": { "type": "string" },
-        "startTime": { "type": "string", "format": "date-time" },
-        "endTime": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["scheduled", "cancelled"], "description": "The status of the class." }
-      },
-      "required": ["title", "batchId", "teacherId", "startTime", "endTime", "createdAt", "status"]
-    },
     "Activity": {
       "title": "Activity",
       "type": "object",
@@ -166,10 +150,6 @@
     "/batches/{batchId}/materials/{materialId}": {
       "schema": { "$ref": "#/entities/StudyMaterial" },
       "description": "Stores study materials for a specific batch."
-    },
-    "/batches/{batchId}/classes/{classId}": {
-      "schema": { "$ref": "#/entities/Class" },
-      "description": "Stores class schedules for a specific batch."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
