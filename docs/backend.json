@@ -36,19 +36,33 @@
         "createdAt"
       ]
     },
-    "Connection": {
-        "title": "Connection",
+    "Batch": {
+      "title": "Batch",
+      "type": "object",
+      "description": "Represents a batch created by a teacher.",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the batch." },
+        "teacherId": { "type": "string", "description": "The UID of the teacher who created the batch." },
+        "teacherName": { "type": "string", "description": "The name of the teacher." },
+        "code": { "type": "string", "description": "A unique, shareable code for students to join the batch." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "teacherId", "teacherName", "code", "createdAt"]
+    },
+    "Enrollment": {
+        "title": "Enrollment",
         "type": "object",
-        "description": "Represents a connection between a student and a teacher.",
+        "description": "Represents a student's enrollment request for a teacher's batch.",
         "properties": {
             "studentId": { "type": "string" },
-            "teacherId": { "type": "string" },
             "studentName": { "type": "string" },
-            "teacherName": { "type": "string" },
+            "teacherId": { "type": "string" },
+            "batchId": { "type": "string" },
+            "batchName": { "type": "string" },
             "status": { "type": "string", "enum": ["pending", "approved"] },
             "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["studentId", "teacherId", "studentName", "teacherName", "status", "createdAt"]
+        "required": ["studentId", "studentName", "teacherId", "batchId", "batchName", "status", "createdAt"]
     }
   },
   "auth": {
@@ -59,9 +73,13 @@
       "schema": { "$ref": "#/entities/User" },
       "description": "Stores user profiles."
     },
-    "/connections/{connectionId}": {
-        "schema": { "$ref": "#/entities/Connection" },
-        "description": "Stores connection requests and approvals between students and teachers."
+    "/batches/{batchId}": {
+        "schema": { "$ref": "#/entities/Batch" },
+        "description": "Stores batches created by teachers."
+    },
+    "/enrollments/{enrollmentId}": {
+        "schema": { "$ref": "#/entities/Enrollment" },
+        "description": "Stores student enrollment requests for batches."
     }
   }
 }

@@ -2,13 +2,15 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
-import { useEffect, useMemo } from 'react';
+import { collection, doc, query, where, addDoc, serverTimestamp, deleteDoc, getDocs } from 'firebase/firestore';
+import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -16,20 +18,27 @@ interface UserProfile {
     role: 'student' | 'teacher';
 }
 
-interface Connection {
+interface Batch {
+    id: string;
+    name: string;
+    teacherId: string;
+    teacherName: string;
+    code: string;
+}
+
+interface Enrollment {
     id: string;
     studentId: string;
     teacherId: string;
+    teacherName: string;
+    batchId: string;
+    batchName: string;
     status: 'pending' | 'approved';
 }
 
-// Helper to get initials from a name
 const getInitials = (name: string) => {
     if (!name) return '';
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('');
+    return name.split(' ').map((n) => n[0]).join('');
 };
 
 export default function StudentDashboardPage() {
@@ -37,6 +46,10 @@ export default function StudentDashboardPage() {
     const firestore = useFirestore();
     const router = useRouter();
 
+    const [batchCode, setBatchCode] = useState('');
+    const [joinMessage, setJoinMessage] = useState({ type: '', text: '' });
+    const [isJoining, setIsJoining] = useState(false);
+    
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
@@ -44,28 +57,16 @@ export default function StudentDashboardPage() {
     
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
-    // --- Data Fetching ---
-    // 1. Get all teachers
-    const teachersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'users'), where('role', '==', 'teacher'));
-    }, [firestore]);
-    const { data: teachers, isLoading: teachersLoading } = useCollection<UserProfile>(teachersQuery);
-
-    // 2. Get all connections for the current student
-    const connectionsQuery = useMemoFirebase(() => {
+    const enrollmentsQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, 'connections'), where('studentId', '==', user.uid));
+        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
     }, [firestore, user?.uid]);
-    const { data: connections, isLoading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
+    const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
-    // --- Memos for derived state ---
-    const connectionsMap = useMemo(() => {
-        if (!connections) return new Map();
-        return new Map(connections.map(c => [c.teacherId, c]));
-    }, [connections]);
-    
-    // --- Auth & Role Check Effect ---
+    const enrolledBatchIds = useMemo(() => {
+        return enrollments?.map(e => e.batchId) || [];
+    }, [enrollments]);
+
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
         if (!user) {
@@ -77,31 +78,60 @@ export default function StudentDashboardPage() {
         }
     }, [user, userProfile, isUserLoading, profileLoading, router]);
 
-    // --- Event Handlers ---
-    const handleSendRequest = async (teacherId: string, teacherName: string) => {
-        if (!firestore || !user || !userProfile) return;
-        
-        await addDoc(collection(firestore, 'connections'), {
-            studentId: user.uid,
-            teacherId: teacherId,
-            studentName: userProfile.name,
-            teacherName: teacherName,
-            status: 'pending',
-            createdAt: serverTimestamp(),
-        });
-    };
+    const handleJoinBatch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!firestore || !user || !userProfile || !batchCode.trim()) return;
 
-    const handleCancelRequest = async (teacherId: string) => {
-        if(!firestore) return;
-        const connection = connectionsMap.get(teacherId);
-        if (connection && connection.id) {
-            await deleteDoc(doc(firestore, 'connections', connection.id));
+        setIsJoining(true);
+        setJoinMessage({ type: '', text: '' });
+
+        const trimmedCode = batchCode.trim();
+
+        const batchesRef = collection(firestore, 'batches');
+        const q = query(batchesRef, where('code', '==', trimmedCode));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            setJoinMessage({ type: 'error', text: 'No batch found with this code.' });
+            setIsJoining(false);
+            return;
+        }
+
+        const batchDoc = querySnapshot.docs[0];
+        const batchData = { ...batchDoc.data(), id: batchDoc.id } as Batch;
+
+        if (enrolledBatchIds.includes(batchData.id)) {
+            setJoinMessage({ type: 'info', text: 'You have already sent a request to join this batch.' });
+            setIsJoining(false);
+            return;
+        }
+
+        try {
+            await addDoc(collection(firestore, 'enrollments'), {
+                studentId: user.uid,
+                studentName: userProfile.name,
+                teacherId: batchData.teacherId,
+                batchId: batchData.id,
+                batchName: batchData.name,
+                status: 'pending',
+                createdAt: serverTimestamp(),
+            });
+            setJoinMessage({ type: 'success', text: `Request sent to join "${batchData.name}"!` });
+            setBatchCode('');
+        } catch (error) {
+            console.error("Error creating enrollment request:", error);
+            setJoinMessage({ type: 'error', text: 'Failed to send request. Please try again.' });
+        } finally {
+            setIsJoining(false);
         }
     };
+    
+    const handleCancelRequest = async (enrollmentId: string) => {
+        if (!firestore) return;
+        await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
+    };
 
-
-    // --- Render Logic ---
-    const isLoading = isUserLoading || profileLoading || teachersLoading || connectionsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -110,54 +140,79 @@ export default function StudentDashboardPage() {
             </div>
         );
     }
-    
-    const renderConnectionButton = (teacher: UserProfile & { id: string }) => {
-        const connection = connectionsMap.get(teacher.id);
-        
-        if (connection) {
-            if (connection.status === 'approved') {
-                return <Button variant="secondary" disabled>Connected</Button>;
-            }
-            if (connection.status === 'pending') {
-                return <Button variant="outline" onClick={() => handleCancelRequest(teacher.id)}>Request Sent</Button>;
-            }
+
+    const renderStatusIcon = (status: 'pending' | 'approved') => {
+        if (status === 'approved') {
+            return <CheckCircle className="h-5 w-5 text-green-500" />;
         }
-        
-        return <Button onClick={() => handleSendRequest(teacher.id, teacher.name)}>Send Request</Button>;
+        return <Clock className="h-5 w-5 text-yellow-500" />;
     };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userName={userProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold font-serif mb-6">Find a Teacher</h1>
-                    <div className="grid gap-4">
-                        {teachers && teachers.length > 0 ? (
-                             teachers.map((teacher) => (
-                                <Card key={teacher.id}>
-                                    <CardContent className="p-4 flex items-center justify-between">
+                <div className="max-w-4xl mx-auto grid gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Join a New Batch</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row items-end gap-4">
+                                <div className="grid gap-2 flex-1 w-full">
+                                    <Label htmlFor="batch-code">Enter Batch Code</Label>
+                                    <Input 
+                                        id="batch-code" 
+                                        placeholder="e.g., A1B2C3" 
+                                        value={batchCode}
+                                        onChange={(e) => setBatchCode(e.target.value)}
+                                    />
+                                </div>
+                                <Button type="submit" disabled={isJoining || !batchCode.trim()}>
+                                    {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Send Request
+                                </Button>
+                            </form>
+                             {joinMessage.text && (
+                                <p className={`mt-4 text-sm font-medium ${
+                                    joinMessage.type === 'error' ? 'text-destructive' : 
+                                    joinMessage.type === 'success' ? 'text-green-600' : 'text-muted-foreground'
+                                }`}>
+                                    {joinMessage.text}
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>My Enrollments</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            {enrollments && enrollments.length > 0 ? (
+                                enrollments.map((enrollment) => (
+                                    <div key={enrollment.id} className="p-4 flex items-center justify-between rounded-lg border bg-background">
                                         <div className="flex items-center gap-4">
-                                             <Avatar>
-                                                <AvatarFallback>{getInitials(teacher.name)}</AvatarFallback>
-                                             </Avatar>
+                                            {renderStatusIcon(enrollment.status)}
                                             <div>
-                                                <p className="font-semibold text-lg">{teacher.name}</p>
-                                                <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                                                <p className="font-semibold text-lg">{enrollment.batchName}</p>
+                                                <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
                                             </div>
                                         </div>
-                                        {renderConnectionButton(teacher)}
-                                    </CardContent>
-                                </Card>
-                            ))
-                        ) : (
-                            <Card>
-                                <CardContent className="p-8">
-                                    <p className="text-muted-foreground text-center">No teachers available at the moment.</p>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
+                                        {enrollment.status === 'pending' ? (
+                                            <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                Cancel Request
+                                            </Button>
+                                        ) : (
+                                            <span className="text-sm font-semibold text-green-600">Approved</span>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-muted-foreground text-center py-8">You are not enrolled in any batches yet.</p>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </main>
         </div>

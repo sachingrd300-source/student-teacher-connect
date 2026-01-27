@@ -2,14 +2,18 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, updateDoc, deleteDoc } from 'firebase/firestore';
-import { useEffect, useMemo } from 'react';
+import { collection, doc, query, where, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, X } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Loader2, Check, X, PlusCircle, Clipboard } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { nanoid } from 'nanoid';
 
 
 interface UserProfile {
@@ -18,27 +22,35 @@ interface UserProfile {
     role: 'student' | 'teacher';
 }
 
-interface Connection {
+interface Batch {
+    id: string;
+    name: string;
+    code: string;
+}
+
+interface Enrollment {
     id: string;
     studentId: string;
-    teacherId: string;
     studentName: string;
+    teacherId: string;
+    batchId: string;
+    batchName: string;
     status: 'pending' | 'approved';
 }
 
-// Helper to get initials from a name
 const getInitials = (name: string) => {
     if (!name) return '';
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('');
+    return name.split(' ').map((n) => n[0]).join('');
 };
 
 export default function TeacherDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
+    
+    const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
+    const [newBatchName, setNewBatchName] = useState('');
+    const [isCreatingBatch, setIsCreatingBatch] = useState(false);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -47,30 +59,32 @@ export default function TeacherDashboardPage() {
     
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
-    // --- Data Fetching ---
-    // Get all connections for the current teacher
-    const connectionsQuery = useMemoFirebase(() => {
+    const batchesQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, 'connections'), where('teacherId', '==', user.uid));
+        return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
-    const { data: connections, isLoading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
+    const { data: batches, isLoading: batchesLoading } = useCollection<Batch>(batchesQuery);
 
-    // --- Memos for derived state ---
+    const enrollmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
+    }, [firestore, user?.uid]);
+    const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
     const [pendingRequests, approvedStudents] = useMemo(() => {
-        if (!connections) return [[], []];
-        const pending: Connection[] = [];
-        const approved: Connection[] = [];
-        connections.forEach(c => {
-            if (c.status === 'pending') {
-                pending.push(c);
+        if (!enrollments) return [[], []];
+        const pending: Enrollment[] = [];
+        const approved: Enrollment[] = [];
+        enrollments.forEach(e => {
+            if (e.status === 'pending') {
+                pending.push(e);
             } else {
-                approved.push(c);
+                approved.push(e);
             }
         });
         return [pending, approved];
-    }, [connections]);
+    }, [enrollments]);
 
-    // --- Auth & Role Check Effect ---
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
         if (!user) {
@@ -82,21 +96,45 @@ export default function TeacherDashboardPage() {
         }
     }, [user, userProfile, isUserLoading, profileLoading, router]);
 
-    // --- Event Handlers ---
-    const handleApprove = async (connectionId: string) => {
-        if (!firestore) return;
-        const connectionRef = doc(firestore, 'connections', connectionId);
-        await updateDoc(connectionRef, { status: 'approved' });
+    const handleCreateBatch = async () => {
+        if (!firestore || !user || !userProfile || !newBatchName.trim()) return;
+        setIsCreatingBatch(true);
+        const batchCode = nanoid(6).toUpperCase();
+        
+        try {
+            await addDoc(collection(firestore, 'batches'), {
+                name: newBatchName.trim(),
+                teacherId: user.uid,
+                teacherName: userProfile.name,
+                code: batchCode,
+                createdAt: serverTimestamp(),
+            });
+            setNewBatchName('');
+            setCreateBatchOpen(false);
+        } catch (error) {
+            console.error("Error creating batch:", error);
+        } finally {
+            setIsCreatingBatch(false);
+        }
     };
 
-    const handleDecline = async (connectionId: string) => {
+    const handleApprove = async (enrollmentId: string) => {
         if (!firestore) return;
-        await deleteDoc(doc(firestore, 'connections', connectionId));
+        const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
+        await updateDoc(enrollmentRef, { status: 'approved' });
     };
 
+    const handleDecline = async (enrollmentId: string) => {
+        if (!firestore) return;
+        await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
+    };
+    
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        // Maybe show a toast notification here
+    };
 
-    // --- Render Logic ---
-    const isLoading = isUserLoading || profileLoading || connectionsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -114,14 +152,47 @@ export default function TeacherDashboardPage() {
                     <h1 className="text-3xl font-bold font-serif mb-6">Teacher Dashboard</h1>
                     
                     <Tabs defaultValue="requests" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="requests">Connection Requests ({pendingRequests.length})</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="batches">My Batches ({batches?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="requests">Enrollment Requests ({pendingRequests.length})</TabsTrigger>
                             <TabsTrigger value="students">My Students ({approvedStudents.length})</TabsTrigger>
                         </TabsList>
+
+                        <TabsContent value="batches" className="mt-4">
+                             <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle>My Batches</CardTitle>
+                                    <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
+                                    </Button>
+                                </CardHeader>
+                                <CardContent className="grid gap-4">
+                                     {batches && batches.length > 0 ? (
+                                        batches.map(batch => (
+                                             <div key={batch.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                 <div>
+                                                    <p className="font-semibold text-lg">{batch.name}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <p className="text-sm text-muted-foreground">Code:</p>
+                                                        <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(batch.code)}>
+                                                            <Clipboard className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground text-center py-8">You haven't created any batches yet.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
                         <TabsContent value="requests" className="mt-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Pending Requests</CardTitle>
+                                    <CardTitle>Pending Enrollment Requests</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
                                     {pendingRequests.length > 0 ? (
@@ -131,7 +202,10 @@ export default function TeacherDashboardPage() {
                                                     <Avatar>
                                                         <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
                                                     </Avatar>
-                                                    <p className="font-semibold">{req.studentName}</p>
+                                                    <div>
+                                                        <p className="font-semibold">{req.studentName}</p>
+                                                        <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req.id)}>
@@ -162,7 +236,10 @@ export default function TeacherDashboardPage() {
                                                     <Avatar>
                                                         <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
                                                     </Avatar>
-                                                    <p className="font-semibold">{student.studentName}</p>
+                                                    <div>
+                                                        <p className="font-semibold">{student.studentName}</p>
+                                                         <p className="text-sm text-muted-foreground">Batch: <span className="font-medium">{student.batchName}</span></p>
+                                                    </div>
                                                 </div>
                                                 <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleDecline(student.id)}>Remove</Button>
                                             </div>
@@ -176,6 +253,38 @@ export default function TeacherDashboardPage() {
                     </Tabs>
                 </div>
             </main>
+
+            <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create a New Batch</DialogTitle>
+                        <DialogDescription>
+                            Enter a name for your new batch. A unique 6-character code will be generated for students to join.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="batch-name" className="text-right">Batch Name</Label>
+                            <Input 
+                                id="batch-name" 
+                                className="col-span-3" 
+                                value={newBatchName} 
+                                onChange={(e) => setNewBatchName(e.target.value)}
+                                placeholder="e.g., Morning Physics Class"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                             <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button onClick={handleCreateBatch} disabled={isCreatingBatch || !newBatchName.trim()}>
+                            {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create Batch
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

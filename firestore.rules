@@ -24,30 +24,32 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn(); // Allow reading any user profile
-      allow list: if isSignedIn(); // Allow listing users to find teachers/students
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isOwner(userId);
       allow delete: if false;
     }
+
+    match /batches/{batchId} {
+      allow get: if isSignedIn();
+      allow list: if isTeacher();
+      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+    }
     
-    match /connections/{connectionId} {
-      // Students can create connection requests for themselves, with a pending status
+    match /enrollments/{enrollmentId} {
       allow create: if isStudent() 
                     && request.resource.data.studentId == request.auth.uid
                     && request.resource.data.status == 'pending';
       
-      // Teachers can update requests made to them (e.g., to approve)
       allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
       
-      // Student can cancel their own request. Teacher can remove a student.
       allow delete: if (isStudent() && resource.data.studentId == request.auth.uid) 
                     || (isTeacher() && resource.data.teacherId == request.auth.uid);
       
-      // A user can get a connection doc if they are the student or the teacher involved
       allow get: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId);
       
-      // Allow students and teachers to query the connections collection.
       allow list: if isStudent() || isTeacher();
     }
   }
