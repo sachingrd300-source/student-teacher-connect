@@ -1,8 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { School } from 'lucide-react';
+import { School, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function MainHeader() {
     return (
@@ -12,15 +18,37 @@ export function MainHeader() {
                 <span className="text-lg font-semibold font-serif">My App</span>
             </Link>
             <nav className="flex gap-2 sm:gap-4 items-center">
-                 <Link href="/login">
-                    <Button variant="ghost">Student Login</Button>
-                </Link>
-                 <Link href="/signup/student">
-                    <Button variant="ghost">Teacher Login</Button>
-                </Link>
-                <Button asChild>
-                     <Link href="/signup">Sign Up</Link>
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost">
+                            Login <ChevronDown className="ml-1 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href="/login">Student</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/signup/student">Teacher</Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <Button>
+                            Sign Up <ChevronDown className="ml-1 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                         <DropdownMenuItem asChild>
+                           <Link href="/signup">As a Student</Link>
+                        </DropdownMenuItem>
+                         <DropdownMenuItem asChild>
+                           <Link href="/signup/teacher">As a Teacher</Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </nav>
         </header>
     );
