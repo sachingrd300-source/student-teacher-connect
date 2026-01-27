@@ -1,0 +1,9 @@
+{
+  "hero": {
+    "src": "https://picsum.photos/seed/homepage-hero/1920/1080",
+    "width": 1920,
+    "height": 1080,
+    "alt": "A vibrant classroom with students and a teacher.",
+    "hint": "education classroom"
+  }
+}
