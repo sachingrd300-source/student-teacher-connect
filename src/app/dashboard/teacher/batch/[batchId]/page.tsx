@@ -14,9 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FeeManagementDialog } from '@/components/fee-management-dialog';
 
 interface UserProfile {
     name: string;
@@ -33,7 +34,12 @@ interface Enrollment {
     id: string;
     studentId: string;
     studentName: string;
+    teacherId: string;
     batchId: string;
+    batchName: string;
+    status: 'pending' | 'approved';
+    createdAt: string;
+    approvedAt?: string;
 }
 
 interface StudyMaterial {
@@ -78,6 +84,7 @@ export default function BatchManagementPage() {
     // Dialog states
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [studentForFees, setStudentForFees] = useState<Enrollment | null>(null);
     
     // Batch form state
     const [batchName, setBatchName] = useState('');
@@ -342,14 +349,17 @@ export default function BatchManagementPage() {
                                 <CardContent className="grid gap-4">
                                     {enrolledStudents && enrolledStudents.length > 0 ? (
                                         enrolledStudents.map(student => (
-                                            <div key={student.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                            <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background">
                                                 <div className="flex items-center gap-4">
                                                     <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
                                                     <p className="font-semibold">{student.studentName}</p>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
                                                     <Button asChild variant="outline" size="sm">
                                                         <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />View Profile</Link>
+                                                    </Button>
+                                                     <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
+                                                        <Wallet className="mr-2 h-4 w-4" /> Fees
                                                     </Button>
                                                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleRemoveStudent(student)}>Remove</Button>
                                                 </div>
@@ -448,6 +458,14 @@ export default function BatchManagementPage() {
                     </Tabs>
                 </div>
             </main>
+
+            {studentForFees && (
+                <FeeManagementDialog 
+                    isOpen={!!studentForFees} 
+                    onClose={() => setStudentForFees(null)} 
+                    student={studentForFees} 
+                />
+            )}
 
             {/* Edit Batch Dialog */}
             <Dialog open={isEditing} onOpenChange={setIsEditing}>
