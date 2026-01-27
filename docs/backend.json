@@ -35,6 +35,20 @@
         "role",
         "createdAt"
       ]
+    },
+    "Connection": {
+        "title": "Connection",
+        "type": "object",
+        "description": "Represents a connection between a student and a teacher.",
+        "properties": {
+            "studentId": { "type": "string" },
+            "teacherId": { "type": "string" },
+            "studentName": { "type": "string" },
+            "teacherName": { "type": "string" },
+            "status": { "type": "string", "enum": ["pending", "approved"] },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["studentId", "teacherId", "studentName", "teacherName", "status", "createdAt"]
     }
   },
   "auth": {
@@ -44,6 +58,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/User" },
       "description": "Stores user profiles."
+    },
+    "/connections/{connectionId}": {
+        "schema": { "$ref": "#/entities/Connection" },
+        "description": "Stores connection requests and approvals between students and teachers."
     }
   }
 }
