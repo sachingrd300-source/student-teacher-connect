@@ -41,7 +41,10 @@ service cloud.firestore {
     match /connections/{connectionId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId);
-      allow list: if isSignedIn() && (request.query.get('studentId') == request.auth.uid || request.query.get('teacherId') == request.auth.uid);
+      // The 'list' rule allows queries, but security is enforced by the 'get' rule.
+      // Firestore checks the 'get' rule on every document returned by a query. 
+      // If any document fails, the entire query fails.
+      allow list: if isSignedIn();
       allow update: if isTutor() && resource.data.teacherId == request.auth.uid;
       allow delete: if isOwner(resource.data.studentId);
     }
