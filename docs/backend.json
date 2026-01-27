@@ -131,9 +131,10 @@
         "teacherId": { "type": "string" },
         "startTime": { "type": "string", "format": "date-time" },
         "endTime": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["scheduled", "cancelled"], "description": "The status of the class." }
       },
-      "required": ["title", "batchId", "teacherId", "startTime", "endTime", "createdAt"]
+      "required": ["title", "batchId", "teacherId", "startTime", "endTime", "createdAt", "status"]
     },
     "Activity": {
       "title": "Activity",

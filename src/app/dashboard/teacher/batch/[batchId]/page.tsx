@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, CalendarPlus, Clock, Download, Trash } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from '@/components/ui/switch';
 
 
 interface UserProfile {
@@ -52,6 +53,7 @@ interface ClassSchedule {
     startTime: string;
     endTime: string;
     createdAt: string;
+    status?: 'scheduled' | 'cancelled';
 }
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
@@ -269,6 +271,7 @@ export default function BatchManagementPage() {
                 batchId: batchId,
                 teacherId: user.uid,
                 createdAt: new Date().toISOString(),
+                status: 'scheduled',
             });
 
             firestoreBatch.set(doc(activityColRef), {
@@ -286,6 +289,26 @@ export default function BatchManagementPage() {
             console.error("Error creating class: ", error);
         } finally {
             setIsCreatingClass(false);
+        }
+    };
+
+    const handleToggleClassStatus = async (classToUpdate: ClassSchedule) => {
+        if (!firestore || !batchId) return;
+    
+        const newStatus = classToUpdate.status === 'scheduled' ? 'cancelled' : 'scheduled';
+        const classDocRef = doc(firestore, 'batches', batchId, 'classes', classToUpdate.id);
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+    
+        try {
+            const firestoreBatch = writeBatch(firestore);
+            firestoreBatch.update(classDocRef, { status: newStatus });
+            firestoreBatch.set(doc(activityColRef), {
+                message: `Class "${classToUpdate.title}" status changed to ${newStatus}.`,
+                createdAt: new Date().toISOString()
+            });
+            await firestoreBatch.commit();
+        } catch (error) {
+            console.error("Error updating class status:", error);
         }
     };
 
@@ -473,14 +496,27 @@ export default function BatchManagementPage() {
                                             <div key={c.id} className="p-3 rounded-lg border bg-background">
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <p className="font-semibold">{c.title}</p>
+                                                        <p className={`font-semibold ${c.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>{c.title}</p>
                                                         {c.description && <p className="text-sm text-muted-foreground my-1">{c.description}</p>}
                                                         <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                                                             <Clock className="h-3 w-3" />
                                                             <span>{formatDate(c.startTime)} to {formatDate(c.endTime)}</span>
                                                         </div>
                                                     </div>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex items-center space-x-2">
+                                                            <Switch
+                                                                id={`status-switch-${c.id}`}
+                                                                checked={c.status === 'scheduled'}
+                                                                onCheckedChange={() => handleToggleClassStatus(c)}
+                                                                aria-label="Toggle class status"
+                                                            />
+                                                            <Label htmlFor={`status-switch-${c.id}`} className="text-sm font-medium">
+                                                                {c.status === 'scheduled' ? 'Open' : 'Closed'}
+                                                            </Label>
+                                                        </div>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteClass(c)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))

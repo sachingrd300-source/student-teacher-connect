@@ -38,6 +38,7 @@ interface ClassSchedule {
     startTime: string;
     endTime: string;
     createdAt: string;
+    status?: 'scheduled' | 'cancelled';
 }
 
 interface Activity {
@@ -190,8 +191,13 @@ export default function StudentBatchPage() {
                                     <CardContent className="grid gap-4">
                                         {classes && classes.length > 0 ? (
                                             classes.map(c => (
-                                                <div key={c.id} className="p-3 rounded-lg border bg-background">
-                                                    <p className="font-semibold">{c.title}</p>
+                                                <div key={c.id} className="p-3 rounded-lg border bg-background relative overflow-hidden">
+                                                    {c.status === 'cancelled' && (
+                                                        <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-full">
+                                                            CANCELLED
+                                                        </div>
+                                                    )}
+                                                    <p className={`font-semibold ${c.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>{c.title}</p>
                                                     {c.description && <p className="text-sm text-muted-foreground my-1">{c.description}</p>}
                                                     <div className="text-xs text-muted-foreground mt-2 flex items-center gap-4">
                                                         <div className="flex items-center gap-1">
