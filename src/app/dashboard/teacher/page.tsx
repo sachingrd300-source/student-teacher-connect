@@ -210,16 +210,19 @@ export default function TeacherDashboardPage() {
             <DashboardHeader userName={userProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold font-serif mb-6">Teacher Dashboard</h1>
+                    <div className="mb-8">
+                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Teacher Dashboard</h1>
+                        <p className="text-muted-foreground mt-2">Manage your batches, students, and requests all in one place.</p>
+                    </div>
                     
                     <Tabs defaultValue="requests" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="batches">My Batches ({batches?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="requests">Enrollment Requests ({pendingRequests.length})</TabsTrigger>
-                            <TabsTrigger value="students">My Students ({approvedStudents.length})</TabsTrigger>
+                            <TabsTrigger value="requests">Requests ({pendingRequests.length})</TabsTrigger>
+                            <TabsTrigger value="students">Students ({approvedStudents.length})</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="batches" className="mt-4">
+                        <TabsContent value="batches" className="mt-6">
                              <Card>
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle>My Batches</CardTitle>
@@ -230,8 +233,8 @@ export default function TeacherDashboardPage() {
                                 <CardContent className="grid gap-4">
                                      {batches && batches.length > 0 ? (
                                         batches.map(batch => (
-                                             <div key={batch.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                 <div>
+                                            <div key={batch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                                 <div className="flex-grow">
                                                     <p className="font-semibold text-lg">{batch.name}</p>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <p className="text-sm text-muted-foreground">Code:</p>
@@ -242,7 +245,7 @@ export default function TeacherDashboardPage() {
                                                     </div>
                                                      <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
                                                 </div>
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0">
                                                     <div className="text-center">
                                                         <p className="font-bold text-lg">{studentCountsByBatch[batch.id] || 0}</p>
                                                         <p className="text-xs text-muted-foreground">Students</p>
@@ -256,13 +259,18 @@ export default function TeacherDashboardPage() {
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-muted-foreground text-center py-8">You haven't created any batches yet.</p>
+                                        <div className="text-center py-12">
+                                            <p className="text-muted-foreground">You haven't created any batches yet.</p>
+                                             <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
+                                                <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
+                                            </Button>
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="requests" className="mt-4">
+                        <TabsContent value="requests" className="mt-6">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Pending Enrollment Requests</CardTitle>
@@ -270,7 +278,7 @@ export default function TeacherDashboardPage() {
                                 <CardContent className="grid gap-4">
                                     {pendingRequests.length > 0 ? (
                                         pendingRequests.map(req => (
-                                            <div key={req.id} className="flex items-center justify-between p-2 rounded-lg border bg-background">
+                                            <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
                                                 <div className="flex items-center gap-4">
                                                     <Avatar>
                                                         <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
@@ -281,7 +289,7 @@ export default function TeacherDashboardPage() {
                                                         <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
                                                     <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req)}>
                                                         <Check className="h-4 w-4" />
                                                     </Button>
@@ -292,12 +300,12 @@ export default function TeacherDashboardPage() {
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-muted-foreground text-center py-8">No pending requests.</p>
+                                        <p className="text-muted-foreground text-center py-12">No pending requests.</p>
                                     )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
-                        <TabsContent value="students" className="mt-4">
+                        <TabsContent value="students" className="mt-6">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Approved Students</CardTitle>
@@ -305,7 +313,7 @@ export default function TeacherDashboardPage() {
                                 <CardContent className="grid gap-4">
                                     {approvedStudents.length > 0 ? (
                                         approvedStudents.map(student => (
-                                             <div key={student.id} className="flex items-center justify-between p-2 rounded-lg border bg-background">
+                                             <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
                                                  <div className="flex items-center gap-4">
                                                     <Avatar>
                                                         <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
@@ -316,16 +324,16 @@ export default function TeacherDashboardPage() {
                                                          <p className="text-xs text-muted-foreground mt-1">Approved: {formatDate(student.approvedAt)}</p>
                                                     </div>
                                                 </div>
-                                                <div className='flex items-center gap-2'>
+                                                <div className='flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0'>
                                                     <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
                                                         <Wallet className="mr-2 h-4 w-4" /> Fees
                                                     </Button>
-                                                    <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
                                                 </div>
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-muted-foreground text-center py-8">You have no students yet.</p>
+                                        <p className="text-muted-foreground text-center py-12">You have no students yet.</p>
                                     )}
                                 </CardContent>
                             </Card>
