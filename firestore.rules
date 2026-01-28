@@ -53,17 +53,17 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
 
       match /materials/{materialId} {
-        allow read: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
+        allow get, list: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
         allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
 
       match /activity/{activityId} {
-        allow read: if isAdmin() || isEnrolledInBatch(batchId) || isTeacherOwnerOfBatch(batchId);
+        allow get, list: if isAdmin() || isEnrolledInBatch(batchId) || isTeacherOwnerOfBatch(batchId);
         allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
       
       match /tests/{testId} {
-        allow read: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
+        allow get, list: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
         allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
     }
