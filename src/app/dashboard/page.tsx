@@ -14,6 +14,9 @@ interface UserProfile {
     lastLoginDate?: string; // YYYY-MM-DD
 }
 
+// Define the daily reward progression
+const dailyRewards = [5, 10, 15, 20, 25, 30, 50]; // Day 1 to Day 7 (bonus)
+
 export default function DashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -50,7 +53,6 @@ export default function DashboardPage() {
                 const currentCoins = userProfile.coins || 0;
                 const currentStreak = userProfile.streak || 0;
                 
-                let newCoins = currentCoins + 5; // Grant daily login coins
                 let newStreak = currentStreak;
 
                 if (lastLoginDate) {
@@ -70,10 +72,10 @@ export default function DashboardPage() {
                     newStreak = 1;
                 }
 
-                // Check for 7-day streak bonus
-                if (newStreak > 0 && (newStreak % 7) === 0) {
-                    newCoins += 50; // 7-day streak bonus
-                }
+                // Calculate coin reward based on the new streak
+                const rewardIndex = (newStreak - 1) % dailyRewards.length;
+                const dailyCoinReward = dailyRewards[rewardIndex];
+                const newCoins = currentCoins + dailyCoinReward;
 
                 updates.coins = newCoins;
                 updates.streak = newStreak;

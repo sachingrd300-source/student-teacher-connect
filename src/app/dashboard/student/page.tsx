@@ -13,6 +13,8 @@ import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, S
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 interface UserProfile {
     name: string;
@@ -62,6 +64,9 @@ const getMotivation = () => {
     ];
     return motivations[Math.floor(Math.random() * motivations.length)];
 };
+
+// Define the daily reward progression
+const dailyRewards = [5, 10, 15, 20, 25, 30, 50]; // Day 1 to Day 7 (bonus)
 
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -169,22 +174,20 @@ export default function StudentDashboardPage() {
     const currentStreak = userProfile?.streak || 0;
     const totalDaysInJourney = 7;
     // The current day number in the 7-day cycle.
-    // Streak 1 = Day 1, Streak 2 = Day 2, ..., Streak 7 = Day 7, Streak 8 = Day 1.
     const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
 
     const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
         const day = i + 1;
+        const reward = dailyRewards[i];
         let status: 'completed' | 'today' | 'locked' = 'locked';
         
         if (day < dayInCycle) {
             status = 'completed';
         } else if (day === dayInCycle) {
-            // A streak of 0 means they haven't started, so Day 1 is "today", but they haven't earned the streak yet.
-            // A streak of > 0 means today's login is counted.
             status = 'today';
         }
         
-        return { day, status };
+        return { day, status, reward };
     });
 
     if (isLoading || !userProfile) {
@@ -220,6 +223,13 @@ export default function StudentDashboardPage() {
         { title: "Free Study Material", description: "Access free notes and resources.", href: "/dashboard/student/free-materials", icon: <Gift className="h-6 w-6 text-primary" /> },
         { title: "Shop", description: "Exclusive merchandise and kits.", href: "/dashboard/student/shop", icon: <ShoppingBag className="h-6 w-6 text-primary" /> },
     ];
+    
+    const todaysTasks = [
+        { id: 'task1', label: 'Watch 1 video lesson' },
+        { id: 'task2', label: 'Attempt 5 MCQ questions' },
+        { id: 'task3', label: 'Read 1 short note' },
+        { id: 'task4', label: 'Post a doubt (optional)' },
+    ];
 
 
     return (
@@ -232,9 +242,9 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                         {/* Main Content */}
-                        <div className="lg:col-span-2 grid gap-8">
+                        <div className="lg:col-span-3 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
@@ -329,8 +339,8 @@ export default function StudentDashboardPage() {
                              <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
                                 <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
                                     <CardHeader>
-                                        <CardTitle>Your Daily Journey</CardTitle>
-                                        <CardDescription>Log in daily to earn rewards and build your streak!</CardDescription>
+                                        <CardTitle>Daily Rewards</CardTitle>
+                                        <CardDescription>Log in daily to earn coins and build your streak!</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex items-center pb-4 overflow-x-auto custom-scrollbar">
@@ -358,28 +368,14 @@ export default function StudentDashboardPage() {
                                                                 </div>
                                                                 
                                                                 <p className="font-bold text-sm">Day {day.day}</p>
+                                                                <p className="text-xs text-muted-foreground">+ {day.reward} Coins</p>
 
-                                                                <div className="h-9 flex items-center"> {/* container for button/text to prevent layout shift */}
-                                                                    {isToday && (
-                                                                        <Button asChild size="sm" className="mt-1 h-7 text-xs px-3">
-                                                                            <Link href={studyLink}>
-                                                                                {latestBatchId ? 'Start' : 'Explore'}
-                                                                            </Link>
-                                                                        </Button>
-                                                                    )}
-                                                                    {isCompleted && (
-                                                                        <p className="text-xs font-semibold text-green-600 mt-1">{isRewardDay ? '+50 Coins!' : 'Completed!'}</p>
-                                                                    )}
-                                                                    {isLocked && (
-                                                                        <p className="text-xs text-muted-foreground mt-1">{isRewardDay ? 'Bonus Reward' : 'Locked'}</p>
-                                                                    )}
-                                                                </div>
                                                             </div>
 
                                                             {index < days.length - 1 && (
                                                                 <div className={cn(
                                                                     "w-10 h-1 mx-2 rounded-full",
-                                                                    isCompleted ? "bg-primary" : "bg-border/70"
+                                                                    isCompleted ? "bg-green-500" : "bg-border/70"
                                                                 )}></div>
                                                             )}
                                                         </div>
@@ -390,6 +386,26 @@ export default function StudentDashboardPage() {
                                     </CardContent>
                                 </Card>
                             </motion.div>
+                            
+                             <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>Today's Tasks</CardTitle>
+                                    <CardDescription>Complete tasks to earn extra coins!</CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid gap-3">
+                                    {todaysTasks.map(task => (
+                                        <div key={task.id} className="flex items-center space-x-3">
+                                            <Checkbox id={task.id} disabled />
+                                            <label
+                                                htmlFor={task.id}
+                                                className="text-sm font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                                {task.label}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
 
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
