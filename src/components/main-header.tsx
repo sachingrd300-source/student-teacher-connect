@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { School, ChevronDown } from 'lucide-react';
+import { School, ChevronDown, Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -9,23 +9,38 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from '@/components/ui/sheet';
 
 export function MainHeader() {
+    const navLinks = [
+        { href: "#features", label: "Features" },
+        { href: "#how-it-works", label: "How it Works" },
+        { href: "#testimonials", label: "Testimonials" },
+    ];
+
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
-            <Link className="flex items-center justify-center mr-auto" href="/">
-                <School className="h-6 w-6 mr-2 text-primary" />
+            <Link className="flex items-center justify-center gap-2" href="/">
+                <School className="h-6 w-6 text-primary" />
                 <span className="text-lg font-semibold">EduConnect Pro</span>
             </Link>
-            <nav className="hidden md:flex gap-4 sm:gap-6 items-center">
-                <Link href="#features" className="text-sm font-medium hover:text-primary transition-colors">Features</Link>
-                <Link href="#how-it-works" className="text-sm font-medium hover:text-primary transition-colors">How it Works</Link>
-                <Link href="#testimonials" className="text-sm font-medium hover:text-primary transition-colors">Testimonials</Link>
-            </nav>
-            <nav className="flex gap-2 sm:gap-4 items-center ml-auto">
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-6 ml-auto">
+                {navLinks.map(link => (
+                     <Link key={link.href} href={link.href} className="text-sm font-medium hover:text-primary transition-colors">
+                        {link.label}
+                    </Link>
+                ))}
+                
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="hidden sm:inline-flex">
+                        <Button variant="ghost">
                             Login <ChevronDown className="ml-1 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -43,6 +58,58 @@ export function MainHeader() {
                    <Link href="/signup">Get Started</Link>
                 </Button>
             </nav>
+
+            {/* Mobile Navigation */}
+            <div className="md:hidden ml-auto">
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="outline" size="icon">
+                            <Menu className="h-5 w-5" />
+                            <span className="sr-only">Toggle navigation menu</span>
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right">
+                        <nav className="grid gap-6 text-lg font-medium p-4">
+                            <SheetClose asChild>
+                                <Link
+                                    href="/"
+                                    className="flex items-center gap-2 text-lg font-semibold mb-4"
+                                >
+                                    <School className="h-6 w-6 text-primary" />
+                                    <span>EduConnect Pro</span>
+                                </Link>
+                            </SheetClose>
+                            {navLinks.map((link) => (
+                                <SheetClose asChild key={link.href}>
+                                    <Link
+                                        href={link.href}
+                                        className="text-muted-foreground hover:text-foreground"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                </SheetClose>
+                            ))}
+                            <div className="mt-8 grid gap-2">
+                                <SheetClose asChild>
+                                    <Button asChild variant="outline" className="w-full">
+                                        <Link href="/login">Student Login</Link>
+                                    </Button>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <Button asChild variant="outline" className="w-full">
+                                        <Link href="/login/teacher">Teacher Login</Link>
+                                    </Button>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <Button asChild className="w-full">
+                                        <Link href="/signup">Get Started</Link>
+                                    </Button>
+                                </SheetClose>
+                            </div>
+                        </nav>
+                    </SheetContent>
+                </Sheet>
+            </div>
         </header>
     );
 }
