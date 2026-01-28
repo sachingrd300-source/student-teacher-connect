@@ -192,220 +192,194 @@ export default function StudentDashboardPage() {
             },
         }),
     };
+    
+    const actionCards = [
+        { title: "Discover Teachers", description: "Find the right teacher for you.", href: "/dashboard/student/find-teachers", icon: <Search className="h-6 w-6 text-primary" /> },
+        { title: "Book Home Teacher", description: "Request a personalized home tutor.", href: "/dashboard/student/book-home-teacher", icon: <Home className="h-6 w-6 text-primary" /> },
+        { title: "Free Study Material", description: "Access free notes and resources.", href: "/dashboard/student/free-materials", icon: <Gift className="h-6 w-6 text-primary" /> },
+        { title: "Shop", description: "Exclusive merchandise and kits.", href: "/dashboard/student/shop", icon: <ShoppingBag className="h-6 w-6 text-primary" /> },
+    ];
+
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-6xl mx-auto grid gap-8">
+                <div className="max-w-7xl mx-auto grid gap-8">
                     <div className="mb-4">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                     {/* Daily Day System */}
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
-                        <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>Your Daily Journey</CardTitle>
-                                <CardDescription>Complete one day at a time to build your streak!</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center pb-4 overflow-x-auto">
-                                    <div className="flex items-center gap-4 px-2">
-                                        {days.map((day, index) => {
-                                            const isCompleted = day.status === 'completed';
-                                            const isToday = day.status === 'today';
-                                            const isLocked = day.status === 'locked';
+                    <div className="grid lg:grid-cols-3 gap-8 items-start">
+                        {/* Main Content */}
+                        <div className="lg:col-span-2 grid gap-8">
+                            <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>Join a New Batch</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row items-end gap-4">
+                                        <div className="grid gap-2 flex-1 w-full">
+                                            <Label htmlFor="batch-code">Enter Batch Code</Label>
+                                            <Input 
+                                                id="batch-code" 
+                                                placeholder="e.g., A1B2C3" 
+                                                value={batchCode}
+                                                onChange={(e) => setBatchCode(e.target.value)}
+                                            />
+                                        </div>
+                                        <Button type="submit" disabled={isJoining || !batchCode.trim()}>
+                                            {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                            Send Request
+                                        </Button>
+                                    </form>
+                                    {joinMessage.text && (
+                                        <p className={`mt-4 text-sm font-medium ${
+                                            joinMessage.type === 'error' ? 'text-destructive' : 
+                                            joinMessage.type === 'success' ? 'text-green-600' : 'text-muted-foreground'
+                                        }`}>
+                                            {joinMessage.text}
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
 
-                                            return (
-                                                <div key={day.day} className="flex items-center">
-                                                    <div
-                                                        className={cn(
-                                                            "flex flex-col items-center justify-center w-28 h-32 rounded-xl border-2 transition-all duration-300 flex-shrink-0",
-                                                            isCompleted && "bg-green-100/50 border-green-300 text-green-800",
-                                                            isToday && "border-primary/80 bg-primary/10 shadow-lg shadow-primary/20 scale-105",
-                                                            isLocked && "bg-muted/60 border-dashed"
-                                                        )}
-                                                    >
-                                                        {isCompleted && <CheckCircle className="w-8 h-8 mb-2" />}
-                                                        {isToday && <Sparkles className="w-8 h-8 mb-2 text-primary animate-pulse" />}
-                                                        {isLocked && <Lock className="w-8 h-8 mb-2 text-muted-foreground" />}
-                                                        
-                                                        <p className="font-bold text-lg">Day {day.day}</p>
-
-                                                        {isToday && (
-                                                            <Button size="sm" className="mt-2 h-7">Start</Button>
-                                                        )}
-                                                         {isCompleted && (
-                                                            <p className="text-xs font-semibold">Done!</p>
-                                                        )}
-                                                         {isLocked && (
-                                                            <p className="text-xs text-muted-foreground">Locked</p>
+                             <div>
+                                <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
+                                {enrollments && enrollments.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {enrollments.map((enrollment, i) => (
+                                            <motion.div
+                                                key={enrollment.id}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="visible"
+                                                variants={cardVariants}
+                                                whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                            >
+                                                <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
+                                                    <div className="flex items-start gap-4 flex-grow">
+                                                        {renderStatusIcon(enrollment.status)}
+                                                        <div className="flex-grow">
+                                                            <p className="font-semibold text-lg">{enrollment.batchName}</p>
+                                                            <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                {enrollment.status === 'pending' 
+                                                                    ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                                    : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 self-end mt-4">
+                                                        {enrollment.status === 'pending' ? (
+                                                            <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                                Cancel Request
+                                                            </Button>
+                                                        ) : (
+                                                            <>
+                                                                <Button asChild variant="outline" size="sm">
+                                                                    <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                                </Button>
+                                                                <Button asChild size="sm">
+                                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
+                                                                        View Batch
+                                                                    </Link>
+                                                                </Button>
+                                                            </>
                                                         )}
                                                     </div>
-
-                                                    {index < days.length - 1 && (
-                                                        <div className="w-8 h-1 bg-border mx-2"></div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                                </Card>
+                                            </motion.div>
+                                        ))}
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                                ) : (
+                                    <div className="w-full bg-background border rounded-2xl p-12 text-center flex flex-col items-center">
+                                        <School className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
+                                        <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card className="rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>Discover Teachers</CardTitle>
-                                <CardDescription>Find the right teacher for you.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Button asChild>
-                                    <Link href="/dashboard/student/find-teachers">
-                                        <Search className="mr-2 h-4 w-4" />
-                                        Find Teachers
-                                    </Link>
-                               </Button>
-                            </CardContent>
-                        </Card>
-                        
-                        <Card className="rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>Book Home Teacher</CardTitle>
-                                <CardDescription>Request a personalized home tutor.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Button asChild>
-                                    <Link href="/dashboard/student/book-home-teacher">
-                                        <Home className="mr-2 h-4 w-4" />
-                                        Book a Teacher
-                                    </Link>
-                               </Button>
-                            </CardContent>
-                        </Card>
+                        {/* Sidebar */}
+                        <div className="lg:col-span-1 grid gap-8">
+                             <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
+                                <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
+                                    <CardHeader>
+                                        <CardTitle>Your Daily Journey</CardTitle>
+                                        <CardDescription>Complete one day at a time to build your streak!</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center pb-4 overflow-x-auto">
+                                            <div className="flex items-center gap-4 px-2">
+                                                {days.map((day, index) => {
+                                                    const isCompleted = day.status === 'completed';
+                                                    const isToday = day.status === 'today';
+                                                    const isLocked = day.status === 'locked';
 
-                        <Card className="rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>Free Study Material</CardTitle>
-                                <CardDescription>Access free notes and resources.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Button asChild>
-                                    <Link href="/dashboard/student/free-materials">
-                                        <Gift className="mr-2 h-4 w-4" />
-                                        Browse Materials
-                                    </Link>
-                               </Button>
-                            </CardContent>
-                        </Card>
+                                                    return (
+                                                        <div key={day.day} className="flex items-center">
+                                                            <div
+                                                                className={cn(
+                                                                    "flex flex-col items-center justify-center w-28 h-32 rounded-xl border-2 transition-all duration-300 flex-shrink-0",
+                                                                    isCompleted && "bg-green-100/50 border-green-300 text-green-800",
+                                                                    isToday && "border-primary/80 bg-primary/10 shadow-lg shadow-primary/20 scale-105",
+                                                                    isLocked && "bg-muted/60 border-dashed"
+                                                                )}
+                                                            >
+                                                                {isCompleted && <CheckCircle className="w-8 h-8 mb-2" />}
+                                                                {isToday && <Sparkles className="w-8 h-8 mb-2 text-primary animate-pulse" />}
+                                                                {isLocked && <Lock className="w-8 h-8 mb-2 text-muted-foreground" />}
+                                                                
+                                                                <p className="font-bold text-lg">Day {day.day}</p>
 
-                        <Card className="rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>Shop</CardTitle>
-                                <CardDescription>Exclusive merchandise and kits.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Button asChild>
-                                    <Link href="/dashboard/student/shop">
-                                        <ShoppingBag className="mr-2 h-4 w-4" />
-                                        Go to Shop
-                                    </Link>
-                               </Button>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                                                {isToday && (
+                                                                    <Button size="sm" className="mt-2 h-7">Start</Button>
+                                                                )}
+                                                                {isCompleted && (
+                                                                    <p className="text-xs font-semibold">Done!</p>
+                                                                )}
+                                                                {isLocked && (
+                                                                    <p className="text-xs text-muted-foreground">Locked</p>
+                                                                )}
+                                                            </div>
 
+                                                            {index < days.length - 1 && (
+                                                                <div className="w-8 h-1 bg-border mx-2"></div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
 
-                    <Card className="rounded-2xl shadow-lg">
-                        <CardHeader>
-                            <CardTitle>Join a New Batch</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row items-end gap-4">
-                                <div className="grid gap-2 flex-1 w-full">
-                                    <Label htmlFor="batch-code">Enter Batch Code</Label>
-                                    <Input 
-                                        id="batch-code" 
-                                        placeholder="e.g., A1B2C3" 
-                                        value={batchCode}
-                                        onChange={(e) => setBatchCode(e.target.value)}
-                                    />
-                                </div>
-                                <Button type="submit" disabled={isJoining || !batchCode.trim()}>
-                                    {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    Send Request
-                                </Button>
-                            </form>
-                             {joinMessage.text && (
-                                <p className={`mt-4 text-sm font-medium ${
-                                    joinMessage.type === 'error' ? 'text-destructive' : 
-                                    joinMessage.type === 'success' ? 'text-green-600' : 'text-muted-foreground'
-                                }`}>
-                                    {joinMessage.text}
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
-                        {enrollments && enrollments.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {enrollments.map((enrollment, i) => (
-                                     <motion.div
-                                        key={enrollment.id}
-                                        custom={i}
-                                        initial="hidden"
-                                        animate="visible"
-                                        variants={cardVariants}
-                                        whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
-                                    >
-                                        <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
-                                            <div className="flex items-start gap-4 flex-grow">
-                                                {renderStatusIcon(enrollment.status)}
-                                                <div className="flex-grow">
-                                                    <p className="font-semibold text-lg">{enrollment.batchName}</p>
-                                                    <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        {enrollment.status === 'pending' 
-                                                            ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                            : `Approved: ${formatDate(enrollment.approvedAt)}`}
-                                                    </p>
+                            <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>Explore</CardTitle>
+                                    <CardDescription>Find resources and more.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid gap-3">
+                                    {actionCards.map(card => (
+                                         <Link href={card.href} key={card.title} className="block group">
+                                            <div className="rounded-xl border bg-background group-hover:bg-muted/50 group-hover:border-primary/20 p-4 flex items-center gap-4 transition-all duration-200">
+                                                <div className="p-2 bg-primary/10 rounded-lg">
+                                                    {card.icon}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold">{card.title}</p>
+                                                    <p className="text-sm text-muted-foreground">{card.description}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2 self-end mt-4">
-                                                {enrollment.status === 'pending' ? (
-                                                    <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                        Cancel Request
-                                                    </Button>
-                                                ) : (
-                                                    <>
-                                                        <Button asChild variant="outline" size="sm">
-                                                            <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
-                                                        </Button>
-                                                        <Button asChild size="sm">
-                                                            <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                                View Batch
-                                                            </Link>
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        ) : (
-                             <div className="w-full bg-background border rounded-2xl p-12 text-center flex flex-col items-center">
-                                <School className="h-12 w-12 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
-                                <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
-                            </div>
-                        )}
+                                        </Link>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </div>
             </main>
