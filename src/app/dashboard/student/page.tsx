@@ -9,14 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Sparkles, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
     name: string;
     email: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 interface Batch {
@@ -49,12 +52,27 @@ const formatDate = (dateString?: string) => {
     });
 };
 
-const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Let\'s learn something new today ✨';
-    if (hour < 18) return 'Keep up the great work! 👍';
-    return 'Time to revise what you learned 🌙';
+const getMotivation = () => {
+    const motivations = [
+        "Consistency beats intensity 💪",
+        "The secret of getting ahead is getting started. 🚀",
+        "Don't wish for it. Work for it. 💡",
+        "The future depends on what you do today. ✨",
+        "Believe you can and you're halfway there. 🎯"
+    ];
+    return motivations[Math.floor(Math.random() * motivations.length)];
 };
+
+// Mock data for the daily journey UI
+const days = [
+  { day: 1, status: 'completed' },
+  { day: 2, status: 'completed' },
+  { day: 3, status: 'today' },
+  { day: 4, status: 'locked' },
+  { day: 5, status: 'locked' },
+  { day: 6, status: 'locked' },
+  { day: 7, status: 'locked' },
+];
 
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -177,16 +195,70 @@ export default function StudentDashboardPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto grid gap-8">
                     <div className="mb-4">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
-                        <p className="text-muted-foreground mt-2">{getGreeting()}</p>
+                        <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
+                     {/* Daily Day System */}
+                    <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
+                        <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
+                            <CardHeader>
+                                <CardTitle>Your Daily Journey</CardTitle>
+                                <CardDescription>Complete one day at a time to build your streak!</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center pb-4 overflow-x-auto">
+                                    <div className="flex items-center gap-4 px-2">
+                                        {days.map((day, index) => {
+                                            const isCompleted = day.status === 'completed';
+                                            const isToday = day.status === 'today';
+                                            const isLocked = day.status === 'locked';
+
+                                            return (
+                                                <div key={day.day} className="flex items-center">
+                                                    <div
+                                                        className={cn(
+                                                            "flex flex-col items-center justify-center w-28 h-32 rounded-xl border-2 transition-all duration-300 flex-shrink-0",
+                                                            isCompleted && "bg-green-100/50 border-green-300 text-green-800",
+                                                            isToday && "border-primary/80 bg-primary/10 shadow-lg shadow-primary/20 scale-105",
+                                                            isLocked && "bg-muted/60 border-dashed"
+                                                        )}
+                                                    >
+                                                        {isCompleted && <CheckCircle className="w-8 h-8 mb-2" />}
+                                                        {isToday && <Sparkles className="w-8 h-8 mb-2 text-primary animate-pulse" />}
+                                                        {isLocked && <Lock className="w-8 h-8 mb-2 text-muted-foreground" />}
+                                                        
+                                                        <p className="font-bold text-lg">Day {day.day}</p>
+
+                                                        {isToday && (
+                                                            <Button size="sm" className="mt-2 h-7">Start</Button>
+                                                        )}
+                                                         {isCompleted && (
+                                                            <p className="text-xs font-semibold">Done!</p>
+                                                        )}
+                                                         {isLocked && (
+                                                            <p className="text-xs text-muted-foreground">Locked</p>
+                                                        )}
+                                                    </div>
+
+                                                    {index < days.length - 1 && (
+                                                        <div className="w-8 h-1 bg-border mx-2"></div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle>Discover Teachers</CardTitle>
                                 <CardDescription>Find the right teacher for you.</CardDescription>
@@ -201,7 +273,7 @@ export default function StudentDashboardPage() {
                             </CardContent>
                         </Card>
                         
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle>Book Home Teacher</CardTitle>
                                 <CardDescription>Request a personalized home tutor.</CardDescription>
@@ -216,7 +288,7 @@ export default function StudentDashboardPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle>Free Study Material</CardTitle>
                                 <CardDescription>Access free notes and resources.</CardDescription>
@@ -231,7 +303,7 @@ export default function StudentDashboardPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle>Shop</CardTitle>
                                 <CardDescription>Exclusive merchandise and kits.</CardDescription>
@@ -248,7 +320,7 @@ export default function StudentDashboardPage() {
                     </div>
 
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle>Join a New Batch</CardTitle>
                         </CardHeader>
@@ -292,7 +364,7 @@ export default function StudentDashboardPage() {
                                         variants={cardVariants}
                                         whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
                                     >
-                                        <Card className="p-4 flex flex-col h-full transition-shadow duration-300">
+                                        <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
                                             <div className="flex items-start gap-4 flex-grow">
                                                 {renderStatusIcon(enrollment.status)}
                                                 <div className="flex-grow">
@@ -328,7 +400,7 @@ export default function StudentDashboardPage() {
                                 ))}
                             </div>
                         ) : (
-                             <div className="w-full bg-background border rounded-lg p-12 text-center flex flex-col items-center">
+                             <div className="w-full bg-background border rounded-2xl p-12 text-center flex flex-col items-center">
                                 <School className="h-12 w-12 text-muted-foreground mb-4" />
                                 <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
                                 <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>

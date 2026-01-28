@@ -21,7 +21,7 @@
         "role": {
           "type": "string",
           "description": "The role of the user.",
-          "enum": ["student", "teacher", "admin"]
+          "enum": ["student", "teacher", "admin", "parent"]
         },
         "bio": {
           "type": "string",
@@ -30,6 +30,18 @@
         "createdAt": {
             "type": "string",
             "format": "date-time"
+        },
+        "coins": {
+            "type": "number",
+            "description": "The number of coins the user has earned."
+        },
+        "streak": {
+            "type": "number",
+            "description": "The user's current daily login streak."
+        },
+        "lastLoginDate": {
+            "type": "string",
+            "description": "The date of the user's last login, in YYYY-MM-DD format."
         },
         "subject": {
           "type": "string",

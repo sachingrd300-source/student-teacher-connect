@@ -25,6 +25,13 @@ interface TeacherProfile {
     bio?: string;
 }
 
+interface UserProfile {
+    name?: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
+}
+
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 export default function FindTeachersPage() {
@@ -37,7 +44,7 @@ export default function FindTeachersPage() {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
-    const { data: currentUserProfile } = useDoc(currentUserProfileRef);
+    const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
 
 
     const teachersQuery = useMemoFirebase(() => {
@@ -82,7 +89,7 @@ export default function FindTeachersPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={currentUserProfile?.name} />
+            <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8 text-center">
@@ -119,7 +126,7 @@ export default function FindTeachersPage() {
                                         whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
                                         className="h-full"
                                     >
-                                        <Card className="flex flex-col h-full transition-shadow duration-300">
+                                        <Card className="flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
                                             <CardHeader className="items-center text-center">
                                                 <Avatar className="w-20 h-20 mb-4">
                                                     <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>

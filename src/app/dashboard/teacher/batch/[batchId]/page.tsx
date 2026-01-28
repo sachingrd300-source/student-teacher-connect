@@ -22,6 +22,9 @@ import { TestMarksDialog } from '@/components/test-marks-dialog';
 
 interface UserProfile {
     name: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 interface Batch {
@@ -411,7 +414,7 @@ export default function BatchManagementPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
                     <div>
@@ -419,7 +422,7 @@ export default function BatchManagementPage() {
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Dashboard
                         </Button>
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -454,7 +457,7 @@ export default function BatchManagementPage() {
                         </TabsList>
 
                         <TabsContent value="students" className="mt-4 grid gap-6">
-                            <Card>
+                            <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Pending Requests ({pendingStudents.length})</CardTitle>
                                     <CardDescription>Approve or decline requests from students to join this batch.</CardDescription>
@@ -484,7 +487,7 @@ export default function BatchManagementPage() {
                                     )}
                                 </CardContent>
                             </Card>
-                             <Card>
+                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Enrolled Students ({enrolledStudents.length})</CardTitle>
                                 </CardHeader>
@@ -521,7 +524,7 @@ export default function BatchManagementPage() {
                         </TabsContent>
 
                         <TabsContent value="tests" className="mt-4 grid gap-6">
-                             <Card>
+                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Create a New Test</CardTitle>
                                     <CardDescription>Schedule a new test for the students in this batch.</CardDescription>
@@ -550,7 +553,7 @@ export default function BatchManagementPage() {
                                     </form>
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="rounded-2xl shadow-lg">
                                 <CardHeader><CardTitle>Conducted Tests</CardTitle></CardHeader>
                                 <CardContent>
                                     {tests && tests.length > 0 ? (
@@ -580,7 +583,7 @@ export default function BatchManagementPage() {
                         </TabsContent>
                         
                         <TabsContent value="materials" className="mt-4 grid gap-6">
-                            <Card>
+                            <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Upload Study Material</CardTitle>
                                     <CardDescription>Share notes, documents, and other files with your students.</CardDescription>
@@ -605,7 +608,7 @@ export default function BatchManagementPage() {
                                     </form>
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="rounded-2xl shadow-lg">
                                  <CardHeader><CardTitle>Uploaded Materials</CardTitle></CardHeader>
                                  <CardContent>
                                      {materials && materials.length > 0 ? (
@@ -641,7 +644,7 @@ export default function BatchManagementPage() {
                         </TabsContent>
 
                         <TabsContent value="announcements" className="mt-4 grid gap-6">
-                            <Card>
+                            <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Post an Announcement</CardTitle>
                                     <CardDescription>Send a notification to all students in this batch.</CardDescription>
@@ -664,7 +667,7 @@ export default function BatchManagementPage() {
                                     </form>
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="rounded-2xl shadow-lg">
                                 <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
                                 <CardContent>
                                     {activities && activities.length > 0 ? (

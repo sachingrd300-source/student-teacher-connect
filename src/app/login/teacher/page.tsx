@@ -86,6 +86,9 @@ export default function TeacherLoginPage() {
           email: user.email,
           role: 'teacher', // Default to teacher for Google sign-in on teacher page
           createdAt: new Date().toISOString(),
+          coins: 0,
+          streak: 0,
+          lastLoginDate: '',
         };
         await setDoc(userRef, userProfileData);
       } else {

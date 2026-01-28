@@ -16,11 +16,18 @@ import {
 import { School, UserCircle, LogOut, User as UserIcon } from 'lucide-react';
 
 
-interface DashboardHeaderProps {
-  userName: string | null | undefined;
+interface UserProfileForHeader {
+  name?: string | null;
+  role?: 'student' | 'teacher' | 'admin' | 'parent';
+  coins?: number;
+  streak?: number;
 }
 
-export function DashboardHeader({ userName }: DashboardHeaderProps) {
+interface DashboardHeaderProps {
+  userProfile: UserProfileForHeader | null | undefined;
+}
+
+export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
   const auth = useAuth();
   const router = useRouter();
 
@@ -38,10 +45,22 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Link className="flex items-center gap-2 font-semibold" href="/dashboard">
             <School className="h-6 w-6 mr-1 text-primary" />
-            <span className="text-lg font-semibold font-serif">My App</span>
+            <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
         </Link>
         
         <div className="flex items-center gap-2 ml-auto">
+             {userProfile?.role === 'student' && (
+                <div className="hidden sm:flex items-center gap-4 border-r pr-4 mr-2">
+                    <div className="flex items-center gap-2 font-semibold text-sm" title="Coins">
+                        <span role="img" aria-label="Coins">🪙</span>
+                        {userProfile?.coins ?? 0}
+                    </div>
+                    <div className="flex items-center gap-2 font-semibold text-sm" title="Daily Streak">
+                        <span role="img" aria-label="Streak">🔥</span>
+                        {userProfile?.streak ?? 0}
+                    </div>
+                </div>
+            )}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="secondary" size="icon" className="rounded-full">
@@ -52,7 +71,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>
                         <p>My Account</p>
-                        <p className="text-sm font-normal text-muted-foreground">{userName}</p>
+                        <p className="text-sm font-normal text-muted-foreground">{userProfile?.name}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>

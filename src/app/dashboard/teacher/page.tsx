@@ -21,7 +21,9 @@ import { motion } from 'framer-motion';
 interface UserProfile {
     name: string;
     email: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 interface Batch {
@@ -189,7 +191,7 @@ export default function TeacherDashboardPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
@@ -198,7 +200,7 @@ export default function TeacherDashboardPage() {
                     </div>
                     
                     <div className="grid gap-8">
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
                                 <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
@@ -252,7 +254,7 @@ export default function TeacherDashboardPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle>Pending Enrollment Requests ({pendingRequests.length})</CardTitle>
                             </CardHeader>

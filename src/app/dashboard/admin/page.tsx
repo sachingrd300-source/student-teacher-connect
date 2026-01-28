@@ -217,7 +217,7 @@ export default function AdminDashboardPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
                     <div>
@@ -225,7 +225,7 @@ export default function AdminDashboardPage() {
                         <p className="text-muted-foreground mt-2">Manage global settings, content, and the shop.</p>
                     </div>
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center"><Home className="mr-3 h-6 w-6 text-primary"/> Home Teacher Bookings</CardTitle>
                             <CardDescription>Review and manage home teacher requests from students.</CardDescription>
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center"><ShoppingBag className="mr-3 h-6 w-6 text-primary"/> Manage Shop</CardTitle>
                             <CardDescription>Add new products or remove existing ones from the student-facing shop.</CardDescription>
@@ -312,7 +312,7 @@ export default function AdminDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Manage Free Study Materials</CardTitle>
                             <CardDescription>Upload and manage materials that will be visible to all students.</CardDescription>

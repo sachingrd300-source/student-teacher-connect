@@ -21,6 +21,13 @@ interface TeacherProfile {
     fee?: string;
 }
 
+interface UserProfile {
+    name?: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
+}
+
 const getInitials = (name: string) => {
     if (!name) return '';
     return name.split(' ').map((n) => n[0]).join('');
@@ -47,7 +54,7 @@ export default function TeacherProfilePage() {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { data: currentUserProfile } = useDoc(currentUserProfileRef);
+    const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
     
     // Redirect if user is not logged in
     useEffect(() => {
@@ -76,10 +83,10 @@ export default function TeacherProfilePage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={currentUserProfile?.name} />
+            <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader className="text-center">
                              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/20">
                                 <AvatarFallback className="text-4xl">{getInitials(teacherProfile.name)}</AvatarFallback>

@@ -15,7 +15,7 @@ import { Loader2, Edit, Save } from 'lucide-react';
 interface UserProfile {
     name: string;
     email: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin' | 'parent';
     subject?: string;
     bio?: string;
     coachingCenterName?: string;
@@ -25,6 +25,8 @@ interface UserProfile {
     mobileNumber?: string;
     fatherName?: string;
     class?: string;
+    coins?: number;
+    streak?: number;
 }
 
 export default function ProfilePage() {
@@ -149,10 +151,10 @@ export default function ProfilePage() {
     
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
-                     <Card>
+                     <Card className="rounded-2xl shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>My Profile</CardTitle>

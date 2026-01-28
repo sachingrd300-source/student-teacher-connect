@@ -14,6 +14,9 @@ import Link from 'next/link';
 
 interface UserProfile {
     name: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 interface ShopItem {
@@ -56,7 +59,7 @@ export default function ShopPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto grid gap-8">
                      <div>
@@ -76,7 +79,7 @@ export default function ShopPage() {
                         {items && items.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {items.map(item => (
-                                    <Card key={item.id} className="flex flex-col overflow-hidden">
+                                    <Card key={item.id} className="flex flex-col overflow-hidden rounded-2xl shadow-lg">
                                         <div className="relative w-full h-56">
                                             <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" />
                                         </div>

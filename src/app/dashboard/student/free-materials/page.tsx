@@ -13,6 +13,9 @@ import { doc } from 'firebase/firestore';
 
 interface UserProfile {
     name: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 interface FreeMaterial {
@@ -71,7 +74,7 @@ export default function FreeMaterialsPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
                      <div>
@@ -79,7 +82,7 @@ export default function FreeMaterialsPage() {
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Dashboard
                         </Button>
-                        <Card>
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center text-2xl font-serif">
                                     <Gift className="mr-3 h-6 w-6 text-primary"/> Free Study Materials
@@ -110,7 +113,7 @@ export default function FreeMaterialsPage() {
                                         <Gift className="mx-auto h-12 w-12 text-muted-foreground" />
                                         <h3 className="mt-4 text-lg font-semibold">No Free Materials... Yet!</h3>
                                         <p className="mt-1 text-sm text-muted-foreground">
-                                            Our admins are working on it. Check back soon for free resources.
+                                            Our admins are curating new items. Check back soon for free resources.
                                         </p>
                                     </div>
                                 )}

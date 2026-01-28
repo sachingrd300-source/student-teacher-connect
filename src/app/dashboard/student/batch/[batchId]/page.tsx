@@ -13,6 +13,9 @@ import { useEffect, useMemo } from 'react';
 
 interface UserProfile {
     name: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 interface Batch {
@@ -222,7 +225,7 @@ export default function StudentBatchPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={currentUserProfile?.name} />
+            <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
                      <div>
@@ -230,7 +233,7 @@ export default function StudentBatchPage() {
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Dashboard
                         </Button>
-                        <Card className="mb-8">
+                        <Card className="mb-8 rounded-2xl shadow-lg">
                              <CardHeader>
                                 <div className="flex justify-between items-center">
                                     <div>
@@ -255,7 +258,7 @@ export default function StudentBatchPage() {
                             </TabsList>
                             
                              <TabsContent value="announcements" className="mt-6">
-                                <Card>
+                                <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center">
                                             <ListCollapse className="mr-2 h-5 w-5 text-primary"/> Announcements
@@ -283,7 +286,7 @@ export default function StudentBatchPage() {
                             </TabsContent>
 
                             <TabsContent value="materials" className="mt-6">
-                                 <Card>
+                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center">
                                             <FileText className="mr-2 h-5 w-5 text-primary"/> Study Materials
@@ -319,7 +322,7 @@ export default function StudentBatchPage() {
                             </TabsContent>
                             
                             <TabsContent value="tests" className="mt-6">
-                                <Card>
+                                <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center">
                                             <ClipboardCheck className="mr-2 h-5 w-5 text-primary"/> Test Results
@@ -363,7 +366,7 @@ export default function StudentBatchPage() {
                             </TabsContent>
 
                             <TabsContent value="fees" className="mt-6">
-                                <Card>
+                                <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center">
                                             <Wallet className="mr-2 h-5 w-5 text-primary"/> My Fee Status

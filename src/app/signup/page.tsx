@@ -57,6 +57,9 @@ export default function StudentSignupPage() {
           email: email.trim(), 
           role: 'student', // Automatically set role
           createdAt: new Date().toISOString(),
+          coins: 0,
+          streak: 0,
+          lastLoginDate: '',
       };
       
       await setDoc(userRef, dataToSet);

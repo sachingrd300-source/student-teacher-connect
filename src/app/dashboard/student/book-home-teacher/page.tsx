@@ -20,6 +20,9 @@ interface UserProfile {
     fatherName?: string;
     class?: string;
     address?: string;
+    role?: 'student' | 'teacher' | 'admin' | 'parent';
+    coins?: number;
+    streak?: number;
 }
 
 export default function BookHomeTeacherPage() {
@@ -97,14 +100,14 @@ export default function BookHomeTeacherPage() {
     
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userName={userProfile?.name} />
+            <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
                     <Button variant="ghost" onClick={() => router.push('/dashboard/student')} className="mb-4">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Dashboard
                     </Button>
-                     <Card>
+                     <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle>Book a Home Teacher</CardTitle>
                             <CardDescription>Fill out the details below to request a personalized home tutor. Our team will review your request and get in touch with you.</CardDescription>

@@ -88,6 +88,9 @@ export default function StudentLoginPage() {
           email: user.email,
           role: 'student', // Default to student for Google sign-in on student page
           createdAt: new Date().toISOString(),
+          coins: 0,
+          streak: 0,
+          lastLoginDate: '',
         };
         await setDoc(userRef, userProfileData);
       } else {
