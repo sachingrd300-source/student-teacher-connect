@@ -4,14 +4,15 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, FileText, Gift, ArrowLeft, School } from 'lucide-react';
+import { Loader2, Download, FileText, Gift, ArrowLeft, School, Search } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from '@/components/ui/input';
 
 interface UserProfile {
     name: string;
@@ -46,6 +47,7 @@ export default function FreeMaterialsPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState('');
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -66,18 +68,42 @@ export default function FreeMaterialsPage() {
         }
     }, [user, isUserLoading, profileLoading, router]);
 
+    const searchedMaterials = useMemo(() => {
+        if (!materials) return [];
+        if (!searchQuery.trim()) return materials;
+
+        const lowercasedQuery = searchQuery.toLowerCase();
+        return materials.filter(material => 
+            material.title.toLowerCase().includes(lowercasedQuery) ||
+            (material.description && material.description.toLowerCase().includes(lowercasedQuery))
+        );
+    }, [materials, searchQuery]);
+
     const filteredMaterials = useMemo(() => {
-        if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
+        if (!searchedMaterials) return { notes: [], books: [], pyqs: [], dpps: [] };
         return {
-            notes: materials.filter(m => m.category === 'notes'),
-            books: materials.filter(m => m.category === 'books'),
-            pyqs: materials.filter(m => m.category === 'pyqs'),
-            dpps: materials.filter(m => m.category === 'dpps'),
+            notes: searchedMaterials.filter(m => m.category === 'notes'),
+            books: searchedMaterials.filter(m => m.category === 'books'),
+            pyqs: searchedMaterials.filter(m => m.category === 'pyqs'),
+            dpps: searchedMaterials.filter(m => m.category === 'dpps'),
         }
-    }, [materials]);
+    }, [searchedMaterials]);
 
     const renderMaterialList = (materialList: FreeMaterial[]) => {
+        const isSearchActive = searchQuery.trim() !== '';
+
         if (materialList.length === 0) {
+            if (isSearchActive) {
+                return (
+                     <div className="text-center py-16">
+                        <Search className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <h3 className="mt-4 text-lg font-semibold">No Materials Found</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Your search for "{searchQuery}" did not match any results.
+                        </p>
+                    </div>
+                );
+            }
             return (
                 <div className="text-center py-16">
                     <Gift className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -121,6 +147,8 @@ export default function FreeMaterialsPage() {
             </div>
         );
     }
+    
+    const isOverallEmpty = !materials || materials.length === 0;
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -140,6 +168,16 @@ export default function FreeMaterialsPage() {
                                 <p className="text-muted-foreground">Free resources and notes curated by our team to help you succeed.</p>
                             </CardHeader>
                             <CardContent className="grid gap-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input 
+                                        placeholder="Search materials by title or description..."
+                                        className="pl-10"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        disabled={isOverallEmpty}
+                                    />
+                                </div>
                                 <Tabs defaultValue="all" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
                                         <TabsTrigger value="all">All</TabsTrigger>
@@ -149,7 +187,15 @@ export default function FreeMaterialsPage() {
                                         <TabsTrigger value="dpps">DPPs</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="all" className="mt-4">
-                                        {renderMaterialList(materials || [])}
+                                        {isOverallEmpty ? (
+                                            <div className="text-center py-16">
+                                                <Gift className="mx-auto h-12 w-12 text-muted-foreground" />
+                                                <h3 className="mt-4 text-lg font-semibold">No Free Materials Available</h3>
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    Our team is curating resources. Please check back later!
+                                                </p>
+                                            </div>
+                                        ) : renderMaterialList(searchedMaterials)}
                                     </TabsContent>
                                     <TabsContent value="notes" className="mt-4">
                                         {renderMaterialList(filteredMaterials.notes)}
@@ -172,5 +218,3 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
-
-    
