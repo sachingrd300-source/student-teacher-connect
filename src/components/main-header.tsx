@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { School, Menu, User, UserPlus } from 'lucide-react';
+import { School, Menu, User, UserPlus, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -19,7 +19,12 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 
-export function MainHeader() {
+interface MainHeaderProps {
+    currentLanguage: 'en' | 'hi';
+    onLanguageChange: (lang: 'en' | 'hi') => void;
+}
+
+export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProps) {
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
@@ -29,6 +34,22 @@ export function MainHeader() {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-2 ml-auto">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Globe className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onLanguageChange('en')} disabled={currentLanguage === 'en'}>
+                            English
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onLanguageChange('hi')} disabled={currentLanguage === 'hi'}>
+                            हिंदी (Hindi)
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost">Login</Button>
@@ -71,7 +92,7 @@ export function MainHeader() {
             </nav>
 
             {/* Mobile Navigation */}
-            <div className="md:hidden ml-auto">
+            <div className="md:hidden ml-auto flex items-center gap-2">
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="outline" size="icon">
@@ -80,7 +101,7 @@ export function MainHeader() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="right">
-                         <SheetHeader className="text-left">
+                         <SheetHeader className="text-left mb-8">
                             <SheetTitle>
                                 <SheetClose asChild>
                                     <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
@@ -93,7 +114,16 @@ export function MainHeader() {
                                 Main navigation menu.
                             </SheetDescription>
                         </SheetHeader>
-                        <div className="mt-8 grid gap-2">
+                        <div className="grid gap-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                <SheetClose asChild>
+                                    <Button variant={currentLanguage === 'en' ? 'default' : 'outline'} onClick={() => onLanguageChange('en')}>English</Button>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <Button variant={currentLanguage === 'hi' ? 'default' : 'outline'} onClick={() => onLanguageChange('hi')}>हिंदी</Button>
+                                </SheetClose>
+                            </div>
+                            <hr className="my-4" />
                             <SheetClose asChild>
                                 <Button asChild variant="outline" className="w-full justify-start text-base py-6">
                                     <Link href="/login">Student Login</Link>

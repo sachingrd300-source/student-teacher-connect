@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
@@ -10,6 +10,7 @@ import placeholderImages from '@/lib/placeholder-images';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { translations } from "@/lib/translations";
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
   hidden: {},
@@ -33,87 +34,90 @@ const fadeInUp = {
   },
 };
 
-const testimonials = [
+const testimonialsData = [
   {
     name: "Priya Sharma",
-    role: "Maths Teacher",
+    roleKey: "testimonialRoleMathsTeacher",
     avatar: "https://picsum.photos/seed/priya/100/100",
     text: "EduConnect Pro has been a game-changer. I get a steady stream of students, and the platform makes management effortless."
   },
   {
     name: "Rohan Mehra",
-    role: "Student, Class 10",
+    roleKey: "testimonialRoleStudent",
     avatar: "https://picsum.photos/seed/rohan/100/100",
     text: "The free notes and PYQs for the Jharkhand Board were incredibly helpful for my exam preparation. My tutor is also excellent!"
   },
   {
     name: "Amit Kumar",
-    role: "Science Teacher",
+    roleKey: "testimonialRoleScienceTeacher",
     avatar: "https://picsum.photos/seed/amit/100/100",
     text: "Joining was the best decision. I can focus on teaching, and the community handles the logistics. The platform is very easy to use."
   }
 ];
 
-const features = [
-    {
-        icon: <GraduationCap className="w-8 h-8 text-primary" />,
-        title: "Expert Tutors",
-        description: "Connect with our community of verified, high-quality local tutors."
-    },
-    {
-        icon: <BookOpen className="w-8 h-8 text-primary" />,
-        title: "Free JAC Resources",
-        description: "Access curated notes, books, and PYQs for Class 8-12 (All Streams)."
-    },
-    {
-        icon: <UserCheck className="w-8 h-8 text-primary" />,
-        title: "Personalized Learning",
-        description: "Find the perfect match for your learning style and goals."
-    }
-];
-
-const howItWorks = {
-    students: [
-        {
-            icon: <Search className="w-6 h-6 text-primary-foreground"/>,
-            title: "Find Your Tutor",
-            description: "Browse verified teacher profiles or join a batch using a code from your teacher."
-        },
-        {
-            icon: <BookOpen className="w-6 h-6 text-primary-foreground"/>,
-            title: "Access Resources",
-            description: "Utilize our extensive library of free notes and materials for the Jharkhand Board."
-        },
-        {
-            icon: <Target className="w-6 h-6 text-primary-foreground"/>,
-            title: "Achieve Your Goals",
-            description: "Track your progress, manage fees, and excel in your studies with ease."
-        }
-    ],
-    teachers: [
-        {
-            icon: <UserCheck className="w-6 h-6 text-primary-foreground"/>,
-            title: "Create Your Profile",
-            description: "Sign up and showcase your expertise to attract students in your area."
-        },
-        {
-            icon: <Briefcase className="w-6 h-6 text-primary-foreground"/>,
-            title: "Manage Your Batches",
-            description: "Easily create batches, share materials, manage fees, and post announcements."
-        },
-        {
-            icon: <TrendingUp className="w-6 h-6 text-primary-foreground"/>,
-            title: "Grow Your Career",
-            description: "Build your reputation, connect with a community, and expand your reach."
-        }
-    ]
-}
-
 
 export default function HomePage() {
+  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const t = translations[language];
+
+  const features = [
+      {
+          icon: <GraduationCap className="w-8 h-8 text-primary" />,
+          title: t.feature1Title,
+          description: t.feature1Description
+      },
+      {
+          icon: <BookOpen className="w-8 h-8 text-primary" />,
+          title: t.feature2Title,
+          description: t.feature2Description
+      },
+      {
+          icon: <UserCheck className="w-8 h-8 text-primary" />,
+          title: t.feature3Title,
+          description: t.feature3Description
+      }
+  ];
+
+  const howItWorks = {
+      students: [
+          {
+              icon: <Search className="w-6 h-6 text-primary-foreground"/>,
+              title: t.studentStep1Title,
+              description: t.studentStep1Description
+          },
+          {
+              icon: <BookOpen className="w-6 h-6 text-primary-foreground"/>,
+              title: t.studentStep2Title,
+              description: t.studentStep2Description
+          },
+          {
+              icon: <Target className="w-6 h-6 text-primary-foreground"/>,
+              title: t.studentStep3Title,
+              description: t.studentStep3Description
+          }
+      ],
+      teachers: [
+          {
+              icon: <UserCheck className="w-6 h-6 text-primary-foreground"/>,
+              title: t.teacherStep1Title,
+              description: t.teacherStep1Description
+          },
+          {
+              icon: <Briefcase className="w-6 h-6 text-primary-foreground"/>,
+              title: t.teacherStep2Title,
+              description: t.teacherStep2Description
+          },
+          {
+              icon: <TrendingUp className="w-6 h-6 text-primary-foreground"/>,
+              title: t.teacherStep3Title,
+              description: t.teacherStep3Description
+          }
+      ]
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <MainHeader />
+      <MainHeader currentLanguage={language} onLanguageChange={setLanguage} />
       <main className="flex-1">
         {/* Hero Section */}
         <motion.section 
@@ -133,20 +137,20 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent"></div>
             <div className="relative z-10 container px-4 md:px-6">
                 <motion.h1 variants={fadeInUp} className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tighter font-serif">
-                    Your Gateway to Quality Education
+                    {t.heroTitle}
                 </motion.h1>
                 <motion.p variants={fadeInUp} className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-white/90">
-                    Connecting dedicated tutors with students in Giridih. Plus, get <span className="font-bold text-primary">free study materials</span> for Jharkhand Board (Class 8-12, Science, Arts & Commerce).
+                    {t.heroDescription}
                 </motion.p>
                 <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild size="lg" className="shadow-lg shadow-primary/20">
                     <Link href="/signup/teacher">
-                        Become a Tutor <ArrowRight className="ml-2 h-5 w-5" />
+                        {t.teacherApplyButton} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                     </Button>
                     <Button asChild size="lg" variant="secondary">
                     <Link href="/signup">
-                        Find a Tutor
+                        {t.studentFindButton}
                     </Link>
                     </Button>
                 </motion.div>
@@ -193,12 +197,12 @@ export default function HomePage() {
                     variants={fadeInUp}
                     className="text-center mb-16"
                  >
-                    <h2 className="text-3xl md:text-4xl font-bold font-serif">A Simple Path to Success</h2>
-                    <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">A straightforward process for students and teachers.</p>
+                    <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.howItWorksTitle}</h2>
+                    <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.howItWorksDescription}</p>
                 </motion.div>
                 <div className="grid md:grid-cols-2 gap-16">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer(0.3, 0)}>
-                        <h3 className="text-2xl font-bold mb-8">For Students</h3>
+                        <h3 className="text-2xl font-bold mb-8">{t.forStudentsTitle}</h3>
                         <div className="relative flex flex-col gap-12">
                             <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-border -z-10"></div>
                             {howItWorks.students.map((item, index) => (
@@ -213,7 +217,7 @@ export default function HomePage() {
                         </div>
                     </motion.div>
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer(0.3, 0)}>
-                        <h3 className="text-2xl font-bold mb-8">For Teachers</h3>
+                        <h3 className="text-2xl font-bold mb-8">{t.forTeachersTitle}</h3>
                         <div className="relative flex flex-col gap-12">
                              <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-border -z-10"></div>
                             {howItWorks.teachers.map((item, index) => (
@@ -241,8 +245,8 @@ export default function HomePage() {
               variants={fadeInUp}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold font-serif">Loved by Our Community</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">Real stories from our growing community of students and teachers.</p>
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.testimonialsTitle}</h2>
+              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.testimonialsDescription}</p>
             </motion.div>
             <motion.div 
                 initial="hidden"
@@ -251,7 +255,7 @@ export default function HomePage() {
                 variants={staggerContainer(0.2, 0)}
                 className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
             >
-              {testimonials.map((testimonial, index) => (
+              {testimonialsData.map((testimonial, index) => (
                  <motion.div
                     key={index}
                     variants={fadeInUp}
@@ -272,7 +276,7 @@ export default function HomePage() {
                                 </Avatar>
                                 <div>
                                     <p className="font-semibold">{testimonial.name}</p>
-                                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                                    <p className="text-sm text-muted-foreground">{t[testimonial.roleKey as keyof typeof t]}</p>
                                 </div>
                             </div>
                         </CardHeader>
@@ -287,12 +291,12 @@ export default function HomePage() {
         <section className="py-16 md:py-32 bg-background">
             <div className="container px-4 md:px-6 text-center">
                 <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
-                    <h2 className="text-3xl md:text-4xl font-bold font-serif">Ready to Get Started?</h2>
-                    <p className="mt-3 max-w-xl mx-auto text-muted-foreground md:text-lg">Join our community today and take the next step in your educational journey.</p>
+                    <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.ctaTitle}</h2>
+                    <p className="mt-3 max-w-xl mx-auto text-muted-foreground md:text-lg">{t.ctaDescription}</p>
                     <div className="mt-8">
                         <Button asChild size="lg" className="shadow-lg shadow-primary/30">
                             <Link href="/signup">
-                                Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
+                                {t.ctaButton} <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
                         </Button>
                     </div>
