@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EduConnect Pro - The Future of Education",
-  description: "Empowering students, teachers, and admins with a unified platform for learning, management, and growth.",
+  title: "Achievers Community - Home Tutors in Giridih",
+  description: "Join the best community of home tutors in Giridih. Find opportunities and grow with us.",
 };
 
 export default function RootLayout({

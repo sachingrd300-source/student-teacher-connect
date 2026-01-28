@@ -22,42 +22,17 @@ export function MainHeader() {
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
                 <School className="h-6 w-6 text-primary" />
-                <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
+                <span className="text-lg font-semibold font-serif">Achievers Community</span>
             </Link>
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4 ml-auto">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost">
-                            Login <ChevronDown className="ml-1 h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href="/login">Student Login</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/login/teacher">Teacher Login</Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button>
-                            Sign Up <ChevronDown className="ml-1 h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href="/signup">As a Student</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/signup/teacher">As a Teacher</Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Button variant="ghost" asChild>
+                    <Link href="/login/teacher">Teacher Login</Link>
+                </Button>
+                <Button asChild>
+                    <Link href="/signup/teacher">Apply Now</Link>
+                </Button>
             </nav>
 
             {/* Mobile Navigation */}
@@ -77,15 +52,10 @@ export function MainHeader() {
                                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                                 >
                                     <School className="h-6 w-6 text-primary" />
-                                    <span>EduConnect Pro</span>
+                                    <span>Achievers Community</span>
                                 </Link>
                             </SheetClose>
                             <div className="mt-8 grid gap-2">
-                                <SheetClose asChild>
-                                    <Button asChild variant="outline" className="w-full">
-                                        <Link href="/login">Student Login</Link>
-                                    </Button>
-                                </SheetClose>
                                 <SheetClose asChild>
                                     <Button asChild variant="outline" className="w-full">
                                         <Link href="/login/teacher">Teacher Login</Link>
@@ -93,12 +63,7 @@ export function MainHeader() {
                                 </SheetClose>
                                  <SheetClose asChild>
                                     <Button asChild className="w-full">
-                                        <Link href="/signup">Sign up as Student</Link>
-                                    </Button>
-                                </SheetClose>
-                                <SheetClose asChild>
-                                    <Button asChild className="w-full">
-                                        <Link href="/signup/teacher">Sign up as Teacher</Link>
+                                        <Link href="/signup/teacher">Apply Now</Link>
                                     </Button>
                                 </SheetClose>
                             </div>
