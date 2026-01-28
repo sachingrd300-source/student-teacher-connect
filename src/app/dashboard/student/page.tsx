@@ -168,8 +168,9 @@ export default function StudentDashboardPage() {
     
     const currentStreak = userProfile?.streak || 0;
     const totalDaysInJourney = 7;
-    // dayInCycle will be 1 for streak 0, 1 for streak 1, 2 for streak 2, 7 for streak 7, 1 for streak 8, etc.
-    const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : (currentStreak === 0 ? 1 : 0);
+    // The current day number in the 7-day cycle.
+    // Streak 1 = Day 1, Streak 2 = Day 2, ..., Streak 7 = Day 7, Streak 8 = Day 1.
+    const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
 
     const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
         const day = i + 1;
@@ -178,6 +179,8 @@ export default function StudentDashboardPage() {
         if (day < dayInCycle) {
             status = 'completed';
         } else if (day === dayInCycle) {
+            // A streak of 0 means they haven't started, so Day 1 is "today", but they haven't earned the streak yet.
+            // A streak of > 0 means today's login is counted.
             status = 'today';
         }
         
@@ -327,7 +330,7 @@ export default function StudentDashboardPage() {
                                 <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle>Your Daily Journey</CardTitle>
-                                        <CardDescription>Complete one day at a time to build your streak!</CardDescription>
+                                        <CardDescription>Log in daily to earn rewards and build your streak!</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex items-center pb-4 overflow-x-auto custom-scrollbar">
@@ -336,6 +339,7 @@ export default function StudentDashboardPage() {
                                                     const isCompleted = day.status === 'completed';
                                                     const isToday = day.status === 'today';
                                                     const isLocked = day.status === 'locked';
+                                                    const isRewardDay = day.day === 7;
 
                                                     return (
                                                         <div key={day.day} className="inline-flex items-center">
@@ -343,14 +347,14 @@ export default function StudentDashboardPage() {
                                                                 <div
                                                                     className={cn(
                                                                         "flex items-center justify-center w-16 h-16 rounded-full border-4 transition-all duration-300",
-                                                                        isCompleted && "bg-green-100 border-green-500 text-green-700",
+                                                                        isCompleted && "bg-green-100 border-green-500",
                                                                         isToday && "bg-primary/10 border-primary shadow-lg shadow-primary/30 scale-110",
                                                                         isLocked && "bg-muted border-border border-dashed"
                                                                     )}
                                                                 >
-                                                                    {isCompleted && <CheckCircle className="w-7 h-7" />}
+                                                                    {isCompleted && (isRewardDay ? <Gift className="w-7 h-7 text-green-700" /> : <CheckCircle className="w-7 h-7 text-green-700" />)}
                                                                     {isToday && <Sparkles className="w-7 h-7 text-primary animate-pulse" />}
-                                                                    {isLocked && <Lock className="w-7 h-7 text-muted-foreground/50" />}
+                                                                    {isLocked && (isRewardDay ? <Gift className="w-7 h-7 text-muted-foreground/50" /> : <Lock className="w-7 h-7 text-muted-foreground/50" />)}
                                                                 </div>
                                                                 
                                                                 <p className="font-bold text-sm">Day {day.day}</p>
@@ -364,16 +368,19 @@ export default function StudentDashboardPage() {
                                                                         </Button>
                                                                     )}
                                                                     {isCompleted && (
-                                                                        <p className="text-xs font-semibold text-green-600 mt-1">Completed!</p>
+                                                                        <p className="text-xs font-semibold text-green-600 mt-1">{isRewardDay ? '+50 Coins!' : 'Completed!'}</p>
                                                                     )}
                                                                     {isLocked && (
-                                                                        <p className="text-xs text-muted-foreground mt-1">Locked</p>
+                                                                        <p className="text-xs text-muted-foreground mt-1">{isRewardDay ? 'Bonus Reward' : 'Locked'}</p>
                                                                     )}
                                                                 </div>
                                                             </div>
 
                                                             {index < days.length - 1 && (
-                                                                <div className="w-10 h-1 bg-border/70 mx-2"></div>
+                                                                <div className={cn(
+                                                                    "w-10 h-1 mx-2 rounded-full",
+                                                                    isCompleted ? "bg-primary" : "bg-border/70"
+                                                                )}></div>
                                                             )}
                                                         </div>
                                                     );
