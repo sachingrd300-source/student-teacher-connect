@@ -6,7 +6,7 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
@@ -232,8 +232,17 @@ export default function StudentBatchPage() {
                         </Button>
                         <Card className="mb-8">
                              <CardHeader>
-                                <CardTitle className="text-2xl font-serif">{batch?.name}</CardTitle>
-                                <CardDescription>Taught by <Link href={`/teachers/${batch?.teacherId}`} className="text-primary hover:underline">{batch?.teacherName}</Link></CardDescription>
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <CardTitle className="text-2xl font-serif">{batch?.name}</CardTitle>
+                                        <CardDescription>Taught by <Link href={`/teachers/${batch?.teacherId}`} className="text-primary hover:underline">{batch?.teacherName}</Link></CardDescription>
+                                    </div>
+                                    <Button asChild>
+                                        <Link href={`/dashboard/student/batch/${batchId}/study`}>
+                                            <Brain className="mr-2 h-4 w-4" /> Go to Study Mode
+                                        </Link>
+                                    </Button>
+                                </div>
                             </CardHeader>
                         </Card>
 
