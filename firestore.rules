@@ -111,5 +111,11 @@ service cloud.firestore {
       allow list: if isStudent() || isAdmin();
       allow write: if isAdmin();
     }
+
+    match /shopItems/{itemId} {
+      allow read: if isSignedIn();
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }

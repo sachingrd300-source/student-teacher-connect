@@ -129,10 +129,26 @@
         "title": { "type": "string" },
         "description": { "type": "string" },
         "fileURL": { "type": "string", "format": "uri" },
+        "fileName": { "type": "string" },
         "fileType": { "type": "string", "description": "e.g., pdf, png, jpg" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "fileURL", "fileType", "createdAt"]
+      "required": ["title", "fileURL", "fileType", "fileName", "createdAt"]
+    },
+    "ShopItem": {
+      "title": "Shop Item",
+      "type": "object",
+      "description": "Represents an item available for purchase in the shop, managed by admins.",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the item." },
+        "description": { "type": "string", "description": "A description of the item." },
+        "price": { "type": "number", "description": "The price of the item." },
+        "imageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image." },
+        "imageName": { "type": "string", "description": "The file name of the image in storage, for deletion purposes." },
+        "purchaseUrl": { "type": "string", "format": "uri", "description": "External link to purchase the item." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "imageUrl", "imageName", "purchaseUrl", "createdAt"]
     },
     "Activity": {
       "title": "Activity",
@@ -216,6 +232,10 @@
     "/freeMaterials/{materialId}": {
       "schema": { "$ref": "#/entities/FreeMaterial" },
       "description": "Stores free study materials uploaded by admins, accessible to all students."
+    },
+    "/shopItems/{itemId}": {
+      "schema": { "$ref": "#/entities/ShopItem" },
+      "description": "Stores items available in the shop, managed by admins."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
