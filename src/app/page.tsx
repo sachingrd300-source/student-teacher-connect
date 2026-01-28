@@ -5,12 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, School } from "lucide-react";
-import placeholderImages from '@/lib/placeholder-images';
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, School, User, Users, Book } from "lucide-react";
+import placeholderImages from '@/lib/placeholder-images.ts';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, limit, query, where } from "firebase/firestore";
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
   hidden: {},
@@ -34,6 +36,8 @@ const fadeInUp = {
   },
 };
 
+const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
+
 const testimonialsData = [
   {
     name: "Priya Sharma",
@@ -55,10 +59,28 @@ const testimonialsData = [
   }
 ];
 
+interface TeacherProfile {
+    id: string;
+    name: string;
+    subject?: string;
+    bio?: string;
+}
+
 
 export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
+
+  const firestore = useFirestore();
+  const featuredTeachersQuery = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return query(
+          collection(firestore, 'users'),
+          where('role', '==', 'teacher'),
+          limit(3)
+      );
+  }, [firestore]);
+  const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
 
   const features = [
       {
@@ -234,6 +256,94 @@ export default function HomePage() {
                 </div>
             </div>
         </section>
+
+        {/* Numbers Section */}
+        <section className="py-16 md:py-24 bg-muted/40">
+          <div className="container px-4 md:px-6">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.5 }}
+              variants={fadeInUp}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.numbersTitle}</h2>
+              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.numbersDescription}</p>
+            </motion.div>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              variants={staggerContainer(0.2, 0)}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-8"
+            >
+              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+                <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
+                <p className="text-4xl font-bold">50+</p>
+                <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
+              </motion.div>
+              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+                <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
+                <p className="text-4xl font-bold">500+</p>
+                <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
+              </motion.div>
+              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+                <Book className="h-10 w-10 text-primary mx-auto mb-4"/>
+                <p className="text-4xl font-bold">10+</p>
+                <p className="text-muted-foreground mt-2">{t.subjectsLabel}</p>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Featured Tutors Section */}
+        {featuredTeachers && featuredTeachers.length > 0 && (
+          <section className="py-16 md:py-24 bg-background">
+            <div className="container px-4 md:px-6">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.5 }}
+                variants={fadeInUp}
+                className="text-center mb-12"
+              >
+                <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.featuredTutorsTitle}</h2>
+                <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.featuredTutorsDescription}</p>
+              </motion.div>
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={staggerContainer(0.2, 0)}
+                className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
+              >
+                {featuredTeachers.map((teacher, index) => (
+                   <motion.div key={teacher.id} variants={fadeInUp} className="h-full">
+                     <Card className="flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg overflow-hidden">
+                        <CardHeader className="items-center text-center p-6 bg-card">
+                            <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
+                                <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
+                            </Avatar>
+                            <CardTitle className="font-serif text-xl">{teacher.name}</CardTitle>
+                            {teacher.subject && (
+                                <p className="text-primary font-semibold">{teacher.subject}</p>
+                            )}
+                        </CardHeader>
+                        <CardContent className="flex-grow flex flex-col justify-between text-center p-6">
+                             <p className="text-sm text-muted-foreground line-clamp-3 mb-6">{teacher.bio || 'An experienced and dedicated educator.'}</p>
+                            <Button asChild variant="outline" className="mt-auto w-full">
+                                <Link href={`/teachers/${teacher.id}`}>
+                                    {t.viewProfileButton}
+                                </Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                   </motion.div>
+                ))}
+              </motion.div>
+            </div>
+          </section>
+        )}
 
         {/* Testimonials Section */}
         <section className="py-16 md:py-24 bg-muted/40">
