@@ -165,9 +165,11 @@ export default function StudentDashboardPage() {
         let status: 'completed' | 'today' | 'locked' = 'locked';
         
         if (currentStreak > 0) {
-            if (day < dayInCycle) {
+            // This logic ensures that for a streak of 7, day 7 is 'today', and for 8, day 1 is 'today'.
+            const effectiveStreakDay = ((currentStreak - 1) % totalDaysInJourney) + 1;
+            if (day < effectiveStreakDay) {
                 status = 'completed';
-            } else if (day === dayInCycle) {
+            } else if (day === effectiveStreakDay) {
                 status = 'today';
             }
         } else {
@@ -218,7 +220,7 @@ export default function StudentDashboardPage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-7xl mx-auto grid gap-8">
+                <div className="max-w-6xl mx-auto grid gap-8">
                     <div className="mb-4">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
