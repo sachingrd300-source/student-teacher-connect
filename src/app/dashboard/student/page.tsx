@@ -157,20 +157,25 @@ export default function StudentDashboardPage() {
     
     const currentStreak = userProfile?.streak || 0;
     const totalDaysInJourney = 7;
+    // dayInCycle will be 1 for streak 0 or 1, 2 for streak 2, 7 for streak 7, 1 for streak 8, etc.
+    const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
+
     const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
         const day = i + 1;
         let status: 'completed' | 'today' | 'locked' = 'locked';
         
-        // A streak of 0 is an edge case for first-time login before the update. Day 1 is 'today'.
-        if (currentStreak === 0) {
-            if (day === 1) status = 'today';
-        } else {
-            if (day < currentStreak) {
+        if (currentStreak > 0) {
+            if (day < dayInCycle) {
                 status = 'completed';
-            } else if (day === currentStreak) {
+            } else if (day === dayInCycle) {
+                status = 'today';
+            }
+        } else {
+             if (day === 1) {
                 status = 'today';
             }
         }
+        
         return { day, status };
     });
 
