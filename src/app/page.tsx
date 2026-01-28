@@ -4,10 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Target, Heart, TrendingUp, Star, MapPin, Phone, Mail, ClipboardList, BadgeCheck, Users, BookOpen } from "lucide-react";
+import { ArrowRight, Star, MapPin, Phone, Mail, User, Briefcase, BookMarked, Search, Award } from "lucide-react";
 import placeholderImages from '@/lib/placeholder-images.json';
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const fadeIn = {
@@ -34,7 +34,6 @@ const itemFadeIn = {
   },
 };
 
-
 const testimonials = [
   {
     name: "Priya Sharma",
@@ -43,42 +42,54 @@ const testimonials = [
     text: "Achievers Community has been a game-changer for my tutoring career. I get a steady stream of students and the support from the team is fantastic."
   },
   {
+    name: "Rohan Mehra",
+    role: "Student, Class 10",
+    avatar: "https://picsum.photos/seed/rohan/100/100",
+    text: "The free notes and PYQs for the Jharkhand Board were incredibly helpful for my exam preparation. My tutor is also excellent!"
+  },
+  {
     name: "Amit Kumar",
     role: "Science Teacher",
     avatar: "https://picsum.photos/seed/amit/100/100",
-    text: "Joining was the best decision. I can focus on teaching, and the community handles the logistics. The students are motivated and eager to learn."
-  },
-    {
-    name: "Sneha Verma",
-    role: "English Teacher",
-    avatar: "https://picsum.photos/seed/sneha/100/100",
-    text: "I love the flexibility and the quality of students I get to teach. It's rewarding to be part of a community that truly values education."
+    text: "Joining was the best decision. I can focus on teaching, and the community handles the logistics. The platform is very easy to use."
   }
 ];
 
-const howItWorksSteps = [
+const studentFeatures = [
     {
-        icon: <ClipboardList className="w-8 h-8 text-primary" />,
-        title: "1. Apply to Join",
-        description: "Fill out our simple application form to tell us about your experience and subjects."
+        icon: <Search className="w-8 h-8 text-primary" />,
+        title: "Find Expert Tutors",
+        description: "Browse verified home tutors in Giridih and find the perfect match for your needs."
     },
     {
-        icon: <BadgeCheck className="w-8 h-8 text-primary" />,
-        title: "2. Get Verified",
-        description: "Our team will review your application and conduct a brief verification process."
+        icon: <BookMarked className="w-8 h-8 text-primary" />,
+        title: "Free Study Material",
+        description: "Access high-quality notes, books, and PYQs for Jharkhand Board (Class 8-12, Science, Arts & Commerce)."
     },
     {
-        icon: <Users className="w-8 h-8 text-primary" />,
-        title: "3. Connect with Students",
-        description: "Once approved, you'll start receiving tuition requests from students in your area."
-    },
-    {
-        icon: <BookOpen className="w-8 h-8 text-primary" />,
-        title: "4. Start Teaching",
-        description: "Accept requests, schedule classes, and make a real impact on students' lives."
+        icon: <Award className="w-8 h-8 text-primary" />,
+        title: "Achieve Your Goals",
+        description: "Join interactive batches, track your test results, and excel in your studies."
     }
 ];
 
+const teacherFeatures = [
+    {
+        icon: <User className="w-8 h-8 text-primary" />,
+        title: "Connect with Students",
+        description: "Get a steady stream of verified student leads in your locality without any marketing hassle."
+    },
+    {
+        icon: <Briefcase className="w-8 h-8 text-primary" />,
+        title: "Manage Your Batches",
+        description: "Easily create and manage student batches, share materials, and conduct tests on our platform."
+    },
+    {
+        icon: <Award className="w-8 h-8 text-primary" />,
+        title: "Build Your Reputation",
+        description: "Grow your career as a professional tutor and be a part of a supportive community of educators."
+    }
+];
 
 export default function HomePage() {
   return (
@@ -86,129 +97,101 @@ export default function HomePage() {
       <MainHeader />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-muted/30 py-20 md:py-28">
-          <div className="container px-4 md:px-6 grid md:grid-cols-2 gap-10 items-center">
-             <motion.div initial="hidden" animate="visible" variants={fadeIn}>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight font-serif bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                    Become a Top Home Tutor in Giridih
-                </h1>
-                <p className="mt-4 max-w-xl text-lg md:text-xl text-muted-foreground">
-                    Join the Achievers Community and connect with students who need your expertise. We're looking for passionate tutors for all subjects, from Class 1 to 12.
-                </p>
-                <div className="mt-8 flex gap-4">
-                  <Button asChild size="lg" className="shadow-lg shadow-primary/20">
-                    <Link href="/signup/teacher">
-                      Apply Now <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
-                   <Button asChild size="lg" variant="outline">
-                    <Link href="#why-us">
-                      Learn More
-                    </Link>
-                  </Button>
-                </div>
-            </motion.div>
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
-                className="relative w-full h-80 md:h-[450px] rounded-2xl overflow-hidden shadow-2xl"
+        <section className="bg-muted/30">
+          <div className="container px-4 md:px-6 py-20 md:py-28">
+             <motion.div 
+                initial="hidden" 
+                animate="visible" 
+                variants={fadeIn}
+                className="grid md:grid-cols-2 gap-10 items-center"
             >
-                <Image
-                    src={placeholderImages.featureTeacher.src}
-                    alt="A teacher helping a student"
-                    fill
-                    priority
-                    className="object-cover"
-                    data-ai-hint="teacher student"
-                />
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <div>
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight font-serif bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
+                        Your Gateway to Quality Education in Giridih
+                    </h1>
+                    <p className="mt-4 max-w-xl text-lg md:text-xl text-muted-foreground">
+                        Connecting dedicated home tutors with students. Plus, get <span className="font-bold text-primary">free study materials</span> for Jharkhand Board (Class 8-12, Science, Arts & Commerce).
+                    </p>
+                    <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                      <Button asChild size="lg" className="shadow-lg shadow-primary/20">
+                        <Link href="/signup/teacher">
+                          Become a Tutor <ArrowRight className="ml-2 h-5 w-5" />
+                        </Link>
+                      </Button>
+                       <Button asChild size="lg" variant="outline">
+                        <Link href="/login">
+                          Find a Tutor
+                        </Link>
+                      </Button>
+                    </div>
+                </div>
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+                    className="relative w-full h-80 md:h-[450px] rounded-2xl overflow-hidden shadow-2xl"
+                >
+                    <Image
+                        src={placeholderImages.hero.src}
+                        alt="A teacher and student collaborating"
+                        fill
+                        priority
+                        className="object-cover"
+                        data-ai-hint="teacher student education"
+                    />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </motion.div>
             </motion.div>
           </div>
         </section>
 
-        {/* Why Join Us Section */}
-        <section id="why-us" className="py-16 md:py-24 bg-background">
-          <div className="container px-4 md:px-6">
-            <motion.div 
+        {/* Instructions Section */}
+        <section id="instructions" className="py-16 md:py-24 bg-background">
+          <div className="container px-4 md:px-6 grid md:grid-cols-2 gap-16 items-center">
+            {/* For Students */}
+            <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.3 }}
                 variants={fadeIn}
-                className="text-center mb-12"
             >
-              <h2 className="text-3xl md:text-4xl font-bold font-serif">Why Join Us?</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">We provide the platform, you provide the knowledge.</p>
+                <h2 className="text-3xl md:text-4xl font-bold font-serif mb-8">For Students</h2>
+                <div className="grid gap-6">
+                    {studentFeatures.map((feature, index) => (
+                        <FeatureItem key={index} icon={feature.icon} title={feature.title} description={feature.description} />
+                    ))}
+                </div>
+                <Button asChild className="mt-8" variant="link" size="lg">
+                    <Link href="/signup">
+                        Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                </Button>
             </motion.div>
-            <motion.div 
-              className="grid gap-8 md:grid-cols-3"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeIn}
+
+            {/* For Teachers */}
+            <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={fadeIn}
             >
-              <FeatureCard
-                icon={<Target className="w-8 h-8 text-primary" />}
-                title="Steady Stream of Students"
-                description="We connect you with verified students in your area, so you can focus on teaching, not marketing."
-              />
-              <FeatureCard
-                icon={<Heart className="w-8 h-8 text-primary" />}
-                title="Supportive Community"
-                description="Join a network of fellow educators. Share resources, get advice, and grow together as professionals."
-              />
-              <FeatureCard
-                icon={<TrendingUp className="w-8 h-8 text-primary" />}
-                title="Professional Growth"
-                description="We provide resources and opportunities to help you enhance your teaching skills and build your reputation."
-              />
+                <h2 className="text-3xl md:text-4xl font-bold font-serif mb-8">For Teachers</h2>
+                <div className="grid gap-6">
+                     {teacherFeatures.map((feature, index) => (
+                        <FeatureItem key={index} icon={feature.icon} title={feature.title} description={feature.description} />
+                    ))}
+                </div>
+                 <Button asChild className="mt-8" variant="link" size="lg">
+                    <Link href="/signup/teacher">
+                        Join Our Community <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                </Button>
             </motion.div>
           </div>
         </section>
         
-        {/* How It Works Section */}
-        <section id="how-it-works" className="py-16 md:py-24 bg-muted/30">
-            <div className="container px-4 md:px-6">
-                <motion.div
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.3 }}
-                    variants={fadeIn}
-                    className="text-center mb-16"
-                >
-                    <h2 className="text-3xl md:text-4xl font-bold font-serif">Simple Steps to Get Started</h2>
-                    <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">Your journey to becoming a valued tutor is just a few clicks away.</p>
-                </motion.div>
-                <div className="relative">
-                    {/* Dashed line for desktop */}
-                    <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-transparent">
-                        <svg width="100%" height="100%">
-                            <line x1="0" y1="50%" x2="100%" y2="50%" strokeDasharray="10, 10" className="stroke-border" strokeWidth="2" />
-                        </svg>
-                    </div>
-                    <motion.div
-                        className="grid gap-12 md:gap-8 md:grid-cols-4"
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, amount: 0.2 }}
-                        variants={fadeIn}
-                    >
-                        {howItWorksSteps.map((step, index) => (
-                            <motion.div key={index} variants={itemFadeIn} className="flex flex-col items-center text-center z-10">
-                                <div className="p-5 bg-background rounded-full mb-4 border-2 border-primary/20 shadow-sm">
-                                    {step.icon}
-                                </div>
-                                <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                                <p className="text-muted-foreground">{step.description}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                </div>
-            </div>
-        </section>
-
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-16 md:py-24 bg-background">
+        <section id="testimonials" className="py-16 md:py-24 bg-muted/30">
           <div className="container px-4 md:px-6">
             <motion.div 
               initial="hidden"
@@ -217,8 +200,8 @@ export default function HomePage() {
               variants={fadeIn}
               className="text-center mb-12"
             >
-              <h2 className="text-3xl md:text-4xl font-bold font-serif">What Our Tutors Say</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">Real stories from tutors in our community.</p>
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">Loved by Students and Teachers</h2>
+              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">Real stories from our growing community.</p>
             </motion.div>
             <div className="grid gap-8 md:grid-cols-3">
               {testimonials.map((testimonial, index) => (
@@ -230,14 +213,16 @@ export default function HomePage() {
                     variants={itemFadeIn}
                     className="h-full"
                 >
-                    <Card key={index} className="h-full flex flex-col bg-muted/30 border-0 shadow-sm">
+                    <Card key={index} className="h-full flex flex-col bg-card border shadow-sm">
                         <CardHeader>
                             <div className="flex text-yellow-400">
                                 <Star className="h-5 w-5 fill-current" /><Star className="h-5 w-5 fill-current" /><Star className="h-5 w-5 fill-current" /><Star className="h-5 w-5 fill-current" /><Star className="h-5 w-5 fill-current" />
                             </div>
                         </CardHeader>
                         <CardContent className="pt-0 flex-grow">
-                            <p className="text-foreground text-base mb-6">"{testimonial.text}"</p>
+                            <p className="text-foreground/90 text-base mb-6">"{testimonial.text}"</p>
+                        </CardContent>
+                         <CardContent>
                             <div className="flex items-center">
                                 <Avatar className="h-12 w-12 mr-4">
                                     <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
@@ -256,29 +241,6 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* CTA Section */}
-        <section id="cta" className="py-16 md:py-24 bg-muted/40">
-            <div className="container px-4 md:px-6">
-                <motion.div 
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.5 }}
-                    variants={fadeIn}
-                    className="bg-card p-10 md:p-16 rounded-2xl shadow-xl text-center"
-                >
-                    <h2 className="text-3xl md:text-4xl font-bold font-serif">Ready to Start Your Tutoring Journey?</h2>
-                    <p className="mt-4 max-w-xl mx-auto text-muted-foreground md:text-lg">Join us today and make a difference. The application is quick and easy.</p>
-                    <div className="mt-8">
-                         <Button asChild size="lg" className="shadow-lg shadow-primary/20">
-                            <Link href="/signup/teacher">
-                            Apply Now <ArrowRight className="ml-2 h-5 w-5" />
-                            </Link>
-                        </Button>
-                    </div>
-                </motion.div>
-            </div>
-        </section>
-
         {/* Google Map Section */}
         <section id="location" className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
@@ -289,8 +251,8 @@ export default function HomePage() {
                 variants={fadeIn}
                 className="text-center mb-12"
              >
-              <h2 className="text-3xl md:text-4xl font-bold font-serif">Our Location</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">We are proudly based in the heart of Giridih, Jharkhand.</p>
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">We're Local</h2>
+              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">Proudly serving the community of Giridih, Jharkhand.</p>
             </motion.div>
             <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -338,17 +300,16 @@ export default function HomePage() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+function FeatureItem({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <motion.div
-      variants={itemFadeIn}
-      className="flex flex-col items-center text-center p-6 border rounded-2xl bg-card shadow-sm h-full"
-    >
-      <div className="p-4 bg-primary/10 rounded-full mb-4">
-        {icon}
-      </div>
-      <h3 className="text-xl font-bold mb-2">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
-    </motion.div>
+    <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 mt-1">{icon}</div>
+        <div>
+            <h3 className="text-xl font-bold">{title}</h3>
+            <p className="text-muted-foreground mt-1">{description}</p>
+        </div>
+    </div>
   )
 }
+
+    
