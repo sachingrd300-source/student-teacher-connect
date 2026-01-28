@@ -1,20 +1,16 @@
-
 'use client';
 
 import Link from 'next/link';
-import { School, ChevronDown, Menu } from 'lucide-react';
+import { School, Menu } from 'lucide-react';
 import { Button } from './ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetClose,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 
 export function MainHeader() {
@@ -45,29 +41,34 @@ export function MainHeader() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="right">
-                        <nav className="grid gap-6 text-lg font-medium p-4">
-                            <SheetClose asChild>
-                                <Link
-                                    href="/"
-                                    className="flex items-center gap-2 text-lg font-semibold mb-4"
-                                >
-                                    <School className="h-6 w-6 text-primary" />
-                                    <span>Achievers Community</span>
-                                </Link>
-                            </SheetClose>
-                            <div className="mt-8 grid gap-2">
+                        <SheetHeader>
+                            <SheetTitle>
                                 <SheetClose asChild>
-                                    <Button asChild variant="outline" className="w-full">
-                                        <Link href="/login/teacher">Teacher Login</Link>
-                                    </Button>
+                                    <Link
+                                        href="/"
+                                        className="flex items-center gap-2 text-lg font-semibold"
+                                    >
+                                        <School className="h-6 w-6 text-primary" />
+                                        <span>Achievers Community</span>
+                                    </Link>
                                 </SheetClose>
-                                 <SheetClose asChild>
-                                    <Button asChild className="w-full">
-                                        <Link href="/signup/teacher">Apply Now</Link>
-                                    </Button>
-                                </SheetClose>
-                            </div>
-                        </nav>
+                            </SheetTitle>
+                             <SheetDescription className="sr-only">
+                                Main navigation menu.
+                            </SheetDescription>
+                        </SheetHeader>
+                        <div className="mt-8 grid gap-2">
+                            <SheetClose asChild>
+                                <Button asChild variant="outline" className="w-full">
+                                    <Link href="/login/teacher">Teacher Login</Link>
+                                </Button>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Button asChild className="w-full">
+                                    <Link href="/signup/teacher">Apply Now</Link>
+                                </Button>
+                            </SheetClose>
+                        </div>
                     </SheetContent>
                 </Sheet>
             </div>
