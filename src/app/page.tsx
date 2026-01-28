@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { MainHeader } from "@/components/main-header";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRight, Wallet, Loader2, Zap, ShieldCheck, BarChart, Users, FileText, School } from "lucide-react";
+import { ArrowRight, Loader2, School, CheckCircle } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import placeholderImages from '@/lib/placeholder-images.json';
@@ -25,6 +25,46 @@ const fadeIn = (delay = 0, duration = 0.5) => ({
     },
   },
 });
+
+const detailedFeatures = [
+    {
+        title: "Empower Teachers to Create and Inspire",
+        description: "Our platform provides teachers with a powerful suite of tools to manage their classroom digitally. From creating batches with unique codes to sharing materials and posting real-time announcements, we streamline the administrative work so you can focus on teaching.",
+        points: [
+            "Simple Batch Creation & Management",
+            "Secure Student Enrollment System",
+            "Instant Announcements & Updates",
+            "Effortless Study Material Sharing",
+        ],
+        image: placeholderImages.featureTeacher,
+        imagePosition: "left" as const,
+    },
+    {
+        title: "A Streamlined Learning Hub for Students",
+        description: "Students get a personalized dashboard that brings everything they need into one place. Access study materials, check test results, view announcements, and track fee payments for all your batches. Our clear and organized interface helps you stay on top of your studies.",
+        points: [
+            "All Your Batches in One Dashboard",
+            "Easy Access to Notes and Materials",
+            "Track Your Test Performance & Results",
+            "Stay Informed with Fee & Announcement Tracking",
+        ],
+        image: placeholderImages.featureStudent,
+        imagePosition: "right" as const,
+    },
+    {
+        title: "A Secure Platform Built for Growth",
+        description: "EduConnect Pro is built on a secure, role-based architecture. Admins have a global view to manage platform-wide features like the Shop and Free Materials, while our robust fee management and home-booking systems provide avenues for expansion.",
+        points: [
+          "Role-based access for Admins, Teachers, and Students",
+          "Centralized Fee, Shop, and Booking Management",
+          "Free material distribution for all students",
+          "Built on a scalable and secure Firebase foundation",
+        ],
+        image: placeholderImages.featureAdmin,
+        imagePosition: "left" as const,
+      },
+];
+
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -98,44 +138,54 @@ export default function Home() {
             </div>
         </section>
         
-        {/* Features Section */}
+        {/* Detailed Features Section */}
         <section id="features" className="py-16 md:py-24 bg-muted/50">
-            <div className="container px-4 md:px-6">
+            <div className="container px-4 md:px-6 space-y-24">
                  <motion.div 
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.3 }}
                     variants={fadeIn()}
-                    className="text-center space-y-4 mb-12"
+                    className="text-center space-y-4"
                 >
                      <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">A Platform Built for Connection and Growth</h2>
                      <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
-                        We provide the tools and community to foster growth and learning for everyone.
+                        We provide dedicated tools and a connected community to foster growth and learning for everyone involved.
                      </p>
                 </motion.div>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {features.map((feature, i) => (
+                {detailedFeatures.map((feature, i) => (
                     <motion.div
-                      key={feature.title}
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true, amount: 0.5 }}
-                      variants={fadeIn(i * 0.1)}
+                        key={feature.title}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.3 }}
+                        variants={fadeIn(0.2)}
+                        className={`grid md:grid-cols-2 gap-12 md:gap-16 items-center`}
                     >
-                      <Card className="h-full hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                          <div className="bg-primary/10 p-3 rounded-full">
-                            <feature.icon className="w-6 h-6 text-primary" />
-                          </div>
-                          <CardTitle className="text-xl">{feature.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-muted-foreground">{feature.description}</p>
-                        </CardContent>
-                      </Card>
+                        <div className={`space-y-6 ${feature.imagePosition === 'right' ? 'md:order-1' : 'md:order-2'}`}>
+                            <h3 className="text-3xl font-bold tracking-tight">{feature.title}</h3>
+                            <p className="text-muted-foreground md:text-lg">{feature.description}</p>
+                            <ul className="space-y-4">
+                                {feature.points.map(point => (
+                                    <li key={point} className="flex items-start">
+                                        <CheckCircle className="w-6 h-6 text-green-500 mr-3 mt-1 flex-shrink-0" />
+                                        <span className="text-foreground font-medium">{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className={`${feature.imagePosition === 'right' ? 'md:order-2' : 'md:order-1'}`}>
+                            <Image
+                                src={feature.image.src}
+                                alt={feature.image.alt}
+                                width={feature.image.width}
+                                height={feature.image.height}
+                                className="rounded-xl shadow-2xl"
+                                data-ai-hint={feature.image.hint}
+                            />
+                        </div>
                     </motion.div>
-                  ))}
-                </div>
+                ))}
             </div>
         </section>
 
@@ -294,39 +344,6 @@ export default function Home() {
     </div>
   );
 }
-
-const features = [
-  {
-    icon: Users,
-    title: "Batch Management",
-    description: "Teachers can create and manage batches, control student enrollment, and streamline communication."
-  },
-  {
-    icon: FileText,
-    title: "Study Materials",
-    description: "Easily upload, organize, and share study materials like notes, DPPs, and solutions with your students."
-  },
-  {
-    icon: BarChart,
-    title: "Performance Tracking",
-    description: "Conduct tests and track student performance with a simple and intuitive marks management system."
-  },
-  {
-    icon: Zap,
-    title: "Real-Time Updates",
-    description: "Post announcements and updates that are instantly available to all students in a batch."
-  },
-  {
-    icon: Wallet,
-    title: "Fee Management",
-    description: "Keep track of monthly fee payments for each student with an easy-to-use status system."
-  },
-  {
-    icon: ShieldCheck,
-    title: "Secure & Role-Based",
-    description: "Secure access for teachers, students, and parents with role-based permissions."
-  }
-];
 
 const steps = [
     {
