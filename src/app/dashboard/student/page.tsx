@@ -89,6 +89,17 @@ export default function StudentDashboardPage() {
         return enrollments?.map(e => e.batchId) || [];
     }, [enrollments]);
 
+    const approvedEnrollments = useMemo(() => {
+        return enrollments
+            ?.filter(e => e.status === 'approved' && e.approvedAt)
+            .sort((a, b) => new Date(b.approvedAt!).getTime() - new Date(a.approvedAt!).getTime()) 
+            || [];
+    }, [enrollments]);
+
+    const latestBatchId = approvedEnrollments[0]?.batchId;
+    const studyLink = latestBatchId ? `/dashboard/student/batch/${latestBatchId}/study` : '/dashboard/student/find-teachers';
+
+
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
         if (!user) {
@@ -218,9 +229,9 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         {/* Main Content */}
-                        <div className="lg:col-span-3 grid gap-8">
+                        <div className="lg:col-span-2 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
@@ -346,7 +357,11 @@ export default function StudentDashboardPage() {
 
                                                                 <div className="h-9 flex items-center"> {/* container for button/text to prevent layout shift */}
                                                                     {isToday && (
-                                                                        <Button size="sm" className="mt-1 h-7 text-xs px-3">Start</Button>
+                                                                        <Button asChild size="sm" className="mt-1 h-7 text-xs px-3">
+                                                                            <Link href={studyLink}>
+                                                                                {latestBatchId ? 'Start' : 'Explore'}
+                                                                            </Link>
+                                                                        </Button>
                                                                     )}
                                                                     {isCompleted && (
                                                                         <p className="text-xs font-semibold text-green-600 mt-1">Completed!</p>
