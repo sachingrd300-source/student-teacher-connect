@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Sparkles, Lock, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -238,12 +238,47 @@ export default function StudentDashboardPage() {
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-7xl mx-auto grid gap-8">
-                    <div className="mb-4">
+                    <div>
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    {/* New Explore Menu Bar */}
+                    <Card className="rounded-2xl shadow-lg">
+                        <CardHeader>
+                            <CardTitle>Daily Rewards</CardTitle>
+                            <CardDescription>Log in daily to build your streak! You are on a {currentStreak}-day streak. 🔥</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-2">
+                            <div className="flex items-center pb-2 overflow-x-auto custom-scrollbar">
+                                <div className="inline-flex items-start gap-4 py-2 px-2">
+                                    {days.map((day) => {
+                                        const isCompleted = day.status === 'completed';
+                                        const isToday = day.status === 'today';
+
+                                        return (
+                                            <div key={day.day} className="flex flex-col items-center gap-2 text-center w-20 flex-shrink-0">
+                                                <div
+                                                    className={cn(
+                                                        "flex items-center justify-center w-16 h-16 rounded-full border-4 font-semibold text-sm transition-all duration-300",
+                                                        isCompleted && "bg-green-100 border-green-500 text-green-700",
+                                                        isToday && "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20",
+                                                        !isCompleted && !isToday && "bg-muted border-border text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {isCompleted ? <Check className="w-7 h-7" /> : (day.day === 7 ? <Gift className="w-7 h-7" /> : `Day ${day.day}`)}
+                                                </div>
+                                                <p className={cn(
+                                                    "text-xs font-bold",
+                                                    isToday ? "text-primary" : "text-muted-foreground"
+                                                )}>+ {day.reward} Coins</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {actionCards.map((card, i) => (
                             <motion.div
@@ -268,9 +303,7 @@ export default function StudentDashboardPage() {
                         ))}
                     </div>
 
-                    {/* Main content area below */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                        {/* Main Content */}
                         <div className="lg:col-span-2 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
@@ -361,67 +394,7 @@ export default function StudentDashboardPage() {
                             </div>
                         </div>
 
-                        {/* Sidebar */}
                         <div className="lg:col-span-1 grid gap-8">
-                             <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
-                                <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle>Daily Rewards</CardTitle>
-                                        <CardDescription>Log in daily to earn coins and build your streak!</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex items-center pb-4 overflow-x-auto custom-scrollbar">
-                                            <div className="inline-flex items-center gap-2 px-2">
-                                                {days.map((day, index) => {
-                                                    const isCompleted = day.status === 'completed';
-                                                    const isToday = day.status === 'today';
-                                                    const isLocked = day.status === 'locked';
-                                                    const isRewardDay = day.day === 7;
-
-                                                    return (
-                                                        <div key={day.day} className="inline-flex items-center">
-                                                            <div className="flex flex-col items-center gap-1 text-center w-24">
-                                                                <div
-                                                                    className={cn(
-                                                                        "flex items-center justify-center w-16 h-16 rounded-full border-4 transition-all duration-300",
-                                                                        isCompleted && "bg-green-100 border-green-500",
-                                                                        isToday && "bg-primary/10 border-primary shadow-lg shadow-primary/30 scale-110",
-                                                                        isLocked && "bg-muted border-border border-dashed"
-                                                                    )}
-                                                                >
-                                                                    {isCompleted && (isRewardDay ? <Gift className="w-7 h-7 text-green-700" /> : <CheckCircle className="w-7 h-7 text-green-700" />)}
-                                                                    {isToday && <Sparkles className="w-7 h-7 text-primary animate-pulse" />}
-                                                                    {isLocked && (isRewardDay ? <Gift className="w-7 h-7 text-muted-foreground/50" /> : <Lock className="w-7 h-7 text-muted-foreground/50" />)}
-                                                                </div>
-                                                                
-                                                                <p className="font-bold text-sm">Day {day.day}</p>
-                                                                <p className="text-xs text-muted-foreground">+ {day.reward} Coins</p>
-
-                                                            </div>
-
-                                                            {index < days.length - 1 && (
-                                                                <div className={cn(
-                                                                    "w-10 h-1 mx-2 rounded-full",
-                                                                    isCompleted ? "bg-green-500" : "bg-border/70"
-                                                                )}></div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                         <div className="px-6 pb-4">
-                                            <Button asChild className="w-full">
-                                                <Link href={studyLink}>
-                                                    {latestBatchId ? "Start Today's Study" : "Explore Batches"}
-                                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                            
                              <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Today's Tasks</CardTitle>
@@ -448,5 +421,3 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
-
-    
