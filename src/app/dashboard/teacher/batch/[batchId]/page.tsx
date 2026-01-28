@@ -170,10 +170,22 @@ export default function BatchManagementPage() {
     }, [batch, user, router]);
 
     const handleUpdateBatch = async () => {
-        if (!batchRef || !batchName.trim()) return;
+        if (!batchRef || !batchName.trim() || !firestore || !batchId) return;
         setIsSaving(true);
         try {
-            await updateDoc(batchRef, { name: batchName.trim() });
+            const firestoreBatch = writeBatch(firestore);
+
+            // Update batch name
+            firestoreBatch.update(batchRef, { name: batchName.trim() });
+
+            // Create activity log
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+            firestoreBatch.set(doc(activityColRef), {
+                message: `The batch name was updated to "${batchName.trim()}".`,
+                createdAt: new Date().toISOString(),
+            });
+
+            await firestoreBatch.commit();
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating batch:", error);

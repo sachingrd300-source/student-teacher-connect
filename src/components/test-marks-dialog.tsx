@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, writeBatch, addDoc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,7 @@ export function TestMarksDialog({ isOpen, onClose, test, students }: TestMarksDi
     };
 
     const handleSaveMarks = async () => {
-        if (!firestore || !test) return;
+        if (!firestore || !test || students.length === 0) return;
         setIsSaving(true);
 
         const batch = writeBatch(firestore);
@@ -118,6 +118,15 @@ export function TestMarksDialog({ isOpen, onClose, test, students }: TestMarksDi
 
         try {
             await batch.commit();
+
+            // After saving marks, create an announcement
+            const batchId = students[0].batchId; // All students are from the same batch
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+            await addDoc(activityColRef, {
+                message: `Marks for the test "${test.title}" have been uploaded.`,
+                createdAt: new Date().toISOString(),
+            });
+
             onClose();
         } catch (error) {
             console.error("Error saving marks:", error);
