@@ -137,7 +137,7 @@ export default function BatchManagementPage() {
     
     const materialsRef = useMemoFirebase(() => {
         if (!firestore || !batchId || !user) return null;
-        return collection(firestore, 'batches', batchId, 'materials');
+        return query(collection(firestore, 'batches', batchId, 'materials'), orderBy('createdAt', 'desc'));
     }, [firestore, batchId, user]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
     
@@ -463,13 +463,13 @@ export default function BatchManagementPage() {
                                 <CardContent className="grid gap-4">
                                     {tests && tests.length > 0 ? (
                                         tests.map(test => (
-                                            <div key={test.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                            <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
                                                 <div>
                                                     <p className="font-semibold">{test.title} <span className="font-normal text-muted-foreground">- {test.subject}</span></p>
                                                     <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
                                                     <p className="text-xs text-muted-foreground mt-1">Max Marks: {test.maxMarks}</p>
                                                 </div>
-                                                <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)}>
+                                                <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)} className="self-end sm:self-center">
                                                     <Pencil className="mr-2 h-4 w-4" /> Manage Marks
                                                 </Button>
                                             </div>
@@ -507,16 +507,16 @@ export default function BatchManagementPage() {
                                  <CardContent className="grid gap-4">
                                      {materials && materials.length > 0 ? (
                                         materials.map(material => (
-                                            <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                <div className="flex items-center gap-3">
-                                                    <FileText className="h-5 w-5 text-muted-foreground" />
+                                            <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
+                                                <div className="flex items-start gap-3">
+                                                    <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
                                                     <div>
                                                         <p className="font-semibold">{material.title}</p>
                                                         <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
                                                         <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
                                                      <Button asChild variant="outline" size="sm">
                                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" /> View</a>
                                                     </Button>

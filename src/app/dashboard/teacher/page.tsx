@@ -253,7 +253,7 @@ export default function TeacherDashboardPage() {
                                                     </div>
                                                      <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
                                                 </div>
-                                                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0">
+                                                <div className="flex items-center justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0">
                                                     <div className="text-center">
                                                         <p className="font-bold text-lg">{studentCountsByBatch[batch.id] || 0}</p>
                                                         <p className="text-xs text-muted-foreground">Students</p>
