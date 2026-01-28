@@ -38,7 +38,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAdmin() || isSignedIn();
+      allow get: if isAdmin() || isSignedIn() || get(/databases/$(database)/documents/users/$(userId)).data.role == 'teacher';
       allow list: if isAdmin() || isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() || isOwner(userId);
@@ -46,11 +46,11 @@ service cloud.firestore {
     }
 
     match /batches/{batchId} {
-      allow get: if isAdmin() || isSignedIn();
-      allow list: if isAdmin() || isTeacher() || isStudent();
-      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
-      allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+        allow get: if isAdmin() || isSignedIn();
+        allow list: if isAdmin() || isTeacher() || isStudent();
+        allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+        allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+        allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
 
       match /materials/{materialId} {
         allow get, list: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);

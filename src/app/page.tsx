@@ -5,13 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck } from "lucide-react";
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School } from "lucide-react";
 import placeholderImages from '@/lib/placeholder-images';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection, limit, query, where } from "firebase/firestore";
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
@@ -71,15 +71,16 @@ export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
 
+  const { user } = useUser();
   const firestore = useFirestore();
   const featuredTeachersQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
+      if (!firestore || !user) return null;
       return query(
           collection(firestore, 'users'),
           where('role', '==', 'teacher'),
           limit(3)
       );
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
 
   const features = [
