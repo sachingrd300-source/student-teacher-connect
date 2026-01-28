@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { collection, limit, query, where } from "firebase/firestore";
+import { collection, limit, query, where, getCountFromServer } from "firebase/firestore";
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
   hidden: {},
@@ -74,6 +74,9 @@ export default function HomePage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const [teacherCount, setTeacherCount] = useState<number>();
+  const [studentCount, setStudentCount] = useState<number>();
+
   const featuredTeachersQuery = useMemoFirebase(() => {
       if (!firestore || !user) return null;
       return query(
@@ -84,36 +87,24 @@ export default function HomePage() {
   }, [firestore, user]);
   const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
 
-  const teachersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'users'), where('role', '==', 'teacher'));
-  }, [firestore, user]);
-  const { data: allTeachers } = useCollection<TeacherProfile>(teachersQuery);
+  useEffect(() => {
+    if (user && firestore) {
+      const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
+      const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
 
-  const studentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'users'), where('role', '==', 'student'));
-  }, [firestore, user]);
-  const { data: allStudents } = useCollection(studentsQuery);
-
-  const teacherCount = allTeachers?.length;
-  const studentCount = allStudents?.length;
-
-  const subjectCount = useMemo(() => {
-    if (!allTeachers) return undefined;
-    const subjects = new Set<string>();
-    allTeachers.forEach(teacher => {
-        if (teacher.subject) {
-            teacher.subject.split(',').forEach(s => {
-                const trimmedSubject = s.trim();
-                if (trimmedSubject) {
-                    subjects.add(trimmedSubject.toLowerCase());
-                }
-            });
-        }
-    });
-    return subjects.size;
-  }, [allTeachers]);
+      getCountFromServer(teachersQuery)
+        .then(snapshot => setTeacherCount(snapshot.data().count))
+        .catch(err => console.error("Error getting teacher count:", err));
+      
+      getCountFromServer(studentsQuery)
+        .then(snapshot => setStudentCount(snapshot.data().count))
+        .catch(err => console.error("Error getting student count:", err));
+    } else {
+      // Reset counts if user logs out
+      setTeacherCount(undefined);
+      setStudentCount(undefined);
+    }
+  }, [user, firestore]);
 
   const features = [
       {
@@ -395,7 +386,7 @@ export default function HomePage() {
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Book className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-4xl font-bold">{user && subjectCount !== undefined ? subjectCount : '10+'}</p>
+                <p className="text-4xl font-bold">10+</p>
                 <p className="text-muted-foreground mt-2">{t.subjectsLabel}</p>
               </motion.div>
             </motion.div>
@@ -575,7 +566,7 @@ export default function HomePage() {
         <div className="container px-4 md:px-6 text-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
             <Link className="flex items-center justify-center gap-2 mb-6" href="/">
-                <GraduationCap className="h-7 w-7 text-primary" />
+                <School className="h-7 w-7 text-primary" />
                 <span className="text-2xl font-semibold font-serif text-white">EduConnect Pro</span>
             </Link>
             <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8">
