@@ -6,6 +6,13 @@
     "alt": "Abstract background representing connectivity and learning.",
     "hint": "abstract network"
   },
+  "heroFull": {
+    "src": "https://picsum.photos/seed/hero-dynamic/1920/1080",
+    "width": 1920,
+    "height": 1080,
+    "alt": "A dynamic image showing a collaborative learning environment.",
+    "hint": "learning collaboration"
+  },
   "dashboardPreview": {
     "src": "https://picsum.photos/seed/dashboard-preview/1200/750",
     "width": 1200,
