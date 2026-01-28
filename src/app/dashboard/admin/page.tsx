@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign, Home } from 'lucide-react';
+import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign, Home, PackageOpen } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Image from 'next/image';
 
@@ -250,7 +250,13 @@ export default function AdminDashboardPage() {
                                             <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                         </div>
                                     ))
-                                ) : <p className="text-muted-foreground text-center py-8">No home teacher bookings yet.</p>}
+                                ) : (
+                                    <div className="text-center py-12 flex flex-col items-center">
+                                        <Home className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">No Home Teacher Bookings</h3>
+                                        <p className="text-muted-foreground mt-1">New student requests for home tutors will appear here.</p>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -261,37 +267,47 @@ export default function AdminDashboardPage() {
                             <CardDescription>Add new products or remove existing ones from the student-facing shop.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <form onSubmit={handleShopItemUpload} className="grid gap-6 p-6 mb-8 border rounded-lg bg-background">
+                             <div className="grid gap-6 p-6 mb-8 border rounded-lg bg-background">
                                 <h3 className="text-lg font-semibold">Add New Item</h3>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
-                                    <div className="grid gap-2"><Label htmlFor="item-price">Price (INR)</Label><Input id="item-price" type="number" step="0.01" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
-                                </div>
-                                <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
-                                <div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required /></div>
-                                <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required /></div>
-                                <Button type="submit" disabled={isUploadingItem} className="w-fit">
-                                    {isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item to Shop
-                                </Button>
-                            </form>
+                                <form onSubmit={handleShopItemUpload} className="grid gap-4">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
+                                        <div className="grid gap-2"><Label htmlFor="item-price">Price (INR)</Label><Input id="item-price" type="number" step="0.01" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
+                                    </div>
+                                    <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
+                                    <div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required /></div>
+                                    <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required /></div>
+                                    <Button type="submit" disabled={isUploadingItem} className="w-fit">
+                                        {isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item to Shop
+                                    </Button>
+                                </form>
+                            </div>
                              
                             <h3 className="text-lg font-semibold mb-4">Existing Shop Items</h3>
-                             <div className="grid gap-4">
+                             <div>
                                 {shopItems && shopItems.length > 0 ? (
-                                    shopItems.map(item => (
-                                        <div key={item.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border bg-background">
-                                            <div className="flex items-start gap-4">
-                                                <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover" />
-                                                <div>
-                                                    <p className="font-semibold">{item.name}</p>
-                                                    <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                                                    <p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p>
+                                    <div className="grid gap-4">
+                                        {shopItems.map(item => (
+                                            <div key={item.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border bg-background">
+                                                <div className="flex items-start gap-4">
+                                                    <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover" />
+                                                    <div>
+                                                        <p className="font-semibold">{item.name}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                                                        <p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p>
+                                                    </div>
                                                 </div>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                             </div>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                                        </div>
-                                    ))
-                                ) : <p className="text-muted-foreground text-center py-8">No items in the shop yet.</p>}
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 flex flex-col items-center">
+                                        <PackageOpen className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">The Shop is Empty</h3>
+                                        <p className="text-muted-foreground mt-1">Add a new item above to get started.</p>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -302,35 +318,45 @@ export default function AdminDashboardPage() {
                             <CardDescription>Upload and manage materials that will be visible to all students.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleMaterialUpload} className="grid gap-6 p-6 mb-8 border rounded-lg bg-background">
+                            <div className="grid gap-6 p-6 mb-8 border rounded-lg bg-background">
                                 <h3 className="text-lg font-semibold">Upload New Material</h3>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                                    <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
-                                </div>
-                                <div className="grid gap-2"><Label htmlFor="material-description">Description (Optional)</Label><Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
-                                <Button type="submit" disabled={isUploadingMaterial} className="w-fit">
-                                    {isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material
-                                </Button>
-                            </form>
+                                <form onSubmit={handleMaterialUpload} className="grid gap-4">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
+                                        <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
+                                    </div>
+                                    <div className="grid gap-2"><Label htmlFor="material-description">Description (Optional)</Label><Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
+                                    <Button type="submit" disabled={isUploadingMaterial} className="w-fit">
+                                        {isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material
+                                    </Button>
+                                </form>
+                            </div>
                             
                             <h3 className="text-lg font-semibold mb-4">Uploaded Free Materials</h3>
-                             <div className="grid gap-4">
-                             {materials && materials.length > 0 ? (
-                                materials.map(material => (
-                                    <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                        <div className="flex items-center gap-3">
-                                            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                            <div>
-                                                <p className="font-semibold">{material.title}</p>
-                                                <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                                                <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                             <div>
+                                 {materials && materials.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        {materials.map(material => (
+                                            <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                <div className="flex items-center gap-3">
+                                                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                    <div>
+                                                        <p className="font-semibold">{material.title}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                                                    </div>
+                                                </div>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                             </div>
-                                        </div>
-                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                        ))}
                                     </div>
-                                ))
-                             ) : <p className="text-muted-foreground text-center py-8">No free materials have been uploaded yet.</p>}
+                                 ) : (
+                                     <div className="text-center py-12 flex flex-col items-center">
+                                        <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">No Free Materials</h3>
+                                        <p className="text-muted-foreground mt-1">Upload your first free material to make it available to all students.</p>
+                                    </div>
+                                 )}
                              </div>
                         </CardContent>
                     </Card>

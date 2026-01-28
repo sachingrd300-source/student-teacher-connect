@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet, School } from 'lucide-react';
+import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet, School, Users, UserCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -153,50 +153,6 @@ export default function TeacherDashboardPage() {
             setIsCreatingBatch(false);
         }
     };
-
-    const handleApprove = async (enrollment: Enrollment) => {
-        if (!firestore) return;
-        
-        const batch = writeBatch(firestore);
-
-        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        batch.update(enrollmentRef, { 
-            status: 'approved',
-            approvedAt: new Date().toISOString()
-        });
-
-        const batchRef = doc(firestore, 'batches', enrollment.batchId);
-        batch.update(batchRef, {
-            approvedStudents: arrayUnion(enrollment.studentId)
-        });
-
-        await batch.commit();
-    };
-
-    const handleRemoveStudent = async (enrollment: Enrollment) => {
-        if (!firestore) return;
-        
-        const batch = writeBatch(firestore);
-        
-        // Remove from batch's approved list
-        const batchRef = doc(firestore, 'batches', enrollment.batchId);
-        batch.update(batchRef, {
-            approvedStudents: arrayRemove(enrollment.studentId)
-        });
-
-        // Delete the enrollment document
-        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        batch.delete(enrollmentRef);
-        
-        // Add activity log
-        const activityColRef = collection(firestore, 'batches', enrollment.batchId, 'activity');
-        batch.set(doc(activityColRef), {
-            message: `Student "${enrollment.studentName}" was removed from the batch.`,
-            createdAt: new Date().toISOString(),
-        });
-
-        await batch.commit();
-    };
     
     const handleDeclineRequest = async (enrollmentId: string) => {
         if (!firestore) return;
@@ -249,42 +205,46 @@ export default function TeacherDashboardPage() {
                                     <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
                                 </Button>
                             </CardHeader>
-                            <CardContent className="grid gap-4">
+                            <CardContent>
                                 {batches && batches.length > 0 ? (
-                                    batches.map((batch, i) => (
-                                        <motion.div
-                                            key={batch.id}
-                                            custom={i}
-                                            initial="hidden"
-                                            animate="visible"
-                                            variants={cardVariants}
-                                            whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
-                                        >
-                                            <div className="flex-grow">
-                                                <p className="font-semibold text-lg">{batch.name}</p>
-                                                <div className="flex items-center gap-2 pt-1">
-                                                    <p className="text-sm text-muted-foreground">Code:</p>
-                                                    <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
-                                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
-                                                        <Clipboard className="h-4 w-4" />
+                                    <div className="grid gap-4">
+                                        {batches.map((batch, i) => (
+                                            <motion.div
+                                                key={batch.id}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="visible"
+                                                variants={cardVariants}
+                                                whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                            >
+                                                <div className="flex-grow">
+                                                    <p className="font-semibold text-lg">{batch.name}</p>
+                                                    <div className="flex items-center gap-2 pt-1">
+                                                        <p className="text-sm text-muted-foreground">Code:</p>
+                                                        <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
+                                                            <Clipboard className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground mt-1">{studentCountsByBatch[batch.id] || 0} Students</p>
+                                                </div>
+                                                <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                    <Button asChild>
+                                                        <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                            <Settings className="mr-2 h-4 w-4" /> Manage
+                                                        </Link>
                                                     </Button>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground mt-1">{studentCountsByBatch[batch.id] || 0} Students</p>
-                                            </div>
-                                            <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                                <Button asChild>
-                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                        <Settings className="mr-2 h-4 w-4" /> Manage
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        </motion.div>
-                                    ))
+                                            </motion.div>
+                                        ))}
+                                    </div>
                                 ) : (
-                                    <div className="text-center py-12">
-                                        <p className="text-muted-foreground">You haven't created any batches yet. Let's create your first one! 🎉</p>
-                                        <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
+                                    <div className="text-center py-12 flex flex-col items-center">
+                                        <School className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">You haven't created any batches yet.</h3>
+                                        <p className="text-muted-foreground mt-1 mb-4">Let's create your first one to get started! 🎉</p>
+                                        <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
                                             <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
                                         </Button>
                                     </div>
@@ -296,95 +256,47 @@ export default function TeacherDashboardPage() {
                             <CardHeader>
                                 <CardTitle>Pending Enrollment Requests ({pendingRequests.length})</CardTitle>
                             </CardHeader>
-                            <CardContent className="grid gap-4">
+                            <CardContent>
                                 {pendingRequests.length > 0 ? (
-                                    pendingRequests.map((req, i) => (
-                                        <motion.div
-                                            key={req.id}
-                                            custom={i}
-                                            initial="hidden"
-                                            animate="visible"
-                                            variants={cardVariants}
-                                            whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <Avatar>
-                                                    <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-semibold">{req.studentName}</p>
-                                                    <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
-                                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
+                                    <div className="grid gap-4">
+                                        {pendingRequests.map((req, i) => (
+                                            <motion.div
+                                                key={req.id}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="visible"
+                                                variants={cardVariants}
+                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <Avatar>
+                                                        <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-semibold">{req.studentName}</p>
+                                                        <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                                <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req)}>
-                                                    <Check className="h-4 w-4" />
-                                                </Button>
-                                                <Button size="icon" variant="outline" className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={() => handleDeclineRequest(req.id)}>
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </motion.div>
-                                    ))
-                                ) : (
-                                    <p className="text-muted-foreground text-center py-12">No new student requests right now. 👍</p>
-                                )}
-                            </CardContent>
-                        </Card>
-                        
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Approved Students ({approvedStudents.length})</CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid gap-4">
-                                {approvedStudents.length > 0 ? (
-                                    approvedStudents.map((student, i) => (
-                                         <motion.div
-                                            key={student.id}
-                                            custom={i}
-                                            initial="hidden"
-                                            animate="visible"
-                                            variants={cardVariants}
-                                            whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
-                                         >
-                                             <div className="flex items-center gap-4">
-                                                <Avatar>
-                                                    <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-semibold">{student.studentName}</p>
-                                                     <p className="text-sm text-muted-foreground">Batch: <span className="font-medium">{student.batchName}</span></p>
-                                                     <p className="text-xs text-muted-foreground mt-1">Approved: {formatDate(student.approvedAt)}</p>
+                                                <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                    <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/teacher/batch/${req.batchId}?tab=students`)}>
+                                                        View in Batch
+                                                    </Button>
                                                 </div>
-                                            </div>
-                                            <div className='flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0'>
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/students/${student.studentId}`}>Profile</Link>
-                                                </Button>
-                                                <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
-                                                    <Wallet className="mr-2 h-4 w-4" /> Fees
-                                                </Button>
-                                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
-                                            </div>
-                                        </motion.div>
-                                    ))
+                                            </motion.div>
+                                        ))}
+                                    </div>
                                 ) : (
-                                    <p className="text-muted-foreground text-center py-12">No students have joined yet. Share your batch codes to get them enrolled! 🚀</p>
+                                    <div className="text-center py-12 flex flex-col items-center">
+                                        <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">All Caught Up!</h3>
+                                        <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
                     </div>
                 </div>
-                 {studentForFees && (
-                    <FeeManagementDialog 
-                        isOpen={!!studentForFees} 
-                        onClose={() => setStudentForFees(null)} 
-                        student={studentForFees} 
-                    />
-                )}
             </main>
 
             <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>

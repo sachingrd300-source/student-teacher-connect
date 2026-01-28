@@ -328,8 +328,10 @@ export default function StudentDashboardPage() {
                                 ))}
                             </div>
                         ) : (
-                             <div className="w-full bg-background border rounded-lg p-12 text-center">
-                                <p className="text-muted-foreground">You haven't joined any batches yet. Find a teacher or enter a batch code to begin! 🚀</p>
+                             <div className="w-full bg-background border rounded-lg p-12 text-center flex flex-col items-center">
+                                <School className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
+                                <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
                             </div>
                         )}
                     </div>

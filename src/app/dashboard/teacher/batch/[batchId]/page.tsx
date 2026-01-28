@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, ChangeEvent } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, query, where, arrayRemove, addDoc, writeBatch, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, arrayUnion, arrayRemove, addDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import Link from 'next/link';
 
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
@@ -90,7 +90,9 @@ export default function BatchManagementPage() {
     const storage = useStorage();
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const batchId = params.batchId as string;
+    const defaultTab = searchParams.get('tab') || 'students';
 
     // Dialog states
     const [isEditing, setIsEditing] = useState(false);
@@ -130,10 +132,23 @@ export default function BatchManagementPage() {
     const { data: batch, isLoading: isBatchLoading } = useDoc<Batch>(batchRef);
 
     const enrollmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user) return null;
-        return query(collection(firestore, 'enrollments'), where('batchId', '==', batchId), where('status', '==', 'approved'));
-    }, [firestore, batchId, user]);
-    const { data: enrolledStudents, isLoading: areStudentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'enrollments'), where('batchId', '==', batchId));
+    }, [firestore, batchId]);
+    const { data: enrollmentsData, isLoading: areStudentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const [pendingStudents, enrolledStudents] = useMemo(() => {
+        const pending: Enrollment[] = [];
+        const enrolled: Enrollment[] = [];
+        enrollmentsData?.forEach(e => {
+            if (e.status === 'pending') {
+                pending.push(e);
+            } else if (e.status === 'approved') {
+                enrolled.push(e);
+            }
+        });
+        return [pending, enrolled];
+    }, [enrollmentsData]);
     
     const materialsRef = useMemoFirebase(() => {
         if (!firestore || !batchId || !user) return null;
@@ -356,6 +371,30 @@ export default function BatchManagementPage() {
         }
     };
 
+    const handleApprove = async (enrollment: Enrollment) => {
+        if (!firestore) return;
+        
+        const batch = writeBatch(firestore);
+
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        batch.update(enrollmentRef, { 
+            status: 'approved',
+            approvedAt: new Date().toISOString()
+        });
+
+        const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
+        batch.update(currentBatchRef, {
+            approvedStudents: arrayUnion(enrollment.studentId)
+        });
+
+        await batch.commit();
+    };
+
+    const handleDecline = async (enrollmentId: string) => {
+        if (!firestore) return;
+        await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
@@ -406,7 +445,7 @@ export default function BatchManagementPage() {
                         </Card>
                     </div>
 
-                    <Tabs defaultValue="announcements" className="w-full">
+                    <Tabs defaultValue={defaultTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
                             <TabsTrigger value="tests">Tests ({tests?.length || 0})</TabsTrigger>
@@ -414,38 +453,79 @@ export default function BatchManagementPage() {
                             <TabsTrigger value="announcements">Announcements</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="students" className="mt-4">
+                        <TabsContent value="students" className="mt-4 grid gap-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Enrolled Students</CardTitle>
+                                    <CardTitle>Pending Requests ({pendingStudents.length})</CardTitle>
+                                    <CardDescription>Approve or decline requests from students to join this batch.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="grid gap-4">
-                                    {enrolledStudents && enrolledStudents.length > 0 ? (
-                                        enrolledStudents.map(student => (
-                                            <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background">
-                                                <div className="flex items-center gap-4">
-                                                    <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
-                                                    <p className="font-semibold">{student.studentName}</p>
+                                <CardContent>
+                                    {pendingStudents.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {pendingStudents.map(student => (
+                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background">
+                                                    <div className="flex items-center gap-4">
+                                                        <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
+                                                        <p className="font-semibold">{student.studentName}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                        <Button size="sm" onClick={() => handleApprove(student)}>Approve</Button>
+                                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(student.id)}>Decline</Button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
-                                                    </Button>
-                                                     <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
-                                                        <Wallet className="mr-2 h-4 w-4" /> Fees
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Pending Requests</h3>
+                                            <p className="text-muted-foreground mt-1">There are no pending requests for this batch.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Enrolled Students ({enrolledStudents.length})</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {enrolledStudents.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {enrolledStudents.map(student => (
+                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background">
+                                                    <div className="flex items-center gap-4">
+                                                        <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
+                                                        <p className="font-semibold">{student.studentName}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                        <Button asChild variant="outline" size="sm">
+                                                            <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
+                                                        </Button>
+                                                         <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
+                                                            <Wallet className="mr-2 h-4 w-4" /> Fees
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No students have joined this batch yet. Share the code to get started!</p>}
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Students Enrolled</h3>
+                                            <p className="text-muted-foreground mt-1">Share the batch code to get students to join!</p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
 
                         <TabsContent value="tests" className="mt-4 grid gap-6">
                              <Card>
-                                <CardHeader><CardTitle>Create a New Test</CardTitle></CardHeader>
+                                <CardHeader>
+                                    <CardTitle>Create a New Test</CardTitle>
+                                    <CardDescription>Schedule a new test for the students in this batch.</CardDescription>
+                                </CardHeader>
                                 <CardContent>
                                     <form onSubmit={handleCreateTest} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
                                         <div className="grid gap-2">
@@ -464,7 +544,7 @@ export default function BatchManagementPage() {
                                             <Label htmlFor="max-marks">Max Marks</Label>
                                             <Input id="max-marks" type="number" value={maxMarks} onChange={(e) => setMaxMarks(e.target.value)} placeholder="e.g., 100" required />
                                         </div>
-                                        <Button type="submit" disabled={isCreatingTest} className="w-full lg:w-auto lg:col-start-4">
+                                        <Button type="submit" disabled={isCreatingTest} className="w-full lg:w-auto sm:col-span-2 lg:col-span-1 lg:col-start-4">
                                             {isCreatingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />} Create Test
                                         </Button>
                                     </form>
@@ -472,28 +552,39 @@ export default function BatchManagementPage() {
                             </Card>
                             <Card>
                                 <CardHeader><CardTitle>Conducted Tests</CardTitle></CardHeader>
-                                <CardContent className="grid gap-4">
+                                <CardContent>
                                     {tests && tests.length > 0 ? (
-                                        tests.map(test => (
-                                            <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
-                                                <div>
-                                                    <p className="font-semibold">{test.title} <span className="font-normal text-muted-foreground">- {test.subject}</span></p>
-                                                    <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">Max Marks: {test.maxMarks}</p>
+                                        <div className="grid gap-4">
+                                            {tests.map(test => (
+                                                <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
+                                                    <div>
+                                                        <p className="font-semibold">{test.title} <span className="font-normal text-muted-foreground">- {test.subject}</span></p>
+                                                        <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Max Marks: {test.maxMarks}</p>
+                                                    </div>
+                                                    <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)} className="self-end sm:self-center">
+                                                        <Pencil className="mr-2 h-4 w-4" /> Manage Marks
+                                                    </Button>
                                                 </div>
-                                                <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)} className="self-end sm:self-center">
-                                                    <Pencil className="mr-2 h-4 w-4" /> Manage Marks
-                                                </Button>
-                                            </div>
-                                        ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No tests have been scheduled for this batch yet. Create one to get started.</p>}
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <Notebook className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Tests Scheduled</h3>
+                                            <p className="text-muted-foreground mt-1">Create a test above to get started.</p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
                         
                         <TabsContent value="materials" className="mt-4 grid gap-6">
                             <Card>
-                                <CardHeader><CardTitle>Upload Study Material</CardTitle></CardHeader>
+                                <CardHeader>
+                                    <CardTitle>Upload Study Material</CardTitle>
+                                    <CardDescription>Share notes, documents, and other files with your students.</CardDescription>
+                                </CardHeader>
                                 <CardContent>
                                     <form onSubmit={handleFileUpload} className="grid gap-4">
                                         <div className="grid gap-2">
@@ -516,34 +607,45 @@ export default function BatchManagementPage() {
                             </Card>
                             <Card>
                                  <CardHeader><CardTitle>Uploaded Materials</CardTitle></CardHeader>
-                                 <CardContent className="grid gap-4">
+                                 <CardContent>
                                      {materials && materials.length > 0 ? (
-                                        materials.map(material => (
-                                            <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
-                                                <div className="flex items-start gap-3">
-                                                    <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-                                                    <div>
-                                                        <p className="font-semibold">{material.title}</p>
-                                                        <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                                                        <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                                        <div className="grid gap-4">
+                                            {materials.map(material => (
+                                                <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                                                        <div>
+                                                            <p className="font-semibold">{material.title}</p>
+                                                            <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                                                            <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
+                                                         <Button asChild variant="outline" size="sm">
+                                                            <a href={material.fileURL} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" /> View</a>
+                                                        </Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
-                                                     <Button asChild variant="outline" size="sm">
-                                                        <a href={material.fileURL} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" /> View</a>
-                                                    </Button>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                                                </div>
-                                            </div>
-                                        ))
-                                     ) : <p className="text-muted-foreground text-center py-8">No study materials have been uploaded. Upload your first file to help your students learn.</p>}
+                                            ))}
+                                        </div>
+                                     ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Materials Uploaded</h3>
+                                            <p className="text-muted-foreground mt-1">Upload a file to share it with your students.</p>
+                                        </div>
+                                     )}
                                  </CardContent>
                             </Card>
                         </TabsContent>
 
                         <TabsContent value="announcements" className="mt-4 grid gap-6">
                             <Card>
-                                <CardHeader><CardTitle>Post an Announcement</CardTitle></CardHeader>
+                                <CardHeader>
+                                    <CardTitle>Post an Announcement</CardTitle>
+                                    <CardDescription>Send a notification to all students in this batch.</CardDescription>
+                                </CardHeader>
                                 <CardContent>
                                     <form onSubmit={handlePostAnnouncement} className="grid gap-4">
                                         <div className="grid gap-2">
@@ -564,15 +666,23 @@ export default function BatchManagementPage() {
                             </Card>
                             <Card>
                                 <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
-                                <CardContent className="grid gap-4">
+                                <CardContent>
                                     {activities && activities.length > 0 ? (
-                                        activities.map(activity => (
-                                            <div key={activity.id} className="p-3 rounded-lg border bg-background">
-                                                <p className="font-medium">{activity.message}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
-                                            </div>
-                                        ))
-                                    ) : <p className="text-muted-foreground text-center py-8">No announcements have been posted. Share an update with your students!</p>}
+                                        <div className="grid gap-4">
+                                            {activities.map(activity => (
+                                                <div key={activity.id} className="p-3 rounded-lg border bg-background">
+                                                    <p className="font-medium">{activity.message}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <Send className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Announcements Posted</h3>
+                                            <p className="text-muted-foreground mt-1">Share an update with your students!</p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
