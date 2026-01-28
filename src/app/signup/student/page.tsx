@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-export default function RedirectToTeacherLogin() {
+export default function RedirectToStudentSignup() {
   const router = useRouter();
   useEffect(() => {
-    router.replace('/login/teacher');
+    router.replace('/signup');
   }, [router]);
   
   return (
