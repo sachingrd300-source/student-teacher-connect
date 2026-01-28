@@ -236,7 +236,7 @@ export default function StudentDashboardPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
+            <main className="flex-1 p-3 md:p-8 bg-muted/20">
                 <div className="max-w-7xl mx-auto grid gap-8">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
@@ -288,7 +288,7 @@ export default function StudentDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 sm:gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
                         {actionCards.map((card, i) => (
                             <motion.div
                                 key={card.title}
@@ -300,7 +300,7 @@ export default function StudentDashboardPage() {
                                 className="h-full"
                             >
                                 <Link href={card.href} className="block h-full">
-                                    <Card className="flex flex-col items-center justify-start text-center p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                    <Card className="flex flex-col items-center justify-start text-center p-3 sm:p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
                                         <div className="p-3 bg-primary/10 rounded-full mb-3">
                                             {card.icon}
                                         </div>
