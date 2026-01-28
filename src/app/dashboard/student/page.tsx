@@ -190,9 +190,9 @@ export default function StudentDashboardPage() {
 
     const renderStatusIcon = (status: 'pending' | 'approved') => {
         if (status === 'approved') {
-            return <CheckCircle className="h-5 w-5 text-green-500" />;
+            return <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />;
         }
-        return <Clock className="h-5 w-5 text-yellow-500" />;
+        return <Clock className="h-5 w-5 text-yellow-500 flex-shrink-0" />;
     };
     
     const cardVariants = {
@@ -224,7 +224,7 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         {/* Main Content */}
                         <div className="lg:col-span-2 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
@@ -232,8 +232,8 @@ export default function StudentDashboardPage() {
                                     <CardTitle>Join a New Batch</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row items-end gap-4">
-                                        <div className="grid gap-2 flex-1 w-full">
+                                    <form onSubmit={handleJoinBatch} className="grid gap-4 sm:flex sm:items-end">
+                                        <div className="grid gap-2 flex-1">
                                             <Label htmlFor="batch-code">Enter Batch Code</Label>
                                             <Input 
                                                 id="batch-code" 
@@ -242,7 +242,7 @@ export default function StudentDashboardPage() {
                                                 onChange={(e) => setBatchCode(e.target.value)}
                                             />
                                         </div>
-                                        <Button type="submit" disabled={isJoining || !batchCode.trim()}>
+                                        <Button type="submit" className="w-full sm:w-auto" disabled={isJoining || !batchCode.trim()}>
                                             {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                             Send Request
                                         </Button>
@@ -274,9 +274,9 @@ export default function StudentDashboardPage() {
                                                 <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
                                                     <div className="flex items-start gap-4 flex-grow">
                                                         {renderStatusIcon(enrollment.status)}
-                                                        <div className="flex-grow">
-                                                            <p className="font-semibold text-lg">{enrollment.batchName}</p>
-                                                            <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
+                                                        <div className="flex-grow min-w-0">
+                                                            <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
+                                                            <p className="text-sm text-muted-foreground break-words">Teacher: {enrollment.teacherName}</p>
                                                             <p className="text-xs text-muted-foreground mt-1">
                                                                 {enrollment.status === 'pending' 
                                                                     ? `Requested: ${formatDate(enrollment.createdAt)}` 
