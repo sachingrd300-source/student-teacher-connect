@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet, School } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -223,130 +222,119 @@ export default function TeacherDashboardPage() {
                         <p className="text-muted-foreground mt-2">Manage your batches, students, and requests all in one place.</p>
                     </div>
                     
-                    <Tabs defaultValue="requests" className="w-full">
-                        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-                            <TabsTrigger value="batches">My Batches ({batches?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="requests">Requests ({pendingRequests.length})</TabsTrigger>
-                            <TabsTrigger value="students">Students ({approvedStudents.length})</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="batches" className="mt-6">
-                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle>My Batches</CardTitle>
-                                    <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
-                                    </Button>
-                                </CardHeader>
-                                <CardContent className="grid gap-4">
-                                     {batches && batches.length > 0 ? (
-                                        batches.map(batch => (
-                                            <div key={batch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
-                                                 <div className="flex-grow">
-                                                    <p className="font-semibold text-lg">{batch.name}</p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <p className="text-sm text-muted-foreground">Code:</p>
-                                                        <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(batch.code)}>
-                                                            <Clipboard className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                     <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
-                                                </div>
-                                                <div className="flex items-center justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0">
-                                                    <div className="text-center">
-                                                        <p className="font-bold text-lg">{studentCountsByBatch[batch.id] || 0}</p>
-                                                        <p className="text-xs text-muted-foreground">Students</p>
-                                                    </div>
-                                                    <Button asChild>
-                                                        <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                            <Settings className="mr-2 h-4 w-4" /> Manage
-                                                        </Link>
+                    <div className="grid gap-8">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
+                                <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                                 {batches && batches.length > 0 ? (
+                                    batches.map(batch => (
+                                        <div key={batch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                             <div className="flex-grow">
+                                                <p className="font-semibold text-lg">{batch.name}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <p className="text-sm text-muted-foreground">Code:</p>
+                                                    <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(batch.code)}>
+                                                        <Clipboard className="h-4 w-4" />
                                                     </Button>
                                                 </div>
+                                                 <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <p className="text-muted-foreground">You haven't created any batches yet. Let's create your first one! 🎉</p>
-                                             <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
-                                                <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
-                                            </Button>
+                                            <div className="flex items-center justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0">
+                                                <div className="text-center">
+                                                    <p className="font-bold text-lg">{studentCountsByBatch[batch.id] || 0}</p>
+                                                    <p className="text-xs text-muted-foreground">Students</p>
+                                                </div>
+                                                <Button asChild>
+                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                        <Settings className="mr-2 h-4 w-4" /> Manage
+                                                    </Link>
+                                                </Button>
+                                            </div>
                                         </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <p className="text-muted-foreground">You haven't created any batches yet. Let's create your first one! 🎉</p>
+                                         <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                        <TabsContent value="requests" className="mt-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Pending Enrollment Requests</CardTitle>
-                                </CardHeader>
-                                <CardContent className="grid gap-4">
-                                    {pendingRequests.length > 0 ? (
-                                        pendingRequests.map(req => (
-                                            <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
-                                                <div className="flex items-center gap-4">
-                                                    <Avatar>
-                                                        <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="font-semibold">{req.studentName}</p>
-                                                        <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
-                                                        <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                                    <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req)}>
-                                                        <Check className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button size="icon" variant="outline" className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={() => handleDeclineRequest(req.id)}>
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Pending Enrollment Requests ({pendingRequests.length})</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                                {pendingRequests.length > 0 ? (
+                                    pendingRequests.map(req => (
+                                        <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar>
+                                                    <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-semibold">{req.studentName}</p>
+                                                    <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
                                                 </div>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground text-center py-12">No new student requests right now. We'll notify you when someone wants to join. 👍</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="students" className="mt-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Approved Students</CardTitle>
-                                </CardHeader>
-                                <CardContent className="grid gap-4">
-                                    {approvedStudents.length > 0 ? (
-                                        approvedStudents.map(student => (
-                                             <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
-                                                 <div className="flex items-center gap-4">
-                                                    <Avatar>
-                                                        <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="font-semibold">{student.studentName}</p>
-                                                         <p className="text-sm text-muted-foreground">Batch: <span className="font-medium">{student.batchName}</span></p>
-                                                         <p className="text-xs text-muted-foreground mt-1">Approved: {formatDate(student.approvedAt)}</p>
-                                                    </div>
-                                                </div>
-                                                <div className='flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0'>
-                                                    <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
-                                                        <Wallet className="mr-2 h-4 w-4" /> Fees
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                            <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                <Button size="icon" variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleApprove(req)}>
+                                                    <Check className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="icon" variant="outline" className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={() => handleDeclineRequest(req.id)}>
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-muted-foreground text-center py-12">No new student requests right now. We'll notify you when someone wants to join. 👍</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Approved Students ({approvedStudents.length})</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                                {approvedStudents.length > 0 ? (
+                                    approvedStudents.map(student => (
+                                         <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                             <div className="flex items-center gap-4">
+                                                <Avatar>
+                                                    <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-semibold">{student.studentName}</p>
+                                                     <p className="text-sm text-muted-foreground">Batch: <span className="font-medium">{student.batchName}</span></p>
+                                                     <p className="text-xs text-muted-foreground mt-1">Approved: {formatDate(student.approvedAt)}</p>
                                                 </div>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground text-center py-12">No students have joined yet. Share your batch codes to get them enrolled! 🚀</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
+                                            <div className='flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0'>
+                                                <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
+                                                    <Wallet className="mr-2 h-4 w-4" /> Fees
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-muted-foreground text-center py-12">No students have joined yet. Share your batch codes to get them enrolled! 🚀</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
                  {studentForFees && (
                     <FeeManagementDialog 
