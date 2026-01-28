@@ -89,3 +89,9 @@
     scrollbar-color: hsl(var(--primary) / 0.5) hsl(var(--muted));
   }
 }
+
+@layer base {
+  section {
+    @apply py-16 md:py-24;
+  }
+}

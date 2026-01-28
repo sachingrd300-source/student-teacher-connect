@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, School, User, Users, Book } from "lucide-react";
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone } from "lucide-react";
 import placeholderImages from '@/lib/placeholder-images.ts';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,6 +136,21 @@ export default function HomePage() {
           }
       ]
   }
+  
+  const platformFeatures = {
+    students: [
+      { icon: <LayoutDashboard className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature1 },
+      { icon: <BookCopy className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature2 },
+      { icon: <BarChart3 className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature3 },
+      { icon: <Trophy className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature4 },
+    ],
+    teachers: [
+      { icon: <Users className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature1 },
+      { icon: <Wallet className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature2 },
+      { icon: <ClipboardCheck className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature3 },
+      { icon: <Megaphone className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature4 },
+    ]
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -257,8 +272,66 @@ export default function HomePage() {
             </div>
         </section>
 
-        {/* Numbers Section */}
+        {/* Platform Features Section */}
         <section className="py-16 md:py-24 bg-muted/40">
+          <div className="container px-4 md:px-6">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.5 }}
+              variants={fadeInUp}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.platformTitle}</h2>
+              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.platformDescription}</p>
+            </motion.div>
+            <motion.div 
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.5 }}
+                variants={fadeInUp}
+                className="mb-12"
+            >
+                <Card className="overflow-hidden rounded-2xl shadow-2xl">
+                    <Image 
+                        src={placeholderImages.dashboardPreview.src} 
+                        alt={placeholderImages.dashboardPreview.alt}
+                        width={placeholderImages.dashboardPreview.width}
+                        height={placeholderImages.dashboardPreview.height}
+                        className="w-full"
+                        data-ai-hint={placeholderImages.dashboardPreview.hint}
+                    />
+                </Card>
+            </motion.div>
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer(0.2, 0)}>
+                <h3 className="text-2xl font-bold mb-6">{t.platformStudentTitle}</h3>
+                <ul className="space-y-4">
+                  {platformFeatures.students.map((feature, index) => (
+                    <motion.li key={index} variants={fadeInUp} className="flex items-start">
+                      {feature.icon}
+                      <span className="flex-1">{feature.text}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer(0.2, 0)}>
+                <h3 className="text-2xl font-bold mb-6">{t.platformTeacherTitle}</h3>
+                <ul className="space-y-4">
+                  {platformFeatures.teachers.map((feature, index) => (
+                    <motion.li key={index} variants={fadeInUp} className="flex items-start">
+                      {feature.icon}
+                      <span className="flex-1">{feature.text}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Numbers Section */}
+        <section className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -298,7 +371,7 @@ export default function HomePage() {
 
         {/* Featured Tutors Section */}
         {featuredTeachers && featuredTeachers.length > 0 && (
-          <section className="py-16 md:py-24 bg-background">
+          <section className="py-16 md:py-24 bg-muted/40">
             <div className="container px-4 md:px-6">
               <motion.div
                 initial="hidden"
@@ -346,7 +419,7 @@ export default function HomePage() {
         )}
 
         {/* Testimonials Section */}
-        <section className="py-16 md:py-24 bg-muted/40">
+        <section className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <motion.div 
               initial="hidden"
@@ -398,7 +471,7 @@ export default function HomePage() {
         </section>
         
          {/* Final CTA */}
-        <section className="py-16 md:py-32 bg-background">
+        <section className="py-16 md:py-32 bg-muted/40">
             <div className="container px-4 md:px-6 text-center">
                 <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
                     <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.ctaTitle}</h2>
@@ -419,7 +492,7 @@ export default function HomePage() {
         <div className="container px-4 md:px-6 text-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
             <Link className="flex items-center justify-center gap-2 mb-6" href="/">
-                <School className="h-7 w-7 text-primary" />
+                <GraduationCap className="h-7 w-7 text-primary" />
                 <span className="text-2xl font-semibold font-serif text-white">EduConnect Pro</span>
             </Link>
             <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8">

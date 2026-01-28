@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { School, Menu, User, UserPlus, Globe } from 'lucide-react';
+import { GraduationCap, Menu, User, UserPlus, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
-                <School className="h-6 w-6 text-primary" />
+                <GraduationCap className="h-6 w-6 text-primary" />
                 <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
             </Link>
             
@@ -105,12 +105,12 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                             <SheetTitle>
                                 <SheetClose asChild>
                                     <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-                                        <School className="h-6 w-6 text-primary" />
+                                        <GraduationCap className="h-6 w-6 text-primary" />
                                         <span>EduConnect Pro</span>
                                     </Link>
                                 </SheetClose>
                             </SheetTitle>
-                             <SheetDescription className="sr-only">
+                             <SheetDescription>
                                 Main navigation menu.
                             </SheetDescription>
                         </SheetHeader>
