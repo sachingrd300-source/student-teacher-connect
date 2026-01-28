@@ -12,6 +12,7 @@ import { Loader2, User, BookUser, Search } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
+import { motion } from 'framer-motion';
 
 
 interface TeacherProfile {
@@ -67,12 +68,23 @@ export default function FindTeachersPage() {
             </div>
         );
     }
+    
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.05,
+            },
+        }),
+    };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userName={currentUserProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <div className="mb-8 text-center">
                          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl font-serif text-foreground">
                             Find Your Teacher
@@ -96,34 +108,44 @@ export default function FindTeachersPage() {
 
                     {teachers && teachers.length > 0 ? (
                          filteredTeachers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredTeachers.map((teacher) => (
-                                    <Card key={teacher.id} className="flex flex-col">
-                                        <CardHeader className="items-center text-center">
-                                            <Avatar className="w-20 h-20 mb-4">
-                                                <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <CardTitle className="font-serif">{teacher.name}</CardTitle>
-                                            {teacher.subject && (
-                                                <CardDescription className="text-primary font-semibold">{teacher.subject}</CardDescription>
-                                            )}
-                                        </CardHeader>
-                                        <CardContent className="flex-grow flex flex-col justify-between text-center">
-                                             <div>
-                                                {teacher.coachingCenterName && (
-                                                    <p className="text-sm text-muted-foreground mb-4">{teacher.coachingCenterName}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {filteredTeachers.map((teacher, i) => (
+                                    <motion.div
+                                        key={teacher.id}
+                                        custom={i}
+                                        initial="hidden"
+                                        animate="visible"
+                                        variants={cardVariants}
+                                        whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                        className="h-full"
+                                    >
+                                        <Card className="flex flex-col h-full transition-shadow duration-300">
+                                            <CardHeader className="items-center text-center">
+                                                <Avatar className="w-20 h-20 mb-4">
+                                                    <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <CardTitle className="font-serif">{teacher.name}</CardTitle>
+                                                {teacher.subject && (
+                                                    <CardDescription className="text-primary font-semibold">{teacher.subject}</CardDescription>
                                                 )}
-                                                {teacher.bio && (
-                                                     <p className="text-sm text-muted-foreground line-clamp-3">{teacher.bio}</p>
-                                                )}
-                                            </div>
-                                            <Button asChild className="mt-6 w-full">
-                                                <Link href={`/teachers/${teacher.id}`}>
-                                                    <User className="mr-2 h-4 w-4" /> View Profile
-                                                </Link>
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
+                                            </CardHeader>
+                                            <CardContent className="flex-grow flex flex-col justify-between text-center">
+                                                 <div>
+                                                    {teacher.coachingCenterName && (
+                                                        <p className="text-sm text-muted-foreground mb-4">{teacher.coachingCenterName}</p>
+                                                    )}
+                                                    {teacher.bio && (
+                                                         <p className="text-sm text-muted-foreground line-clamp-3">{teacher.bio}</p>
+                                                    )}
+                                                </div>
+                                                <Button asChild className="mt-6 w-full">
+                                                    <Link href={`/teachers/${teacher.id}`}>
+                                                        <User className="mr-2 h-4 w-4" /> View Profile
+                                                    </Link>
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
                                 ))}
                             </div>
                         ) : (

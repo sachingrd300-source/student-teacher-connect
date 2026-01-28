@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
+import { motion } from 'framer-motion';
 
 
 interface UserProfile {
@@ -211,12 +212,23 @@ export default function TeacherDashboardPage() {
             </div>
         );
     }
+    
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.05,
+            },
+        }),
+    };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userName={userProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">{greeting}, {userProfile?.name}! ☀️</h1>
                         <p className="text-muted-foreground mt-2">Manage your batches, students, and requests all in one place.</p>
@@ -230,34 +242,46 @@ export default function TeacherDashboardPage() {
                                     <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
                                 </Button>
                             </CardHeader>
-                            <CardContent className="grid gap-4">
+                            <CardContent>
                                  {batches && batches.length > 0 ? (
-                                    batches.map(batch => (
-                                        <div key={batch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
-                                             <div className="flex-grow">
-                                                <p className="font-semibold text-lg">{batch.name}</p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <p className="text-sm text-muted-foreground">Code:</p>
-                                                    <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(batch.code)}>
-                                                        <Clipboard className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                                 <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(batch.createdAt)}</p>
-                                            </div>
-                                            <div className="flex items-center justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0">
-                                                <div className="text-center">
-                                                    <p className="font-bold text-lg">{studentCountsByBatch[batch.id] || 0}</p>
-                                                    <p className="text-xs text-muted-foreground">Students</p>
-                                                </div>
-                                                <Button asChild>
-                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                        <Settings className="mr-2 h-4 w-4" /> Manage
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {batches.map((batch, i) => (
+                                            <motion.div
+                                                key={batch.id}
+                                                custom={i}
+                                                initial="hidden"
+                                                animate="visible"
+                                                variants={cardVariants}
+                                                whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                                className="h-full"
+                                            >
+                                                <Card className="flex flex-col h-full transition-shadow duration-300">
+                                                    <CardHeader>
+                                                        <CardTitle className="text-xl">{batch.name}</CardTitle>
+                                                         <div className="flex items-center gap-2 pt-2">
+                                                            <p className="text-sm text-muted-foreground">Code:</p>
+                                                            <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(batch.code)}>
+                                                                <Clipboard className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="flex-grow flex items-end justify-between">
+                                                        <div className="text-left">
+                                                            <p className="font-bold text-2xl">{studentCountsByBatch[batch.id] || 0}</p>
+                                                            <p className="text-sm text-muted-foreground">Students</p>
+                                                        </div>
+                                                        <Button asChild>
+                                                            <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                                <Settings className="mr-2 h-4 w-4" /> Manage
+                                                            </Link>
+                                                        </Button>
+                                                    </CardContent>
+                                                </Card>
+                                            </motion.div>
+                                        ))
+                                    }
+                                    </div>
                                 ) : (
                                     <div className="text-center py-12">
                                         <p className="text-muted-foreground">You haven't created any batches yet. Let's create your first one! 🎉</p>
@@ -275,8 +299,16 @@ export default function TeacherDashboardPage() {
                             </CardHeader>
                             <CardContent className="grid gap-4">
                                 {pendingRequests.length > 0 ? (
-                                    pendingRequests.map(req => (
-                                        <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                    pendingRequests.map((req, i) => (
+                                        <motion.div
+                                            key={req.id}
+                                            custom={i}
+                                            initial="hidden"
+                                            animate="visible"
+                                            variants={cardVariants}
+                                            whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                        >
                                             <div className="flex items-center gap-4">
                                                 <Avatar>
                                                     <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
@@ -295,10 +327,10 @@ export default function TeacherDashboardPage() {
                                                     <X className="h-4 w-4" />
                                                 </Button>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     ))
                                 ) : (
-                                    <p className="text-muted-foreground text-center py-12">No new student requests right now. We'll notify you when someone wants to join. 👍</p>
+                                    <p className="text-muted-foreground text-center py-12">No new student requests right now. 👍</p>
                                 )}
                             </CardContent>
                         </Card>
@@ -309,8 +341,16 @@ export default function TeacherDashboardPage() {
                             </CardHeader>
                             <CardContent className="grid gap-4">
                                 {approvedStudents.length > 0 ? (
-                                    approvedStudents.map(student => (
-                                         <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                    approvedStudents.map((student, i) => (
+                                         <motion.div
+                                            key={student.id}
+                                            custom={i}
+                                            initial="hidden"
+                                            animate="visible"
+                                            variants={cardVariants}
+                                            whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                         >
                                              <div className="flex items-center gap-4">
                                                 <Avatar>
                                                     <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
@@ -322,12 +362,15 @@ export default function TeacherDashboardPage() {
                                                 </div>
                                             </div>
                                             <div className='flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0'>
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href={`/students/${student.studentId}`}>Profile</Link>
+                                                </Button>
                                                 <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
                                                     <Wallet className="mr-2 h-4 w-4" /> Fees
                                                 </Button>
                                                 <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleRemoveStudent(student)}>Remove</Button>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     ))
                                 ) : (
                                     <p className="text-muted-foreground text-center py-12">No students have joined yet. Share your batch codes to get them enrolled! 🚀</p>

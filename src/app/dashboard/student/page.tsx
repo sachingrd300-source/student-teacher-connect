@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 interface UserProfile {
     name: string;
@@ -162,12 +163,23 @@ export default function StudentDashboardPage() {
         }
         return <Clock className="h-5 w-5 text-yellow-500" />;
     };
+    
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.05,
+            },
+        }),
+    };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userName={userProfile?.name} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto grid gap-8">
+                <div className="max-w-6xl mx-auto grid gap-8">
                     <div className="mb-4">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
                         <p className="text-muted-foreground mt-2">{getGreeting()}</p>
@@ -267,51 +279,60 @@ export default function StudentDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>My Enrollments</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            {enrollments && enrollments.length > 0 ? (
-                                enrollments.map((enrollment) => (
-                                    <div key={enrollment.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-background">
-                                        <div className="flex items-center gap-4">
-                                            {renderStatusIcon(enrollment.status)}
-                                            <div>
-                                                <p className="font-semibold text-lg">{enrollment.batchName}</p>
-                                                <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {enrollment.status === 'pending' 
-                                                        ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                        : `Approved: ${formatDate(enrollment.approvedAt)}`}
-                                                </p>
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
+                        {enrollments && enrollments.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {enrollments.map((enrollment, i) => (
+                                     <motion.div
+                                        key={enrollment.id}
+                                        custom={i}
+                                        initial="hidden"
+                                        animate="visible"
+                                        variants={cardVariants}
+                                        whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                    >
+                                        <Card className="p-4 flex flex-col h-full transition-shadow duration-300">
+                                            <div className="flex items-start gap-4 flex-grow">
+                                                {renderStatusIcon(enrollment.status)}
+                                                <div className="flex-grow">
+                                                    <p className="font-semibold text-lg">{enrollment.batchName}</p>
+                                                    <p className="text-sm text-muted-foreground">Teacher: {enrollment.teacherName}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        {enrollment.status === 'pending' 
+                                                            ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                            : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                            {enrollment.status === 'pending' ? (
-                                                <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                    Cancel Request
-                                                </Button>
-                                            ) : (
-                                                <>
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                            <div className="flex gap-2 self-end mt-4">
+                                                {enrollment.status === 'pending' ? (
+                                                    <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                        Cancel Request
                                                     </Button>
-                                                    <Button asChild size="sm">
-                                                        <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                            View Batch
-                                                        </Link>
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-muted-foreground text-center py-8">You haven't joined any batches yet. Find a teacher or enter a batch code to begin! 🚀</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                                                ) : (
+                                                    <>
+                                                        <Button asChild variant="outline" size="sm">
+                                                            <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                        </Button>
+                                                        <Button asChild size="sm">
+                                                            <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
+                                                                View Batch
+                                                            </Link>
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </Card>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="w-full bg-background border rounded-lg p-12 text-center">
+                                <p className="text-muted-foreground">You haven't joined any batches yet. Find a teacher or enter a batch code to begin! 🚀</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </main>
         </div>
