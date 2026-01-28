@@ -304,8 +304,8 @@ export default function StudentDashboardPage() {
                                         <div className="p-3 bg-primary/10 rounded-full mb-3">
                                             {card.icon}
                                         </div>
-                                        <h3 className="font-semibold text-base sm:text-lg">{card.title}</h3>
-                                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex-grow">{card.description}</p>
+                                        <h3 className="font-semibold text-sm sm:text-base">{card.title}</h3>
+                                        <p className="text-xs text-muted-foreground mt-1 flex-grow">{card.description}</p>
                                     </Card>
                                 </Link>
                             </motion.div>
@@ -348,7 +348,7 @@ export default function StudentDashboardPage() {
                              <div>
                                 <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
                                 {enrollments && enrollments.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         {enrollments.map((enrollment, i) => (
                                             <motion.div
                                                 key={enrollment.id}
@@ -430,4 +430,3 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
-
