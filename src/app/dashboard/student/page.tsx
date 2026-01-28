@@ -319,7 +319,7 @@ export default function StudentDashboardPage() {
                                         <CardDescription>Complete one day at a time to build your streak!</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="flex items-center pb-4 overflow-x-auto">
+                                        <div className="flex items-center pb-4 overflow-x-auto custom-scrollbar">
                                             <div className="inline-flex items-center gap-2 px-2">
                                                 {days.map((day, index) => {
                                                     const isCompleted = day.status === 'completed';
