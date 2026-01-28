@@ -144,9 +144,14 @@
         "fileURL": { "type": "string", "format": "uri" },
         "fileName": { "type": "string" },
         "fileType": { "type": "string", "description": "e.g., pdf, png, jpg" },
+        "category": {
+          "type": "string",
+          "description": "The category of the study material.",
+          "enum": ["notes", "books", "pyqs", "dpps"]
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "fileURL", "fileType", "fileName", "createdAt"]
+      "required": ["title", "fileURL", "fileType", "fileName", "createdAt", "category"]
     },
     "ShopItem": {
       "title": "Shop Item",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useMemo } from 'react';
 import { useUser, useFirestore, useStorage, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -16,11 +16,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign, Home, PackageOpen } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface UserProfile {
     name: string;
     role: 'admin';
 }
+
+type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 
 interface FreeMaterial {
     id: string;
@@ -29,6 +34,7 @@ interface FreeMaterial {
     fileURL: string;
     fileName: string; 
     fileType: string;
+    category: MaterialCategory;
     createdAt: string;
 }
 
@@ -71,6 +77,7 @@ export default function AdminDashboardPage() {
     const [materialTitle, setMaterialTitle] = useState('');
     const [materialDescription, setMaterialDescription] = useState('');
     const [materialFile, setMaterialFile] = useState<File | null>(null);
+    const [materialCategory, setMaterialCategory] = useState<MaterialCategory | ''>('');
     const [isUploadingMaterial, setIsUploadingMaterial] = useState(false);
 
     // State for shop items
@@ -107,7 +114,7 @@ export default function AdminDashboardPage() {
 
     const handleMaterialUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!materialFile || !materialTitle.trim() || !storage || !user) return;
+        if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !user) return;
 
         setIsUploadingMaterial(true);
         const fileName = `${Date.now()}_${materialFile.name}`;
@@ -123,11 +130,13 @@ export default function AdminDashboardPage() {
                 fileURL: downloadURL,
                 fileName: fileName,
                 fileType: materialFile.type,
+                category: materialCategory,
                 createdAt: new Date().toISOString(),
             });
             setMaterialTitle('');
             setMaterialDescription('');
             setMaterialFile(null);
+            setMaterialCategory('');
             if (document.getElementById('material-file')) (document.getElementById('material-file') as HTMLInputElement).value = '';
         } catch (error) {
             console.error("Error uploading free material: ", error);
@@ -202,6 +211,45 @@ export default function AdminDashboardPage() {
             console.error("Error deleting home booking:", error);
         }
     };
+    
+    const renderMaterialList = (materialList: FreeMaterial[]) => {
+        if (materialList.length === 0) {
+            return (
+                <div className="text-center py-12 flex flex-col items-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold">No Materials in this Category</h3>
+                    <p className="text-muted-foreground mt-1">Upload materials to see them here.</p>
+                </div>
+            );
+        }
+        return (
+            <div className="grid gap-4">
+                {materialList.map(material => (
+                    <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                        <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <div>
+                                <p className="font-semibold">{material.title}</p>
+                                <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                                <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                            </div>
+                        </div>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    const filteredMaterials = useMemo(() => {
+        if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
+        return {
+            notes: materials.filter(m => m.category === 'notes'),
+            books: materials.filter(m => m.category === 'books'),
+            pyqs: materials.filter(m => m.category === 'pyqs'),
+            dpps: materials.filter(m => m.category === 'dpps'),
+        }
+    }, [materials]);
 
 
     const isLoading = isUserLoading || profileLoading || materialsLoading || shopItemsLoading || bookingsLoading;
@@ -322,10 +370,33 @@ export default function AdminDashboardPage() {
                                 <h3 className="text-lg font-semibold">Upload New Material</h3>
                                 <form onSubmit={handleMaterialUpload} className="grid gap-4">
                                     <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                                        <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="material-title">Material Title</Label>
+                                            <Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="material-category">Category</Label>
+                                            <Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required>
+                                                <SelectTrigger id="material-category">
+                                                    <SelectValue placeholder="Select a category" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="notes">Notes</SelectItem>
+                                                    <SelectItem value="books">Books</SelectItem>
+                                                    <SelectItem value="pyqs">PYQs (Previous Year Questions)</SelectItem>
+                                                    <SelectItem value="dpps">DPPs (Daily Practice Problems)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
-                                    <div className="grid gap-2"><Label htmlFor="material-description">Description (Optional)</Label><Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
+                                     <div className="grid gap-2">
+                                        <Label htmlFor="material-file">File</Label>
+                                        <Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="material-description">Description (Optional)</Label>
+                                        <Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} />
+                                    </div>
                                     <Button type="submit" disabled={isUploadingMaterial} className="w-fit">
                                         {isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material
                                     </Button>
@@ -333,31 +404,30 @@ export default function AdminDashboardPage() {
                             </div>
                             
                             <h3 className="text-lg font-semibold mb-4">Uploaded Free Materials</h3>
-                             <div>
-                                 {materials && materials.length > 0 ? (
-                                    <div className="grid gap-4">
-                                        {materials.map(material => (
-                                            <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                <div className="flex items-center gap-3">
-                                                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                                    <div>
-                                                        <p className="font-semibold">{material.title}</p>
-                                                        <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                                                        <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
-                                                    </div>
-                                                </div>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                 ) : (
-                                     <div className="text-center py-12 flex flex-col items-center">
-                                        <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">No Free Materials</h3>
-                                        <p className="text-muted-foreground mt-1">Upload your first free material to make it available to all students.</p>
-                                    </div>
-                                 )}
-                             </div>
+                            <Tabs defaultValue="all" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+                                    <TabsTrigger value="all">All</TabsTrigger>
+                                    <TabsTrigger value="notes">Notes</TabsTrigger>
+                                    <TabsTrigger value="books">Books</TabsTrigger>
+                                    <TabsTrigger value="pyqs">PYQs</TabsTrigger>
+                                    <TabsTrigger value="dpps">DPPs</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="all" className="mt-4">
+                                    {renderMaterialList(materials || [])}
+                                </TabsContent>
+                                <TabsContent value="notes" className="mt-4">
+                                    {renderMaterialList(filteredMaterials.notes)}
+                                </TabsContent>
+                                <TabsContent value="books" className="mt-4">
+                                    {renderMaterialList(filteredMaterials.books)}
+                                </TabsContent>
+                                <TabsContent value="pyqs" className="mt-4">
+                                    {renderMaterialList(filteredMaterials.pyqs)}
+                                </TabsContent>
+                                <TabsContent value="dpps" className="mt-4">
+                                    {renderMaterialList(filteredMaterials.dpps)}
+                                </TabsContent>
+                            </Tabs>
                         </CardContent>
                     </Card>
                 </div>
