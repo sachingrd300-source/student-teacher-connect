@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Sparkles, Lock } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Sparkles, Lock, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -242,9 +243,35 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                    {/* New Explore Menu Bar */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {actionCards.map((card, i) => (
+                            <motion.div
+                                key={card.title}
+                                custom={i}
+                                initial="hidden"
+                                animate="visible"
+                                variants={cardVariants}
+                                whileHover={{ y: -5, scale: 1.05, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                                className="h-full"
+                            >
+                                <Link href={card.href} className="block h-full">
+                                    <Card className="flex flex-col items-center justify-start text-center p-6 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                        <div className="p-4 bg-primary/10 rounded-full mb-4">
+                                            {card.icon}
+                                        </div>
+                                        <h3 className="font-semibold text-lg">{card.title}</h3>
+                                        <p className="text-sm text-muted-foreground mt-1 flex-grow">{card.description}</p>
+                                    </Card>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Main content area below */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         {/* Main Content */}
-                        <div className="lg:col-span-3 grid gap-8">
+                        <div className="lg:col-span-2 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
@@ -383,6 +410,14 @@ export default function StudentDashboardPage() {
                                                 })}
                                             </div>
                                         </div>
+                                         <div className="px-6 pb-4">
+                                            <Button asChild className="w-full">
+                                                <Link href={studyLink}>
+                                                    {latestBatchId ? "Start Today's Study" : "Explore Batches"}
+                                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </motion.div>
@@ -406,28 +441,6 @@ export default function StudentDashboardPage() {
                                     ))}
                                 </CardContent>
                             </Card>
-
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                    <CardTitle>Explore</CardTitle>
-                                    <CardDescription>Find resources and more.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="grid gap-3">
-                                    {actionCards.map(card => (
-                                         <Link href={card.href} key={card.title} className="block group">
-                                            <div className="rounded-xl border bg-background group-hover:bg-muted/50 group-hover:border-primary/20 p-4 flex items-center gap-4 transition-all duration-200">
-                                                <div className="p-2 bg-primary/10 rounded-lg">
-                                                    {card.icon}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold">{card.title}</p>
-                                                    <p className="text-sm text-muted-foreground">{card.description}</p>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </CardContent>
-                            </Card>
                         </div>
                     </div>
                 </div>
@@ -435,3 +448,5 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
+
+    
