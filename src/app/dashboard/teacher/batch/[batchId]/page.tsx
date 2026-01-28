@@ -394,7 +394,7 @@ export default function BatchManagementPage() {
                         </Card>
                     </div>
 
-                    <Tabs defaultValue="students" className="w-full">
+                    <Tabs defaultValue="announcements" className="w-full">
                         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
                             <TabsTrigger value="tests">Tests ({tests?.length || 0})</TabsTrigger>
