@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -139,40 +140,30 @@ export default function FreeMaterialsPage() {
                                 <p className="text-muted-foreground">Free resources and notes curated by our team to help you succeed.</p>
                             </CardHeader>
                             <CardContent className="grid gap-4">
-                                {materials && materials.length > 0 ? (
-                                    <Tabs defaultValue="all" className="w-full">
-                                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
-                                            <TabsTrigger value="all">All</TabsTrigger>
-                                            <TabsTrigger value="notes">Notes</TabsTrigger>
-                                            <TabsTrigger value="books">Books</TabsTrigger>
-                                            <TabsTrigger value="pyqs">PYQs</TabsTrigger>
-                                            <TabsTrigger value="dpps">DPPs</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent value="all" className="mt-4">
-                                            {renderMaterialList(materials)}
-                                        </TabsContent>
-                                        <TabsContent value="notes" className="mt-4">
-                                            {renderMaterialList(filteredMaterials.notes)}
-                                        </TabsContent>
-                                        <TabsContent value="books" className="mt-4">
-                                            {renderMaterialList(filteredMaterials.books)}
-                                        </TabsContent>
-                                        <TabsContent value="pyqs" className="mt-4">
-                                            {renderMaterialList(filteredMaterials.pyqs)}
-                                        </TabsContent>
-                                        <TabsContent value="dpps" className="mt-4">
-                                            {renderMaterialList(filteredMaterials.dpps)}
-                                        </TabsContent>
-                                    </Tabs>
-                                ) : (
-                                    <div className="text-center py-16">
-                                        <Gift className="mx-auto h-12 w-12 text-muted-foreground" />
-                                        <h3 className="mt-4 text-lg font-semibold">No Free Materials... Yet!</h3>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            Our admins are curating new items. Check back soon for free resources.
-                                        </p>
-                                    </div>
-                                )}
+                                <Tabs defaultValue="all" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+                                        <TabsTrigger value="all">All</TabsTrigger>
+                                        <TabsTrigger value="notes">Notes</TabsTrigger>
+                                        <TabsTrigger value="books">Books</TabsTrigger>
+                                        <TabsTrigger value="pyqs">PYQs</TabsTrigger>
+                                        <TabsTrigger value="dpps">DPPs</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="all" className="mt-4">
+                                        {renderMaterialList(materials || [])}
+                                    </TabsContent>
+                                    <TabsContent value="notes" className="mt-4">
+                                        {renderMaterialList(filteredMaterials.notes)}
+                                    </TabsContent>
+                                    <TabsContent value="books" className="mt-4">
+                                        {renderMaterialList(filteredMaterials.books)}
+                                    </TabsContent>
+                                    <TabsContent value="pyqs" className="mt-4">
+                                        {renderMaterialList(filteredMaterials.pyqs)}
+                                    </TabsContent>
+                                    <TabsContent value="dpps" className="mt-4">
+                                        {renderMaterialList(filteredMaterials.dpps)}
+                                    </TabsContent>
+                                </Tabs>
                             </CardContent>
                         </Card>
                     </div>
@@ -181,3 +172,5 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
+
+    
