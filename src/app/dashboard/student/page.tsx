@@ -212,15 +212,15 @@ export default function StudentDashboardPage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-6xl mx-auto grid gap-8">
+                <div className="max-w-7xl mx-auto grid gap-8">
                     <div className="mb-4">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                         {/* Main Content */}
-                        <div className="lg:col-span-2 grid gap-8">
+                        <div className="lg:col-span-3 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
