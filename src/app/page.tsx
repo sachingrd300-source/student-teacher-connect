@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
@@ -73,6 +73,7 @@ export default function HomePage() {
 
   const { user } = useUser();
   const firestore = useFirestore();
+
   const featuredTeachersQuery = useMemoFirebase(() => {
       if (!firestore || !user) return null;
       return query(
@@ -82,6 +83,37 @@ export default function HomePage() {
       );
   }, [firestore, user]);
   const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
+
+  const teachersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users'), where('role', '==', 'teacher'));
+  }, [firestore, user]);
+  const { data: allTeachers } = useCollection<TeacherProfile>(teachersQuery);
+
+  const studentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users'), where('role', '==', 'student'));
+  }, [firestore, user]);
+  const { data: allStudents } = useCollection(studentsQuery);
+
+  const teacherCount = allTeachers?.length;
+  const studentCount = allStudents?.length;
+
+  const subjectCount = useMemo(() => {
+    if (!allTeachers) return undefined;
+    const subjects = new Set<string>();
+    allTeachers.forEach(teacher => {
+        if (teacher.subject) {
+            teacher.subject.split(',').forEach(s => {
+                const trimmedSubject = s.trim();
+                if (trimmedSubject) {
+                    subjects.add(trimmedSubject.toLowerCase());
+                }
+            });
+        }
+    });
+    return subjects.size;
+  }, [allTeachers]);
 
   const features = [
       {
@@ -353,17 +385,17 @@ export default function HomePage() {
             >
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-4xl font-bold">50+</p>
+                <p className="text-4xl font-bold">{user && teacherCount !== undefined ? teacherCount : '50+'}</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-4xl font-bold">500+</p>
+                <p className="text-4xl font-bold">{user && studentCount !== undefined ? studentCount : '500+'}</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Book className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-4xl font-bold">10+</p>
+                <p className="text-4xl font-bold">{user && subjectCount !== undefined ? subjectCount : '10+'}</p>
                 <p className="text-muted-foreground mt-2">{t.subjectsLabel}</p>
               </motion.div>
             </motion.div>
@@ -421,7 +453,7 @@ export default function HomePage() {
         </section>
 
         {/* Featured Tutors Section */}
-        {featuredTeachers && featuredTeachers.length > 0 && (
+        {user && featuredTeachers && featuredTeachers.length > 0 && (
           <section className="py-16 md:py-24 bg-background">
             <div className="container px-4 md:px-6">
               <motion.div
