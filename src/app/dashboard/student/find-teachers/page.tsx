@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import Link from 'next/link';
@@ -7,9 +8,10 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, User, BookUser } from 'lucide-react';
+import { Loader2, User, BookUser, Search } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
+import { Input } from '@/components/ui/input';
 
 
 interface TeacherProfile {
@@ -27,6 +29,7 @@ const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 export default function FindTeachersPage() {
     const firestore = useFirestore();
     const { user } = useUser();
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Fetch current user's profile for header
     const currentUserProfileRef = useMemoFirebase(() => {
@@ -42,6 +45,20 @@ export default function FindTeachersPage() {
     }, [firestore]);
     
     const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
+
+    const filteredTeachers = useMemo(() => {
+        if (!teachers) return [];
+        if (!searchQuery.trim()) return teachers;
+
+        return teachers.filter(teacher => {
+            const searchLower = searchQuery.toLowerCase();
+            const nameMatch = teacher.name.toLowerCase().includes(searchLower);
+            const subjectMatch = teacher.subject?.toLowerCase().includes(searchLower) || false;
+            const centerMatch = teacher.coachingCenterName?.toLowerCase().includes(searchLower) || false;
+            return nameMatch || subjectMatch || centerMatch;
+        });
+    }, [teachers, searchQuery]);
+
 
     if (teachersLoading) {
         return (
@@ -65,37 +82,59 @@ export default function FindTeachersPage() {
                         </p>
                     </div>
 
-                    {teachers && teachers.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {teachers.map((teacher) => (
-                                <Card key={teacher.id} className="flex flex-col">
-                                    <CardHeader className="items-center text-center">
-                                        <Avatar className="w-20 h-20 mb-4">
-                                            <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
-                                        </Avatar>
-                                        <CardTitle className="font-serif">{teacher.name}</CardTitle>
-                                        {teacher.subject && (
-                                            <CardDescription className="text-primary font-semibold">{teacher.subject}</CardDescription>
-                                        )}
-                                    </CardHeader>
-                                    <CardContent className="flex-grow flex flex-col justify-between text-center">
-                                         <div>
-                                            {teacher.coachingCenterName && (
-                                                <p className="text-sm text-muted-foreground mb-4">{teacher.coachingCenterName}</p>
-                                            )}
-                                            {teacher.bio && (
-                                                 <p className="text-sm text-muted-foreground line-clamp-3">{teacher.bio}</p>
-                                            )}
-                                        </div>
-                                        <Button asChild className="mt-6 w-full">
-                                            <Link href={`/teachers/${teacher.id}`}>
-                                                <User className="mr-2 h-4 w-4" /> View Profile
-                                            </Link>
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                    <div className="mb-8 max-w-lg mx-auto">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by name, subject, or center..."
+                                className="pl-10"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
+                    </div>
+
+                    {teachers && teachers.length > 0 ? (
+                         filteredTeachers.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredTeachers.map((teacher) => (
+                                    <Card key={teacher.id} className="flex flex-col">
+                                        <CardHeader className="items-center text-center">
+                                            <Avatar className="w-20 h-20 mb-4">
+                                                <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <CardTitle className="font-serif">{teacher.name}</CardTitle>
+                                            {teacher.subject && (
+                                                <CardDescription className="text-primary font-semibold">{teacher.subject}</CardDescription>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent className="flex-grow flex flex-col justify-between text-center">
+                                             <div>
+                                                {teacher.coachingCenterName && (
+                                                    <p className="text-sm text-muted-foreground mb-4">{teacher.coachingCenterName}</p>
+                                                )}
+                                                {teacher.bio && (
+                                                     <p className="text-sm text-muted-foreground line-clamp-3">{teacher.bio}</p>
+                                                )}
+                                            </div>
+                                            <Button asChild className="mt-6 w-full">
+                                                <Link href={`/teachers/${teacher.id}`}>
+                                                    <User className="mr-2 h-4 w-4" /> View Profile
+                                                </Link>
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="text-center py-16">
+                                 <Search className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-semibold">No Teachers Found</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Your search for "{searchQuery}" did not match any teachers.
+                                </p>
+                            </div>
+                        )
                     ) : (
                         <div className="text-center py-16">
                              <BookUser className="mx-auto h-12 w-12 text-muted-foreground" />
