@@ -114,12 +114,13 @@
         "title": { "type": "string" },
         "description": { "type": "string" },
         "fileURL": { "type": "string", "format": "uri" },
+        "fileName": { "type": "string" },
         "fileType": { "type": "string", "description": "e.g., pdf, png, jpg" },
         "batchId": { "type": "string" },
         "teacherId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "fileURL", "fileType", "batchId", "teacherId", "createdAt"]
+      "required": ["title", "fileURL", "fileType", "batchId", "teacherId", "fileName", "createdAt"]
     },
     "FreeMaterial": {
       "title": "Free Material",

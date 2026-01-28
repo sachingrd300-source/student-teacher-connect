@@ -116,7 +116,7 @@ export default function StudentBatchPage() {
     
     const materialsRef = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
-        return collection(firestore, 'batches', batchId, 'materials');
+        return query(collection(firestore, 'batches', batchId, 'materials'), orderBy('createdAt', 'desc'));
     }, [firestore, batchId]);
     const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
     
