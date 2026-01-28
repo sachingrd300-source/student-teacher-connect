@@ -165,7 +165,6 @@ export default function StudentDashboardPage() {
         let status: 'completed' | 'today' | 'locked' = 'locked';
         
         if (currentStreak > 0) {
-            // This logic ensures that for a streak of 7, day 7 is 'today', and for 8, day 1 is 'today'.
             const effectiveStreakDay = ((currentStreak - 1) % totalDaysInJourney) + 1;
             if (day < effectiveStreakDay) {
                 status = 'completed';
@@ -226,15 +225,15 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                         {/* Main Content */}
-                        <div className="lg:col-span-2 grid gap-8">
+                        <div className="lg:col-span-3 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <form onSubmit={handleJoinBatch} className="grid gap-4 sm:flex sm:items-end">
+                                    <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row sm:items-end gap-4">
                                         <div className="grid gap-2 flex-1">
                                             <Label htmlFor="batch-code">Enter Batch Code</Label>
                                             <Input 
@@ -319,7 +318,7 @@ export default function StudentDashboardPage() {
                         </div>
 
                         {/* Sidebar */}
-                        <div className="lg:col-span-1 grid gap-8">
+                        <div className="lg:col-span-2 grid gap-8">
                              <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
                                 <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
                                     <CardHeader>
