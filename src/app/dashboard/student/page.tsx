@@ -63,17 +63,6 @@ const getMotivation = () => {
     return motivations[Math.floor(Math.random() * motivations.length)];
 };
 
-// Mock data for the daily journey UI
-const days = [
-  { day: 1, status: 'completed' },
-  { day: 2, status: 'completed' },
-  { day: 3, status: 'today' },
-  { day: 4, status: 'locked' },
-  { day: 5, status: 'locked' },
-  { day: 6, status: 'locked' },
-  { day: 7, status: 'locked' },
-];
-
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -165,6 +154,25 @@ export default function StudentDashboardPage() {
     };
 
     const isLoading = isUserLoading || profileLoading || enrollmentsLoading;
+    
+    const currentStreak = userProfile?.streak || 0;
+    const totalDaysInJourney = 7;
+    const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
+        const day = i + 1;
+        let status: 'completed' | 'today' | 'locked' = 'locked';
+        
+        // A streak of 0 is an edge case for first-time login before the update. Day 1 is 'today'.
+        if (currentStreak === 0) {
+            if (day === 1) status = 'today';
+        } else {
+            if (day < currentStreak) {
+                status = 'completed';
+            } else if (day === currentStreak) {
+                status = 'today';
+            }
+        }
+        return { day, status };
+    });
 
     if (isLoading || !userProfile) {
         return (
@@ -313,41 +321,45 @@ export default function StudentDashboardPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex items-center pb-4 overflow-x-auto">
-                                            <div className="flex items-center gap-4 px-2">
+                                            <div className="inline-flex items-center gap-2 px-2">
                                                 {days.map((day, index) => {
                                                     const isCompleted = day.status === 'completed';
                                                     const isToday = day.status === 'today';
                                                     const isLocked = day.status === 'locked';
 
                                                     return (
-                                                        <div key={day.day} className="flex items-center">
-                                                            <div
-                                                                className={cn(
-                                                                    "flex flex-col items-center justify-center w-28 h-32 rounded-xl border-2 transition-all duration-300 flex-shrink-0",
-                                                                    isCompleted && "bg-green-100/50 border-green-300 text-green-800",
-                                                                    isToday && "border-primary/80 bg-primary/10 shadow-lg shadow-primary/20 scale-105",
-                                                                    isLocked && "bg-muted/60 border-dashed"
-                                                                )}
-                                                            >
-                                                                {isCompleted && <CheckCircle className="w-8 h-8 mb-2" />}
-                                                                {isToday && <Sparkles className="w-8 h-8 mb-2 text-primary animate-pulse" />}
-                                                                {isLocked && <Lock className="w-8 h-8 mb-2 text-muted-foreground" />}
+                                                        <div key={day.day} className="inline-flex items-center">
+                                                            <div className="flex flex-col items-center gap-1 text-center w-24">
+                                                                <div
+                                                                    className={cn(
+                                                                        "flex items-center justify-center w-16 h-16 rounded-full border-4 transition-all duration-300",
+                                                                        isCompleted && "bg-green-100 border-green-500 text-green-700",
+                                                                        isToday && "bg-primary/10 border-primary shadow-lg shadow-primary/30 scale-110",
+                                                                        isLocked && "bg-muted border-border border-dashed"
+                                                                    )}
+                                                                >
+                                                                    {isCompleted && <CheckCircle className="w-7 h-7" />}
+                                                                    {isToday && <Sparkles className="w-7 h-7 text-primary animate-pulse" />}
+                                                                    {isLocked && <Lock className="w-7 h-7 text-muted-foreground/50" />}
+                                                                </div>
                                                                 
-                                                                <p className="font-bold text-lg">Day {day.day}</p>
+                                                                <p className="font-bold text-sm">Day {day.day}</p>
 
-                                                                {isToday && (
-                                                                    <Button size="sm" className="mt-2 h-7">Start</Button>
-                                                                )}
-                                                                {isCompleted && (
-                                                                    <p className="text-xs font-semibold">Done!</p>
-                                                                )}
-                                                                {isLocked && (
-                                                                    <p className="text-xs text-muted-foreground">Locked</p>
-                                                                )}
+                                                                <div className="h-9 flex items-center"> {/* container for button/text to prevent layout shift */}
+                                                                    {isToday && (
+                                                                        <Button size="sm" className="mt-1 h-7 text-xs px-3">Start</Button>
+                                                                    )}
+                                                                    {isCompleted && (
+                                                                        <p className="text-xs font-semibold text-green-600 mt-1">Completed!</p>
+                                                                    )}
+                                                                    {isLocked && (
+                                                                        <p className="text-xs text-muted-foreground mt-1">Locked</p>
+                                                                    )}
+                                                                </div>
                                                             </div>
 
                                                             {index < days.length - 1 && (
-                                                                <div className="w-8 h-1 bg-border mx-2"></div>
+                                                                <div className="w-10 h-1 bg-border/70 mx-2"></div>
                                                             )}
                                                         </div>
                                                     );
