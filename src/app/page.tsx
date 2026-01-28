@@ -103,7 +103,7 @@ export default function Home() {
     );
   }
 
-  const { hero, dashboardPreview } = placeholderImages;
+  const { dashboardPreview } = placeholderImages;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -142,15 +142,15 @@ export default function Home() {
                     initial="hidden"
                     animate="visible"
                     variants={fadeIn('left')}
+                    className="rounded-xl shadow-2xl overflow-hidden aspect-video"
                  >
-                    <Image
-                        src={hero.src}
-                        alt={hero.alt}
-                        width={hero.width}
-                        height={hero.height}
-                        className="rounded-xl shadow-2xl"
-                        data-ai-hint={hero.hint}
-                        priority
+                    <video
+                      src="https://videos.pexels.com/video-files/3129957/3129957-hd_1280_720_24fps.mp4"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
                     />
                 </motion.div>
             </div>
