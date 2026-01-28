@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone } from "lucide-react";
-import placeholderImages from '@/lib/placeholder-images.ts';
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck } from "lucide-react";
+import placeholderImages from '@/lib/placeholder-images';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -369,9 +369,59 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* New Study Hub Section */}
+        <section className="py-16 md:py-24 bg-muted/40">
+          <div className="container px-4 md:px-6">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.5 }}
+              variants={fadeInUp}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.studyHubTitle}</h2>
+              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.studyHubDescription}</p>
+            </motion.div>
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer(0.2, 0)}>
+                <h3 className="text-2xl font-bold mb-6 flex items-center"><BookCopy className="w-7 h-7 mr-3 text-primary"/> {t.freeResourcesTitle}</h3>
+                <p className="text-muted-foreground mb-6">{t.freeResourcesDescription}</p>
+                <div className="flex flex-wrap gap-3">
+                  {['Notes', 'PYQs', 'Books', 'DPPs'].map((item, index) => (
+                    <motion.div key={index} variants={fadeInUp} className="bg-background rounded-full px-4 py-2 text-sm font-semibold shadow-sm border">
+                      {item}
+                    </motion.div>
+                  ))}
+                </div>
+                <Button asChild className="mt-8">
+                    <Link href="/signup">
+                        {t.accessResourcesButton} <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+              </motion.div>
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer(0.2, 0)}>
+                <h3 className="text-2xl font-bold mb-6 flex items-center"><BookCheck className="w-7 h-7 mr-3 text-primary"/> {t.subjectsCoveredTitle}</h3>
+                <p className="text-muted-foreground mb-6">{t.subjectsCoveredDescription}</p>
+                <div className="flex flex-wrap gap-3">
+                  {['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'History', 'Geography', 'Economics', 'Accountancy', 'Business Studies'].map((item, index) => (
+                    <motion.div key={index} variants={fadeInUp} className="bg-background rounded-full px-4 py-2 text-sm font-semibold shadow-sm border">
+                      {item}
+                    </motion.div>
+                  ))}
+                </div>
+                 <Button asChild variant="outline" className="mt-8">
+                    <Link href="/dashboard/student/find-teachers">
+                        {t.findSubjectTutorButton} <Search className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Featured Tutors Section */}
         {featuredTeachers && featuredTeachers.length > 0 && (
-          <section className="py-16 md:py-24 bg-muted/40">
+          <section className="py-16 md:py-24 bg-background">
             <div className="container px-4 md:px-6">
               <motion.div
                 initial="hidden"
@@ -419,7 +469,7 @@ export default function HomePage() {
         )}
 
         {/* Testimonials Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
             <motion.div 
               initial="hidden"
@@ -471,7 +521,7 @@ export default function HomePage() {
         </section>
         
          {/* Final CTA */}
-        <section className="py-16 md:py-32 bg-muted/40">
+        <section className="py-16 md:py-32 bg-background">
             <div className="container px-4 md:px-6 text-center">
                 <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
                     <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.ctaTitle}</h2>
