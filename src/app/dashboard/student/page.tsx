@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -173,11 +173,11 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getGreeting()}</p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Discover New Teachers</CardTitle>
-                                <CardDescription>Browse profiles and find the right teacher for you.</CardDescription>
+                                <CardTitle>Discover Teachers</CardTitle>
+                                <CardDescription>Find the right teacher for you.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                <Button asChild>
@@ -188,11 +188,26 @@ export default function StudentDashboardPage() {
                                </Button>
                             </CardContent>
                         </Card>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Book Home Teacher</CardTitle>
+                                <CardDescription>Request a personalized home tutor.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <Button asChild>
+                                    <Link href="/dashboard/student/book-home-teacher">
+                                        <Home className="mr-2 h-4 w-4" />
+                                        Book a Teacher
+                                    </Link>
+                               </Button>
+                            </CardContent>
+                        </Card>
 
                         <Card>
                             <CardHeader>
                                 <CardTitle>Free Study Material</CardTitle>
-                                <CardDescription>Access free notes and resources curated by our team.</CardDescription>
+                                <CardDescription>Access free notes and resources.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                <Button asChild>
@@ -207,7 +222,7 @@ export default function StudentDashboardPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Shop</CardTitle>
-                                <CardDescription>Exclusive merchandise and study kits curated by admins.</CardDescription>
+                                <CardDescription>Exclusive merchandise and kits.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                <Button asChild>

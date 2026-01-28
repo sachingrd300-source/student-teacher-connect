@@ -119,7 +119,10 @@ service cloud.firestore {
     }
 
     match /homeBookings/{bookingId} {
-      allow read, write: if isAdmin();
+      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
+      allow read: if isAdmin() || (isStudent() && resource.data.studentId == request.auth.uid);
+      allow list: if isAdmin();
+      allow update, delete: if isAdmin();
     }
   }
 }
