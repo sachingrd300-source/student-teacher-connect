@@ -8,23 +8,41 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { MainHeader } from "@/components/main-header";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRight, Loader2, School, CheckCircle } from "lucide-react";
+import { ArrowRight, Loader2, School, CheckCircle, User, Briefcase, ShieldCheck } from "lucide-react";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import placeholderImages from '@/lib/placeholder-images.json';
 
-const fadeIn = (delay = 0, duration = 0.5) => ({
-  hidden: { opacity: 0, y: 20 },
+// More advanced variants for staggering animations
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const fadeIn = (direction = 'up', delay = 0) => ({
+  hidden: {
+    opacity: 0,
+    y: direction === 'up' ? 20 : direction === 'down' ? -20 : 0,
+    x: direction === 'left' ? 20 : direction === 'right' ? -20 : 0,
+  },
   visible: {
     opacity: 1,
     y: 0,
+    x: 0,
     transition: {
       delay,
-      duration,
+      duration: 0.6,
       ease: "easeOut",
     },
   },
 });
+
 
 const detailedFeatures = [
     {
@@ -97,16 +115,16 @@ export default function Home() {
                 <motion.div 
                     initial="hidden"
                     animate="visible"
-                    variants={fadeIn()}
+                    variants={staggerContainer}
                     className="space-y-6 text-center md:text-left"
                 >
-                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-foreground">
+                    <motion.h1 variants={fadeIn('up')} className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-foreground">
                         Modern Education, <span className="text-primary">Seamlessly Connected.</span>
-                    </h1>
-                    <p className="max-w-xl mx-auto md:mx-0 text-lg text-muted-foreground">
+                    </motion.h1>
+                    <motion.p variants={fadeIn('up')} className="max-w-xl mx-auto md:mx-0 text-lg text-muted-foreground">
                         EduConnect Pro is the ultimate platform connecting dedicated teachers with eager students. Manage batches, share materials, and track progress, all in one place.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    </motion.p>
+                    <motion.div variants={fadeIn('up')} className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                         <Button asChild size="lg" className="font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-105 transition-all">
                            <Link href="/signup">
                              Get Started Free
@@ -118,12 +136,12 @@ export default function Home() {
                                 I'm a Teacher
                             </Link>
                         </Button>
-                    </div>
+                    </motion.div>
                 </motion.div>
                  <motion.div
                     initial="hidden"
                     animate="visible"
-                    variants={fadeIn(0.2)}
+                    variants={fadeIn('left')}
                  >
                     <Image
                         src={hero.src}
@@ -137,15 +155,56 @@ export default function Home() {
                 </motion.div>
             </div>
         </section>
+
+        {/* Who is it for Section */}
+        <section className="py-16 md:py-24 bg-muted/50">
+            <div className="container px-4 md:px-6">
+                <motion.div
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    variants={fadeIn('up')}
+                    className="text-center space-y-4 mb-16"
+                >
+                    <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">One Platform, Limitless Roles</h2>
+                    <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
+                        Whether you're a student eager to learn, a teacher ready to inspire, or an admin overseeing it all, EduConnect Pro has you covered.
+                    </p>
+                </motion.div>
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                    variants={staggerContainer}
+                    className="grid md:grid-cols-3 gap-8"
+                >
+                    {roles.map((role, i) => (
+                        <motion.div key={role.title} variants={fadeIn('up')}>
+                             <Card className="h-full text-center p-6 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                                <CardHeader className="p-0 items-center">
+                                    <div className="p-4 bg-primary/10 rounded-full mb-4 inline-block">
+                                        {role.icon}
+                                    </div>
+                                    <CardTitle>{role.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0 mt-4">
+                                    <CardDescription>{role.description}</CardDescription>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            </div>
+        </section>
         
         {/* Detailed Features Section */}
-        <section id="features" className="py-16 md:py-24 bg-muted/50">
+        <section id="features" className="py-16 md:py-24">
             <div className="container px-4 md:px-6 space-y-24">
                  <motion.div 
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.3 }}
-                    variants={fadeIn()}
+                    variants={fadeIn('up')}
                     className="text-center space-y-4"
                 >
                      <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">A Platform Built for Connection and Growth</h2>
@@ -159,10 +218,9 @@ export default function Home() {
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, amount: 0.3 }}
-                        variants={fadeIn(0.2)}
                         className={`grid md:grid-cols-2 gap-12 md:gap-16 items-center`}
                     >
-                        <div className={`space-y-6 ${feature.imagePosition === 'right' ? 'md:order-1' : 'md:order-2'}`}>
+                        <motion.div variants={fadeIn(feature.imagePosition === 'right' ? 'right' : 'left')} className={`space-y-6 ${feature.imagePosition === 'right' ? 'md:order-1' : 'md:order-2'}`}>
                             <h3 className="text-3xl font-bold tracking-tight">{feature.title}</h3>
                             <p className="text-muted-foreground md:text-lg">{feature.description}</p>
                             <ul className="space-y-4">
@@ -173,8 +231,8 @@ export default function Home() {
                                     </li>
                                 ))}
                             </ul>
-                        </div>
-                        <div className={`${feature.imagePosition === 'right' ? 'md:order-2' : 'md:order-1'}`}>
+                        </motion.div>
+                        <motion.div variants={fadeIn(feature.imagePosition === 'right' ? 'left' : 'right')} className={`${feature.imagePosition === 'right' ? 'md:order-2' : 'md:order-1'}`}>
                             <Image
                                 src={feature.image.src}
                                 alt={feature.image.alt}
@@ -183,20 +241,20 @@ export default function Home() {
                                 className="rounded-xl shadow-2xl"
                                 data-ai-hint={feature.image.hint}
                             />
-                        </div>
+                        </motion.div>
                     </motion.div>
                 ))}
             </div>
         </section>
 
         {/* How it Works Section */}
-        <section id="how-it-works" className="py-16 md:py-24">
+        <section id="how-it-works" className="py-16 md:py-24 bg-muted/50">
              <div className="container px-4 md:px-6">
                 <motion.div 
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.3 }}
-                    variants={fadeIn()}
+                    variants={fadeIn('up')}
                     className="text-center space-y-4 mb-16"
                 >
                      <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Get Started in Minutes</h2>
@@ -205,18 +263,18 @@ export default function Home() {
                      </p>
                 </motion.div>
                 <div className="relative grid md:grid-cols-3 gap-8">
-                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block"></div>
+                    <div className="absolute top-12 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block"></div>
                     {steps.map((step, i) => (
                       <motion.div
                         key={step.title}
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, amount: 0.5 }}
-                        variants={fadeIn(i * 0.15)}
+                        variants={fadeIn('up', i * 0.15)}
                         className="relative"
                       >
-                        <div className="relative z-10 flex flex-col items-center text-center p-6 bg-background">
-                            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground font-bold text-2xl mb-6 ring-8 ring-background">{i + 1}</div>
+                        <div className="relative z-10 flex flex-col items-center text-center p-6 bg-muted/50">
+                            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground font-bold text-2xl mb-6 ring-8 ring-muted/50">{i + 1}</div>
                             <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
                             <p className="text-muted-foreground">{step.description}</p>
                         </div>
@@ -227,13 +285,13 @@ export default function Home() {
         </section>
 
         {/* Dashboard Preview Section */}
-        <section id="dashboard-preview" className="py-16 md:py-24 bg-muted/50">
+        <section id="dashboard-preview" className="py-16 md:py-24">
             <div className="container px-4 md:px-6">
                  <motion.div 
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.3 }}
-                    variants={fadeIn()}
+                    variants={fadeIn('up')}
                     className="text-center space-y-4 mb-12"
                 >
                      <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Your All-in-One Dashboard</h2>
@@ -245,7 +303,7 @@ export default function Home() {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.2 }}
-                    variants={fadeIn()}
+                    variants={fadeIn('up')}
                     className="max-w-5xl mx-auto"
                 >
                   <div className="rounded-xl shadow-2xl overflow-hidden border">
@@ -257,13 +315,13 @@ export default function Home() {
 
 
         {/* Testimonials */}
-        <section id="testimonials" className="py-16 md:py-24">
+        <section id="testimonials" className="py-16 md:py-24 bg-muted/50">
           <div className="container px-4 md:px-6">
             <motion.div 
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.3 }}
-                variants={fadeIn()}
+                variants={fadeIn('up')}
                 className="text-center space-y-4 mb-12"
             >
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Loved by Students and Teachers</h2>
@@ -271,16 +329,20 @@ export default function Home() {
                 See what members of our community are saying about their experience.
               </p>
             </motion.div>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {testimonials.map((testimonial, i) => (
+            <motion.div 
+                className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={staggerContainer}
+            >
+              {testimonials.map((testimonial) => (
                 <motion.div
                   key={testimonial.name}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.5 }}
-                  variants={fadeIn(i * 0.1)}
+                  variants={fadeIn('up')}
+                  whileHover={{ scale: 1.05, y: -5, boxShadow: "0px 10px 30px -5px rgba(0,0,0,0.1)" }}
                 >
-                  <Card className="h-full flex flex-col">
+                  <Card className="h-full flex flex-col rounded-2xl shadow-lg transition-all duration-300">
                     <CardContent className="p-6 flex-grow">
                       <p className="text-muted-foreground mb-6">"{testimonial.quote}"</p>
                     </CardContent>
@@ -296,7 +358,7 @@ export default function Home() {
                   </Card>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
       </main>
@@ -359,6 +421,25 @@ const steps = [
         description: "Access all your materials, announcements, and tools in one organized dashboard."
     }
 ];
+
+const roles = [
+    {
+        title: "For Students",
+        description: "Join batches, access materials, track your progress, and engage with a focused learning environment.",
+        icon: <User className="h-8 w-8 text-primary" />,
+    },
+    {
+        title: "For Teachers",
+        description: "Create and manage batches, share resources, post announcements, and monitor student performance effortlessly.",
+        icon: <Briefcase className="h-8 w-8 text-primary" />,
+    },
+    {
+        title: "For Admins",
+        description: "Oversee the entire platform, manage free content, handle home tutor bookings, and maintain the shop.",
+        icon: <ShieldCheck className="h-8 w-8 text-primary" />,
+    }
+];
+
 
 const testimonials = [
   {
