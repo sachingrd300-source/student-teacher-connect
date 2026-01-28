@@ -256,9 +256,12 @@ export default function AdminDashboardPage() {
                     </Card>
 
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center"><ShoppingBag className="mr-3 h-6 w-6 text-primary"/> Manage Shop</CardTitle></CardHeader>
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><ShoppingBag className="mr-3 h-6 w-6 text-primary"/> Manage Shop</CardTitle>
+                            <CardDescription>Add new products or remove existing ones from the student-facing shop.</CardDescription>
+                        </CardHeader>
                         <CardContent>
-                             <form onSubmit={handleShopItemUpload} className="grid gap-6 p-6 mb-6 border rounded-lg">
+                             <form onSubmit={handleShopItemUpload} className="grid gap-6 p-6 mb-8 border rounded-lg bg-background">
                                 <h3 className="text-lg font-semibold">Add New Item</h3>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
@@ -272,7 +275,7 @@ export default function AdminDashboardPage() {
                                 </Button>
                             </form>
                              
-                            <h3 className="text-lg font-semibold mb-4">Existing Items</h3>
+                            <h3 className="text-lg font-semibold mb-4">Existing Shop Items</h3>
                              <div className="grid gap-4">
                                 {shopItems && shopItems.length > 0 ? (
                                     shopItems.map(item => (
@@ -296,10 +299,11 @@ export default function AdminDashboardPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Manage Free Study Materials</CardTitle>
-                            <CardDescription>Upload materials that will be visible to all students.</CardDescription>
+                            <CardDescription>Upload and manage materials that will be visible to all students.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleMaterialUpload} className="grid gap-6">
+                            <form onSubmit={handleMaterialUpload} className="grid gap-6 p-6 mb-8 border rounded-lg bg-background">
+                                <h3 className="text-lg font-semibold">Upload New Material</h3>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
                                     <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
@@ -309,11 +313,9 @@ export default function AdminDashboardPage() {
                                     {isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material
                                 </Button>
                             </form>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                         <CardHeader><CardTitle>Uploaded Free Materials</CardTitle></CardHeader>
-                         <CardContent className="grid gap-4">
+                            
+                            <h3 className="text-lg font-semibold mb-4">Uploaded Free Materials</h3>
+                             <div className="grid gap-4">
                              {materials && materials.length > 0 ? (
                                 materials.map(material => (
                                     <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
@@ -329,7 +331,8 @@ export default function AdminDashboardPage() {
                                     </div>
                                 ))
                              ) : <p className="text-muted-foreground text-center py-8">No free materials have been uploaded yet.</p>}
-                         </CardContent>
+                             </div>
+                        </CardContent>
                     </Card>
                 </div>
             </main>
