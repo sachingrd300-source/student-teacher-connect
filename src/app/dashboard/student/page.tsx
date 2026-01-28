@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -149,8 +149,8 @@ export default function StudentDashboardPage() {
 
     if (isLoading || !userProfile) {
         return (
-            <div className="flex h-screen items-center justify-center flex-col gap-4">
-                <School className="h-12 w-12 animate-pulse text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <School className="h-16 w-16 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Loading your courses...</p>
             </div>
         );
@@ -176,13 +176,28 @@ export default function StudentDashboardPage() {
                      <Card>
                         <CardHeader>
                             <CardTitle>Discover New Teachers</CardTitle>
+                            <CardDescription>Browse profiles and find the right teacher for you.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                           <p className="text-muted-foreground mb-4">Browse profiles and find the right teacher for you.</p>
                            <Button asChild>
                                 <Link href="/dashboard/student/find-teachers">
                                     <Search className="mr-2 h-4 w-4" />
                                     Find Teachers
+                                </Link>
+                           </Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Free Study Material</CardTitle>
+                            <CardDescription>Access free notes and resources curated by our team.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <Button asChild>
+                                <Link href="/dashboard/student/free-materials">
+                                    <Gift className="mr-2 h-4 w-4" />
+                                    Browse Free Materials
                                 </Link>
                            </Button>
                         </CardContent>

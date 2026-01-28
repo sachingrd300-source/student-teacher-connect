@@ -105,5 +105,11 @@ service cloud.firestore {
       allow update, delete: if isAdmin() ||
                       (isTeacher() && resource.data.teacherId == request.auth.uid);
     }
+
+    match /freeMaterials/{materialId} {
+      allow read: if isStudent() || isAdmin();
+      allow list: if isStudent() || isAdmin();
+      allow write: if isAdmin();
+    }
   }
 }

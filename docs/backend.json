@@ -121,6 +121,19 @@
       },
       "required": ["title", "fileURL", "fileType", "batchId", "teacherId", "createdAt"]
     },
+    "FreeMaterial": {
+      "title": "Free Material",
+      "type": "object",
+      "description": "Represents free study material uploaded by an admin, available to all students.",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "fileURL": { "type": "string", "format": "uri" },
+        "fileType": { "type": "string", "description": "e.g., pdf, png, jpg" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "fileURL", "fileType", "createdAt"]
+    },
     "Activity": {
       "title": "Activity",
       "type": "object",
@@ -199,6 +212,10 @@
     "/batches/{batchId}/materials/{materialId}": {
       "schema": { "$ref": "#/entities/StudyMaterial" },
       "description": "Stores study materials for a specific batch."
+    },
+    "/freeMaterials/{materialId}": {
+      "schema": { "$ref": "#/entities/FreeMaterial" },
+      "description": "Stores free study materials uploaded by admins, accessible to all students."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
