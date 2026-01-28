@@ -98,7 +98,7 @@ export default function StudentProfilePage() {
                             <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="Mobile Number" value={studentProfile.mobileNumber} />
                             <InfoItem icon={<UserIcon className="w-5 h-5 text-primary" />} label="Father's Name" value={studentProfile.fatherName} />
                             <InfoItem icon={<GraduationCap className="w-5 h-5 text-primary" />} label="Class" value={studentProfile.class} />
-                            <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Address" value={studentProfile.address} />
+                            <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Home Address" value={studentProfile.address} />
                             
                             {studentProfile.bio && (
                                 <div className="border-t pt-4">

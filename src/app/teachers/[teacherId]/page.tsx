@@ -104,7 +104,7 @@ export default function TeacherProfilePage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
                                 <InfoItem icon={<Building className="w-5 h-5 text-primary" />} label="Coaching Center" value={teacherProfile.coachingCenterName} />
                                 <InfoItem icon={<Wallet className="w-5 h-5 text-primary" />} label="Fee Structure" value={teacherProfile.fee} />
-                                <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Address" value={teacherProfile.address} />
+                                <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Tuition Address" value={teacherProfile.address} />
                                 <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="WhatsApp" value={teacherProfile.whatsappNumber} />
                             </div>
 

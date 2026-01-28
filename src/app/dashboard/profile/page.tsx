@@ -36,6 +36,7 @@ export default function ProfilePage() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [errors, setErrors] = useState<{ address?: string }>({});
     
     // Form state
     const [name, setName] = useState('');
@@ -89,6 +90,17 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         if (!userProfileRef || !userProfile) return;
+
+        const newErrors: { address?: string } = {};
+        if (userProfile.role === 'teacher' && !address.trim()) {
+            newErrors.address = 'Address is mandatory for teachers to be listed.';
+        }
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            return;
+        }
+
         setIsSaving(true);
         try {
             const dataToUpdate: { [key: string]: any } = {
@@ -124,6 +136,7 @@ export default function ProfilePage() {
             setName(userProfile.name || '');
             setBio(userProfile.bio || '');
             setAddress(userProfile.address || '');
+            setErrors({}); // Clear errors
 
             if (userProfile.role === 'teacher') {
                 setSubject(userProfile.subject || '');
@@ -194,10 +207,33 @@ export default function ProfilePage() {
                                 )}
                             </div>
                             
-                             <div className="grid gap-2">
-                                <Label htmlFor="address">Address</Label>
+                            <div className="grid gap-2">
+                                <Label htmlFor="address">
+                                    {userProfile.role === 'teacher' ? 'Tuition Address' : 'Home Address'}
+                                    {userProfile.role === 'teacher' && <span className="text-destructive"> *</span>}
+                                </Label>
                                 {isEditing ? (
-                                    <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your full address" />
+                                    <>
+                                        <Textarea
+                                            id="address"
+                                            value={address}
+                                            onChange={(e) => setAddress(e.target.value)}
+                                            placeholder={
+                                                userProfile.role === 'teacher' 
+                                                ? "Your tuition center or primary teaching location. This is required." 
+                                                : "Your home address for finding local tutors."
+                                            }
+                                            required={userProfile.role === 'teacher'}
+                                            className={errors.address ? 'border-destructive' : ''}
+                                        />
+                                        {errors.address && <p className="text-sm font-medium text-destructive">{errors.address}</p>}
+                                        <p className="text-xs text-muted-foreground">
+                                            {userProfile.role === 'teacher' 
+                                                ? "This address will be visible to students to help them find you."
+                                                : "Your address is kept private and only used to find nearby tutors."
+                                            }
+                                        </p>
+                                    </>
                                 ) : (
                                     <p className="text-sm font-medium whitespace-pre-wrap">{address || <span className="text-muted-foreground">Not set</span>}</p>
                                 )}
