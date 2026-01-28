@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -17,27 +18,15 @@ import {
 } from '@/components/ui/sheet';
 
 export function MainHeader() {
-    const navLinks = [
-        { href: "#features", label: "Features" },
-        { href: "#how-it-works", label: "How it Works" },
-        { href: "#testimonials", label: "Testimonials" },
-    ];
-
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
                 <School className="h-6 w-6 text-primary" />
-                <span className="text-lg font-semibold">EduConnect Pro</span>
+                <span className="text-lg font-semibold">Achievers Community</span>
             </Link>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6 ml-auto">
-                {navLinks.map(link => (
-                     <Link key={link.href} href={link.href} className="text-sm font-medium hover:text-primary transition-colors">
-                        {link.label}
-                    </Link>
-                ))}
-                
+            <nav className="hidden md:flex items-center gap-4 ml-auto">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost">
@@ -55,7 +44,7 @@ export function MainHeader() {
                 </DropdownMenu>
 
                 <Button asChild>
-                   <Link href="/signup">Get Started</Link>
+                   <Link href="/signup/teacher">Apply Now</Link>
                 </Button>
             </nav>
 
@@ -76,19 +65,9 @@ export function MainHeader() {
                                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                                 >
                                     <School className="h-6 w-6 text-primary" />
-                                    <span>EduConnect Pro</span>
+                                    <span>Achievers Community</span>
                                 </Link>
                             </SheetClose>
-                            {navLinks.map((link) => (
-                                <SheetClose asChild key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-muted-foreground hover:text-foreground"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </SheetClose>
-                            ))}
                             <div className="mt-8 grid gap-2">
                                 <SheetClose asChild>
                                     <Button asChild variant="outline" className="w-full">
@@ -102,7 +81,7 @@ export function MainHeader() {
                                 </SheetClose>
                                 <SheetClose asChild>
                                     <Button asChild className="w-full">
-                                        <Link href="/signup">Get Started</Link>
+                                        <Link href="/signup/teacher">Apply Now</Link>
                                     </Button>
                                 </SheetClose>
                             </div>
