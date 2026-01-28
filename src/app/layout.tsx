@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Achievers Community - Home Tutors Required in Giridih",
-  description: "Join our team of passionate home tutors in Giridih. Flexible hours, competitive pay, and professional growth. Apply now at Achievers Community.",
+  title: "EduConnect Pro - The Future of Education",
+  description: "Empowering students, teachers, and admins with a unified platform for learning, management, and growth.",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased overflow-x-hidden",
+          "min-h-screen bg-background font-sans antialiased",
           inter.variable
         )}
       >

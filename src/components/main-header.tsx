@@ -22,7 +22,7 @@ export function MainHeader() {
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
                 <School className="h-6 w-6 text-primary" />
-                <span className="text-lg font-semibold">Achievers Community</span>
+                <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
             </Link>
             
             {/* Desktop Navigation */}
@@ -43,9 +43,21 @@ export function MainHeader() {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button asChild>
-                   <Link href="/signup/teacher">Apply Now</Link>
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button>
+                            Sign Up <ChevronDown className="ml-1 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href="/signup">As a Student</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/signup/teacher">As a Teacher</Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </nav>
 
             {/* Mobile Navigation */}
@@ -65,7 +77,7 @@ export function MainHeader() {
                                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                                 >
                                     <School className="h-6 w-6 text-primary" />
-                                    <span>Achievers Community</span>
+                                    <span>EduConnect Pro</span>
                                 </Link>
                             </SheetClose>
                             <div className="mt-8 grid gap-2">
@@ -79,9 +91,14 @@ export function MainHeader() {
                                         <Link href="/login/teacher">Teacher Login</Link>
                                     </Button>
                                 </SheetClose>
+                                 <SheetClose asChild>
+                                    <Button asChild className="w-full">
+                                        <Link href="/signup">Sign up as Student</Link>
+                                    </Button>
+                                </SheetClose>
                                 <SheetClose asChild>
                                     <Button asChild className="w-full">
-                                        <Link href="/signup/teacher">Apply Now</Link>
+                                        <Link href="/signup/teacher">Sign up as Teacher</Link>
                                     </Button>
                                 </SheetClose>
                             </div>

@@ -2,125 +2,129 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Check, Phone, MessageSquare, Mail } from "lucide-react";
+import { ArrowRight, BookOpen, UserCog, Users } from "lucide-react";
+import placeholderImages from '@/lib/placeholder-images.json';
 import { motion } from "framer-motion";
 
-const whyJoinUsItems = [
-    "Flexible Hours",
-    "Competitive Pay",
-    "Impactful Work",
-    "Professional Growth",
-];
-
-const lookingForItems = [
-    "Passionate Educators",
-    "Subject Experts (All Grades)",
-    "Good Communication",
-    "Local Candidates (Giridih)",
-];
-
-const fadeIn = (delay = 0) => ({
+const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      delay,
       duration: 0.6,
       ease: "easeOut",
     },
   },
-});
+};
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen bg-muted/30">
+    <div className="flex flex-col min-h-screen">
       <MainHeader />
       <main className="flex-1">
-        <section className="py-12 md:py-20">
-          <motion.div 
+        {/* Hero Section */}
+        <section className="relative w-full h-[60vh] md:h-[80vh] flex items-center justify-center text-center text-white overflow-hidden">
+          <Image
+            src={placeholderImages.hero.src}
+            alt={placeholderImages.hero.alt}
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint={placeholderImages.hero.hint}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/20" />
+          <motion.div
             initial="hidden"
             animate="visible"
-            variants={fadeIn()}
-            className="container px-4 md:px-6"
+            variants={fadeIn}
+            className="relative z-10 p-4"
           >
-            <Card className="max-w-4xl mx-auto rounded-2xl shadow-2xl overflow-hidden border-2 border-primary/20">
-              <CardContent className="p-6 md:p-12">
-                <div className="text-center">
-                  <div className="inline-flex items-center flex-col sm:flex-row gap-4 mb-4">
-                    <div className="flex items-center justify-center w-20 h-20 bg-primary/10 rounded-lg">
-                      <span className="text-4xl font-bold text-primary font-serif">AC</span>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl md:text-4xl font-bold text-foreground">Achievers Community</h1>
-                    </div>
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-primary">
-                    HOME TUTORS REQUIRED
-                  </h2>
-                  <p className="mt-2 text-lg text-muted-foreground font-semibold">
-                    EMPOWERING MINDS IN GIRIDIH
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8 md:gap-12 my-12">
-                  <div>
-                    <h3 className="text-xl font-bold mb-4">Why Join Us?</h3>
-                    <ul className="space-y-3">
-                      {whyJoinUsItems.map((item) => (
-                        <li key={item} className="flex items-start">
-                          <Check className="w-5 h-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                          <span className="text-foreground">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-4">Looking for:</h3>
-                    <ul className="space-y-3">
-                      {lookingForItems.map((item) => (
-                        <li key={item} className="flex items-start">
-                          <Check className="w-5 h-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                          <span className="text-foreground">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="text-center mb-10">
-                  <Button asChild size="lg" className="font-bold text-lg px-12 py-6 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-105 transition-all">
-                    <Link href="/signup/teacher">
-                      APPLY NOW
-                    </Link>
-                  </Button>
-                </div>
-                
-                <div className="border-t pt-8 space-y-4 text-center">
-                   <div className="flex flex-col md:flex-row items-center justify-center gap-x-6 gap-y-3">
-                     <div className="flex items-center gap-2">
-                         <Phone className="w-5 h-5 text-primary" />
-                         <span className="font-semibold">Mobile: <a href="tel:+916207639300" className="hover:underline">+91 6207639300</a>, <a href="tel:+919431974149" className="hover:underline">+91 9431974149</a></span>
-                     </div>
-                      <div className="flex items-center gap-2">
-                         <MessageSquare className="w-5 h-5 text-green-500" />
-                         <span className="font-semibold">WhatsApp: <a href="https://wa.me/919523496514" target="_blank" rel="noopener noreferrer" className="hover:underline">+91 9523496514</a></span>
-                     </div>
-                   </div>
-                    <div className="flex items-center justify-center gap-2">
-                     <Mail className="w-5 h-5 text-primary" />
-                     <span className="font-semibold">Email: <a href="mailto:achievers0community@gmail.com" className="hover:underline">achievers0community@gmail.com</a></span>
-                   </div>
-                 </div>
-
-              </CardContent>
-            </Card>
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter">
+              The Future of Education, Connected.
+            </h1>
+            <p className="mt-4 max-w-2xl mx-auto text-lg md:text-xl">
+              Empowering students, teachers, and admins with a unified platform for learning, management, and growth.
+            </p>
+            <div className="mt-8 flex justify-center gap-4">
+              <Button asChild size="lg">
+                <Link href="/signup">
+                  Join as a Student <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link href="/signup/teacher">Join as a Teacher</Link>
+              </Button>
+            </div>
           </motion.div>
         </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-12 md:py-24 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold font-serif">A Platform for Everyone</h2>
+              <p className="mt-2 text-muted-foreground md:text-lg">Tailored experiences for every role in education.</p>
+            </div>
+            <div className="grid gap-10 md:grid-cols-3">
+              <FeatureCard
+                icon={<Users className="w-8 h-8 text-primary" />}
+                title="For Teachers"
+                description="Manage batches, upload materials, track student progress, handle fees, and post announcements with ease. Focus on what you do best: teaching."
+                image={placeholderImages.featureTeacher}
+              />
+              <FeatureCard
+                icon={<BookOpen className="w-8 h-8 text-primary" />}
+                title="For Students"
+                description="Join batches, access study materials, track your test results, and stay updated. Engage in a gamified learning journey with daily rewards."
+                image={placeholderImages.featureStudent}
+              />
+              <FeatureCard
+                icon={<UserCog className="w-8 h-8 text-primary" />}
+                title="For Admins"
+                description="Oversee the entire platform. Manage users, handle home tutor bookings, add free resources, and manage the platform's shop."
+                image={placeholderImages.featureAdmin}
+              />
+            </div>
+          </div>
+        </section>
       </main>
+      <footer className="py-6 border-t">
+        <div className="container text-center text-muted-foreground text-sm">
+          © {new Date().getFullYear()} EduConnect Pro. All Rights Reserved.
+        </div>
+      </footer>
     </div>
   );
+}
+
+function FeatureCard({ icon, title, description, image }: { icon: React.ReactNode, title: string, description: string, image: { src: string, alt: string, width: number, height: number, hint: string } }) {
+  return (
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={fadeIn}
+      className="flex flex-col items-center text-center"
+    >
+      <div className="relative w-full h-56 mb-6 rounded-lg overflow-hidden">
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
+          data-ai-hint={image.hint}
+        />
+      </div>
+      <div className="p-4 bg-primary/10 rounded-full mb-4">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
+    </motion.div>
+  )
 }
