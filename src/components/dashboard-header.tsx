@@ -50,15 +50,17 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
         
         <div className="flex items-center gap-2 ml-auto">
              {userProfile?.role === 'student' && (
-                <div className="flex items-center gap-2 sm:gap-4 sm:border-r sm:pr-4 sm:mr-2">
-                    <div className="flex items-center gap-1 sm:gap-2 font-semibold text-sm" title="Coins">
-                        <span role="img" aria-label="Coins">🪙</span>
-                        {userProfile?.coins ?? 0}
-                    </div>
-                    <div className="flex items-center gap-1 sm:gap-2 font-semibold text-sm" title="Daily Streak">
-                        <span role="img" aria-label="Streak">🔥</span>
-                        {userProfile?.streak ?? 0}
-                    </div>
+                <div className="flex items-center sm:border-r sm:pr-4 sm:mr-2">
+                    <Link href="/dashboard/student/rewards" className="flex items-center gap-2 sm:gap-4 p-2 -m-2 rounded-md hover:bg-muted transition-colors" title="View Daily Rewards">
+                        <div className="flex items-center gap-1 sm:gap-2 font-semibold text-sm">
+                            <span role="img" aria-label="Coins">🪙</span>
+                            {userProfile?.coins ?? 0}
+                        </div>
+                        <div className="flex items-center gap-1 sm:gap-2 font-semibold text-sm">
+                            <span role="img" aria-label="Streak">🔥</span>
+                            {userProfile?.streak ?? 0}
+                        </div>
+                    </Link>
                 </div>
             )}
             <DropdownMenu>
