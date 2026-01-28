@@ -104,6 +104,7 @@ export default function StudentDashboardPage() {
 
     const latestBatchId = approvedEnrollments[0]?.batchId;
     const studyLink = latestBatchId ? `/dashboard/student/batch/${latestBatchId}/study` : '/dashboard/student/find-teachers';
+    const startButtonText = latestBatchId ? 'Start' : 'Explore';
 
 
     useEffect(() => {
@@ -250,28 +251,35 @@ export default function StudentDashboardPage() {
                         <CardContent className="pt-2">
                             <div className="flex items-center pb-2 overflow-x-auto custom-scrollbar">
                                 <div className="inline-flex items-start gap-4 py-2 px-2">
-                                    {days.map((day) => {
+                                    {days.map((day, index) => {
                                         const isCompleted = day.status === 'completed';
                                         const isToday = day.status === 'today';
+                                        const isBonus = day.day === 7;
+                                        
+                                        const isLineFilled = day.status === 'completed' || day.status === 'today';
+                                        const showLine = index < days.length - 1;
 
                                         return (
-                                            <div key={day.day} className="flex flex-col items-center gap-2 text-center w-20 flex-shrink-0">
-                                                <div
-                                                    className={cn(
-                                                        "relative flex items-center justify-center w-16 h-16 rounded-full border-4 font-semibold text-sm transition-all duration-300",
-                                                        isCompleted && "bg-green-100 border-green-500 text-green-700",
-                                                        isToday && "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20",
-                                                        !isCompleted && !isToday && "bg-muted border-border text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {isCompleted ? <Check className="w-7 h-7" /> : 
-                                                     isToday ? <Sparkles className="w-7 h-7" /> :
-                                                     (day.day === 7 ? <Gift className="w-7 h-7" /> : `Day ${day.day}`)}
+                                            <div key={day.day} className="flex items-center">
+                                                <div className="flex flex-col items-center gap-2 text-center w-20 flex-shrink-0">
+                                                    <div
+                                                        className={cn(
+                                                            "relative flex items-center justify-center w-12 h-12 rounded-full border-2 font-semibold text-xs transition-all duration-300",
+                                                            isCompleted && "bg-green-100 border-green-500 text-green-700",
+                                                            isToday && "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 w-16 h-16",
+                                                            !isCompleted && !isToday && "bg-muted border-border text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {isCompleted ? <Check className="w-6 h-6" /> : 
+                                                        isToday ? <Sparkles className="w-7 h-7" /> :
+                                                        (isBonus ? <Gift className="w-6 h-6" /> : `Day ${day.day}`)}
+                                                    </div>
+                                                    <p className={cn(
+                                                        "text-xs font-bold",
+                                                        isToday ? "text-primary" : "text-muted-foreground"
+                                                    )}>+ {day.reward} Coins</p>
                                                 </div>
-                                                <p className={cn(
-                                                    "text-xs font-bold",
-                                                    isToday ? "text-primary" : "text-muted-foreground"
-                                                )}>+ {day.reward} Coins</p>
+                                                {showLine && <div className={cn("w-6 h-1 mx-2 rounded-full", isLineFilled ? 'bg-primary/50' : 'bg-border')} />}
                                             </div>
                                         );
                                     })}
@@ -280,7 +288,7 @@ export default function StudentDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 sm:gap-6">
                         {actionCards.map((card, i) => (
                             <motion.div
                                 key={card.title}
@@ -292,12 +300,12 @@ export default function StudentDashboardPage() {
                                 className="h-full"
                             >
                                 <Link href={card.href} className="block h-full">
-                                    <Card className="flex flex-col items-center justify-start text-center p-6 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
-                                        <div className="p-4 bg-primary/10 rounded-full mb-4">
+                                    <Card className="flex flex-col items-center justify-start text-center p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                        <div className="p-3 bg-primary/10 rounded-full mb-3">
                                             {card.icon}
                                         </div>
-                                        <h3 className="font-semibold text-lg">{card.title}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1 flex-grow">{card.description}</p>
+                                        <h3 className="font-semibold text-base sm:text-lg">{card.title}</h3>
+                                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex-grow">{card.description}</p>
                                     </Card>
                                 </Link>
                             </motion.div>
@@ -310,7 +318,7 @@ export default function StudentDashboardPage() {
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
                                     <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row sm:items-end gap-4">
                                         <div className="grid gap-2 flex-1">
                                             <Label htmlFor="batch-code">Enter Batch Code</Label>
@@ -401,7 +409,7 @@ export default function StudentDashboardPage() {
                                     <CardTitle>Today's Tasks</CardTitle>
                                     <CardDescription>Complete tasks to earn extra coins!</CardDescription>
                                 </CardHeader>
-                                <CardContent className="grid gap-3">
+                                <CardContent className="grid gap-3 p-4 pt-0">
                                     {todaysTasks.map(task => (
                                         <div key={task.id} className="flex items-center space-x-3">
                                             <Checkbox id={task.id} disabled />
@@ -422,3 +430,4 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
+
