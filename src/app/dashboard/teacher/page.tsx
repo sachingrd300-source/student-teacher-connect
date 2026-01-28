@@ -221,7 +221,7 @@ export default function TeacherDashboardPage() {
                                                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
                                             >
                                                 <div className="flex-grow">
-                                                    <p className="font-semibold text-lg">{batch.name}</p>
+                                                    <p className="font-semibold text-lg break-words">{batch.name}</p>
                                                     <div className="flex items-center gap-2 pt-1">
                                                         <p className="text-sm text-muted-foreground">Code:</p>
                                                         <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
@@ -270,13 +270,13 @@ export default function TeacherDashboardPage() {
                                                 variants={cardVariants}
                                                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
                                             >
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-4 flex-1 min-w-0">
                                                     <Avatar>
                                                         <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
                                                     </Avatar>
-                                                    <div>
-                                                        <p className="font-semibold">{req.studentName}</p>
-                                                        <p className="text-sm text-muted-foreground">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-semibold break-words">{req.studentName}</p>
+                                                        <p className="text-sm text-muted-foreground break-words">Wants to join: <span className="font-medium">{req.batchName}</span></p>
                                                         <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
                                                     </div>
                                                 </div>
