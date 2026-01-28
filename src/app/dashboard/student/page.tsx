@@ -157,24 +157,17 @@ export default function StudentDashboardPage() {
     
     const currentStreak = userProfile?.streak || 0;
     const totalDaysInJourney = 7;
-    // dayInCycle will be 1 for streak 0 or 1, 2 for streak 2, 7 for streak 7, 1 for streak 8, etc.
-    const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
+    // dayInCycle will be 1 for streak 0, 1 for streak 1, 2 for streak 2, 7 for streak 7, 1 for streak 8, etc.
+    const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : (currentStreak === 0 ? 1 : 0);
 
     const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
         const day = i + 1;
         let status: 'completed' | 'today' | 'locked' = 'locked';
         
-        if (currentStreak > 0) {
-            const effectiveStreakDay = ((currentStreak - 1) % totalDaysInJourney) + 1;
-            if (day < effectiveStreakDay) {
-                status = 'completed';
-            } else if (day === effectiveStreakDay) {
-                status = 'today';
-            }
-        } else {
-             if (day === 1) {
-                status = 'today';
-            }
+        if (day < dayInCycle) {
+            status = 'completed';
+        } else if (day === dayInCycle) {
+            status = 'today';
         }
         
         return { day, status };
@@ -225,9 +218,9 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         {/* Main Content */}
-                        <div className="lg:col-span-3 grid gap-8">
+                        <div className="lg:col-span-2 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
@@ -318,7 +311,7 @@ export default function StudentDashboardPage() {
                         </div>
 
                         {/* Sidebar */}
-                        <div className="lg:col-span-2 grid gap-8">
+                        <div className="lg:col-span-1 grid gap-8">
                              <motion.div variants={cardVariants} initial="hidden" animate="visible" custom={0}>
                                 <Card className="p-0 overflow-hidden rounded-2xl shadow-lg">
                                     <CardHeader>
