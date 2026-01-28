@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign } from 'lucide-react';
+import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign, Home } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Image from 'next/image';
 
@@ -43,6 +43,18 @@ interface ShopItem {
     createdAt: string;
 }
 
+interface HomeBooking {
+    id: string;
+    studentName: string;
+    fatherName?: string;
+    mobileNumber: string;
+    address: string;
+    studentClass: string;
+    status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+    createdAt: string;
+    assignedTeacherId?: string;
+}
+
 const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -68,6 +80,15 @@ export default function AdminDashboardPage() {
     const [itemPurchaseUrl, setItemPurchaseUrl] = useState('');
     const [itemImage, setItemImage] = useState<File | null>(null);
     const [isUploadingItem, setIsUploadingItem] = useState(false);
+    
+    // State for home bookings
+    const [bookingStudentName, setBookingStudentName] = useState('');
+    const [bookingFatherName, setBookingFatherName] = useState('');
+    const [bookingMobile, setBookingMobile] = useState('');
+    const [bookingAddress, setBookingAddress] = useState('');
+    const [bookingClass, setBookingClass] = useState('');
+    const [isCreatingBooking, setIsCreatingBooking] = useState(false);
+
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -77,6 +98,9 @@ export default function AdminDashboardPage() {
     
     const shopItemsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore]);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
+
+    const homeBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore]);
+    const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
 
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
@@ -177,9 +201,46 @@ export default function AdminDashboardPage() {
             console.error("Error deleting shop item: ", error);
         }
     };
+    
+    const handleCreateBooking = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!bookingStudentName.trim() || !bookingMobile.trim() || !bookingAddress.trim() || !bookingClass.trim() || !firestore) return;
+        
+        setIsCreatingBooking(true);
+        try {
+            await addDoc(collection(firestore, 'homeBookings'), {
+                studentName: bookingStudentName.trim(),
+                fatherName: bookingFatherName.trim(),
+                mobileNumber: bookingMobile.trim(),
+                address: bookingAddress.trim(),
+                studentClass: bookingClass.trim(),
+                status: 'Pending',
+                createdAt: new Date().toISOString(),
+            });
+            // Reset form
+            setBookingStudentName('');
+            setBookingFatherName('');
+            setBookingMobile('');
+            setBookingAddress('');
+            setBookingClass('');
+        } catch (error) {
+            console.error("Error creating home booking:", error);
+        } finally {
+            setIsCreatingBooking(false);
+        }
+    };
+
+    const handleDeleteBooking = async (bookingId: string) => {
+        if (!firestore) return;
+        try {
+            await deleteDoc(doc(firestore, 'homeBookings', bookingId));
+        } catch (error) {
+            console.error("Error deleting home booking:", error);
+        }
+    };
 
 
-    const isLoading = isUserLoading || profileLoading || materialsLoading || shopItemsLoading;
+    const isLoading = isUserLoading || profileLoading || materialsLoading || shopItemsLoading || bookingsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -199,6 +260,50 @@ export default function AdminDashboardPage() {
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Dashboard</h1>
                         <p className="text-muted-foreground mt-2">Manage global settings, content, and the shop.</p>
                     </div>
+
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center"><Home className="mr-3 h-6 w-6 text-primary"/> Home Teacher Bookings</CardTitle></CardHeader>
+                        <CardContent>
+                             <form onSubmit={handleCreateBooking} className="grid gap-6 p-6 mb-6 border rounded-lg">
+                                <h3 className="text-lg font-semibold">Create New Booking</h3>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-2"><Label htmlFor="booking-student-name">Student Name</Label><Input id="booking-student-name" value={bookingStudentName} onChange={(e) => setBookingStudentName(e.target.value)} required /></div>
+                                    <div className="grid gap-2"><Label htmlFor="booking-father-name">Father's Name</Label><Input id="booking-father-name" value={bookingFatherName} onChange={(e) => setBookingFatherName(e.target.value)} /></div>
+                                </div>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                     <div className="grid gap-2"><Label htmlFor="booking-mobile">Mobile Number</Label><Input id="booking-mobile" value={bookingMobile} onChange={(e) => setBookingMobile(e.target.value)} required /></div>
+                                    <div className="grid gap-2"><Label htmlFor="booking-class">Class</Label><Input id="booking-class" value={bookingClass} onChange={(e) => setBookingClass(e.target.value)} required /></div>
+                                </div>
+                                <div className="grid gap-2"><Label htmlFor="booking-address">Address</Label><Textarea id="booking-address" value={bookingAddress} onChange={(e) => setBookingAddress(e.target.value)} required /></div>
+                                <Button type="submit" disabled={isCreatingBooking} className="w-fit">
+                                    {isCreatingBooking ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Create Booking
+                                </Button>
+                            </form>
+                             
+                            <h3 className="text-lg font-semibold mb-4">Existing Bookings</h3>
+                             <div className="grid gap-4">
+                                {homeBookings && homeBookings.length > 0 ? (
+                                    homeBookings.map(booking => (
+                                        <div key={booking.id} className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-background">
+                                            <div className="grid gap-2">
+                                                <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
+                                                <p className="text-sm text-muted-foreground">Father: {booking.fatherName || 'N/A'}</p>
+                                                <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
+                                                <p className="text-sm text-muted-foreground">Address: {booking.address}</p>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                                                    <span>Status:</span>
+                                                    <span className={`font-semibold ${booking.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'}`}>{booking.status}</span>
+                                                    <span>|</span>
+                                                    <span>Created: {formatDate(booking.createdAt)}</span>
+                                                </div>
+                                            </div>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                        </div>
+                                    ))
+                                ) : <p className="text-muted-foreground text-center py-8">No home teacher bookings yet.</p>}
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     <Card>
                         <CardHeader><CardTitle className="flex items-center"><ShoppingBag className="mr-3 h-6 w-6 text-primary"/> Manage Shop</CardTitle></CardHeader>

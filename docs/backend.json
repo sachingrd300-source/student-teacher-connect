@@ -150,6 +150,54 @@
       },
       "required": ["name", "price", "imageUrl", "imageName", "purchaseUrl", "createdAt"]
     },
+    "HomeBooking": {
+      "title": "Home Booking",
+      "type": "object",
+      "description": "Represents a booking for a home teacher, managed by admins.",
+      "properties": {
+        "studentName": {
+          "type": "string",
+          "description": "The name of the student."
+        },
+        "mobileNumber": {
+          "type": "string",
+          "description": "The contact mobile number for the booking."
+        },
+        "address": {
+          "type": "string",
+          "description": "The address where home tuition is required."
+        },
+        "studentClass": {
+          "type": "string",
+          "description": "The class/grade of the student."
+        },
+        "fatherName": {
+          "type": "string",
+          "description": "The student's father's name."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the booking.",
+          "enum": ["Pending", "Assigned", "Completed", "Cancelled"]
+        },
+        "assignedTeacherId": {
+          "type": "string",
+          "description": "UID of the assigned teacher."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "studentName",
+        "mobileNumber",
+        "address",
+        "studentClass",
+        "status",
+        "createdAt"
+      ]
+    },
     "Activity": {
       "title": "Activity",
       "type": "object",
@@ -236,6 +284,10 @@
     "/shopItems/{itemId}": {
       "schema": { "$ref": "#/entities/ShopItem" },
       "description": "Stores items available in the shop, managed by admins."
+    },
+    "/homeBookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/HomeBooking" },
+      "description": "Stores home teacher booking requests managed by admins."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },

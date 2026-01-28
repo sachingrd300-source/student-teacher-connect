@@ -117,5 +117,9 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    match /homeBookings/{bookingId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
