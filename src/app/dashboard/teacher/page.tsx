@@ -187,6 +187,13 @@ export default function TeacherDashboardPage() {
         // Delete the enrollment document
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
         batch.delete(enrollmentRef);
+        
+        // Add activity log
+        const activityColRef = collection(firestore, 'batches', enrollment.batchId, 'activity');
+        batch.set(doc(activityColRef), {
+            message: `Student "${enrollment.studentName}" was removed from the batch.`,
+            createdAt: new Date().toISOString(),
+        });
 
         await batch.commit();
     };
@@ -242,50 +249,42 @@ export default function TeacherDashboardPage() {
                                     <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
                                 </Button>
                             </CardHeader>
-                            <CardContent>
-                                 {batches && batches.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {batches.map((batch, i) => (
-                                            <motion.div
-                                                key={batch.id}
-                                                custom={i}
-                                                initial="hidden"
-                                                animate="visible"
-                                                variants={cardVariants}
-                                                whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
-                                                className="h-full"
-                                            >
-                                                <Card className="flex flex-col h-full transition-shadow duration-300">
-                                                    <CardHeader>
-                                                        <CardTitle className="text-xl">{batch.name}</CardTitle>
-                                                         <div className="flex items-center gap-2 pt-2">
-                                                            <p className="text-sm text-muted-foreground">Code:</p>
-                                                            <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
-                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(batch.code)}>
-                                                                <Clipboard className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </CardHeader>
-                                                    <CardContent className="flex-grow flex items-end justify-between">
-                                                        <div className="text-left">
-                                                            <p className="font-bold text-2xl">{studentCountsByBatch[batch.id] || 0}</p>
-                                                            <p className="text-sm text-muted-foreground">Students</p>
-                                                        </div>
-                                                        <Button asChild>
-                                                            <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                                <Settings className="mr-2 h-4 w-4" /> Manage
-                                                            </Link>
-                                                        </Button>
-                                                    </CardContent>
-                                                </Card>
-                                            </motion.div>
-                                        ))
-                                    }
-                                    </div>
+                            <CardContent className="grid gap-4">
+                                {batches && batches.length > 0 ? (
+                                    batches.map((batch, i) => (
+                                        <motion.div
+                                            key={batch.id}
+                                            custom={i}
+                                            initial="hidden"
+                                            animate="visible"
+                                            variants={cardVariants}
+                                            whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                        >
+                                            <div className="flex-grow">
+                                                <p className="font-semibold text-lg">{batch.name}</p>
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <p className="text-sm text-muted-foreground">Code:</p>
+                                                    <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
+                                                        <Clipboard className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground mt-1">{studentCountsByBatch[batch.id] || 0} Students</p>
+                                            </div>
+                                            <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                <Button asChild>
+                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                        <Settings className="mr-2 h-4 w-4" /> Manage
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </motion.div>
+                                    ))
                                 ) : (
                                     <div className="text-center py-12">
                                         <p className="text-muted-foreground">You haven't created any batches yet. Let's create your first one! 🎉</p>
-                                         <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
+                                        <Button size="sm" className="mt-4" onClick={() => setCreateBatchOpen(true)}>
                                             <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
                                         </Button>
                                     </div>
