@@ -376,27 +376,45 @@ export default function BatchManagementPage() {
     };
 
     const handleApprove = async (enrollment: Enrollment) => {
-        if (!firestore) return;
+        if (!firestore || !batchId) return;
         
-        const batch = writeBatch(firestore);
+        const firestoreBatch = writeBatch(firestore);
 
         const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        batch.update(enrollmentRef, { 
+        firestoreBatch.update(enrollmentRef, { 
             status: 'approved',
             approvedAt: new Date().toISOString()
         });
 
         const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
-        batch.update(currentBatchRef, {
+        firestoreBatch.update(currentBatchRef, {
             approvedStudents: arrayUnion(enrollment.studentId)
         });
 
-        await batch.commit();
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        firestoreBatch.set(doc(activityColRef), {
+            message: `Student "${enrollment.studentName}" has been approved and added to the batch.`,
+            createdAt: new Date().toISOString(),
+        });
+
+        await firestoreBatch.commit();
     };
 
-    const handleDecline = async (enrollmentId: string) => {
-        if (!firestore) return;
-        await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
+    const handleDecline = async (enrollment: Enrollment) => {
+        if (!firestore || !batchId) return;
+        
+        const firestoreBatch = writeBatch(firestore);
+
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        firestoreBatch.delete(enrollmentRef);
+
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        firestoreBatch.set(doc(activityColRef), {
+            message: `The enrollment request for "${enrollment.studentName}" was declined.`,
+            createdAt: new Date().toISOString(),
+        });
+
+        await firestoreBatch.commit();
     };
 
     const copyToClipboard = (text: string) => {
@@ -474,7 +492,7 @@ export default function BatchManagementPage() {
                                                     </div>
                                                     <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
                                                         <Button size="sm" onClick={() => handleApprove(student)}>Approve</Button>
-                                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(student.id)}>Decline</Button>
+                                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(student)}>Decline</Button>
                                                     </div>
                                                 </div>
                                             ))}
