@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -174,7 +174,6 @@ export default function StudentDashboardPage() {
     
     const currentStreak = userProfile?.streak || 0;
     const totalDaysInJourney = 7;
-    // The current day number in the 7-day cycle.
     const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
 
     const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
@@ -259,13 +258,15 @@ export default function StudentDashboardPage() {
                                             <div key={day.day} className="flex flex-col items-center gap-2 text-center w-20 flex-shrink-0">
                                                 <div
                                                     className={cn(
-                                                        "flex items-center justify-center w-16 h-16 rounded-full border-4 font-semibold text-sm transition-all duration-300",
+                                                        "relative flex items-center justify-center w-16 h-16 rounded-full border-4 font-semibold text-sm transition-all duration-300",
                                                         isCompleted && "bg-green-100 border-green-500 text-green-700",
                                                         isToday && "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20",
                                                         !isCompleted && !isToday && "bg-muted border-border text-muted-foreground"
                                                     )}
                                                 >
-                                                    {isCompleted ? <Check className="w-7 h-7" /> : (day.day === 7 ? <Gift className="w-7 h-7" /> : `Day ${day.day}`)}
+                                                    {isCompleted ? <Check className="w-7 h-7" /> : 
+                                                     isToday ? <Sparkles className="w-7 h-7" /> :
+                                                     (day.day === 7 ? <Gift className="w-7 h-7" /> : `Day ${day.day}`)}
                                                 </div>
                                                 <p className={cn(
                                                     "text-xs font-bold",
@@ -303,8 +304,8 @@ export default function StudentDashboardPage() {
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                        <div className="lg:col-span-2 grid gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                        <div className="md:col-span-2 grid gap-8">
                             <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Join a New Batch</CardTitle>
@@ -394,7 +395,7 @@ export default function StudentDashboardPage() {
                             </div>
                         </div>
 
-                        <div className="lg:col-span-1 grid gap-8">
+                        <div className="md:col-span-1 grid gap-8">
                              <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Today's Tasks</CardTitle>
