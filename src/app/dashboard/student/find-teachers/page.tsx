@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -90,7 +91,12 @@ export default function FindTeachersPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={currentUserProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
+            <motion.main 
+                className="flex-1 p-4 md:p-8 bg-muted/20"
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
+            >
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8 text-center">
                          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl font-serif text-foreground">
@@ -123,7 +129,7 @@ export default function FindTeachersPage() {
                                         initial="hidden"
                                         animate="visible"
                                         variants={cardVariants}
-                                        whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                        whileHover={{ scale: 1.02, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
                                         whileTap={{ scale: 0.98 }}
                                         className="h-full"
                                     >
@@ -175,7 +181,7 @@ export default function FindTeachersPage() {
                         </div>
                     )}
                 </div>
-            </main>
+            </motion.main>
         </div>
     );
 }

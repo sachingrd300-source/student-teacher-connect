@@ -220,7 +220,12 @@ export default function CoachingManagementPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
+            <motion.main 
+                className="flex-1 p-4 md:p-8 bg-muted/20"
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
+            >
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
@@ -276,8 +281,8 @@ export default function CoachingManagementPage() {
                                                 initial="hidden"
                                                 animate="visible"
                                                 variants={cardVariants}
-                                                whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                                whileTap={{ scale: 0.99 }}
+                                                whileHover={{ scale: 1.02, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                                whileTap={{ scale: 0.98 }}
                                                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background"
                                             >
                                                 <div className="flex-grow">
@@ -328,8 +333,8 @@ export default function CoachingManagementPage() {
                                                 initial="hidden"
                                                 animate="visible"
                                                 variants={cardVariants}
-                                                whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                                whileTap={{ scale: 0.99 }}
+                                                whileHover={{ scale: 1.02, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                                whileTap={{ scale: 0.98 }}
                                                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background"
                                             >
                                                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -364,7 +369,7 @@ export default function CoachingManagementPage() {
                         </Card>
                     </div>
                 </div>
-            </main>
+            </motion.main>
 
             <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
                 <DialogContent>
@@ -400,4 +405,3 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
-

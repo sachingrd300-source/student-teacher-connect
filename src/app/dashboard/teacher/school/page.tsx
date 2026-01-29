@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -135,7 +136,12 @@ export default function SchoolManagementPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
+            <motion.main 
+                className="flex-1 p-4 md:p-8 bg-muted/20"
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
+            >
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">School Management</h1>
@@ -201,7 +207,7 @@ export default function SchoolManagementPage() {
                         </CardContent>
                     </Card>
                 </div>
-            </main>
+            </motion.main>
 
             <Dialog open={isCreateSessionOpen} onOpenChange={setCreateSessionOpen}>
                 <DialogContent>

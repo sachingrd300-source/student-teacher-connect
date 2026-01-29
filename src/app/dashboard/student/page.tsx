@@ -215,7 +215,12 @@ export default function StudentDashboardPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-3 md:p-8 bg-muted/20">
+            <motion.main 
+                className="flex-1 p-3 md:p-8 bg-muted/20"
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
+            >
                 <div className="max-w-7xl mx-auto grid gap-8">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome back, {userProfile?.name}!</h1>
@@ -230,8 +235,8 @@ export default function StudentDashboardPage() {
                                 initial="hidden"
                                 animate="visible"
                                 variants={cardVariants}
-                                whileHover={{ y: -5, scale: 1.05, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                                whileTap={{ scale: 0.98 }}
                                 className="h-full"
                             >
                                 <Link href={card.href} className="block h-full">
@@ -291,7 +296,7 @@ export default function StudentDashboardPage() {
                                                 initial="hidden"
                                                 animate="visible"
                                                 variants={cardVariants}
-                                                whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                                whileHover={{ scale: 1.02, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
                                                 whileTap={{ scale: 0.98 }}
                                             >
                                                 <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
@@ -362,7 +367,7 @@ export default function StudentDashboardPage() {
                         </div>
                     </div>
                 </div>
-            </main>
+            </motion.main>
         </div>
     );
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from "react";
@@ -233,7 +234,8 @@ export default function HomePage() {
                         <motion.div 
                             key={index}
                             variants={fadeInUp}
-                            whileHover={{ y: -10, transition: { duration: 0.3 } }}
+                            whileHover={{ y: -5, scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             className="p-8 bg-card rounded-2xl shadow-lg border border-transparent hover:border-primary/50 hover:shadow-primary/10 transition-all duration-300"
                         >
                             <div className="flex justify-center mb-5">
@@ -412,17 +414,17 @@ export default function HomePage() {
               variants={staggerContainer(0.2, 0)}
               className="grid grid-cols-1 sm:grid-cols-3 gap-8"
             >
-              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-4xl font-bold">{user && teacherCount !== undefined ? teacherCount : '50+'}</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
-              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-4xl font-bold">{user && studentCount !== undefined ? studentCount : '500+'}</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
-              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Book className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-4xl font-bold">10+</p>
                 <p className="text-muted-foreground mt-2">{t.subjectsLabel}</p>
@@ -507,7 +509,7 @@ export default function HomePage() {
                         key={teacher.id} 
                         variants={fadeInUp} 
                         className="h-full"
-                        whileHover={{ y: -5, scale: 1.03, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                        whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
                         whileTap={{ scale: 0.98 }}
                     >
                      <Card className="flex flex-col h-full rounded-2xl shadow-lg overflow-hidden">
@@ -561,7 +563,7 @@ export default function HomePage() {
                     key={index}
                     variants={fadeInUp}
                     className="h-full"
-                    whileHover={{ y: -5, scale: 1.03, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                    whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
                     whileTap={{ scale: 0.98 }}
                 >
                     <Card key={index} className="h-full flex flex-col bg-card border shadow-sm rounded-xl overflow-hidden">
