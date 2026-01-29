@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
-import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, limit, query, where, getCountFromServer } from "firebase/firestore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -73,24 +73,23 @@ export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
 
-  const { user } = useUser();
   const firestore = useFirestore();
 
   const [teacherCount, setTeacherCount] = useState<number>();
   const [studentCount, setStudentCount] = useState<number>();
 
   const featuredTeachersQuery = useMemoFirebase(() => {
-      if (!firestore || !user) return null;
+      if (!firestore) return null;
       return query(
           collection(firestore, 'users'),
           where('role', '==', 'teacher'),
           limit(3)
       );
-  }, [firestore, user]);
+  }, [firestore]);
   const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
 
   useEffect(() => {
-    if (user && firestore) {
+    if (firestore) {
       const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
       const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
 
@@ -101,12 +100,8 @@ export default function HomePage() {
       getCountFromServer(studentsQuery)
         .then(snapshot => setStudentCount(snapshot.data().count))
         .catch(err => console.error("Error getting student count:", err));
-    } else {
-      // Reset counts if user logs out
-      setTeacherCount(undefined);
-      setStudentCount(undefined);
     }
-  }, [user, firestore]);
+  }, [firestore]);
 
   const features = [
       {
@@ -416,12 +411,12 @@ export default function HomePage() {
             >
               <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-4xl font-bold">{user && teacherCount !== undefined ? teacherCount : '50+'}</p>
+                <p className="text-4xl font-bold">{teacherCount !== undefined ? teacherCount : '50+'}</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-4xl font-bold">{user && studentCount !== undefined ? studentCount : '500+'}</p>
+                <p className="text-4xl font-bold">{studentCount !== undefined ? studentCount : '500+'}</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
@@ -484,7 +479,7 @@ export default function HomePage() {
         </section>
 
         {/* Featured Tutors Section */}
-        {user && featuredTeachers && featuredTeachers.length > 0 && (
+        {featuredTeachers && featuredTeachers.length > 0 && (
           <section className="py-16 md:py-24 bg-muted/40">
             <div className="container px-4 md:px-6">
               <motion.div
@@ -642,3 +637,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
