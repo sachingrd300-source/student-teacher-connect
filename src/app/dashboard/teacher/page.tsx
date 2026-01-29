@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, query, where } from 'firebase/firestore';
 import { useEffect, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { School, Briefcase, Building2, Users, BookCopy, UserCheck } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { School, Briefcase, Building2, Users, BookCopy, UserCheck, Award, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 
 interface UserProfile {
@@ -147,6 +148,32 @@ export default function TeacherDashboardPage() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={cardVariants}
+                        className="mb-8"
+                    >
+                        <Card className="rounded-2xl shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3">
+                                    <Award className="h-6 w-6"/>
+                                    Welcome to the Achievers Community!
+                                </CardTitle>
+                                <CardDescription className="text-primary-foreground/90">
+                                    You're part of a growing network of dedicated educators in Giridih. Thank you for joining us.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button asChild variant="secondary">
+                                    <Link href="/dashboard/profile">
+                                        View & Complete Your Profile <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
                     <div className="mb-8">
                         <h2 className="text-2xl font-bold tracking-tight">Management</h2>
