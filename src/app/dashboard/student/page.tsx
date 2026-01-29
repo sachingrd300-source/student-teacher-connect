@@ -231,6 +231,7 @@ export default function StudentDashboardPage() {
                                 animate="visible"
                                 variants={cardVariants}
                                 whileHover={{ y: -5, scale: 1.05, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                                whileTap={{ scale: 0.95 }}
                                 className="h-full"
                             >
                                 <Link href={card.href} className="block h-full">
@@ -291,6 +292,7 @@ export default function StudentDashboardPage() {
                                                 animate="visible"
                                                 variants={cardVariants}
                                                 whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                                whileTap={{ scale: 0.98 }}
                                             >
                                                 <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
                                                     <div className="flex items-start gap-4 flex-grow">

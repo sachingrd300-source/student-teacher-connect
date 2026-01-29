@@ -159,8 +159,10 @@ export default function SchoolManagementPage() {
                                             initial="hidden"
                                             animate="visible"
                                             variants={cardVariants}
+                                            whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                                            whileTap={{ scale: 0.98 }}
                                         >
-                                          <Card className="flex flex-col h-full transition-shadow duration-300 hover:shadow-md">
+                                          <Card className="flex flex-col h-full">
                                             <CardHeader>
                                               <CardTitle className="font-serif text-xl">{school.name}</CardTitle>
                                               <CardDescription>{school.address}</CardDescription>

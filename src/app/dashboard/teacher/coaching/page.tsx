@@ -277,7 +277,8 @@ export default function CoachingManagementPage() {
                                                 animate="visible"
                                                 variants={cardVariants}
                                                 whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                                whileTap={{ scale: 0.99 }}
+                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background"
                                             >
                                                 <div className="flex-grow">
                                                     <p className="font-semibold text-lg break-words">{batch.name}</p>
@@ -327,7 +328,9 @@ export default function CoachingManagementPage() {
                                                 initial="hidden"
                                                 animate="visible"
                                                 variants={cardVariants}
-                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background transition-all duration-300"
+                                                whileHover={{ scale: 1.01, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
+                                                whileTap={{ scale: 0.99 }}
+                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background"
                                             >
                                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                                     <Avatar>

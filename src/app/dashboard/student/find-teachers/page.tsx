@@ -124,6 +124,7 @@ export default function FindTeachersPage() {
                                         animate="visible"
                                         variants={cardVariants}
                                         whileHover={{ scale: 1.03, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                        whileTap={{ scale: 0.98 }}
                                         className="h-full"
                                     >
                                         <Card className="flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">

@@ -503,8 +503,14 @@ export default function HomePage() {
                 className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
               >
                 {featuredTeachers.map((teacher, index) => (
-                   <motion.div key={teacher.id} variants={fadeInUp} className="h-full">
-                     <Card className="flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg overflow-hidden">
+                   <motion.div 
+                        key={teacher.id} 
+                        variants={fadeInUp} 
+                        className="h-full"
+                        whileHover={{ y: -5, scale: 1.03, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                     <Card className="flex flex-col h-full rounded-2xl shadow-lg overflow-hidden">
                         <CardHeader className="items-center text-center p-6 bg-card">
                             <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
                                 <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
@@ -555,8 +561,10 @@ export default function HomePage() {
                     key={index}
                     variants={fadeInUp}
                     className="h-full"
+                    whileHover={{ y: -5, scale: 1.03, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                    whileTap={{ scale: 0.98 }}
                 >
-                    <Card key={index} className="h-full flex flex-col bg-card border shadow-sm rounded-xl overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+                    <Card key={index} className="h-full flex flex-col bg-card border shadow-sm rounded-xl overflow-hidden">
                         <CardContent className="p-6 flex-grow">
                             <div className="flex text-yellow-400 mb-4">
                                 {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
