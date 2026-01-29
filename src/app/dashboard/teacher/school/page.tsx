@@ -138,10 +138,6 @@ export default function SchoolManagementPage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
-                         <Button variant="ghost" onClick={() => router.push('/dashboard/teacher')} className="mb-4">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Dashboard
-                        </Button>
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">School Management</h1>
                         <p className="text-muted-foreground mt-2">Create and manage your school sessions.</p>
                     </div>
