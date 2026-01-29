@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX } from 'lucide-react';
+import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX, GraduationCap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -104,6 +104,11 @@ export default function SchoolDetailsPage() {
         return query(collection(firestore, 'users'), where('__name__', 'in', school.teacherIds.slice(0, 30)));
     }, [firestore, school]);
     const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
+
+    const totalStudents = useMemo(() => {
+        if (!school || !school.classes) return 0;
+        return school.classes.reduce((acc, currentClass) => acc + (currentClass.students?.length || 0), 0);
+    }, [school]);
 
     // Security check: ensure user is the principal
     useEffect(() => {
@@ -280,13 +285,36 @@ export default function SchoolDetailsPage() {
                         </Card>
                     </div>
 
-                    <Tabs defaultValue="classes" className="w-full">
+                    <Tabs defaultValue="dashboard" className="w-full">
                         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                             <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
-                             <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="students">Students</TabsTrigger>
                             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                            <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="students">Students ({totalStudents})</TabsTrigger>
                         </TabsList>
+
+                        <TabsContent value="dashboard" className="mt-6">
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{school.teacherIds?.length || 0}</div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{totalStudents}</div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
                         
                         <TabsContent value="teachers" className="mt-6">
                             <Card className="rounded-2xl shadow-lg">
@@ -392,17 +420,6 @@ export default function SchoolDetailsPage() {
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="dashboard" className="mt-6">
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardContent className="pt-6">
-                                    <div className="text-center py-24 flex flex-col items-center">
-                                        <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary"><Building2 className="h-10 w-10" /></div>
-                                        <h3 className="text-2xl font-semibold font-serif">School Dashboard</h3>
-                                        <p className="text-muted-foreground mt-2 max-w-md">An overview of school statistics and activity will be shown here.</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
                     </Tabs>
                 </div>
 
