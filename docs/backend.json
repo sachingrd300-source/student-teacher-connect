@@ -282,7 +282,7 @@
     "School": {
       "title": "School",
       "type": "object",
-      "description": "Represents a school managed by a principal user.",
+      "description": "Represents a school managed by a principal user. The principal can directly add and manage teachers, classes, and students within the school document.",
       "properties": {
         "name": { "type": "string", "description": "The name of the school." },
         "address": { "type": "string", "description": "The physical address of the school." },
@@ -292,7 +292,33 @@
         "teacherIds": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "List of UIDs of teachers who are part of this school's staff."
+          "description": "List of UIDs of teachers who are part of this school's staff. Managed by the principal."
+        },
+        "classes": {
+          "type": "array",
+          "description": "List of classes in the school, managed by the principal.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Unique ID for the class (e.g., generated with nanoid)." },
+              "name": { "type": "string", "description": "The name of the class, e.g., 'Class 10' or '12th Grade'." },
+              "section": { "type": "string", "description": "The section of the class, e.g., 'A', 'B', 'Science'." },
+              "students": {
+                "type": "array",
+                "description": "List of students enrolled in this class, directly added by the principal.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "description": "Unique ID for the student entry." },
+                    "name": { "type": "string", "description": "Full name of the student." },
+                    "rollNumber": { "type": "string", "description": "The student's roll number in the class." }
+                  },
+                  "required": ["id", "name"]
+                }
+              }
+            },
+            "required": ["id", "name", "section"]
+          }
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
