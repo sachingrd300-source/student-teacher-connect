@@ -103,7 +103,7 @@ export default function SchoolDetailsPage() {
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
     // Fetch school data
-    const schoolRef = useMemoFirebase(() => doc(firestore, 'schools', schoolId), [firestore, schoolId]);
+    const schoolRef = useMemoFirebase(() => user ? doc(firestore, 'schools', schoolId) : null, [firestore, schoolId, user]);
     const { data: school, isLoading: schoolLoading } = useDoc<School>(schoolRef);
 
     // Fetch profiles of teachers in the school
