@@ -36,6 +36,11 @@ service cloud.firestore {
       let batchData = get(/databases/$(database)/documents/batches/$(batchId)).data;
       return isStudent() && request.auth.uid in batchData.approvedStudents;
     }
+    
+    function isSchoolPrincipal(schoolId) {
+      let schoolData = get(/databases/$(database)/documents/schools/$(schoolId)).data;
+      return isTeacher() && schoolData.principalId == request.auth.uid;
+    }
 
     match /users/{userId} {
       allow get: if isAdmin() || isSignedIn() || get(/databases/$(database)/documents/users/$(userId)).data.role == 'teacher';
@@ -123,6 +128,14 @@ service cloud.firestore {
       allow read: if isAdmin() || (isStudent() && resource.data.studentId == request.auth.uid);
       allow list: if isAdmin();
       allow update, delete: if isAdmin();
+    }
+    
+    match /schools/{schoolId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isTeacher() && request.resource.data.principalId == request.auth.uid;
+      allow update: if isSchoolPrincipal(schoolId) || isAdmin();
+      allow delete: if isSchoolPrincipal(schoolId) || isAdmin();
     }
   }
 }

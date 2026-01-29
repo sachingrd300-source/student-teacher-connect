@@ -6,7 +6,7 @@ import { doc } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card } from '@/components/ui/card';
-import { School, Briefcase } from 'lucide-react';
+import { School, Briefcase, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -112,13 +112,15 @@ export default function TeacherDashboardPage() {
                             whileHover={{ y: -5, scale: 1.05, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
                             className="h-full"
                         >
-                            <Card className="flex flex-col items-center justify-start text-center p-4 h-full rounded-2xl shadow-lg transition-all duration-300 opacity-50 cursor-not-allowed">
-                                <div className="p-3 bg-primary/10 rounded-full mb-3">
-                                    <School className="h-6 w-6 text-primary" />
-                                </div>
-                                <h3 className="font-semibold text-base">School Management</h3>
-                                <p className="text-xs text-muted-foreground mt-1 flex-grow">Integrate and manage school-related activities and data.</p>
-                            </Card>
+                            <Link href="/dashboard/teacher/school" className="block h-full">
+                                <Card className="flex flex-col items-center justify-start text-center p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                    <div className="p-3 bg-primary/10 rounded-full mb-3">
+                                        <Building2 className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <h3 className="font-semibold text-base">School Management</h3>
+                                    <p className="text-xs text-muted-foreground mt-1 flex-grow">Integrate and manage school-related activities and data.</p>
+                                </Card>
+                            </Link>
                         </motion.div>
                     </div>
                     

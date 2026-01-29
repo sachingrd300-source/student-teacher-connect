@@ -278,6 +278,25 @@
         "uploadedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["testId", "studentId", "studentName", "batchId", "teacherId", "marksObtained", "uploadedAt"]
+    },
+    "School": {
+      "title": "School",
+      "type": "object",
+      "description": "Represents a school managed by a principal user.",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the school." },
+        "address": { "type": "string", "description": "The physical address of the school." },
+        "principalId": { "type": "string", "description": "The UID of the user who is the principal of the school." },
+        "principalName": { "type": "string", "description": "The name of the principal." },
+        "code": { "type": "string", "description": "A unique, shareable code for other teachers to join the school staff." },
+        "teacherIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of UIDs of teachers who are part of this school's staff."
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "address", "principalId", "principalName", "code", "createdAt"]
     }
   },
   "auth": {
@@ -327,6 +346,10 @@
     "/testResults/{resultId}": {
       "schema": { "$ref": "#/entities/TestResult" },
       "description": "Stores student marks for tests."
+    },
+    "/schools/{schoolId}": {
+      "schema": { "$ref": "#/entities/School" },
+      "description": "Stores schools created and managed by principals."
     }
   }
 }
