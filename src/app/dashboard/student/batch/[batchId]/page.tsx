@@ -242,9 +242,16 @@ export default function StudentBatchPage() {
                         </Link>
                     </Button>
 
-                    <div>
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif">{batch?.name}</h1>
-                        <p className="text-muted-foreground mt-2">Welcome to your batch page. Here you can access study materials, announcements, fee details, and test results.</p>
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                        <div className="flex-1">
+                            <h1 className="text-3xl md:text-4xl font-bold font-serif">{batch?.name}</h1>
+                            <p className="text-muted-foreground mt-2">Welcome to your batch page. Here you can access study materials, announcements, fee details, and test results.</p>
+                        </div>
+                        <Button asChild size="lg" className="w-full sm:w-auto">
+                           <Link href={`/dashboard/student/batch/${batchId}/study`}>
+                                <Brain className="mr-2 h-5 w-5"/> Start Study Session
+                            </Link>
+                        </Button>
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
@@ -412,3 +419,4 @@ export default function StudentBatchPage() {
         </div>
     );
 }
+    
