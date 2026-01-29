@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,6 +77,7 @@ export default function StudentDashboardPage() {
     const [batchCode, setBatchCode] = useState('');
     const [joinMessage, setJoinMessage] = useState({ type: '', text: '' });
     const [isJoining, setIsJoining] = useState(false);
+    const [completedTasks, setCompletedTasks] = useState<string[]>([]);
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -90,6 +91,24 @@ export default function StudentDashboardPage() {
         return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    // Key for localStorage
+    const tasksStorageKey = `daily_tasks_${user?.uid}`;
+
+    // Load tasks from localStorage on mount and reset if it's a new day
+    useEffect(() => {
+        if (!user) return; // Don't run if user is not loaded
+        const storedTasks = localStorage.getItem(tasksStorageKey);
+        if (storedTasks) {
+            const { date, tasks } = JSON.parse(storedTasks);
+            const today = new Date().toISOString().split('T')[0];
+            if (date === today) {
+                setCompletedTasks(tasks);
+            } else {
+                localStorage.removeItem(tasksStorageKey);
+            }
+        }
+    }, [user, tasksStorageKey]);
 
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
@@ -113,6 +132,28 @@ export default function StudentDashboardPage() {
             router.replace('/dashboard');
         }
     }, [user, userProfile, isUserLoading, profileLoading, router]);
+
+    const handleTaskToggle = (taskId: string) => {
+        const isAlreadyCompleted = completedTasks.includes(taskId);
+
+        // Instantly update UI
+        const newCompletedTasks = isAlreadyCompleted
+            ? completedTasks.filter(id => id !== taskId)
+            : [...completedTasks, taskId];
+        
+        setCompletedTasks(newCompletedTasks);
+
+        // Persist to localStorage
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem(tasksStorageKey, JSON.stringify({ date: today, tasks: newCompletedTasks }));
+
+        // Award coins only when completing a task, not un-completing
+        if (!isAlreadyCompleted && userProfileRef && userProfile) {
+            const currentCoins = userProfile.coins || 0;
+            const newCoins = currentCoins + 2; // Award 2 coins per task
+            updateDoc(userProfileRef, { coins: newCoins }).catch(err => console.error("Failed to update coins", err));
+        }
+    };
 
     const handleJoinBatch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -347,16 +388,26 @@ export default function StudentDashboardPage() {
                         <div className="md:col-span-1 grid gap-8">
                              <Card className="rounded-2xl shadow-lg">
                                 <CardHeader>
-                                    <CardTitle>Today's Tasks</CardTitle>
+                                    <CardTitle className="flex items-center">
+                                        <Sparkles className="mr-2 h-5 w-5 text-primary" />
+                                        Today's Tasks
+                                    </CardTitle>
                                     <CardDescription>Complete tasks to earn extra coins!</CardDescription>
                                 </CardHeader>
                                 <CardContent className="grid gap-3 p-4 pt-0">
                                     {todaysTasks.map(task => (
                                         <div key={task.id} className="flex items-center space-x-3">
-                                            <Checkbox id={task.id} disabled />
+                                            <Checkbox
+                                                id={task.id}
+                                                checked={completedTasks.includes(task.id)}
+                                                onCheckedChange={() => handleTaskToggle(task.id)}
+                                            />
                                             <label
                                                 htmlFor={task.id}
-                                                className="text-sm font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                className={cn(
+                                                    "text-sm font-medium leading-none transition-colors",
+                                                    completedTasks.includes(task.id) ? "text-muted-foreground line-through" : "text-foreground"
+                                                )}
                                             >
                                                 {task.label}
                                             </label>
@@ -372,3 +423,4 @@ export default function StudentDashboardPage() {
     );
 }
 
+    
