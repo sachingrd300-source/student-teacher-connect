@@ -1,12 +1,12 @@
 'use client';
 
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
-import { useEffect } from 'react';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { useEffect, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card } from '@/components/ui/card';
-import { School, Briefcase, Building2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { School, Briefcase, Building2, Users, BookCopy, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -17,6 +17,14 @@ interface UserProfile {
     role: 'student' | 'teacher' | 'admin' | 'parent';
     coins?: number;
     streak?: number;
+}
+
+interface Batch {
+    id: string;
+}
+
+interface Enrollment {
+    status: 'pending' | 'approved';
 }
 
 
@@ -39,6 +47,26 @@ export default function TeacherDashboardPage() {
     
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
+    const batchesQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(collection(firestore, 'batches'), where('teacherId', '==', user.uid));
+    }, [firestore, user?.uid]);
+    const { data: batches, isLoading: batchesLoading } = useCollection<Batch>(batchesQuery);
+
+    const enrollmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
+    }, [firestore, user?.uid]);
+    const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const stats = useMemo(() => {
+        if (!batches || !enrollments) return { totalBatches: 0, totalStudents: 0, pendingRequests: 0 };
+        return {
+            totalBatches: batches.length,
+            totalStudents: enrollments.filter(e => e.status === 'approved').length,
+            pendingRequests: enrollments.filter(e => e.status === 'pending').length,
+        };
+    }, [batches, enrollments]);
 
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
@@ -52,7 +80,7 @@ export default function TeacherDashboardPage() {
     }, [user, userProfile, isUserLoading, profileLoading, router]);
 
 
-    const isLoading = isUserLoading || profileLoading;
+    const isLoading = isUserLoading || profileLoading || batchesLoading || enrollmentsLoading;
     const greeting = getGreeting();
 
     if (isLoading || !userProfile) {
@@ -85,7 +113,46 @@ export default function TeacherDashboardPage() {
                         <p className="text-muted-foreground mt-2">Manage your coaching, students, and more.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
+                        <p className="text-muted-foreground">A quick summary of your coaching activity.</p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
+                                <BookCopy className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.totalBatches}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                                <UserCheck className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.pendingRequests}</div>
+                                {stats.pendingRequests > 0 && <p className="text-xs text-muted-foreground">Go to Coaching Management to review.</p>}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold tracking-tight">Management</h2>
+                        <p className="text-muted-foreground">Access your management portals.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <motion.div
                             custom={0}
                             initial="hidden"
