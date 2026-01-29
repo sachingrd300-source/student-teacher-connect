@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet, School, Users, UserCheck } from 'lucide-react';
+import { Loader2, Check, X, PlusCircle, Clipboard, Settings, Wallet, School, Users, UserCheck, Briefcase } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -197,6 +197,41 @@ export default function TeacherDashboardPage() {
                     <div className="mb-8">
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">{greeting}, {userProfile?.name}! ☀️</h1>
                         <p className="text-muted-foreground mt-2">Manage your batches, students, and requests all in one place.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <motion.div
+                            custom={0}
+                            initial="hidden"
+                            animate="visible"
+                            variants={cardVariants}
+                            whileHover={{ y: -5, scale: 1.05, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                            className="h-full"
+                        >
+                            <Card className="flex flex-col items-center justify-start text-center p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                <div className="p-3 bg-primary/10 rounded-full mb-3">
+                                    <Briefcase className="h-6 w-6 text-primary" />
+                                </div>
+                                <h3 className="font-semibold text-base">Coaching Management</h3>
+                                <p className="text-xs text-muted-foreground mt-1 flex-grow">Manage your coaching center details, staff, and operations.</p>
+                            </Card>
+                        </motion.div>
+                        <motion.div
+                            custom={1}
+                            initial="hidden"
+                            animate="visible"
+                            variants={cardVariants}
+                            whileHover={{ y: -5, scale: 1.05, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                            className="h-full"
+                        >
+                            <Card className="flex flex-col items-center justify-start text-center p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                <div className="p-3 bg-primary/10 rounded-full mb-3">
+                                    <School className="h-6 w-6 text-primary" />
+                                </div>
+                                <h3 className="font-semibold text-base">School Management</h3>
+                                <p className="text-xs text-muted-foreground mt-1 flex-grow">Integrate and manage school-related activities and data.</p>
+                            </Card>
+                        </motion.div>
                     </div>
                     
                     <div className="grid gap-8">
