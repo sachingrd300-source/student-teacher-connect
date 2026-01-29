@@ -68,6 +68,9 @@ export const translations = {
     subjectsCoveredTitle: "Subjects We Cover",
     subjectsCoveredDescription: "Our expert tutors cover a wide range of subjects to cater to your learning needs. Find a specialist for any subject.",
     findSubjectTutorButton: "Find a Subject Tutor",
+    joinTeacherTitle: "Join Our Community of Achievers",
+    joinTeacherDescription: "Become part of a growing network of dedicated educators in Giridih. Get a steady stream of students, manage your batches effortlessly, and grow your career.",
+    joinTeacherButton: "Apply to be a Teacher",
   },
   hi: {
     heroTitle: "गुणवत्तापूर्ण शिक्षा का आपका प्रवेश द्वार",
@@ -138,5 +141,8 @@ export const translations = {
     subjectsCoveredTitle: "पढ़ाए जाने वाले विषय",
     subjectsCoveredDescription: "हमारे विशेषज्ञ ट्यूटर आपकी सीखने की जरूरतों को पूरा करने के लिए विषयों की एक विस्तृत श्रृंखला को कवर करते हैं। किसी भी विषय के लिए एक विशेषज्ञ खोजें।",
     findSubjectTutorButton: "विषय ट्यूटर खोजें",
+    joinTeacherTitle: "हमारे अचीवर्स समुदाय में शामिल हों",
+    joinTeacherDescription: "गिरिडीह में समर्पित शिक्षकों के बढ़ते नेटवर्क का हिस्सा बनें। छात्रों की एक स्थिर धारा प्राप्त करें, अपने बैचों को सहजता से प्रबंधित करें और अपना करियर बढ़ाएं।",
+    joinTeacherButton: "शिक्षक बनने के लिए आवेदन करें",
   },
 };

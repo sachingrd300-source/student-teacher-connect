@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School } from "lucide-react";
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award } from "lucide-react";
 import placeholderImages from '@/lib/placeholder-images';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -296,8 +296,34 @@ export default function HomePage() {
             </div>
         </section>
 
-        {/* Platform Features Section */}
+        {/* Join as Teacher CTA Section */}
         <section className="py-16 md:py-24 bg-muted/40">
+            <div className="container px-4 md:px-6">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                    variants={fadeInUp}
+                >
+                    <Card className="rounded-2xl shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-primary">
+                        <div className="p-8 md:p-12 text-center text-primary-foreground">
+                            <Award className="h-12 w-12 mx-auto mb-4" />
+                            <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.joinTeacherTitle}</h2>
+                            <p className="mt-3 max-w-2xl mx-auto text-lg text-primary-foreground/90">{t.joinTeacherDescription}</p>
+                            <Button asChild size="lg" variant="secondary" className="mt-8">
+                                <Link href="/signup/teacher">
+                                    {t.joinTeacherButton} <ArrowRight className="ml-2 h-5 w-5" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </Card>
+                </motion.div>
+            </div>
+        </section>
+
+
+        {/* Platform Features Section */}
+        <section className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -355,7 +381,7 @@ export default function HomePage() {
         </section>
 
         {/* Numbers Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -394,7 +420,7 @@ export default function HomePage() {
         </section>
 
         {/* New Study Hub Section */}
-        <section className="py-16 md:py-24 bg-muted/40">
+        <section className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -445,7 +471,7 @@ export default function HomePage() {
 
         {/* Featured Tutors Section */}
         {user && featuredTeachers && featuredTeachers.length > 0 && (
-          <section className="py-16 md:py-24 bg-background">
+          <section className="py-16 md:py-24 bg-muted/40">
             <div className="container px-4 md:px-6">
               <motion.div
                 initial="hidden"
@@ -493,7 +519,7 @@ export default function HomePage() {
         )}
 
         {/* Testimonials Section */}
-        <section className="py-16 md:py-24 bg-muted/40">
+        <section className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <motion.div 
               initial="hidden"
@@ -545,7 +571,7 @@ export default function HomePage() {
         </section>
         
          {/* Final CTA */}
-        <section className="py-16 md:py-32 bg-background">
+        <section className="py-16 md:py-32 bg-muted/40">
             <div className="container px-4 md:px-6 text-center">
                 <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
                     <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.ctaTitle}</h2>
