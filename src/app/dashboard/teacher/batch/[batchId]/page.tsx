@@ -468,7 +468,7 @@ export default function BatchManagementPage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
                     <div>
-                        <Button variant="ghost" onClick={() => router.push('/dashboard/teacher')} className="mb-4">
+                        <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/coaching')} className="mb-4">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Dashboard
                         </Button>

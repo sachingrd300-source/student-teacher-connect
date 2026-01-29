@@ -6,8 +6,9 @@ import { doc } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Building, MapPin, Phone, Wallet, Briefcase } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 interface TeacherProfile {
     name: string;
@@ -87,6 +88,10 @@ export default function TeacherProfilePage() {
             <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
+                    <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                    </Button>
                     <Card className="rounded-2xl shadow-lg">
                         <CardHeader className="text-center">
                              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/20">

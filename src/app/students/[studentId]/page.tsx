@@ -82,7 +82,7 @@ export default function StudentProfilePage() {
             <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
-                     <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+                     <Button variant="ghost" onClick={() => router.push('/dashboard/teacher')} className="mb-4">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back
                     </Button>
