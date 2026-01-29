@@ -91,6 +91,12 @@ export default function SchoolDetailsPage() {
     const [newStudentAddress, setNewStudentAddress] = useState('');
     const [newStudentAdmissionDate, setNewStudentAdmissionDate] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
+    
+    const [isEditingSchool, setIsEditingSchool] = useState(false);
+    const [schoolName, setSchoolName] = useState('');
+    const [schoolAddress, setSchoolAddress] = useState('');
+    const [academicYear, setAcademicYear] = useState('');
+    const [isSavingSchool, setIsSavingSchool] = useState(false);
 
     // Fetch current user's profile for header
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -104,7 +110,7 @@ export default function SchoolDetailsPage() {
     const teachersQuery = useMemoFirebase(() => {
         if (!firestore || !school || !school.teacherIds || school.teacherIds.length === 0) return null;
         // Firestore 'in' query is limited to 30 elements. For larger schools, this would need pagination or a different data model.
-        return query(collection(firestore, 'users'), where('__name__', 'in', school.teacherIds.slice(0, 30)));
+        return query(collection(firestore, 'users'), where('__name__', 'in', (school.teacherIds || []).slice(0, 30)));
     }, [firestore, school]);
     const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
 
@@ -120,11 +126,36 @@ export default function SchoolDetailsPage() {
         }
     }, [school, user, router]);
 
+    useEffect(() => {
+        if (school) {
+            setSchoolName(school.name || '');
+            setSchoolAddress(school.address || '');
+            setAcademicYear(school.academicYear || '');
+        }
+    }, [school]);
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
     // --- Handler Functions ---
+
+     const handleUpdateSchool = async () => {
+        if (!schoolName.trim() || !school) return;
+        setIsSavingSchool(true);
+        try {
+            await updateDoc(schoolRef, {
+                name: schoolName.trim(),
+                address: schoolAddress.trim(),
+                academicYear: academicYear.trim(),
+            });
+            setIsEditingSchool(false);
+        } catch (error) {
+            console.error("Error updating school details:", error);
+        } finally {
+            setIsSavingSchool(false);
+        }
+    };
 
     const handleAddTeacher = async () => {
         if (!newTeacherEmail.trim()) return;
@@ -207,7 +238,7 @@ export default function SchoolDetailsPage() {
             fatherName: newStudentFatherName.trim(),
             mobileNumber: newStudentMobileNumber.trim(),
             address: newStudentAddress.trim(),
-            admissionDate: newStudentAdmissionDate ? new Date(newStudentAdmissionDate).toISOString() : undefined,
+            admissionDate: newStudentAdmissionDate ? new Date(newStudentAdmissionDate).toISOString() : '',
         };
 
         const updatedClasses = (school.classes || []).map(c => {
@@ -285,6 +316,11 @@ export default function SchoolDetailsPage() {
                                                 <Clipboard className="h-4 w-4" />
                                             </Button>
                                         </div>
+                                    </div>
+                                    <div>
+                                        <Button variant="outline" size="icon" onClick={() => setIsEditingSchool(true)}>
+                                            <Pen className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -433,6 +469,34 @@ export default function SchoolDetailsPage() {
                 </div>
 
                 {/* Dialogs */}
+                <Dialog open={isEditingSchool} onOpenChange={setIsEditingSchool}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit School Details</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="school-name-edit">School Name</Label>
+                                <Input id="school-name-edit" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="school-address-edit">School Address</Label>
+                                <Textarea id="school-address-edit" value={schoolAddress} onChange={e => setSchoolAddress(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="school-year-edit">Academic Year</Label>
+                                <Input id="school-year-edit" value={academicYear} onChange={e => setAcademicYear(e.target.value)} placeholder="e.g., 2024-2025" />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <Button onClick={handleUpdateSchool} disabled={isSavingSchool}>
+                                {isSavingSchool ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
                 <Dialog open={isAddTeacherOpen} onOpenChange={setAddTeacherOpen}>
                     <DialogContent>
                         <DialogHeader>
