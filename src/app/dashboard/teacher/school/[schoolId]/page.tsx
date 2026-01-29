@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -539,12 +540,12 @@ export default function SchoolDetailsPage() {
                 </Dialog>
 
                 <Dialog open={!!classToManage} onOpenChange={(isOpen) => !isOpen && setClassToManage(null)}>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl md:max-w-4xl">
                         <DialogHeader>
                             <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
                         </DialogHeader>
                         <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[60vh] overflow-y-auto">
-                             <div className="flex flex-col gap-4 pr-4 border-r">
+                             <div className="flex flex-col gap-4 md:pr-4 md:border-r border-b md:border-b-0 pb-8 md:pb-0">
                                 <h4 className="font-semibold">Add New Student</h4>
                                 <div className="grid gap-3">
                                     <div className="grid gap-1.5"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} required/></div>
@@ -595,3 +596,5 @@ export default function SchoolDetailsPage() {
         </div>
     );
 }
+
+    

@@ -179,7 +179,7 @@ export default function FreeMaterialsPage() {
                                     />
                                 </div>
                                 <Tabs defaultValue="all" className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+                                    <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
                                         <TabsTrigger value="all">All</TabsTrigger>
                                         <TabsTrigger value="notes">Notes</TabsTrigger>
                                         <TabsTrigger value="books">Books</TabsTrigger>
@@ -218,3 +218,5 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
+
+    
