@@ -72,6 +72,19 @@ interface TeacherProfile {
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
+const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+};
+
 export default function SchoolDetailsPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -494,7 +507,7 @@ export default function SchoolDetailsPage() {
                                                                     <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
                                                                     <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
                                                                     {s.admissionDate && (
-                                                                        <p className="col-span-2"><strong>Admission:</strong> {new Date(s.admissionDate).toLocaleDateString()}</p>
+                                                                        <p className="col-span-2"><strong>Admission:</strong> {formatDate(s.admissionDate)}</p>
                                                                     )}
                                                                 </div>
                                                             </div>

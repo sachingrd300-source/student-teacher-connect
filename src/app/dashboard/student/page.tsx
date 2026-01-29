@@ -48,10 +48,13 @@ interface Enrollment {
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
     });
 };
 
@@ -361,3 +364,4 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
+
