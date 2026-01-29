@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
                     <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
                         <div className="flex items-start gap-3 w-full">
                             <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
-                            <div>
+                            <div className="w-full">
                                 <p className="font-semibold">{material.title}</p>
                                 <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
                                 <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
@@ -296,7 +296,7 @@ export default function AdminDashboardPage() {
                                                     <span>Created: {formatDate(booking.createdAt)}</span>
                                                 </div>
                                             </div>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)} className="self-end sm:self-center flex-shrink-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                         </div>
                                     ))
                                 ) : (
@@ -339,14 +339,14 @@ export default function AdminDashboardPage() {
                                         {shopItems.map(item => (
                                             <div key={item.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-3 rounded-lg border bg-background">
                                                 <div className="flex items-start gap-4 w-full">
-                                                    <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover" />
-                                                    <div>
+                                                    <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover flex-shrink-0" />
+                                                    <div className="w-full">
                                                         <p className="font-semibold">{item.name}</p>
                                                         <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                                                         <p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p>
                                                     </div>
                                                 </div>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center flex-shrink-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                             </div>
                                         ))}
                                     </div>
@@ -436,6 +436,8 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
 
     
 

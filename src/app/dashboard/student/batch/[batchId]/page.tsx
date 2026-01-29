@@ -116,317 +116,273 @@ export default function StudentBatchPage() {
         if (!firestore || !batchId) return null;
         return doc(firestore, 'batches', batchId);
     }, [firestore, batchId]);
-    const { data: batch, isLoading: batchLoading } = useDoc<Batch>(batchRef);
-    
-    const materialsRef = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
-        return query(collection(firestore, 'batches', batchId, 'materials'), orderBy('createdAt', 'desc'));
-    }, [firestore, batchId]);
-    const { data: materials, isLoading: materialsLoading } = useCollection<StudyMaterial>(materialsRef);
-    
-    const activityQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId) return null;
-        return query(collection(firestore, 'batches', batchId, 'activity'), orderBy('createdAt', 'desc'));
-    }, [firestore, batchId]);
-    const { data: activities, isLoading: activitiesLoading } = useCollection<Activity>(activityQuery);
+    const { data: batch, isLoading: isBatchLoading } = useDoc<Batch>(batchRef);
 
-    const enrollmentQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user?.uid) return null;
+    const isEnrolledQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid || !batchId) return null;
         return query(
             collection(firestore, 'enrollments'),
             where('studentId', '==', user.uid),
-            where('batchId', '==', batchId),
-            where('status', '==', 'approved')
+            where('batchId', '==', batchId)
         );
-    }, [firestore, batchId, user?.uid]);
-    const { data: enrollments, isLoading: enrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
-    const enrollment = enrollments?.[0];
-    const isEnrolledAndApproved = !!enrollment;
+    }, [firestore, user?.uid, batchId]);
+    const { data: enrollments, isLoading: isEnrollmentsLoading } = useCollection<Enrollment>(isEnrolledQuery);
+    const isEnrolled = enrollments && enrollments.length > 0 && enrollments[0].status === 'approved';
+
+    const studyMaterialsQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(
+            collection(firestore, 'batches', batchId, 'studyMaterials'),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore, batchId]);
+    const { data: studyMaterials, isLoading: isStudyMaterialsLoading } = useCollection<StudyMaterial>(studyMaterialsQuery);
+
+    const activitiesQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(
+            collection(firestore, 'batches', batchId, 'activities'),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore, batchId]);
+    const { data: activities, isLoading: isActivitiesLoading } = useCollection<Activity>(activitiesQuery);
 
     const feesQuery = useMemoFirebase(() => {
         if (!firestore || !batchId || !user?.uid) return null;
+
+        // Get the current month and year
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed.
+        const currentYear = now.getFullYear();
+
+        // Calculate the start date (6 months ago)
+        const startDate = new Date(currentYear, currentMonth - 6, 1); // Go back 6 months
+
+        // Calculate the end date (current month)
+        const endDate = new Date(currentYear, currentMonth, 0); // Last day of the current month
+
+        // Get all months in range
+        const monthsInRange = getMonthsInRange(startDate, endDate);
+
+        // Construct an array of composite keys (month-year) for querying
+        const compositeKeys = monthsInRange.map(m => `${m.month}-${m.year}`);
+
         return query(
-            collection(firestore, 'fees'),
+            collection(firestore, 'batches', batchId, 'fees'),
             where('studentId', '==', user.uid),
-            where('batchId', '==', batchId)
+            where('compositeKey', 'in', compositeKeys),
+            orderBy('feeYear'),
+            orderBy('feeMonth')
         );
     }, [firestore, batchId, user?.uid]);
-    const { data: feesData, isLoading: feesLoading } = useCollection<Fee>(feesQuery);
+    const { data: fees, isLoading: isFeesLoading } = useCollection<Fee>(feesQuery);
 
     const testsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
         return query(collection(firestore, 'batches', batchId, 'tests'), orderBy('testDate', 'desc'));
     }, [firestore, batchId]);
-    const { data: tests, isLoading: testsLoading } = useCollection<Test>(testsQuery);
-    
+    const { data: tests, isLoading: isTestsLoading } = useCollection<Test>(testsQuery);
+
     const testResultsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId || !user?.uid) return null;
         return query(
-            collection(firestore, 'testResults'),
-            where('studentId', '==', user.uid),
-            where('batchId', '==', batchId)
+            collection(firestore, 'batches', batchId, 'testResults'),
+            where('studentId', '==', user.uid)
         );
     }, [firestore, batchId, user?.uid]);
-    const { data: testResults, isLoading: testResultsLoading } = useCollection<TestResult>(testResultsQuery);
+    const { data: testResults, isLoading: isTestResultsLoading } = useCollection<TestResult>(testResultsQuery);
 
-    const resultsByTestId = useMemo(() => {
-        const map = new Map<string, TestResult>();
-        testResults?.forEach(result => map.set(result.testId, result));
-        return map;
-    }, [testResults]);
-
-
-    const feeStatusByMonth = useMemo(() => {
-        const statusMap = new Map<string, { status: 'paid' | 'unpaid', paidOn?: string }>();
-        feesData?.forEach(fee => {
-            const key = `${fee.feeYear}-${fee.feeMonth}`;
-            statusMap.set(key, { status: fee.status, paidOn: fee.paidOn });
-        });
-        return statusMap;
-    }, [feesData]);
-
-    const allMonths = useMemo(() => {
-        if (!enrollment?.approvedAt) return [];
-        const startDate = new Date(enrollment.approvedAt);
-        const endDate = new Date(); // today
-        return getMonthsInRange(startDate, endDate);
-    }, [enrollment?.approvedAt]);
-
-    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
-
-    // Security check
-    const isSecurityLoading = isUserLoading || batchLoading || enrollmentLoading;
     useEffect(() => {
-        if (!isSecurityLoading && (!batch || !isEnrolledAndApproved)) {
+        if (isUserLoading || isBatchLoading || isEnrollmentsLoading) return;
+
+        if (!user) {
+            router.replace('/login');
+            return;
+        }
+
+        if (!batch) {
+            router.replace('/dashboard/student');
+            return;
+        }
+
+        if (!isEnrolled) {
             router.replace('/dashboard/student');
         }
-    }, [isSecurityLoading, batch, isEnrolledAndApproved, router]);
-    
-    const handlePayNow = () => {
-        alert('Payment gateway integration is pending. Please contact your teacher to complete the payment.');
+    }, [user, batch, isUserLoading, isBatchLoading, isEnrollmentsLoading, isEnrolled, router]);
+
+    const isLoading = isUserLoading || isBatchLoading || isEnrollmentsLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
+
+    if (isLoading || !currentUserProfile) {
+        return (
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <Brain className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Batch Details...</p>
+            </div>
+        );
+    }
+
+    const getTestResult = (testId: string) => {
+        const result = testResults?.find(res => res.testId === testId);
+        return result ? result.marksObtained : 'N/A';
     };
-
-    const isPageLoading = isUserLoading || batchLoading || materialsLoading || activitiesLoading || enrollmentLoading || feesLoading || testsLoading || testResultsLoading;
-
-    if (isPageLoading) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    if (!batch || !isEnrolledAndApproved) {
-        return (
-             <div className="flex h-screen items-center justify-center">
-                <p>Access Denied. Redirecting...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto grid gap-8">
-                     <div>
-                        <Button variant="ghost" onClick={() => router.push('/dashboard/student')} className="mb-4">
+                <div className="max-w-5xl mx-auto grid gap-8">
+                    <Button variant="ghost" size="sm" asChild>
+                        <Link href="/dashboard/student">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Dashboard
-                        </Button>
-                        <Card className="mb-8 rounded-2xl shadow-lg">
-                             <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <CardTitle className="text-2xl font-serif">{batch?.name}</CardTitle>
-                                        <CardDescription>Taught by <Link href={`/teachers/${batch?.teacherId}`} className="text-primary hover:underline">{batch?.teacherName}</Link></CardDescription>
-                                    </div>
-                                    <Button asChild>
-                                        <Link href={`/dashboard/student/batch/${batchId}/study`}>
-                                            <Brain className="mr-2 h-4 w-4" /> Go to Study Mode
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                        </Card>
+                        </Link>
+                    </Button>
 
-                         <Tabs defaultValue={defaultTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-                                <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                                <TabsTrigger value="materials">Materials</TabsTrigger>
-                                <TabsTrigger value="tests">Tests</TabsTrigger>
-                                <TabsTrigger value="fees">Fees</TabsTrigger>
-                            </TabsList>
-                            
-                             <TabsContent value="announcements" className="mt-6">
-                                <Card className="rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center">
-                                            <ListCollapse className="mr-2 h-5 w-5 text-primary"/> Announcements
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {activities && activities.length > 0 ? (
-                                            <div className="grid gap-4">
-                                                {activities.map(activity => (
-                                                    <div key={activity.id} className="p-3 rounded-lg border bg-background">
-                                                        <p className="font-medium">{activity.message}</p>
-                                                        <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-12 flex flex-col items-center">
-                                                <ListCollapse className="h-12 w-12 text-muted-foreground mb-4" />
-                                                <h3 className="text-lg font-semibold">No Announcements Yet</h3>
-                                                <p className="text-muted-foreground mt-1">Your teacher hasn't posted any updates for this batch.</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-
-                            <TabsContent value="materials" className="mt-6">
-                                 <Card className="rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center">
-                                            <FileText className="mr-2 h-5 w-5 text-primary"/> Study Materials
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {materials && materials.length > 0 ? (
-                                            <div className="grid gap-4">
-                                                {materials.map(material => (
-                                                    <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
-                                                        <div className="w-full">
-                                                            <p className="font-semibold">{material.title}</p>
-                                                             <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                                                            <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
-                                                        </div>
-                                                        <Button asChild size="sm" className="self-end sm:self-center flex-shrink-0">
-                                                            <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
-                                                            <Download className="mr-2 h-4 w-4" /> Download
-                                                            </a>
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-12 flex flex-col items-center">
-                                                <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                                                <h3 className="text-lg font-semibold">No Study Materials</h3>
-                                                <p className="text-muted-foreground mt-1">Your teacher hasn't uploaded any materials yet.</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            
-                            <TabsContent value="tests" className="mt-6">
-                                <Card className="rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center">
-                                            <ClipboardCheck className="mr-2 h-5 w-5 text-primary"/> Test Results
-                                        </CardTitle>
-                                        <CardDescription>View your performance in all tests conducted in this batch.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {tests && tests.length > 0 ? (
-                                            <div className="grid gap-4">
-                                                {tests.map((test) => {
-                                                    const result = resultsByTestId.get(test.id);
-                                                    return (
-                                                        <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-lg border bg-background">
-                                                            <div className="w-full">
-                                                                <p className="font-semibold">{test.title}</p>
-                                                                <p className="text-sm text-muted-foreground mt-1">{test.subject}</p>
-                                                                <p className="text-xs text-muted-foreground mt-2">Date: {new Date(test.testDate).toLocaleDateString()}</p>
-                                                            </div>
-                                                            <div className="text-right self-end sm:self-center">
-                                                                {result ? (
-                                                                    <>
-                                                                        <p className="text-xl font-bold text-primary">{result.marksObtained} <span className="text-sm font-normal text-muted-foreground">/ {test.maxMarks}</span></p>
-                                                                    </>
-                                                                ) : (
-                                                                    <p className="text-sm text-muted-foreground">Not graded</p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-12 flex flex-col items-center">
-                                                <Notebook className="h-12 w-12 text-muted-foreground mb-4" />
-                                                <h3 className="text-lg font-semibold">No Tests Conducted</h3>
-                                                <p className="text-muted-foreground mt-1">No tests have been scheduled for this batch yet.</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-
-                            <TabsContent value="fees" className="mt-6">
-                                <Card className="rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center">
-                                            <Wallet className="mr-2 h-5 w-5 text-primary"/> My Fee Status
-                                        </CardTitle>
-                                        <CardDescription>View your monthly fee payment history for this batch.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {allMonths.length > 0 ? (
-                                            <div className="grid gap-4">
-                                                {allMonths.reverse().map(({ month, year }) => {
-                                                    const key = `${year}-${month}`;
-                                                    const feeInfo = feeStatusByMonth.get(key);
-                                                    const isPaid = feeInfo?.status === 'paid';
-                                                    
-                                                    return (
-                                                        <div key={key} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
-                                                            <div className="w-full">
-                                                                <p className="font-medium">
-                                                                    {monthFormatter.format(new Date(year, month - 1))}
-                                                                </p>
-                                                                {isPaid && feeInfo?.paidOn ? (
-                                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                                        Paid on: {new Date(feeInfo.paidOn).toLocaleDateString()}
-                                                                    </p>
-                                                                ) : null}
-                                                            </div>
-
-                                                            {isPaid ? (
-                                                                <div className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                                                                    PAID
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex items-center gap-4 self-end sm:self-center">
-                                                                    <div className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
-                                                                        DUE
-                                                                    </div>
-                                                                    <Button size="sm" variant="outline" onClick={handlePayNow}>
-                                                                        <CreditCard className="mr-2 h-4 w-4" /> Pay Now
-                                                                    </Button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-12 flex flex-col items-center">
-                                                <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
-                                                <h3 className="text-lg font-semibold">No Fee Information</h3>
-                                                <p className="text-muted-foreground mt-1">Fee information will be available here once you are approved.</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        </Tabs>
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-bold font-serif">{batch?.name}</h1>
+                        <p className="text-muted-foreground mt-2">Welcome to your batch page. Here you can access study materials, announcements, fee details, and test results.</p>
                     </div>
+
+                    <Tabs defaultValue={defaultTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
+                            <TabsTrigger value="announcements">Announcements</TabsTrigger>
+                            <TabsTrigger value="study-materials">Study Materials</TabsTrigger>
+                            <TabsTrigger value="fees">Fees</TabsTrigger>
+                            <TabsTrigger value="tests">Tests &amp; Results</TabsTrigger>
+                            {/*<TabsTrigger value="leaderboard">Leaderboard (Coming Soon)</TabsTrigger>*/}
+                        </TabsList>
+                        <TabsContent value="announcements" className="mt-4">
+                            <Card className="rounded-2xl shadow-md">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><ListCollapse className="mr-3 h-5 w-5 text-primary"/> Latest Announcements</CardTitle>
+                                    <CardDescription>Stay up-to-date with important batch announcements.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {activities && activities.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {activities.map(activity => (
+                                                <div key={activity.id} className="p-4 rounded-lg border bg-background">
+                                                    <p className="text-sm text-muted-foreground">{activity.message}</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">Posted: {formatDate(activity.createdAt)}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <ListCollapse className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Announcements Yet</h3>
+                                            <p className="text-muted-foreground mt-1">Check back later for updates from your teacher.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="study-materials" className="mt-4">
+                            <Card className="rounded-2xl shadow-md">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><FileText className="mr-3 h-5 w-5 text-primary"/> Study Materials</CardTitle>
+                                    <CardDescription>Access all the materials uploaded by your teacher.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {studyMaterials && studyMaterials.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {studyMaterials.map(material => (
+                                                <div key={material.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background">
+                                                    <div className="flex items-center gap-4">
+                                                        <FileText className="h-5 w-5 text-muted-foreground" />
+                                                        <div>
+                                                            <p className="font-semibold">{material.title}</p>
+                                                            <p className="text-sm text-muted-foreground">{material.description}</p>
+                                                        </div>
+                                                    </div>
+                                                    <a href={material.fileURL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2">
+                                                        Download
+                                                        <Download className="ml-2 h-4 w-4" />
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Study Materials Yet</h3>
+                                            <p className="text-muted-foreground mt-1">Your teacher will upload materials here soon.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="fees" className="mt-4">
+                            <Card className="rounded-2xl shadow-md">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><Wallet className="mr-3 h-5 w-5 text-primary"/> Fee Details</CardTitle>
+                                    <CardDescription>View your fee payment status for the past months.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {fees && fees.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {fees.map(fee => (
+                                                <div key={fee.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background">
+                                                    <div>
+                                                        <p className="font-semibold">{new Date(fee.feeYear, fee.feeMonth - 1, 1).toLocaleString('default', { month: 'long' })} {fee.feeYear}</p>
+                                                        <p className="text-sm text-muted-foreground">Status: {fee.status === 'paid' ? 'Paid' : 'Unpaid'}</p>
+                                                        {fee.status === 'paid' && (
+                                                            <p className="text-xs text-muted-foreground">Paid On: {formatDate(fee.paidOn || '')}</p>
+                                                        )}
+                                                    </div>
+                                                    {fee.status === 'unpaid' && (
+                                                        <Button variant="outline">
+                                                            Pay Now <CreditCard className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Fee Records Found</h3>
+                                            <p className="text-muted-foreground mt-1">Your fee payment history will appear here.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="tests" className="mt-4">
+                            <Card className="rounded-2xl shadow-md">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><ClipboardCheck className="mr-3 h-5 w-5 text-primary"/> Tests &amp; Results</CardTitle>
+                                    <CardDescription>View upcoming tests and your previous results.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {tests && tests.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {tests.map(test => (
+                                                <div key={test.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background">
+                                                    <div>
+                                                        <p className="font-semibold">{test.title} ({test.subject})</p>
+                                                        <p className="text-sm text-muted-foreground">Date: {formatDate(test.testDate)}</p>
+                                                        <p className="text-sm text-muted-foreground">Max Marks: {test.maxMarks}</p>
+                                                        <p className="text-sm text-muted-foreground">Marks Obtained: {getTestResult(test.id)}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <ClipboardCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Tests Available</h3>
+                                            <p className="text-muted-foreground mt-1">Check back later for upcoming tests and results.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </main>
         </div>
     );
 }
+
+    

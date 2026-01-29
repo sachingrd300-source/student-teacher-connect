@@ -519,7 +519,7 @@ export default function BatchManagementPage() {
                                                         <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
                                                         <p className="font-semibold break-words">{student.studentName}</p>
                                                     </div>
-                                                    <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                    <div className="flex items-center gap-2 self-end sm:self-center flex-wrap mt-4 sm:mt-0">
                                                         <Button asChild variant="outline" size="sm">
                                                             <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
                                                         </Button>
@@ -549,24 +549,26 @@ export default function BatchManagementPage() {
                                     <CardDescription>Schedule a new test for the students in this batch.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <form onSubmit={handleCreateTest} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="test-title">Test Title</Label>
-                                            <Input id="test-title" value={testTitle} onChange={(e) => setTestTitle(e.target.value)} placeholder="e.g., Mid-Term Exam" required />
+                                    <form onSubmit={handleCreateTest} className="grid gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div className="grid gap-2 lg:col-span-2">
+                                                <Label htmlFor="test-title">Test Title</Label>
+                                                <Input id="test-title" value={testTitle} onChange={(e) => setTestTitle(e.target.value)} placeholder="e.g., Mid-Term Exam" required />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="test-subject">Subject</Label>
+                                                <Input id="test-subject" value={testSubject} onChange={(e) => setTestSubject(e.target.value)} placeholder="e.g., Physics" required />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="test-date">Test Date</Label>
+                                                <Input id="test-date" type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} required />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="max-marks">Max Marks</Label>
+                                                <Input id="max-marks" type="number" value={maxMarks} onChange={(e) => setMaxMarks(e.target.value)} placeholder="e.g., 100" required />
+                                            </div>
                                         </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="test-subject">Subject</Label>
-                                            <Input id="test-subject" value={testSubject} onChange={(e) => setTestSubject(e.target.value)} placeholder="e.g., Physics" required />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="test-date">Test Date</Label>
-                                            <Input id="test-date" type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} required />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="max-marks">Max Marks</Label>
-                                            <Input id="max-marks" type="number" value={maxMarks} onChange={(e) => setMaxMarks(e.target.value)} placeholder="e.g., 100" required />
-                                        </div>
-                                        <Button type="submit" disabled={isCreatingTest} className="w-full lg:w-auto sm:col-span-2 lg:col-span-1 lg:col-start-4">
+                                        <Button type="submit" disabled={isCreatingTest} className="w-full sm:w-fit mt-4">
                                             {isCreatingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />} Create Test
                                         </Button>
                                     </form>
@@ -584,7 +586,7 @@ export default function BatchManagementPage() {
                                                         <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
                                                         <p className="text-xs text-muted-foreground mt-1">Max Marks: {test.maxMarks}</p>
                                                     </div>
-                                                    <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)} className="self-end sm:self-center">
+                                                    <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)} className="self-end sm:self-center flex-shrink-0">
                                                         <Pencil className="mr-2 h-4 w-4" /> Manage Marks
                                                     </Button>
                                                 </div>
@@ -642,7 +644,7 @@ export default function BatchManagementPage() {
                                                             <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
+                                                    <div className="flex gap-2 self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0">
                                                          <Button asChild variant="outline" size="sm">
                                                             <a href={material.fileURL} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" /> View</a>
                                                         </Button>
@@ -756,11 +758,4 @@ export default function BatchManagementPage() {
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                         <Button variant="destructive" onClick={handleDeleteBatch} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Yes, delete it
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
-}
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-

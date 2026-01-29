@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -369,7 +368,7 @@ export default function SchoolDetailsPage() {
                                                         </div>
                                                     </div>
                                                     {teacher.id !== school.principalId ? (
-                                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center"><UserX className="mr-2 h-4 w-4" />Remove</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center mt-2 sm:mt-0"><UserX className="mr-2 h-4 w-4" />Remove</Button>
                                                     ) : (
                                                         <span className="text-xs font-semibold text-primary px-3 self-end sm:self-center">PRINCIPAL</span>
                                                     )}
@@ -399,7 +398,7 @@ export default function SchoolDetailsPage() {
                                                         <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
                                                          {c.teacherName && <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>}
                                                     </div>
-                                                    <div className="flex items-center gap-2 self-end sm:self-center">
+                                                    <div className="flex items-center gap-2 self-end sm:self-center mt-2 sm:mt-0">
                                                         <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Pen className="mr-2 h-4 w-4" />Manage Students</Button>
                                                         <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
                                                     </div>
@@ -543,7 +542,7 @@ export default function SchoolDetailsPage() {
                             <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
                         </DialogHeader>
                         <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[60vh] overflow-y-auto">
-                             <div className="flex flex-col gap-4 md:pr-4 md:border-r border-b md:border-b-0 pb-8 md:pb-0">
+                             <div className="flex flex-col gap-4 md:pr-4 md:border-r border-b md:border-b-0 pb-8 md:pb-0 mb-8 md:mb-0">
                                 <h4 className="font-semibold">Add New Student</h4>
                                 <div className="grid gap-3">
                                     <div className="grid gap-1.5"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} required/></div>
