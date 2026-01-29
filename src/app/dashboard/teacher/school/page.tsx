@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Textarea } from '@/components/ui/textarea';
 
 // Interfaces
 interface UserProfile {
@@ -29,6 +30,7 @@ interface School {
     code: string;
     createdAt: string;
     principalId: string;
+    academicYear: string;
 }
 
 // Main component
@@ -42,6 +44,7 @@ export default function SchoolManagementPage() {
     const [isCreateSchoolOpen, setCreateSchoolOpen] = useState(false);
     const [newSchoolName, setNewSchoolName] = useState('');
     const [newSchoolAddress, setNewSchoolAddress] = useState('');
+    const [academicYearDate, setAcademicYearDate] = useState('');
     const [isCreatingSchool, setIsCreatingSchool] = useState(false);
 
     // Fetch user profile
@@ -67,23 +70,34 @@ export default function SchoolManagementPage() {
 
     // Function to handle school creation
     const handleCreateSchool = async () => {
-        if (!firestore || !user || !userProfile || !newSchoolName.trim()) return;
+        if (!firestore || !user || !userProfile || !newSchoolName.trim() || !academicYearDate) return;
         setIsCreatingSchool(true);
         const schoolCode = nanoid(8).toUpperCase();
         
+        const startDate = new Date(academicYearDate);
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth(); // 0-11
+
+        // Academic year is typically April to March in India.
+        // If month is before April (Jan, Feb, Mar), it belongs to the previous academic year.
+        const academicYearStart = startMonth < 3 ? startYear - 1 : startYear;
+        const academicYearString = `${academicYearStart}-${academicYearStart + 1}`;
+    
         try {
             await addDoc(collection(firestore, 'schools'), {
                 name: newSchoolName.trim(),
-                address: '',
+                address: newSchoolAddress.trim(),
                 principalId: user.uid,
                 principalName: userProfile.name,
                 code: schoolCode,
+                academicYear: academicYearString,
                 teacherIds: [user.uid], // Principal is the first teacher
                 classes: [],
                 createdAt: new Date().toISOString(),
             });
             setNewSchoolName('');
             setNewSchoolAddress('');
+            setAcademicYearDate('');
             setCreateSchoolOpen(false);
         } catch (error) {
             console.error("Error creating school:", error);
@@ -163,6 +177,7 @@ export default function SchoolManagementPage() {
                                                         <Clipboard className="h-4 w-4" />
                                                     </Button>
                                                 </div>
+                                                <p className="text-sm text-muted-foreground mt-2">Session: {school.academicYear}</p>
                                             </CardContent>
                                             <CardFooter>
                                               <Button asChild className="w-full">
@@ -195,7 +210,7 @@ export default function SchoolManagementPage() {
                     <DialogHeader>
                         <DialogTitle>Create a New School</DialogTitle>
                         <DialogDescription>
-                            Enter a name for your new school. A unique 8-character code will be generated for teachers to join.
+                            Enter the school details. An academic session will be created based on the start date.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -208,12 +223,21 @@ export default function SchoolManagementPage() {
                                 placeholder="e.g., Knowledge High School"
                             />
                         </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="school-address">School Address</Label>
+                            <Textarea id="school-address" value={newSchoolAddress} onChange={(e) => setNewSchoolAddress(e.target.value)} placeholder="Enter the full address of the school" />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="academic-year-date">Academic Session Start Date</Label>
+                            <Input id="academic-year-date" type="date" value={academicYearDate} onChange={(e) => setAcademicYearDate(e.target.value)} />
+                            <p className="text-xs text-muted-foreground">The academic year (e.g., 2024-2025) will be determined from this date.</p>
+                        </div>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
                              <Button variant="outline">Cancel</Button>
                         </DialogClose>
-                        <Button onClick={handleCreateSchool} disabled={isCreatingSchool || !newSchoolName.trim()}>
+                        <Button onClick={handleCreateSchool} disabled={isCreatingSchool || !newSchoolName.trim() || !academicYearDate}>
                             {isCreatingSchool && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Create School
                         </Button>

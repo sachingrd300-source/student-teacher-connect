@@ -294,6 +294,7 @@
         "principalId": { "type": "string", "description": "The UID of the user who is the principal of the school." },
         "principalName": { "type": "string", "description": "The name of the principal." },
         "code": { "type": "string", "description": "A unique, shareable code for other teachers to join the school staff." },
+        "academicYear": { "type": "string", "description": "The current academic year session, e.g., '2024-2025'." },
         "teacherIds": {
           "type": "array",
           "items": { "type": "string" },
@@ -332,7 +333,7 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "principalId", "principalName", "code", "createdAt"]
+      "required": ["name", "principalId", "principalName", "code", "academicYear", "createdAt"]
     }
   },
   "auth": {
