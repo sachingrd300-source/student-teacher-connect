@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award } from "lucide-react";
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award, Facebook, Twitter, Instagram } from "lucide-react";
 import placeholderImages from '@/lib/placeholder-images';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection, limit, query, where, getCountFromServer } from "firebase/firestore";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
   hidden: {},
@@ -197,10 +198,10 @@ export default function HomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent"></div>
             <div className="relative z-10 container px-4 md:px-6">
-                <motion.h1 variants={fadeInUp} className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tighter font-serif">
+                <motion.h1 variants={fadeInUp} className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tighter font-serif [text-shadow:0_3px_6px_rgba(0,0,0,0.5)]">
                     {t.heroTitle}
                 </motion.h1>
-                <motion.p variants={fadeInUp} className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-white/90">
+                <motion.p variants={fadeInUp} className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-white/90 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
                     {t.heroDescription}
                 </motion.p>
                 <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -335,47 +336,58 @@ export default function HomePage() {
               <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.platformTitle}</h2>
               <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.platformDescription}</p>
             </motion.div>
-            <motion.div 
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.5 }}
-                variants={fadeInUp}
-                className="mb-12"
-            >
-                <Card className="overflow-hidden rounded-2xl shadow-2xl">
-                    <Image 
-                        src={placeholderImages.dashboardPreview.src} 
-                        alt={placeholderImages.dashboardPreview.alt}
-                        width={placeholderImages.dashboardPreview.width}
-                        height={placeholderImages.dashboardPreview.height}
-                        className="w-full"
-                        data-ai-hint={placeholderImages.dashboardPreview.hint}
-                    />
-                </Card>
-            </motion.div>
-            <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer(0.2, 0)}>
-                <h3 className="text-2xl font-bold mb-6">{t.platformStudentTitle}</h3>
-                <ul className="space-y-4">
-                  {platformFeatures.students.map((feature, index) => (
-                    <motion.li key={index} variants={fadeInUp} className="flex items-start">
-                      {feature.icon}
-                      <span className="flex-1">{feature.text}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer(0.2, 0)}>
-                <h3 className="text-2xl font-bold mb-6">{t.platformTeacherTitle}</h3>
-                <ul className="space-y-4">
-                  {platformFeatures.teachers.map((feature, index) => (
-                    <motion.li key={index} variants={fadeInUp} className="flex items-start">
-                      {feature.icon}
-                      <span className="flex-1">{feature.text}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
+
+            <div className="grid lg:grid-cols-2 gap-12 items-center mt-12">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                    variants={fadeInUp}
+                >
+                    <Card className="overflow-hidden rounded-2xl shadow-2xl">
+                        <Image 
+                            src={placeholderImages.dashboardPreview.src} 
+                            alt={placeholderImages.dashboardPreview.alt}
+                            width={placeholderImages.dashboardPreview.width}
+                            height={placeholderImages.dashboardPreview.height}
+                            className="w-full"
+                            data-ai-hint={placeholderImages.dashboardPreview.hint}
+                        />
+                    </Card>
+                </motion.div>
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }} 
+                    variants={staggerContainer(0.2, 0.2)}
+                >
+                    <Tabs defaultValue="students" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="students">{t.forStudentsTitle}</TabsTrigger>
+                            <TabsTrigger value="teachers">{t.forTeachersTitle}</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="students" className="mt-6">
+                            <ul className="space-y-4">
+                              {platformFeatures.students.map((feature, index) => (
+                                <motion.li key={index} variants={fadeInUp} className="flex items-start">
+                                  {feature.icon}
+                                  <span className="flex-1">{feature.text}</span>
+                                </motion.li>
+                              ))}
+                            </ul>
+                        </TabsContent>
+                        <TabsContent value="teachers" className="mt-6">
+                            <ul className="space-y-4">
+                              {platformFeatures.teachers.map((feature, index) => (
+                                <motion.li key={index} variants={fadeInUp} className="flex items-start">
+                                  {feature.icon}
+                                  <span className="flex-1">{feature.text}</span>
+                                </motion.li>
+                              ))}
+                            </ul>
+                        </TabsContent>
+                    </Tabs>
+                </motion.div>
             </div>
           </div>
         </section>
@@ -438,7 +450,7 @@ export default function HomePage() {
                 <p className="text-muted-foreground mb-6">{t.freeResourcesDescription}</p>
                 <div className="flex flex-wrap gap-3">
                   {['Notes', 'PYQs', 'Books', 'DPPs'].map((item, index) => (
-                    <motion.div key={index} variants={fadeInUp} className="bg-background rounded-full px-4 py-2 text-sm font-semibold shadow-sm border">
+                    <motion.div key={index} variants={fadeInUp} className="bg-background rounded-full px-4 py-2 text-sm font-semibold shadow-sm border hover:bg-muted transition-colors">
                       {item}
                     </motion.div>
                   ))}
@@ -454,7 +466,7 @@ export default function HomePage() {
                 <p className="text-muted-foreground mb-6">{t.subjectsCoveredDescription}</p>
                 <div className="flex flex-wrap gap-3">
                   {['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'History', 'Geography', 'Economics', 'Accountancy', 'Business Studies'].map((item, index) => (
-                    <motion.div key={index} variants={fadeInUp} className="bg-background rounded-full px-4 py-2 text-sm font-semibold shadow-sm border">
+                    <motion.div key={index} variants={fadeInUp} className="bg-background rounded-full px-4 py-2 text-sm font-semibold shadow-sm border hover:bg-muted transition-colors">
                       {item}
                     </motion.div>
                   ))}
@@ -605,6 +617,11 @@ export default function HomePage() {
                 <div className="flex items-center gap-2">
                 <span>Giridih, Jharkhand</span>
                 </div>
+            </div>
+             <div className="flex justify-center gap-4 mt-8">
+                <a href="#" className="text-gray-400 hover:text-white"><Facebook className="h-6 w-6"/></a>
+                <a href="#" className="text-gray-400 hover:text-white"><Twitter className="h-6 w-6"/></a>
+                <a href="#" className="text-gray-400 hover:text-white"><Instagram className="h-6 w-6"/></a>
             </div>
             <p className="mt-8 text-gray-500 text-sm">
                 © {new Date().getFullYear()} EduConnect Pro. All Rights Reserved.
