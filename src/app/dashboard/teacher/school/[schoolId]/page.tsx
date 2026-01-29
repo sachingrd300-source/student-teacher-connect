@@ -108,6 +108,12 @@ export default function SchoolDetailsPage() {
 
     const [studentForFees, setStudentForFees] = useState<{student: StudentEntry, classId: string} | null>(null);
 
+    const [classToEdit, setClassToEdit] = useState<ClassEntry | null>(null);
+    const [editingClassName, setEditingClassName] = useState('');
+    const [editingClassSection, setEditingClassSection] = useState('');
+    const [editingClassTeacherId, setEditingClassTeacherId] = useState('');
+    const [isUpdatingClass, setIsUpdatingClass] = useState(false);
+
     // Fetch current user's profile for header
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
@@ -143,6 +149,14 @@ export default function SchoolDetailsPage() {
             setAcademicYear(school.academicYear || '');
         }
     }, [school]);
+
+    useEffect(() => {
+        if (classToEdit) {
+            setEditingClassName(classToEdit.name);
+            setEditingClassSection(classToEdit.section);
+            setEditingClassTeacherId(classToEdit.teacherId || '');
+        }
+    }, [classToEdit]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -229,6 +243,35 @@ export default function SchoolDetailsPage() {
         setNewClassTeacherId('');
         setIsAddingClass(false);
         setAddClassOpen(false);
+    };
+
+    const handleUpdateClass = async () => {
+        if (!editingClassName.trim() || !editingClassSection.trim() || !school || !classToEdit) return;
+        setIsUpdatingClass(true);
+
+        const selectedTeacher = teachers?.find(t => t.id === editingClassTeacherId);
+
+        const updatedClasses = (school.classes || []).map(c => {
+            if (c.id === classToEdit.id) {
+                return {
+                    ...c,
+                    name: editingClassName.trim(),
+                    section: editingClassSection.trim(),
+                    teacherId: selectedTeacher?.id || '',
+                    teacherName: selectedTeacher?.name || '',
+                };
+            }
+            return c;
+        });
+        
+        try {
+            await updateDoc(schoolRef, { classes: updatedClasses });
+            setClassToEdit(null);
+        } catch (error) {
+            console.error("Error updating class:", error);
+        } finally {
+            setIsUpdatingClass(false);
+        }
     };
     
     const handleDeleteClass = async (classId: string) => {
@@ -407,10 +450,15 @@ export default function SchoolDetailsPage() {
                                                     <div className='w-full'>
                                                         <p className="font-semibold">{c.name} - Section {c.section}</p>
                                                         <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
-                                                         {c.teacherName && <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>}
+                                                         {c.teacherName ? (
+                                                            <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>
+                                                         ) : (
+                                                            <p className="text-sm text-yellow-600 mt-1 font-semibold">No teacher assigned</p>
+                                                         )}
                                                     </div>
                                                     <div className="flex items-center gap-2 self-end sm:self-center mt-2 sm:mt-0">
-                                                        <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Pen className="mr-2 h-4 w-4" />Manage Students</Button>
+                                                        <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Users className="mr-2 h-4 w-4" />Students</Button>
+                                                        <Button variant="outline" size="icon" onClick={() => setClassToEdit(c)}><Pen className="h-4 w-4" /></Button>
                                                         <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
                                                     </div>
                                                 </div>
@@ -600,6 +648,47 @@ export default function SchoolDetailsPage() {
                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                             <Button onClick={handleAddClass} disabled={isAddingClass || !newClassName || !newClassSection}>
                                 {isAddingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FilePlus className="mr-2 h-4 w-4" />} Create Class
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                 <Dialog open={!!classToEdit} onOpenChange={(isOpen) => !isOpen && setClassToEdit(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit Class</DialogTitle>
+                            <DialogDescription>
+                                Update the class details and assign a teacher.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-class-name">Class Name</Label>
+                                <Input id="edit-class-name" value={editingClassName} onChange={e => setEditingClassName(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-class-section">Section</Label>
+                                <Input id="edit-class-section" value={editingClassSection} onChange={e => setEditingClassSection(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-class-teacher">Assign Teacher</Label>
+                                <Select value={editingClassTeacherId} onValueChange={setEditingClassTeacherId}>
+                                    <SelectTrigger id="edit-class-teacher">
+                                        <SelectValue placeholder="Select a teacher" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">No Teacher</SelectItem>
+                                        {(teachers || []).map(teacher => (
+                                            <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <Button onClick={handleUpdateClass} disabled={isUpdatingClass || !editingClassName || !editingClassSection}>
+                                {isUpdatingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Changes
                             </Button>
                         </DialogFooter>
                     </DialogContent>
