@@ -313,7 +313,10 @@
                   "properties": {
                     "id": { "type": "string", "description": "Unique ID for the student entry." },
                     "name": { "type": "string", "description": "Full name of the student." },
-                    "rollNumber": { "type": "string", "description": "The student's roll number in the class." }
+                    "rollNumber": { "type": "string", "description": "The student's roll number in the class." },
+                    "fatherName": { "type": "string", "description": "The student's father's name." },
+                    "mobileNumber": { "type": "string", "description": "The student's contact mobile number." },
+                    "address": { "type": "string", "description": "The student's physical address." }
                   },
                   "required": ["id", "name"]
                 }

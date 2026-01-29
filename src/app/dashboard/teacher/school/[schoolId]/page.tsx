@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -28,6 +29,9 @@ interface StudentEntry {
     id: string;
     name:string;
     rollNumber?: string;
+    fatherName?: string;
+    mobileNumber?: string;
+    address?: string;
 }
 
 interface ClassEntry {
@@ -80,6 +84,9 @@ export default function SchoolDetailsPage() {
     const [classToManage, setClassToManage] = useState<ClassEntry | null>(null);
     const [newStudentName, setNewStudentName] = useState('');
     const [newStudentRoll, setNewStudentRoll] = useState('');
+    const [newStudentFatherName, setNewStudentFatherName] = useState('');
+    const [newStudentMobileNumber, setNewStudentMobileNumber] = useState('');
+    const [newStudentAddress, setNewStudentAddress] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
 
     // Fetch current user's profile for header
@@ -189,6 +196,9 @@ export default function SchoolDetailsPage() {
             id: nanoid(),
             name: newStudentName.trim(),
             rollNumber: newStudentRoll.trim(),
+            fatherName: newStudentFatherName.trim(),
+            mobileNumber: newStudentMobileNumber.trim(),
+            address: newStudentAddress.trim(),
         };
 
         const updatedClasses = (school.classes || []).map(c => {
@@ -206,6 +216,9 @@ export default function SchoolDetailsPage() {
 
         setNewStudentName('');
         setNewStudentRoll('');
+        setNewStudentFatherName('');
+        setNewStudentMobileNumber('');
+        setNewStudentAddress('');
         setIsAddingStudent(false);
     };
 
@@ -269,8 +282,8 @@ export default function SchoolDetailsPage() {
 
                     <Tabs defaultValue="classes" className="w-full">
                         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                            <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
+                             <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
+                             <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
                             <TabsTrigger value="students">Students</TabsTrigger>
                             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                         </TabsList>
@@ -352,11 +365,16 @@ export default function SchoolDetailsPage() {
                                             {(school.classes || []).map(c => (c.students && c.students.length > 0) && (
                                                 <div key={c.id}>
                                                     <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
-                                                     <div className="grid gap-2">
+                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                         {c.students.map(s => (
-                                                            <div key={s.id} className="flex justify-between items-center p-2 rounded-md">
-                                                                <p>{s.name}</p>
-                                                                <p className="text-sm text-muted-foreground">Roll: {s.rollNumber || 'N/A'}</p>
+                                                            <div key={s.id} className="p-3 rounded-lg border bg-background">
+                                                                <p className="font-semibold">{s.name}</p>
+                                                                <div className="mt-2 text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                                                                    <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
+                                                                    <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
+                                                                    <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
+                                                                    <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
+                                                                </div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -422,7 +440,7 @@ export default function SchoolDetailsPage() {
                                         <SelectValue placeholder="Select a teacher" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {teachers?.map(teacher => (
+                                        {(teachers || []).map(teacher => (
                                             <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -443,26 +461,38 @@ export default function SchoolDetailsPage() {
                         <DialogHeader>
                             <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
                         </DialogHeader>
-                        <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[60vh]">
-                            <div className="flex flex-col gap-4">
+                        <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[60vh] overflow-y-auto">
+                             <div className="flex flex-col gap-4 pr-4 border-r">
                                 <h4 className="font-semibold">Add New Student</h4>
-                                <div className="grid gap-2"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} /></div>
-                                <div className="grid gap-2"><Label htmlFor="student-roll">Roll Number (Optional)</Label><Input id="student-roll" value={newStudentRoll} onChange={e => setNewStudentRoll(e.target.value)} /></div>
+                                <div className="grid gap-3">
+                                    <div className="grid gap-1.5"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} required/></div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid gap-1.5"><Label htmlFor="student-roll">Roll Number</Label><Input id="student-roll" value={newStudentRoll} onChange={e => setNewStudentRoll(e.target.value)} /></div>
+                                        <div className="grid gap-1.5"><Label htmlFor="student-father">Father's Name</Label><Input id="student-father" value={newStudentFatherName} onChange={e => setNewStudentFatherName(e.target.value)} /></div>
+                                    </div>
+                                    <div className="grid gap-1.5"><Label htmlFor="student-mobile">Mobile Number</Label><Input id="student-mobile" value={newStudentMobileNumber} onChange={e => setNewStudentMobileNumber(e.target.value)} /></div>
+                                    <div className="grid gap-1.5"><Label htmlFor="student-address">Address</Label><Textarea id="student-address" value={newStudentAddress} onChange={e => setNewStudentAddress(e.target.value)} rows={2} /></div>
+                                </div>
                                 <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-2 w-fit">
                                     {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4"/>} Add Student
                                 </Button>
                             </div>
-                            <div className="flex flex-col gap-4 overflow-y-auto pr-2">
+                            <div className="flex flex-col gap-4 overflow-y-auto">
                                  <h4 className="font-semibold">Enrolled Students ({classToManage?.students?.length || 0})</h4>
                                  {classToManage?.students && classToManage.students.length > 0 ? (
-                                    <div className="grid gap-2">
+                                    <div className="grid gap-3">
                                         {classToManage.students.map(s => (
-                                            <div key={s.id} className="flex items-center justify-between p-2 rounded-md border">
-                                                <div>
-                                                    <p>{s.name}</p>
-                                                    <p className="text-xs text-muted-foreground">Roll: {s.rollNumber || 'N/A'}</p>
+                                             <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="font-semibold">{s.name}</p>
+                                                    <Button size="icon" variant="ghost" className="text-destructive h-7 w-7" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>
                                                 </div>
-                                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                                                <div className="mt-2 text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                                                    <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
+                                                    <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
+                                                    <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
+                                                    <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
