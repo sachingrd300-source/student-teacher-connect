@@ -41,11 +41,11 @@ export default function SchoolManagementPage() {
     const router = useRouter();
     
     // State for create dialog
-    const [isCreateSchoolOpen, setCreateSchoolOpen] = useState(false);
-    const [newSchoolName, setNewSchoolName] = useState('');
+    const [isCreateSessionOpen, setCreateSessionOpen] = useState(false);
+    const [newSessionName, setNewSessionName] = useState('');
     const [newSchoolAddress, setNewSchoolAddress] = useState('');
     const [academicYearDate, setAcademicYearDate] = useState('');
-    const [isCreatingSchool, setIsCreatingSchool] = useState(false);
+    const [isCreatingSession, setIsCreatingSession] = useState(false);
 
     // Fetch user profile
     const userProfileRef = useMemoFirebase(() => {
@@ -69,9 +69,9 @@ export default function SchoolManagementPage() {
     }, [user, userProfile, isUserLoading, profileLoading, router]);
 
     // Function to handle school creation
-    const handleCreateSchool = async () => {
-        if (!firestore || !user || !userProfile || !newSchoolName.trim() || !academicYearDate) return;
-        setIsCreatingSchool(true);
+    const handleCreateSession = async () => {
+        if (!firestore || !user || !userProfile || !newSessionName.trim() || !academicYearDate) return;
+        setIsCreatingSession(true);
         const schoolCode = nanoid(8).toUpperCase();
         
         const startDate = new Date(academicYearDate);
@@ -85,7 +85,7 @@ export default function SchoolManagementPage() {
     
         try {
             await addDoc(collection(firestore, 'schools'), {
-                name: newSchoolName.trim(),
+                name: newSessionName.trim(),
                 address: newSchoolAddress.trim(),
                 principalId: user.uid,
                 principalName: userProfile.name,
@@ -95,14 +95,14 @@ export default function SchoolManagementPage() {
                 classes: [],
                 createdAt: new Date().toISOString(),
             });
-            setNewSchoolName('');
+            setNewSessionName('');
             setNewSchoolAddress('');
             setAcademicYearDate('');
-            setCreateSchoolOpen(false);
+            setCreateSessionOpen(false);
         } catch (error) {
             console.error("Error creating school:", error);
         } finally {
-            setIsCreatingSchool(false);
+            setIsCreatingSession(false);
         }
     };
 
@@ -143,14 +143,14 @@ export default function SchoolManagementPage() {
                             Back to Dashboard
                         </Button>
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">School Management</h1>
-                        <p className="text-muted-foreground mt-2">Create and manage your schools.</p>
+                        <p className="text-muted-foreground mt-2">Create and manage your school sessions.</p>
                     </div>
                     
                     <Card className="rounded-2xl shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>My Schools ({schools?.length || 0})</CardTitle>
-                            <Button size="sm" onClick={() => setCreateSchoolOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Create School
+                            <CardTitle>My Sessions ({schools?.length || 0})</CardTitle>
+                            <Button size="sm" onClick={() => setCreateSessionOpen(true)}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Create Session
                             </Button>
                         </CardHeader>
                         <CardContent>
@@ -182,7 +182,7 @@ export default function SchoolManagementPage() {
                                             <CardFooter>
                                               <Button asChild className="w-full">
                                                   <Link href={`/dashboard/teacher/school/${school.id}`}>
-                                                      <Settings className="mr-2 h-4 w-4" /> Manage School
+                                                      <Settings className="mr-2 h-4 w-4" /> Manage Session
                                                   </Link>
                                               </Button>
                                             </CardFooter>
@@ -193,10 +193,10 @@ export default function SchoolManagementPage() {
                             ) : (
                                 <div className="text-center py-16 flex flex-col items-center">
                                     <School className="h-16 w-16 text-muted-foreground mb-4" />
-                                    <h3 className="text-xl font-semibold">You haven't created any schools yet.</h3>
-                                    <p className="text-muted-foreground mt-2 mb-6 max-w-md">Create a school to manage classes, teachers, and students all in one place.</p>
-                                    <Button onClick={() => setCreateSchoolOpen(true)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Your First School
+                                    <h3 className="text-xl font-semibold">You haven't created any sessions yet.</h3>
+                                    <p className="text-muted-foreground mt-2 mb-6 max-w-md">Create a session to manage classes, teachers, and students all in one place.</p>
+                                    <Button onClick={() => setCreateSessionOpen(true)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Session
                                     </Button>
                                 </div>
                             )}
@@ -205,12 +205,12 @@ export default function SchoolManagementPage() {
                 </div>
             </main>
 
-            <Dialog open={isCreateSchoolOpen} onOpenChange={setCreateSchoolOpen}>
+            <Dialog open={isCreateSessionOpen} onOpenChange={setCreateSessionOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Create a New School</DialogTitle>
+                        <DialogTitle>Create a New Session</DialogTitle>
                         <DialogDescription>
-                            Enter the school details. An academic session will be created based on the start date.
+                            Enter the session details. An academic session will be created based on the start date.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -218,8 +218,8 @@ export default function SchoolManagementPage() {
                             <Label htmlFor="school-name">School Name</Label>
                             <Input 
                                 id="school-name"
-                                value={newSchoolName} 
-                                onChange={(e) => setNewSchoolName(e.target.value)}
+                                value={newSessionName} 
+                                onChange={(e) => setNewSessionName(e.target.value)}
                                 placeholder="e.g., Knowledge High School"
                             />
                         </div>
@@ -237,9 +237,9 @@ export default function SchoolManagementPage() {
                         <DialogClose asChild>
                              <Button variant="outline">Cancel</Button>
                         </DialogClose>
-                        <Button onClick={handleCreateSchool} disabled={isCreatingSchool || !newSchoolName.trim() || !academicYearDate}>
-                            {isCreatingSchool && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create School
+                        <Button onClick={handleCreateSession} disabled={isCreatingSession || !newSessionName.trim() || !academicYearDate}>
+                            {isCreatingSession && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create Session
                         </Button>
                     </DialogFooter>
                 </DialogContent>
