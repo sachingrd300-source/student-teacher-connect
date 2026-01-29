@@ -323,21 +323,7 @@
                     "fatherName": { "type": "string", "description": "The student's father's name." },
                     "mobileNumber": { "type": "string", "description": "The student's contact mobile number." },
                     "address": { "type": "string", "description": "The student's physical address." },
-                    "admissionDate": { "type": "string", "format": "date-time", "description": "The date the student was admitted." },
-                    "fees": {
-                      "type": "array",
-                      "description": "Monthly fee payment status for the student.",
-                      "items": {
-                          "type": "object",
-                          "properties": {
-                              "feeMonth": { "type": "number", "description": "The month of the fee (1-12)." },
-                              "feeYear": { "type": "number", "description": "The year of the fee." },
-                              "status": { "type": "string", "enum": ["paid", "unpaid"] },
-                              "paidOn": { "type": "string", "format": "date-time" }
-                          },
-                          "required": ["feeMonth", "feeYear", "status"]
-                      }
-                    }
+                    "admissionDate": { "type": "string", "format": "date-time", "description": "The date the student was admitted." }
                   },
                   "required": ["id", "name"]
                 }
