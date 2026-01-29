@@ -67,14 +67,14 @@ export default function SchoolManagementPage() {
 
     // Function to handle school creation
     const handleCreateSchool = async () => {
-        if (!firestore || !user || !userProfile || !newSchoolName.trim() || !newSchoolAddress.trim()) return;
+        if (!firestore || !user || !userProfile || !newSchoolName.trim()) return;
         setIsCreatingSchool(true);
         const schoolCode = nanoid(8).toUpperCase();
         
         try {
             await addDoc(collection(firestore, 'schools'), {
                 name: newSchoolName.trim(),
-                address: newSchoolAddress.trim(),
+                address: '',
                 principalId: user.uid,
                 principalName: userProfile.name,
                 code: schoolCode,
@@ -195,7 +195,7 @@ export default function SchoolManagementPage() {
                     <DialogHeader>
                         <DialogTitle>Create a New School</DialogTitle>
                         <DialogDescription>
-                            Enter the details for your new school. A unique 8-character code will be generated for teachers to join.
+                            Enter a name for your new school. A unique 8-character code will be generated for teachers to join.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -208,21 +208,12 @@ export default function SchoolManagementPage() {
                                 placeholder="e.g., Knowledge High School"
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="school-address">School Address</Label>
-                            <Input 
-                                id="school-address" 
-                                value={newSchoolAddress} 
-                                onChange={(e) => setNewSchoolAddress(e.target.value)}
-                                placeholder="e.g., 123 Education Lane, Giridih"
-                            />
-                        </div>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
                              <Button variant="outline">Cancel</Button>
                         </DialogClose>
-                        <Button onClick={handleCreateSchool} disabled={isCreatingSchool || !newSchoolName.trim() || !newSchoolAddress.trim()}>
+                        <Button onClick={handleCreateSchool} disabled={isCreatingSchool || !newSchoolName.trim()}>
                             {isCreatingSchool && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Create School
                         </Button>

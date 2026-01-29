@@ -332,7 +332,7 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "address", "principalId", "principalName", "code", "createdAt"]
+      "required": ["name", "principalId", "principalName", "code", "createdAt"]
     }
   },
   "auth": {
