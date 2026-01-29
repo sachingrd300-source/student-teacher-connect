@@ -85,6 +85,7 @@ export default function TeacherLoginPage() {
           name: user.displayName || user.email?.split('@')[0],
           email: user.email,
           role: 'teacher', // Default to teacher for Google sign-in on teacher page
+          teacherType: 'coaching', // Default management focus
           createdAt: new Date().toISOString(),
           coins: 0,
           streak: 0,

@@ -17,6 +17,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SignupPage() {
   const auth = useAuth();
@@ -28,6 +29,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [managementFocus, setManagementFocus] = useState<'coaching' | 'school'>('coaching');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -53,7 +55,7 @@ export default function SignupPage() {
       const user = userCredential.user;
       const userRef = doc(firestore, `users/${user.uid}`);
       
-      const dataToSet = {
+      const dataToSet: { [key: string]: any } = {
           id: user.uid,
           name: name.trim(),
           email: email.trim(), 
@@ -63,6 +65,10 @@ export default function SignupPage() {
           streak: 0,
           lastLoginDate: '',
       };
+
+      if (role === 'teacher') {
+        dataToSet.teacherType = managementFocus;
+      }
       
       await setDoc(userRef, dataToSet);
       
@@ -116,6 +122,33 @@ export default function SignupPage() {
                     </div>
                   </RadioGroup>
                 </div>
+                
+                <AnimatePresence>
+                  {role === 'teacher' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="grid gap-2 overflow-hidden"
+                    >
+                      <div className="grid gap-2">
+                        <Label>I want to manage...</Label>
+                        <RadioGroup defaultValue="coaching" onValueChange={(value) => setManagementFocus(value as 'coaching' | 'school')} className="flex gap-4 pt-1">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="coaching" id="focus-coaching" />
+                            <Label htmlFor="focus-coaching">My Coaching</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="school" id="focus-school" />
+                            <Label htmlFor="focus-school">A School</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="grid gap-2">
                   <Label htmlFor="full-name">Full Name</Label>
                   <Input id="full-name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />

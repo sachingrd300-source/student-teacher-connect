@@ -9,6 +9,7 @@ import { Loader2, School } from 'lucide-react';
 interface UserProfile {
     name: string;
     role: 'student' | 'teacher' | 'admin' | 'parent';
+    teacherType?: 'coaching' | 'school';
     coins?: number;
     streak?: number;
     lastLoginDate?: string; // YYYY-MM-DD
@@ -87,7 +88,11 @@ export default function DashboardPage() {
 
 
             if (userProfile.role === 'teacher') {
-                router.replace('/dashboard/teacher');
+                if (userProfile.teacherType === 'school') {
+                    router.replace('/dashboard/teacher/school');
+                } else { // Defaults to coaching
+                    router.replace('/dashboard/teacher/coaching');
+                }
             } else if (userProfile.role === 'student') {
                 router.replace('/dashboard/student');
             } else if (userProfile.role === 'admin') {

@@ -23,6 +23,11 @@
           "description": "The role of the user.",
           "enum": ["student", "teacher", "admin", "parent"]
         },
+        "teacherType": {
+          "type": "string",
+          "description": "Specifies the management focus for a teacher.",
+          "enum": ["coaching", "school"]
+        },
         "bio": {
           "type": "string",
           "description": "A short biography of the user."
