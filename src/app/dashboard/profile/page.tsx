@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -168,13 +169,13 @@ export default function ProfilePage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
                      <Card className="rounded-2xl shadow-lg">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
+                        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className='w-full'>
                                 <CardTitle>My Profile</CardTitle>
                                 <CardDescription>View and edit your personal information.</CardDescription>
                             </div>
                             {!isEditing && (
-                               <Button variant="outline" size="icon" onClick={() => setIsEditing(true)}>
+                               <Button variant="outline" size="icon" onClick={() => setIsEditing(true)} className="self-end sm:self-auto flex-shrink-0">
                                     <Edit className="h-4 w-4" />
                                     <span className="sr-only">Edit Profile</span>
                                 </Button>

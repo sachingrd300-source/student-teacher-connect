@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -296,13 +297,13 @@ export default function StudentBatchPage() {
                                         {materials && materials.length > 0 ? (
                                             <div className="grid gap-4">
                                                 {materials.map(material => (
-                                                    <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                        <div>
+                                                    <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                                        <div className="w-full">
                                                             <p className="font-semibold">{material.title}</p>
                                                              <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
                                                             <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
                                                         </div>
-                                                        <Button asChild size="sm">
+                                                        <Button asChild size="sm" className="self-end sm:self-center flex-shrink-0">
                                                             <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
                                                             <Download className="mr-2 h-4 w-4" /> Download
                                                             </a>
@@ -335,13 +336,13 @@ export default function StudentBatchPage() {
                                                 {tests.map((test) => {
                                                     const result = resultsByTestId.get(test.id);
                                                     return (
-                                                        <div key={test.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                            <div>
+                                                        <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-lg border bg-background">
+                                                            <div className="w-full">
                                                                 <p className="font-semibold">{test.title}</p>
                                                                 <p className="text-sm text-muted-foreground mt-1">{test.subject}</p>
                                                                 <p className="text-xs text-muted-foreground mt-2">Date: {new Date(test.testDate).toLocaleDateString()}</p>
                                                             </div>
-                                                            <div className="text-right">
+                                                            <div className="text-right self-end sm:self-center">
                                                                 {result ? (
                                                                     <>
                                                                         <p className="text-xl font-bold text-primary">{result.marksObtained} <span className="text-sm font-normal text-muted-foreground">/ {test.maxMarks}</span></p>
@@ -382,8 +383,8 @@ export default function StudentBatchPage() {
                                                     const isPaid = feeInfo?.status === 'paid';
                                                     
                                                     return (
-                                                        <div key={key} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                            <div>
+                                                        <div key={key} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                                            <div className="w-full">
                                                                 <p className="font-medium">
                                                                     {monthFormatter.format(new Date(year, month - 1))}
                                                                 </p>
@@ -399,7 +400,7 @@ export default function StudentBatchPage() {
                                                                     PAID
                                                                 </div>
                                                             ) : (
-                                                                <div className="flex items-center gap-4">
+                                                                <div className="flex items-center gap-4 self-end sm:self-center">
                                                                     <div className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
                                                                         DUE
                                                                     </div>

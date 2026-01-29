@@ -443,7 +443,7 @@ export default function BatchManagementPage() {
                         </Button>
                         <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
-                                <div className="flex justify-between items-start">
+                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                     <div>
                                         <CardTitle className="text-2xl font-serif">{batch.name}</CardTitle>
                                         <div className="flex items-center gap-2 mt-2">
@@ -454,7 +454,7 @@ export default function BatchManagementPage() {
                                             </Button>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 self-end sm:self-auto">
                                         <Button variant="outline" size="icon" onClick={() => setIsEditing(true)}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
@@ -764,4 +764,3 @@ export default function BatchManagementPage() {
         </div>
     );
 }
-

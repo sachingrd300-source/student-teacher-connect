@@ -304,17 +304,15 @@ export default function SchoolDetailsPage() {
                             Back to My Sessions
                         </Button>
                         <Card className="rounded-2xl shadow-lg">
-                             <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className="text-2xl font-serif">{school.name}</CardTitle>
-                                        <CardDescription>{school.address}</CardDescription>
-                                    </div>
-                                    <div>
-                                        <Button variant="outline" size="icon" onClick={() => setIsEditingSchool(true)}>
-                                            <Pen className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                             <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                                <div className='w-full'>
+                                    <CardTitle className="text-2xl font-serif">{school.name}</CardTitle>
+                                    <CardDescription>{school.address}</CardDescription>
+                                </div>
+                                <div className="self-end sm:self-start flex-shrink-0">
+                                    <Button variant="outline" size="icon" onClick={() => setIsEditingSchool(true)}>
+                                        <Pen className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </CardHeader>
                         </Card>
@@ -362,8 +360,8 @@ export default function SchoolDetailsPage() {
                                         teachers && teachers.length > 0 ? (
                                         <div className="grid gap-4">
                                             {teachers.map(teacher => (
-                                                <div key={teacher.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                    <div className="flex items-center gap-3">
+                                                <div key={teacher.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                                    <div className="flex items-center gap-3 w-full">
                                                         <Avatar><AvatarFallback>{getInitials(teacher.name)}</AvatarFallback></Avatar>
                                                         <div>
                                                             <p className="font-semibold">{teacher.name}</p>
@@ -371,9 +369,9 @@ export default function SchoolDetailsPage() {
                                                         </div>
                                                     </div>
                                                     {teacher.id !== school.principalId ? (
-                                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)}><UserX className="mr-2 h-4 w-4" />Remove</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center"><UserX className="mr-2 h-4 w-4" />Remove</Button>
                                                     ) : (
-                                                        <span className="text-xs font-semibold text-primary px-3">PRINCIPAL</span>
+                                                        <span className="text-xs font-semibold text-primary px-3 self-end sm:self-center">PRINCIPAL</span>
                                                     )}
                                                 </div>
                                             ))}
@@ -395,13 +393,13 @@ export default function SchoolDetailsPage() {
                                     {school.classes && school.classes.length > 0 ? (
                                          <div className="grid gap-4">
                                             {school.classes.map(c => (
-                                                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
-                                                    <div>
+                                                <div key={c.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                                    <div className='w-full'>
                                                         <p className="font-semibold">{c.name} - Section {c.section}</p>
                                                         <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
                                                          {c.teacherName && <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 self-end sm:self-center">
                                                         <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Pen className="mr-2 h-4 w-4" />Manage Students</Button>
                                                         <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
                                                     </div>
@@ -596,5 +594,3 @@ export default function SchoolDetailsPage() {
         </div>
     );
 }
-
-    
