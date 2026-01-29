@@ -308,14 +308,6 @@ export default function SchoolDetailsPage() {
                                     <div>
                                         <CardTitle className="text-2xl font-serif">{school.name}</CardTitle>
                                         <CardDescription>{school.address}</CardDescription>
-                                        {school.academicYear && <CardDescription className="font-semibold mt-1">Session: {school.academicYear}</CardDescription>}
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <p className="text-sm text-muted-foreground">Join Code:</p>
-                                            <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{school.code}</span>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => copyToClipboard(school.code)}>
-                                                <Clipboard className="h-4 w-4" />
-                                            </Button>
-                                        </div>
                                     </div>
                                     <div>
                                         <Button variant="outline" size="icon" onClick={() => setIsEditingSchool(true)}>
