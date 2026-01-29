@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award, Facebook, Twitter, Instagram } from "lucide-react";
+import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award, Facebook, Twitter, Instagram, Building2 } from "lucide-react";
 import placeholderImages from '@/lib/placeholder-images';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,17 +109,17 @@ export default function HomePage() {
 
   const features = [
       {
-          icon: <GraduationCap className="w-8 h-8 text-primary" />,
+          icon: <Briefcase className="w-8 h-8 text-primary" />,
           title: t.feature1Title,
           description: t.feature1Description
       },
       {
-          icon: <BookOpen className="w-8 h-8 text-primary" />,
+          icon: <Building2 className="w-8 h-8 text-primary" />,
           title: t.feature2Title,
           description: t.feature2Description
       },
       {
-          icon: <UserCheck className="w-8 h-8 text-primary" />,
+          icon: <GraduationCap className="w-8 h-8 text-primary" />,
           title: t.feature3Title,
           description: t.feature3Description
       }
