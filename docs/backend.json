@@ -322,7 +322,8 @@
                     "rollNumber": { "type": "string", "description": "The student's roll number in the class." },
                     "fatherName": { "type": "string", "description": "The student's father's name." },
                     "mobileNumber": { "type": "string", "description": "The student's contact mobile number." },
-                    "address": { "type": "string", "description": "The student's physical address." }
+                    "address": { "type": "string", "description": "The student's physical address." },
+                    "admissionDate": { "type": "string", "format": "date-time", "description": "The date the student was admitted." }
                   },
                   "required": ["id", "name"]
                 }
@@ -333,7 +334,7 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "principalId", "principalName", "code", "academicYear", "createdAt"]
+      "required": ["name", "principalId", "principalName", "code", "createdAt"]
     }
   },
   "auth": {

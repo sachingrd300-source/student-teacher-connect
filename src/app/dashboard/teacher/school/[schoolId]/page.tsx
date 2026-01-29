@@ -32,6 +32,7 @@ interface StudentEntry {
     fatherName?: string;
     mobileNumber?: string;
     address?: string;
+    admissionDate?: string;
 }
 
 interface ClassEntry {
@@ -88,6 +89,7 @@ export default function SchoolDetailsPage() {
     const [newStudentFatherName, setNewStudentFatherName] = useState('');
     const [newStudentMobileNumber, setNewStudentMobileNumber] = useState('');
     const [newStudentAddress, setNewStudentAddress] = useState('');
+    const [newStudentAdmissionDate, setNewStudentAdmissionDate] = useState('');
     const [isAddingStudent, setIsAddingStudent] = useState(false);
 
     // Fetch current user's profile for header
@@ -205,6 +207,7 @@ export default function SchoolDetailsPage() {
             fatherName: newStudentFatherName.trim(),
             mobileNumber: newStudentMobileNumber.trim(),
             address: newStudentAddress.trim(),
+            admissionDate: newStudentAdmissionDate ? new Date(newStudentAdmissionDate).toISOString() : undefined,
         };
 
         const updatedClasses = (school.classes || []).map(c => {
@@ -225,6 +228,7 @@ export default function SchoolDetailsPage() {
         setNewStudentFatherName('');
         setNewStudentMobileNumber('');
         setNewStudentAddress('');
+        setNewStudentAdmissionDate('');
         setIsAddingStudent(false);
     };
 
@@ -265,7 +269,7 @@ export default function SchoolDetailsPage() {
                     <div>
                         <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/school')} className="mb-4">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to My Schools
+                            Back to My Sessions
                         </Button>
                         <Card className="rounded-2xl shadow-lg">
                              <CardHeader>
@@ -404,6 +408,9 @@ export default function SchoolDetailsPage() {
                                                                     <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
                                                                     <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
                                                                     <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
+                                                                    {s.admissionDate && (
+                                                                        <p className="col-span-2"><strong>Admission:</strong> {new Date(s.admissionDate).toLocaleDateString()}</p>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -491,6 +498,7 @@ export default function SchoolDetailsPage() {
                                     </div>
                                     <div className="grid gap-1.5"><Label htmlFor="student-mobile">Mobile Number</Label><Input id="student-mobile" value={newStudentMobileNumber} onChange={e => setNewStudentMobileNumber(e.target.value)} /></div>
                                     <div className="grid gap-1.5"><Label htmlFor="student-address">Address</Label><Textarea id="student-address" value={newStudentAddress} onChange={e => setNewStudentAddress(e.target.value)} rows={2} /></div>
+                                    <div className="grid gap-1.5"><Label htmlFor="student-admission-date">Admission Date</Label><Input id="student-admission-date" type="date" value={newStudentAdmissionDate} onChange={e => setNewStudentAdmissionDate(e.target.value)} /></div>
                                 </div>
                                 <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-2 w-fit">
                                     {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4"/>} Add Student
@@ -511,6 +519,9 @@ export default function SchoolDetailsPage() {
                                                     <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
                                                     <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
                                                     <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
+                                                    {s.admissionDate && (
+                                                        <p className="col-span-2"><strong>Admission:</strong> {new Date(s.admissionDate).toLocaleDateString()}</p>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
