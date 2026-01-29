@@ -1,19 +1,39 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useEffect } from 'react';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, arrayUnion, arrayRemove, where, query, collection, getDocs, writeBatch } from 'firebase/firestore';
+import { useEffect, useState, useMemo, Fragment } from 'react';
+import { nanoid } from 'nanoid';
+
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Clipboard, Users, Book, User, Building2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
+// Interfaces
 interface UserProfile {
     name: string;
     role?: 'teacher';
+}
+
+interface StudentEntry {
+    id: string;
+    name:string;
+    rollNumber?: string;
+}
+
+interface ClassEntry {
+    id: string;
+    name: string;
+    section: string;
+    students: StudentEntry[];
 }
 
 interface School {
@@ -22,7 +42,18 @@ interface School {
     address: string;
     code: string;
     principalId: string;
+    teacherIds: string[];
+    classes: ClassEntry[];
 }
+
+interface TeacherProfile {
+    id: string;
+    name: string;
+    email: string;
+    role: 'teacher';
+}
+
+const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 export default function SchoolDetailsPage() {
     const { user, isUserLoading } = useUser();
@@ -31,19 +62,37 @@ export default function SchoolDetailsPage() {
     const params = useParams();
     const schoolId = params.schoolId as string;
 
+    // State
+    const [isAddTeacherOpen, setAddTeacherOpen] = useState(false);
+    const [newTeacherEmail, setNewTeacherEmail] = useState('');
+    const [addTeacherError, setAddTeacherError] = useState('');
+    const [isAddingTeacher, setIsAddingTeacher] = useState(false);
+    
+    const [isAddClassOpen, setAddClassOpen] = useState(false);
+    const [newClassName, setNewClassName] = useState('');
+    const [newClassSection, setNewClassSection] = useState('');
+    const [isAddingClass, setIsAddingClass] = useState(false);
+
+    const [classToManage, setClassToManage] = useState<ClassEntry | null>(null);
+    const [newStudentName, setNewStudentName] = useState('');
+    const [newStudentRoll, setNewStudentRoll] = useState('');
+    const [isAddingStudent, setIsAddingStudent] = useState(false);
+
     // Fetch current user's profile for header
-    const userProfileRef = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user?.uid]);
+    const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
     // Fetch school data
-    const schoolRef = useMemoFirebase(() => {
-        if (!firestore || !schoolId) return null;
-        return doc(firestore, 'schools', schoolId);
-    }, [firestore, schoolId]);
+    const schoolRef = useMemoFirebase(() => doc(firestore, 'schools', schoolId), [firestore, schoolId]);
     const { data: school, isLoading: schoolLoading } = useDoc<School>(schoolRef);
+
+    // Fetch profiles of teachers in the school
+    const teachersQuery = useMemoFirebase(() => {
+        if (!firestore || !school || !school.teacherIds || school.teacherIds.length === 0) return null;
+        // Firestore 'in' query is limited to 30 elements. For larger schools, this would need pagination or a different data model.
+        return query(collection(firestore, 'users'), where('__name__', 'in', school.teacherIds.slice(0, 30)));
+    }, [firestore, school]);
+    const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
 
     // Security check: ensure user is the principal
     useEffect(() => {
@@ -55,6 +104,120 @@ export default function SchoolDetailsPage() {
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
+
+    // --- Handler Functions ---
+
+    const handleAddTeacher = async () => {
+        if (!newTeacherEmail.trim()) return;
+        setIsAddingTeacher(true);
+        setAddTeacherError('');
+
+        try {
+            const usersRef = collection(firestore, 'users');
+            const q = query(usersRef, where('email', '==', newTeacherEmail.trim()), where('role', '==', 'teacher'));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                setAddTeacherError('No teacher found with this email or user is not a teacher.');
+                return;
+            }
+
+            const teacherDoc = querySnapshot.docs[0];
+            const teacherId = teacherDoc.id;
+
+            if (school?.teacherIds.includes(teacherId)) {
+                setAddTeacherError('This teacher is already in the school.');
+                return;
+            }
+
+            await updateDoc(schoolRef, { teacherIds: arrayUnion(teacherId) });
+            setNewTeacherEmail('');
+            setAddTeacherOpen(false);
+
+        } catch (error) {
+            setAddTeacherError('An error occurred. Please try again.');
+            console.error("Error adding teacher: ", error);
+        } finally {
+            setIsAddingTeacher(false);
+        }
+    };
+    
+    const handleRemoveTeacher = async (teacherId: string) => {
+        if (teacherId === school?.principalId) return; // Cannot remove the principal
+        await updateDoc(schoolRef, { teacherIds: arrayRemove(teacherId) });
+    };
+
+    const handleAddClass = async () => {
+        if (!newClassName.trim() || !newClassSection.trim() || !school) return;
+        setIsAddingClass(true);
+
+        const newClass: ClassEntry = {
+            id: nanoid(),
+            name: newClassName.trim(),
+            section: newClassSection.trim(),
+            students: [],
+        };
+        
+        await updateDoc(schoolRef, { classes: arrayUnion(newClass) });
+        
+        setNewClassName('');
+        setNewClassSection('');
+        setIsAddingClass(false);
+        setAddClassOpen(false);
+    };
+    
+    const handleDeleteClass = async (classId: string) => {
+        if (!school) return;
+        const updatedClasses = school.classes.filter(c => c.id !== classId);
+        await updateDoc(schoolRef, { classes: updatedClasses });
+    };
+
+    const handleAddStudent = async () => {
+        if (!newStudentName.trim() || !classToManage || !school) return;
+        setIsAddingStudent(true);
+
+        const newStudent: StudentEntry = {
+            id: nanoid(),
+            name: newStudentName.trim(),
+            rollNumber: newStudentRoll.trim(),
+        };
+
+        const updatedClasses = school.classes.map(c => {
+            if (c.id === classToManage.id) {
+                return { ...c, students: [...c.students, newStudent] };
+            }
+            return c;
+        });
+
+        await updateDoc(schoolRef, { classes: updatedClasses });
+        
+        // update local state to re-render dialog
+        const updatedClass = updatedClasses.find(c => c.id === classToManage.id);
+        if (updatedClass) setClassToManage(updatedClass);
+
+        setNewStudentName('');
+        setNewStudentRoll('');
+        setIsAddingStudent(false);
+    };
+
+    const handleRemoveStudent = async (studentId: string) => {
+        if (!classToManage || !school) return;
+
+        const updatedClasses = school.classes.map(c => {
+            if (c.id === classToManage.id) {
+                const updatedStudents = c.students.filter(s => s.id !== studentId);
+                return { ...c, students: updatedStudents };
+            }
+            return c;
+        });
+
+        await updateDoc(schoolRef, { classes: updatedClasses });
+        
+        const updatedClass = updatedClasses.find(c => c.id === classToManage.id);
+        if (updatedClass) setClassToManage(updatedClass);
+    };
+
+    // --- Loading and Render ---
 
     const isLoading = isUserLoading || schoolLoading;
 
@@ -80,8 +243,8 @@ export default function SchoolDetailsPage() {
                              <CardHeader>
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <CardTitle className="text-2xl font-serif">{school?.name}</CardTitle>
-                                        <CardDescription>{school?.address}</CardDescription>
+                                        <CardTitle className="text-2xl font-serif">{school.name}</CardTitle>
+                                        <CardDescription>{school.address}</CardDescription>
                                         <div className="flex items-center gap-2 mt-2">
                                             <p className="text-sm text-muted-foreground">Join Code:</p>
                                             <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{school.code}</span>
@@ -95,44 +258,203 @@ export default function SchoolDetailsPage() {
                         </Card>
                     </div>
 
-                    <Tabs defaultValue="dashboard" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                            <TabsTrigger value="teachers">Teachers</TabsTrigger>
-                            <TabsTrigger value="classes">Classes</TabsTrigger>
+                    <Tabs defaultValue="classes" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                            <TabsTrigger value="teachers">Teachers ({school.teacherIds.length})</TabsTrigger>
+                            <TabsTrigger value="classes">Classes ({school.classes.length})</TabsTrigger>
                             <TabsTrigger value="students">Students</TabsTrigger>
+                            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                         </TabsList>
                         
-                        <TabsContent value="dashboard" className="mt-6">
-                            <ComingSoon icon={<Building2 className="h-10 w-10" />} title="School Dashboard" description="An overview of school statistics and activity will be shown here." />
-                        </TabsContent>
                         <TabsContent value="teachers" className="mt-6">
-                             <ComingSoon icon={<Users className="h-10 w-10" />} title="Teacher Management" description="A section to invite and manage all teachers associated with your school." />
+                            <Card className="rounded-2xl shadow-lg">
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle>Manage Teachers</CardTitle>
+                                    <Button size="sm" onClick={() => setAddTeacherOpen(true)}><UserPlus className="mr-2 h-4 w-4" /> Add Teacher</Button>
+                                </CardHeader>
+                                <CardContent>
+                                    {teachersLoading ? <Loader2 className="animate-spin" /> :
+                                        teachers && teachers.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {teachers.map(teacher => (
+                                                <div key={teacher.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar><AvatarFallback>{getInitials(teacher.name)}</AvatarFallback></Avatar>
+                                                        <div>
+                                                            <p className="font-semibold">{teacher.name}</p>
+                                                            <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    {teacher.id !== school.principalId ? (
+                                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)}><UserX className="mr-2 h-4 w-4" />Remove</Button>
+                                                    ) : (
+                                                        <span className="text-xs font-semibold text-primary px-3">PRINCIPAL</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                         <p className="text-muted-foreground text-center py-8">No teachers found. The principal is the only member.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </TabsContent>
+
                         <TabsContent value="classes" className="mt-6">
-                             <ComingSoon icon={<Book className="h-10 w-10" />} title="Class Management" description="A feature to create classes, assign class teachers, and manage subjects." />
+                           <Card className="rounded-2xl shadow-lg">
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle>Manage Classes</CardTitle>
+                                    <Button size="sm" onClick={() => setAddClassOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Class</Button>
+                                </CardHeader>
+                                <CardContent>
+                                    {school.classes && school.classes.length > 0 ? (
+                                         <div className="grid gap-4">
+                                            {school.classes.map(c => (
+                                                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                                    <div>
+                                                        <p className="font-semibold">{c.name} - Section {c.section}</p>
+                                                        <p className="text-sm text-muted-foreground">{c.students.length} student(s)</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Pen className="mr-2 h-4 w-4" />Manage Students</Button>
+                                                        <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <Book className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Classes Created</h3>
+                                            <p className="text-muted-foreground mt-1">Add a class to get started.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </TabsContent>
-                        <TabsContent value="students" className="mt-6">
-                             <ComingSoon icon={<User className="h-10 w-10" />} title="Student Management" description="A comprehensive view of all students enrolled in your school, organized by class." />
+
+                         <TabsContent value="students" className="mt-6">
+                             <Card className="rounded-2xl shadow-lg">
+                                <CardHeader><CardTitle>All Students</CardTitle></CardHeader>
+                                <CardContent>
+                                    {school.classes && school.classes.some(c => c.students.length > 0) ? (
+                                        <div className="space-y-6">
+                                            {school.classes.map(c => c.students.length > 0 && (
+                                                <div key={c.id}>
+                                                    <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
+                                                     <div className="grid gap-2">
+                                                        {c.students.map(s => (
+                                                            <div key={s.id} className="flex justify-between items-center p-2 rounded-md">
+                                                                <p>{s.name}</p>
+                                                                <p className="text-sm text-muted-foreground">Roll: {s.rollNumber || 'N/A'}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <UserIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Students Enrolled</h3>
+                                            <p className="text-muted-foreground mt-1">Add students to classes in the 'Classes' tab.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="dashboard" className="mt-6">
+                            <Card className="rounded-2xl shadow-lg">
+                                <CardContent className="pt-6">
+                                    <div className="text-center py-24 flex flex-col items-center">
+                                        <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary"><Building2 className="h-10 w-10" /></div>
+                                        <h3 className="text-2xl font-semibold font-serif">School Dashboard</h3>
+                                        <p className="text-muted-foreground mt-2 max-w-md">An overview of school statistics and activity will be shown here.</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </TabsContent>
                     </Tabs>
-
                 </div>
+
+                {/* Dialogs */}
+                <Dialog open={isAddTeacherOpen} onOpenChange={setAddTeacherOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add Teacher</DialogTitle>
+                            <DialogDescription>Enter the email address of the teacher you want to add. They must have a 'teacher' account on this platform.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <Label htmlFor="teacher-email">Teacher's Email</Label>
+                            <Input id="teacher-email" value={newTeacherEmail} onChange={(e) => setNewTeacherEmail(e.target.value)} placeholder="teacher@example.com"/>
+                             {addTeacherError && <p className="text-sm text-destructive">{addTeacherError}</p>}
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <Button onClick={handleAddTeacher} disabled={isAddingTeacher}>
+                                {isAddingTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4" />} Add Teacher
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isAddClassOpen} onOpenChange={setAddClassOpen}>
+                    <DialogContent>
+                        <DialogHeader><DialogTitle>Add New Class</DialogTitle></DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2"><Label htmlFor="class-name">Class Name</Label><Input id="class-name" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g., 10th"/></div>
+                            <div className="grid gap-2"><Label htmlFor="class-section">Section</Label><Input id="class-section" value={newClassSection} onChange={e => setNewClassSection(e.target.value)} placeholder="e.g., A"/></div>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <Button onClick={handleAddClass} disabled={isAddingClass || !newClassName || !newClassSection}>
+                                {isAddingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FilePlus className="mr-2 h-4 w-4" />} Create Class
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={!!classToManage} onOpenChange={(isOpen) => !isOpen && setClassToManage(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[60vh]">
+                            <div className="flex flex-col gap-4">
+                                <h4 className="font-semibold">Add New Student</h4>
+                                <div className="grid gap-2"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} /></div>
+                                <div className="grid gap-2"><Label htmlFor="student-roll">Roll Number (Optional)</Label><Input id="student-roll" value={newStudentRoll} onChange={e => setNewStudentRoll(e.target.value)} /></div>
+                                <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-2 w-fit">
+                                    {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4"/>} Add Student
+                                </Button>
+                            </div>
+                            <div className="flex flex-col gap-4 overflow-y-auto pr-2">
+                                 <h4 className="font-semibold">Enrolled Students ({classToManage?.students.length || 0})</h4>
+                                 {classToManage?.students && classToManage.students.length > 0 ? (
+                                    <div className="grid gap-2">
+                                        {classToManage.students.map(s => (
+                                            <div key={s.id} className="flex items-center justify-between p-2 rounded-md border">
+                                                <div>
+                                                    <p>{s.name}</p>
+                                                    <p className="text-xs text-muted-foreground">Roll: {s.rollNumber || 'N/A'}</p>
+                                                </div>
+                                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                 ) : <p className="text-sm text-muted-foreground text-center pt-8">No students in this class yet.</p>}
+                            </div>
+                        </div>
+                         <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Done</Button></DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
             </main>
         </div>
     );
 }
 
-const ComingSoon = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-    <Card className="rounded-2xl shadow-lg">
-        <CardContent className="pt-6">
-             <div className="text-center py-24 flex flex-col items-center">
-                <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
-                    {icon}
-                </div>
-                <h3 className="text-2xl font-semibold font-serif">{title}</h3>
-                <p className="text-muted-foreground mt-2 max-w-md">{description}</p>
-            </div>
-        </CardContent>
-    </Card>
-)
+    
