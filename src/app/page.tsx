@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from "react";
@@ -12,7 +11,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, limit, query, where, getCountFromServer } from "firebase/firestore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -72,24 +71,26 @@ interface TeacherProfile {
 export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
-
+  const { user } = useUser();
   const firestore = useFirestore();
 
   const [teacherCount, setTeacherCount] = useState<number>();
   const [studentCount, setStudentCount] = useState<number>();
 
   const featuredTeachersQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
+      // Only fetch if user is logged in, to avoid permission errors for public visitors
+      if (!firestore || !user) return null;
       return query(
           collection(firestore, 'users'),
           where('role', '==', 'teacher'),
           limit(3)
       );
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
 
   useEffect(() => {
-    if (firestore) {
+    // Only fetch if user is logged in, to avoid permission errors for public visitors
+    if (firestore && user) {
       const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
       const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
 
@@ -101,7 +102,7 @@ export default function HomePage() {
         .then(snapshot => setStudentCount(snapshot.data().count))
         .catch(err => console.error("Error getting student count:", err));
     }
-  }, [firestore]);
+  }, [firestore, user]);
 
   const features = [
       {
@@ -637,5 +638,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
