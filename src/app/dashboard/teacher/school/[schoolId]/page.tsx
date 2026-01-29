@@ -12,17 +12,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX, GraduationCap } from 'lucide-react';
+import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX, GraduationCap, Wallet, CheckCircle, XCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SchoolFeeManagementDialog } from '@/components/school-fee-management-dialog';
 
 
 // Interfaces
 interface UserProfile {
     name: string;
     role?: 'teacher';
+}
+interface FeeEntry {
+    feeMonth: number;
+    feeYear: number;
+    status: 'paid' | 'unpaid';
+    paidOn?: string;
 }
 
 interface StudentEntry {
@@ -33,6 +40,7 @@ interface StudentEntry {
     mobileNumber?: string;
     address?: string;
     admissionDate?: string;
+    fees?: FeeEntry[];
 }
 
 interface ClassEntry {
@@ -97,6 +105,8 @@ export default function SchoolDetailsPage() {
     const [schoolAddress, setSchoolAddress] = useState('');
     const [academicYear, setAcademicYear] = useState('');
     const [isSavingSchool, setIsSavingSchool] = useState(false);
+
+    const [studentForFees, setStudentForFees] = useState<{student: StudentEntry, classId: string} | null>(null);
 
     // Fetch current user's profile for header
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -318,11 +328,12 @@ export default function SchoolDetailsPage() {
                     </div>
 
                     <Tabs defaultValue="dashboard" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
                             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                             <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
                             <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
                             <TabsTrigger value="students">Students ({totalStudents})</TabsTrigger>
+                            <TabsTrigger value="fees">Fees</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="dashboard" className="mt-6">
@@ -454,6 +465,64 @@ export default function SchoolDetailsPage() {
                                 </CardContent>
                             </Card>
                         </TabsContent>
+                        
+                        <TabsContent value="fees" className="mt-6">
+                            <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>Fee Management</CardTitle>
+                                    <CardDescription>Track and update monthly fee payments for all students.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {school.classes && school.classes.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {school.classes.map(c => (
+                                                <div key={c.id}>
+                                                    <h4 className="font-semibold text-lg mb-3 border-b pb-2">Class {c.name} - Section {c.section}</h4>
+                                                    {c.students && c.students.length > 0 ? (
+                                                        <div className="grid gap-3">
+                                                            {c.students.map(s => {
+                                                                const currentMonth = new Date().getMonth() + 1;
+                                                                const currentYear = new Date().getFullYear();
+                                                                const currentMonthFee = s.fees?.find(f => f.feeMonth === currentMonth && f.feeYear === currentYear);
+                                                                const status = currentMonthFee?.status || 'unpaid';
+                                                                
+                                                                return (
+                                                                    <div key={s.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background">
+                                                                        <div>
+                                                                            <p className="font-semibold">{s.name}</p>
+                                                                            <p className="text-sm text-muted-foreground">Roll No: {s.rollNumber || 'N/A'}</p>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-4 self-end sm:self-center mt-2 sm:mt-0">
+                                                                            <div className="flex items-center gap-2 text-sm">
+                                                                                {status === 'paid' ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-destructive" />}
+                                                                                <span className="font-medium">
+                                                                                    {new Date().toLocaleString('default', { month: 'long' })} Fee: <span className={status === 'paid' ? 'text-green-600' : 'text-destructive'}>{status}</span>
+                                                                                </span>
+                                                                            </div>
+                                                                            <Button variant="outline" size="sm" onClick={() => setStudentForFees({ student: s, classId: c.id })}>
+                                                                                <Wallet className="mr-2 h-4 w-4" /> Manage Fees
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground px-2">No students in this class.</p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <Book className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Classes Created</h3>
+                                            <p className="text-muted-foreground mt-1">Add a class to manage student fees.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
                     </Tabs>
                 </div>
@@ -536,7 +605,7 @@ export default function SchoolDetailsPage() {
                     </DialogContent>
                 </Dialog>
 
-                <Dialog open={!!classToManage} onOpenChange={(isOpen) => !isOpen && setClassToManage(null)}>
+                <Dialog open={!!classToManage} onOpenChange={(isOpen) => { if (!isOpen) { setClassToManage(null); setStudentForFees(null); } }}>
                     <DialogContent className="max-w-2xl md:max-w-4xl">
                         <DialogHeader>
                             <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
@@ -588,6 +657,16 @@ export default function SchoolDetailsPage() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+                
+                {studentForFees && (
+                    <SchoolFeeManagementDialog 
+                        isOpen={!!studentForFees} 
+                        onClose={() => setStudentForFees(null)}
+                        school={school}
+                        classId={studentForFees.classId}
+                        student={studentForFees.student}
+                    />
+                )}
 
             </main>
         </div>
