@@ -5,13 +5,14 @@ import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, MessageCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 
 // From [schoolId]/page.tsx
 interface StudentEntry {
     id: string;
     name:string;
+    mobileNumber?: string;
     admissionDate?: string;
     fees?: FeeEntry[];
 }
@@ -25,6 +26,7 @@ interface ClassEntry {
 
 interface School {
     id: string;
+    name: string;
     classes?: ClassEntry[];
 }
 
@@ -80,6 +82,18 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
         const endDate = new Date(); // today
         return getMonthsInRange(startDate, endDate);
     }, [student?.admissionDate]);
+
+    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+
+    const handleSendReminder = (month: number, year: number) => {
+        if (!student?.mobileNumber) return;
+        const message = `Hello ${student.name}, this is a reminder from ${school.name} that your school fee for ${monthFormatter.format(new Date(year, month - 1))} is pending. Thank you.`;
+        const phoneNumber = student.mobileNumber.replace(/[^0-9]/g, '');
+        const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
+        const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    };
+
 
     const handleFeeStatusChange = (month: number, year: number, isPaid: boolean) => {
         const newStatus = isPaid ? 'paid' : 'unpaid';
@@ -146,8 +160,6 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
     };
 
 
-    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
-
     if (!student) return null;
 
     return (
@@ -167,28 +179,39 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
                             const paidOnDate = feeInfo?.paidOn ? new Date(feeInfo.paidOn) : null;
                             
                             return (
-                                <div key={`${year}-${month}`} className="flex items-center justify-between p-3 rounded-lg border">
-                                    <div>
+                                <div key={`${year}-${month}`} className="flex flex-col p-3 rounded-lg border gap-2">
+                                    <div className="flex items-center justify-between">
                                         <p className="font-medium">
                                             {monthFormatter.format(new Date(year, month - 1))}
                                         </p>
-                                         {isPaid && paidOnDate && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Paid on: {paidOnDate.toLocaleDateString()}
-                                            </p>
-                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <span className={`text-sm font-semibold ${isPaid ? 'text-green-600' : 'text-destructive'}`}>
+                                                {isPaid ? 'Paid' : 'Unpaid'}
+                                            </span>
+                                            <Switch
+                                                checked={isPaid}
+                                                onCheckedChange={(checked) => handleFeeStatusChange(month, year, checked)}
+                                                aria-label={`Mark as ${isPaid ? 'unpaid' : 'paid'}`}
+                                                disabled={isPaid}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`text-sm font-semibold ${isPaid ? 'text-green-600' : 'text-destructive'}`}>
-                                            {isPaid ? 'Paid' : 'Unpaid'}
-                                        </span>
-                                        <Switch
-                                            checked={isPaid}
-                                            onCheckedChange={(checked) => handleFeeStatusChange(month, year, checked)}
-                                            aria-label={`Mark as ${isPaid ? 'unpaid' : 'paid'}`}
-                                            disabled={isPaid}
-                                        />
-                                    </div>
+                                    {isPaid && paidOnDate && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Paid on: {paidOnDate.toLocaleDateString()}
+                                        </p>
+                                    )}
+                                     {!isPaid && student.mobileNumber && (
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="self-start"
+                                            onClick={() => handleSendReminder(month, year)}
+                                        >
+                                            <MessageCircle className="h-4 w-4 mr-2" />
+                                            Send Reminder
+                                        </Button>
+                                    )}
                                 </div>
                             );
                         }) : <p className="text-center text-muted-foreground">Set an admission date for the student to manage fees.</p>}

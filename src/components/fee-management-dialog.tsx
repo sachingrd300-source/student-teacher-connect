@@ -1,12 +1,11 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, doc, writeBatch, addDoc, updateDoc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 
 // From teacher/page.tsx
@@ -31,6 +30,11 @@ interface Fee {
     status: 'paid' | 'unpaid';
     paidOn?: string;
 }
+
+interface StudentProfile {
+    mobileNumber?: string;
+}
+
 
 interface FeeManagementDialogProps {
     isOpen: boolean;
@@ -64,6 +68,13 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
 
     const { data: feesData, isLoading: feesLoading } = useCollection<Fee>(feesQuery);
 
+    const studentProfileRef = useMemoFirebase(() => {
+        if (!firestore || !student) return null;
+        return doc(firestore, 'users', student.studentId);
+    }, [firestore, student]);
+    const { data: studentProfile } = useDoc<StudentProfile>(studentProfileRef);
+
+
     const feeStatusByMonth = useMemo(() => {
         const statusMap = new Map<string, { status: 'paid' | 'unpaid', feeId: string, paidOn?: string }>();
         feesData?.forEach(fee => {
@@ -79,6 +90,17 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
         const endDate = new Date(); // today
         return getMonthsInRange(startDate, endDate);
     }, [student?.approvedAt]);
+    
+    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+
+    const handleSendReminder = (month: number, year: number) => {
+        if (!studentProfile?.mobileNumber || !student) return;
+        const message = `Hello ${student.studentName}, this is a reminder for your fee payment for the month of ${monthFormatter.format(new Date(year, month - 1))}. Please pay at your earliest convenience. Thank you.`;
+        const phoneNumber = studentProfile.mobileNumber.replace(/[^0-9]/g, '');
+        const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
+        const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    };
 
     const handleFeeStatusChange = async (month: number, year: number, isPaid: boolean) => {
         if (!firestore || !student) return;
@@ -124,8 +146,6 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
     };
 
 
-    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
-
     if (!student) return null;
 
     return (
@@ -152,28 +172,39 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                                 const paidOnDate = feeInfo?.paidOn ? new Date(feeInfo.paidOn) : null;
                                 
                                 return (
-                                    <div key={key} className="flex items-center justify-between p-3 rounded-lg border">
-                                        <div>
+                                    <div key={key} className="flex flex-col p-3 rounded-lg border gap-2">
+                                        <div className="flex items-center justify-between">
                                             <p className="font-medium">
                                                 {monthFormatter.format(new Date(year, month - 1))}
                                             </p>
-                                             {isPaid && paidOnDate && (
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Paid on: {paidOnDate.toLocaleDateString()}
-                                                </p>
-                                            )}
+                                            <div className="flex items-center gap-3">
+                                                <span className={`text-sm font-semibold ${isPaid ? 'text-green-600' : 'text-destructive'}`}>
+                                                    {isPaid ? 'Paid' : 'Unpaid'}
+                                                </span>
+                                                <Switch
+                                                    checked={isPaid}
+                                                    onCheckedChange={(checked) => handleFeeStatusChange(month, year, checked)}
+                                                    aria-label={`Mark as ${isPaid ? 'unpaid' : 'paid'}`}
+                                                    disabled={isPaid}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className={`text-sm font-semibold ${isPaid ? 'text-green-600' : 'text-destructive'}`}>
-                                                {isPaid ? 'Paid' : 'Unpaid'}
-                                            </span>
-                                            <Switch
-                                                checked={isPaid}
-                                                onCheckedChange={(checked) => handleFeeStatusChange(month, year, checked)}
-                                                aria-label={`Mark as ${isPaid ? 'unpaid' : 'paid'}`}
-                                                disabled={isPaid}
-                                            />
-                                        </div>
+                                         {isPaid && paidOnDate && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Paid on: {paidOnDate.toLocaleDateString()}
+                                            </p>
+                                        )}
+                                        {!isPaid && studentProfile?.mobileNumber && (
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="self-start"
+                                                onClick={() => handleSendReminder(month, year)}
+                                            >
+                                                <MessageCircle className="h-4 w-4 mr-2" />
+                                                Send Reminder
+                                            </Button>
+                                        )}
                                     </div>
                                 );
                             })}
