@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -10,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { PaymentDialog } from '@/components/payment-dialog';
 
 interface UserProfile {
     name: string;
@@ -105,6 +105,8 @@ export default function StudentBatchPage() {
     const searchParams = useSearchParams();
     const batchId = params.batchId as string;
     const defaultTab = searchParams.get('tab') || 'announcements';
+    
+    const [feeToPay, setFeeToPay] = useState<{ month: number, year: number } | null>(null);
 
     const currentUserProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -166,10 +168,11 @@ export default function StudentBatchPage() {
 
     const testResultsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId || !user?.uid) return null;
+        const testIds = (tests && tests.length > 0) ? tests.map(t => t.id) : [' '];
         return query(
             collection(firestore, 'testResults'),
             where('studentId', '==', user.uid),
-            where('testId', 'in', tests ? tests.map(t => t.id) : [' ']) // 'in' query needs a non-empty array
+            where('testId', 'in', testIds)
         );
     }, [firestore, batchId, user?.uid, tests]);
     const { data: testResults, isLoading: isTestResultsLoading } = useCollection<TestResult>(testResultsQuery);
@@ -211,7 +214,7 @@ export default function StudentBatchPage() {
 
     const isLoading = isUserLoading || isBatchLoading || isEnrollmentsLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
 
-    if (isLoading || !currentUserProfile) {
+    if (isLoading || !currentUserProfile || !batch) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
                 <Brain className="h-16 w-16 animate-pulse text-primary" />
@@ -337,7 +340,7 @@ export default function StudentBatchPage() {
                                                             )}
                                                         </div>
                                                         {status === 'unpaid' && (
-                                                            <Button variant="outline" className="self-end sm:self-center">
+                                                            <Button variant="outline" className="self-end sm:self-center" onClick={() => setFeeToPay({ month, year })}>
                                                                 Pay Now <CreditCard className="ml-2 h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -390,10 +393,22 @@ export default function StudentBatchPage() {
                     </Tabs>
                 </div>
             </main>
+            
+            {feeToPay && user && (
+                 <PaymentDialog 
+                    isOpen={!!feeToPay}
+                    onClose={() => setFeeToPay(null)}
+                    studentId={user.uid}
+                    studentName={currentUserProfile.name}
+                    teacherId={batch.teacherId}
+                    batchId={batchId}
+                    batchName={batch.name}
+                    feeDetails={feeToPay}
+                    onPaymentSuccess={() => {
+                        // The real-time listener will auto-update the UI.
+                    }}
+                />
+            )}
         </div>
     );
 }
-
-    
-
-    
