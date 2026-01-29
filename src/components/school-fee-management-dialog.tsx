@@ -201,16 +201,22 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
                                             Paid on: {paidOnDate.toLocaleDateString()}
                                         </p>
                                     )}
-                                     {!isPaid && student.mobileNumber && (
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="self-start"
-                                            onClick={() => handleSendReminder(month, year)}
-                                        >
-                                            <MessageCircle className="h-4 w-4 mr-2" />
-                                            Send Reminder
-                                        </Button>
+                                     {!isPaid && (
+                                        student.mobileNumber ? (
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="self-start"
+                                                onClick={() => handleSendReminder(month, year)}
+                                            >
+                                                <MessageCircle className="h-4 w-4 mr-2" />
+                                                Send Reminder
+                                            </Button>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground self-start pt-2">
+                                                Add mobile number to student's profile to send reminders.
+                                            </p>
+                                        )
                                     )}
                                 </div>
                             );

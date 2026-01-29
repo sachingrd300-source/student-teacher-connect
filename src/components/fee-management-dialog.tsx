@@ -72,8 +72,9 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
         if (!firestore || !student) return null;
         return doc(firestore, 'users', student.studentId);
     }, [firestore, student]);
-    const { data: studentProfile } = useDoc<StudentProfile>(studentProfileRef);
+    const { data: studentProfile, isLoading: profileLoading } = useDoc<StudentProfile>(studentProfileRef);
 
+    const isLoading = feesLoading || profileLoading;
 
     const feeStatusByMonth = useMemo(() => {
         const statusMap = new Map<string, { status: 'paid' | 'unpaid', feeId: string, paidOn?: string }>();
@@ -121,7 +122,7 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                 const feeRef = doc(firestore, 'fees', existingFee.feeId);
                 await updateDoc(feeRef, {
                     status: newStatus,
-                    paidOn: isPaid ? new Date().toISOString() : null,
+                    paidOn: isPaid ? new Date().toISOString() : undefined,
                 });
             } else {
                 // Create new doc
@@ -135,7 +136,7 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                     feeMonth: month,
                     feeYear: year,
                     status: newStatus,
-                    paidOn: isPaid ? new Date().toISOString() : null,
+                    paidOn: isPaid ? new Date().toISOString() : undefined,
                     createdAt: new Date().toISOString(),
                 });
             }
@@ -159,7 +160,7 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 max-h-[60vh] overflow-y-auto">
-                    {feesLoading ? (
+                    {isLoading ? (
                          <div className="flex justify-center items-center h-24">
                             <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
@@ -194,16 +195,22 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                                                 Paid on: {paidOnDate.toLocaleDateString()}
                                             </p>
                                         )}
-                                        {!isPaid && studentProfile?.mobileNumber && (
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                className="self-start"
-                                                onClick={() => handleSendReminder(month, year)}
-                                            >
-                                                <MessageCircle className="h-4 w-4 mr-2" />
-                                                Send Reminder
-                                            </Button>
+                                        {!isPaid && (
+                                            studentProfile?.mobileNumber ? (
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="self-start"
+                                                    onClick={() => handleSendReminder(month, year)}
+                                                >
+                                                    <MessageCircle className="h-4 w-4 mr-2" />
+                                                    Send Reminder
+                                                </Button>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground self-start pt-2">
+                                                    Add mobile number to student's profile to send reminders.
+                                                </p>
+                                            )
                                         )}
                                     </div>
                                 );
