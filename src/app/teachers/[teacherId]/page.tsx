@@ -6,7 +6,7 @@ import { doc } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Building, MapPin, Phone, Wallet } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Wallet, Briefcase } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface TeacherProfile {
@@ -67,8 +67,9 @@ export default function TeacherProfilePage() {
 
     if (isLoading || !teacherProfile) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <Briefcase className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Teacher Profile...</p>
             </div>
         );
     }

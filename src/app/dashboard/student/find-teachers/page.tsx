@@ -9,7 +9,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, User, BookUser, Search } from 'lucide-react';
+import { Loader2, User, BookUser, Search, Users } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
@@ -71,8 +71,9 @@ export default function FindTeachersPage() {
 
     if (teachersLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <Users className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Finding Teachers...</p>
             </div>
         );
     }
@@ -129,7 +130,7 @@ export default function FindTeachersPage() {
                                         initial="hidden"
                                         animate="visible"
                                         variants={cardVariants}
-                                        whileHover={{ scale: 1.02, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                        whileHover={{ scale: 1.02, y: -5, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
                                         whileTap={{ scale: 0.98 }}
                                         className="h-full"
                                     >

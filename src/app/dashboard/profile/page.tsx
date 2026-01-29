@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Edit, Save } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -156,8 +156,9 @@ export default function ProfilePage() {
 
     if (isLoading || !userProfile) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <UserCircle className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Profile...</p>
             </div>
         );
     }

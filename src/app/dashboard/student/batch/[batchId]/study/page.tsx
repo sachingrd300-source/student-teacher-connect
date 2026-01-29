@@ -5,7 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, X, BookOpen, Music } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, X, BookOpen, Music, Brain } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PomodoroTimer } from '@/components/pomodoro-timer';
@@ -102,8 +102,9 @@ export default function StudyModePage() {
 
     if (isPageLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-900 text-white">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-gray-900 text-white gap-4">
+                <Brain className="h-16 w-16 animate-pulse text-primary" />
+                <p>Loading Study Mode...</p>
             </div>
         );
     }

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { cn } from "@/lib/utils";
+import { OfflineIndicator } from "@/components/offline-indicator";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
           inter.variable
         )}
       >
+        <OfflineIndicator />
         <FirebaseClientProvider>{children}</FirebaseClientProvider>
       </body>
     </html>

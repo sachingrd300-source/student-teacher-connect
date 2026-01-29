@@ -60,8 +60,9 @@ export default function StudentProfilePage() {
 
     if (isLoading || !studentProfile) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <GraduationCap className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Student Profile...</p>
             </div>
         );
     }

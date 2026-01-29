@@ -352,8 +352,9 @@ export default function SchoolDetailsPage() {
 
     if (isLoading || !school) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <Building2 className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading School Details...</p>
             </div>
         );
     }
