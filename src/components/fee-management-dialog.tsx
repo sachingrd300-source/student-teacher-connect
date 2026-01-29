@@ -85,6 +85,12 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
 
         const key = `${year}-${month}`;
         const existingFee = feeStatusByMonth.get(key);
+
+        if (existingFee?.status === 'paid' && !isPaid) {
+            // Prevent marking a paid fee as unpaid
+            return;
+        }
+
         const newStatus = isPaid ? 'paid' : 'unpaid';
 
         try {
@@ -165,6 +171,7 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                                                 checked={isPaid}
                                                 onCheckedChange={(checked) => handleFeeStatusChange(month, year, checked)}
                                                 aria-label={`Mark as ${isPaid ? 'unpaid' : 'paid'}`}
+                                                disabled={isPaid}
                                             />
                                         </div>
                                     </div>
@@ -182,5 +189,3 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
         </Dialog>
     );
 }
-
-    

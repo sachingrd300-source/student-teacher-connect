@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -84,6 +85,11 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
     const handleFeeStatusChange = (month: number, year: number, isPaid: boolean) => {
         const newStatus = isPaid ? 'paid' : 'unpaid';
         const existingEntryIndex = feeStatus.findIndex(f => f.feeMonth === month && f.feeYear === year);
+
+        if (existingEntryIndex !== -1 && feeStatus[existingEntryIndex].status === 'paid' && !isPaid) {
+            // Prevent marking a paid fee as unpaid
+            return;
+        }
 
         let updatedFees = [...feeStatus];
 
@@ -181,6 +187,7 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
                                             checked={isPaid}
                                             onCheckedChange={(checked) => handleFeeStatusChange(month, year, checked)}
                                             aria-label={`Mark as ${isPaid ? 'unpaid' : 'paid'}`}
+                                            disabled={isPaid}
                                         />
                                     </div>
                                 </div>
