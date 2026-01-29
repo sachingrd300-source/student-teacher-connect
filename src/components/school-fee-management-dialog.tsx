@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -90,19 +89,25 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
 
         if (existingEntryIndex !== -1) {
             // Update existing entry
-            updatedFees[existingEntryIndex] = {
-                ...updatedFees[existingEntryIndex],
-                status: newStatus,
-                paidOn: isPaid ? new Date().toISOString() : undefined
-            };
+            const entryToUpdate = { ...updatedFees[existingEntryIndex] };
+            entryToUpdate.status = newStatus;
+            if (isPaid) {
+                entryToUpdate.paidOn = new Date().toISOString();
+            } else {
+                delete entryToUpdate.paidOn;
+            }
+            updatedFees[existingEntryIndex] = entryToUpdate;
         } else {
             // Add new entry
-            updatedFees.push({
+            const newEntry: FeeEntry = {
                 feeMonth: month,
                 feeYear: year,
                 status: newStatus,
-                paidOn: isPaid ? new Date().toISOString() : undefined
-            });
+            };
+            if (isPaid) {
+                newEntry.paidOn = new Date().toISOString();
+            }
+            updatedFees.push(newEntry);
         }
         setFeeStatus(updatedFees);
     };
@@ -146,12 +151,12 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
                 <DialogHeader>
                     <DialogTitle>Manage Fees for {student.name}</DialogTitle>
                     <DialogDescription>
-                        Joined: {student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : 'N/A'}
+                        Admission Date: {student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : 'N/A'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 max-h-[60vh] overflow-y-auto">
                     <div className="grid gap-4">
-                        {allMonths.slice().reverse().map(({ month, year }) => { // Show recent months first
+                        {allMonths.length > 0 ? allMonths.slice().reverse().map(({ month, year }) => { // Show recent months first
                             const feeInfo = feeStatus.find(f => f.feeMonth === month && f.feeYear === year);
                             const isPaid = feeInfo?.status === 'paid';
                             const paidOnDate = feeInfo?.paidOn ? new Date(feeInfo.paidOn) : null;
@@ -180,7 +185,7 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
                                     </div>
                                 </div>
                             );
-                        })}
+                        }) : <p className="text-center text-muted-foreground">Set an admission date for the student to manage fees.</p>}
                     </div>
                 </div>
                 <DialogFooter>
@@ -196,5 +201,3 @@ export function SchoolFeeManagementDialog({ isOpen, onClose, school, classId, st
         </Dialog>
     );
 }
-
-    

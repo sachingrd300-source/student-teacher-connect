@@ -113,7 +113,7 @@ export default function SchoolDetailsPage() {
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
     // Fetch school data
-    const schoolRef = useMemoFirebase(() => user ? doc(firestore, 'schools', schoolId) : null, [firestore, schoolId, user]);
+    const schoolRef = useMemoFirebase(() => (user && schoolId) ? doc(firestore, 'schools', schoolId) : null, [firestore, schoolId, user]);
     const { data: school, isLoading: schoolLoading } = useDoc<School>(schoolRef);
 
     // Fetch profiles of teachers in the school
@@ -248,7 +248,7 @@ export default function SchoolDetailsPage() {
             fatherName: newStudentFatherName.trim(),
             mobileNumber: newStudentMobileNumber.trim(),
             address: newStudentAddress.trim(),
-            admissionDate: newStudentAdmissionDate ? new Date(newStudentAdmissionDate).toISOString() : '',
+            admissionDate: newStudentAdmissionDate ? new Date(newStudentAdmissionDate).toISOString() : new Date().toISOString(),
         };
 
         const updatedClasses = (school.classes || []).map(c => {
@@ -610,10 +610,10 @@ export default function SchoolDetailsPage() {
                         <DialogHeader>
                             <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
                         </DialogHeader>
-                        <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[60vh] overflow-y-auto">
+                        <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[70vh] md:max-h-[60vh] overflow-y-auto">
                              <div className="flex flex-col gap-4 md:pr-4 md:border-r border-b md:border-b-0 pb-8 md:pb-0 mb-8 md:mb-0">
                                 <h4 className="font-semibold">Add New Student</h4>
-                                <div className="grid gap-3">
+                                <div className="grid gap-3 overflow-y-auto pr-2">
                                     <div className="grid gap-1.5"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} required/></div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="grid gap-1.5"><Label htmlFor="student-roll">Roll Number</Label><Input id="student-roll" value={newStudentRoll} onChange={e => setNewStudentRoll(e.target.value)} /></div>
@@ -623,7 +623,7 @@ export default function SchoolDetailsPage() {
                                     <div className="grid gap-1.5"><Label htmlFor="student-address">Address</Label><Textarea id="student-address" value={newStudentAddress} onChange={e => setNewStudentAddress(e.target.value)} rows={2} /></div>
                                     <div className="grid gap-1.5"><Label htmlFor="student-admission-date">Admission Date</Label><Input id="student-admission-date" type="date" value={newStudentAdmissionDate} onChange={e => setNewStudentAdmissionDate(e.target.value)} /></div>
                                 </div>
-                                <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-2 w-fit">
+                                <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-auto w-fit">
                                     {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4"/>} Add Student
                                 </Button>
                             </div>
