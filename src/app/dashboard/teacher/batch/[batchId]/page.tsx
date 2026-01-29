@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect, ChangeEvent, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, query, where, arrayUnion, arrayRemove, addDoc, writeBatch, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { doc, updateDoc, deleteDoc, collection, query, where, arrayUnion, arrayRemove, addDoc, writeBatch, orderBy, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import Link from 'next/link';
 
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -214,13 +213,44 @@ export default function BatchManagementPage() {
     };
 
     const handleDeleteBatch = async () => {
-        if (!batchRef) return;
+        if (!firestore || !storage || !batchRef || !batchId) return;
+        
         setIsSaving(true);
         try {
-            await deleteDoc(batchRef);
-            router.push('/dashboard/teacher');
+            const firestoreBatch = writeBatch(firestore);
+
+            // 1. Delete all related documents in root collections (enrollments, fees, testResults)
+            const collectionsToDelete = ['enrollments', 'fees', 'testResults'];
+            for (const coll of collectionsToDelete) {
+                const q = query(collection(firestore, coll), where('batchId', '==', batchId));
+                const snapshot = await getDocs(q);
+                snapshot.docs.forEach(doc => firestoreBatch.delete(doc.ref));
+            }
+
+            // 2. Delete documents in subcollections
+            const subcollections = ['tests', 'activity', 'materials'];
+            for (const subcoll of subcollections) {
+                const subcollRef = collection(firestore, 'batches', batchId, subcoll);
+                const snapshot = await getDocs(subcollRef);
+                snapshot.docs.forEach(doc => firestoreBatch.delete(doc.ref));
+            }
+            
+            // 3. Delete associated files from Firebase Storage
+            const materialsFolderRef = ref(storage, `materials/${batchId}`);
+            const materialsList = await listAll(materialsFolderRef);
+            await Promise.all(materialsList.items.map(itemRef => deleteObject(itemRef)));
+            
+            // 4. Delete the main batch document itself
+            firestoreBatch.delete(batchRef);
+
+            // 5. Commit all the batched Firestore writes
+            await firestoreBatch.commit();
+            
+            // Navigate away after successful deletion
+            router.push('/dashboard/teacher/coaching');
+
         } catch (error) {
-            console.error("Error deleting batch:", error);
+            console.error("Error deleting batch and all its data:", error);
             setIsSaving(false);
         }
     };
@@ -754,9 +784,17 @@ export default function BatchManagementPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Are you sure?</DialogTitle>
-                        <DialogDescription>This will permanently delete the "{batch?.name}" batch. This action cannot be undone.</DialogDescription>
+                        <DialogDescription>This will permanently delete the "{batch?.name}" batch and all its associated data, including student enrollments, materials, and tests. This action cannot be undone.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                         <Button variant="destructive" onClick={handleDeleteBatch} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Delete Batch
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
