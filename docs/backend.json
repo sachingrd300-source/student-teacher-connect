@@ -303,6 +303,8 @@
               "id": { "type": "string", "description": "Unique ID for the class (e.g., generated with nanoid)." },
               "name": { "type": "string", "description": "The name of the class, e.g., 'Class 10' or '12th Grade'." },
               "section": { "type": "string", "description": "The section of the class, e.g., 'A', 'B', 'Science'." },
+              "teacherId": { "type": "string", "description": "The UID of the teacher assigned to the class." },
+              "teacherName": { "type": "string", "description": "The name of the teacher assigned to the class." },
               "students": {
                 "type": "array",
                 "description": "List of students enrolled in this class, directly added by the principal.",

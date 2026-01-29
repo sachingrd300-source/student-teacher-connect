@@ -15,6 +15,7 @@ import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 // Interfaces
@@ -34,6 +35,8 @@ interface ClassEntry {
     name: string;
     section: string;
     students?: StudentEntry[];
+    teacherId?: string;
+    teacherName?: string;
 }
 
 interface School {
@@ -71,6 +74,7 @@ export default function SchoolDetailsPage() {
     const [isAddClassOpen, setAddClassOpen] = useState(false);
     const [newClassName, setNewClassName] = useState('');
     const [newClassSection, setNewClassSection] = useState('');
+    const [newClassTeacherId, setNewClassTeacherId] = useState('');
     const [isAddingClass, setIsAddingClass] = useState(false);
 
     const [classToManage, setClassToManage] = useState<ClassEntry | null>(null);
@@ -151,17 +155,22 @@ export default function SchoolDetailsPage() {
         if (!newClassName.trim() || !newClassSection.trim() || !school) return;
         setIsAddingClass(true);
 
+        const selectedTeacher = teachers?.find(t => t.id === newClassTeacherId);
+
         const newClass: ClassEntry = {
             id: nanoid(),
             name: newClassName.trim(),
             section: newClassSection.trim(),
             students: [],
+            teacherId: selectedTeacher?.id,
+            teacherName: selectedTeacher?.name
         };
         
         await updateDoc(schoolRef, { classes: arrayUnion(newClass) });
         
         setNewClassName('');
         setNewClassSection('');
+        setNewClassTeacherId('');
         setIsAddingClass(false);
         setAddClassOpen(false);
     };
@@ -314,6 +323,7 @@ export default function SchoolDetailsPage() {
                                                     <div>
                                                         <p className="font-semibold">{c.name} - Section {c.section}</p>
                                                         <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
+                                                         {c.teacherName && <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>}
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Pen className="mr-2 h-4 w-4" />Manage Students</Button>
@@ -405,6 +415,19 @@ export default function SchoolDetailsPage() {
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2"><Label htmlFor="class-name">Class Name</Label><Input id="class-name" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g., 10th"/></div>
                             <div className="grid gap-2"><Label htmlFor="class-section">Section</Label><Input id="class-section" value={newClassSection} onChange={e => setNewClassSection(e.target.value)} placeholder="e.g., A"/></div>
+                             <div className="grid gap-2">
+                                <Label htmlFor="class-teacher">Assign Teacher (Optional)</Label>
+                                <Select value={newClassTeacherId} onValueChange={setNewClassTeacherId}>
+                                    <SelectTrigger id="class-teacher">
+                                        <SelectValue placeholder="Select a teacher" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {teachers?.map(teacher => (
+                                            <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
