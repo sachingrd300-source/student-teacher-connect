@@ -127,12 +127,13 @@ export default function StudentBatchPage() {
         );
     }, [firestore, user?.uid, batchId]);
     const { data: enrollments, isLoading: isEnrollmentsLoading } = useCollection<Enrollment>(isEnrolledQuery);
-    const isEnrolled = enrollments && enrollments.length > 0 && enrollments[0].status === 'approved';
+    const enrollment = useMemo(() => enrollments?.[0], [enrollments]);
+    const isEnrolled = enrollment?.status === 'approved';
 
     const studyMaterialsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
         return query(
-            collection(firestore, 'batches', batchId, 'studyMaterials'),
+            collection(firestore, 'batches', batchId, 'materials'),
             orderBy('createdAt', 'desc')
         );
     }, [firestore, batchId]);
@@ -141,7 +142,7 @@ export default function StudentBatchPage() {
     const activitiesQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
         return query(
-            collection(firestore, 'batches', batchId, 'activities'),
+            collection(firestore, 'batches', batchId, 'activity'),
             orderBy('createdAt', 'desc')
         );
     }, [firestore, batchId]);
@@ -149,33 +150,13 @@ export default function StudentBatchPage() {
 
     const feesQuery = useMemoFirebase(() => {
         if (!firestore || !batchId || !user?.uid) return null;
-
-        // Get the current month and year
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed.
-        const currentYear = now.getFullYear();
-
-        // Calculate the start date (6 months ago)
-        const startDate = new Date(currentYear, currentMonth - 6, 1); // Go back 6 months
-
-        // Calculate the end date (current month)
-        const endDate = new Date(currentYear, currentMonth, 0); // Last day of the current month
-
-        // Get all months in range
-        const monthsInRange = getMonthsInRange(startDate, endDate);
-
-        // Construct an array of composite keys (month-year) for querying
-        const compositeKeys = monthsInRange.map(m => `${m.month}-${m.year}`);
-
         return query(
-            collection(firestore, 'batches', batchId, 'fees'),
+            collection(firestore, 'fees'),
             where('studentId', '==', user.uid),
-            where('compositeKey', 'in', compositeKeys),
-            orderBy('feeYear'),
-            orderBy('feeMonth')
+            where('batchId', '==', batchId)
         );
     }, [firestore, batchId, user?.uid]);
-    const { data: fees, isLoading: isFeesLoading } = useCollection<Fee>(feesQuery);
+    const { data: feesData, isLoading: isFeesLoading } = useCollection<Fee>(feesQuery);
 
     const testsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
@@ -186,11 +167,29 @@ export default function StudentBatchPage() {
     const testResultsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId || !user?.uid) return null;
         return query(
-            collection(firestore, 'batches', batchId, 'testResults'),
-            where('studentId', '==', user.uid)
+            collection(firestore, 'testResults'),
+            where('studentId', '==', user.uid),
+            where('testId', 'in', tests ? tests.map(t => t.id) : [' ']) // 'in' query needs a non-empty array
         );
-    }, [firestore, batchId, user?.uid]);
+    }, [firestore, batchId, user?.uid, tests]);
     const { data: testResults, isLoading: isTestResultsLoading } = useCollection<TestResult>(testResultsQuery);
+
+    const allFeeMonths = useMemo(() => {
+        if (!enrollment?.approvedAt) return [];
+        const startDate = new Date(enrollment.approvedAt);
+        const endDate = new Date();
+        return getMonthsInRange(startDate, endDate);
+    }, [enrollment?.approvedAt]);
+
+    const feeStatusByMonth = useMemo(() => {
+        const statusMap = new Map<string, { status: 'paid' | 'unpaid', paidOn?: string }>();
+        feesData?.forEach(fee => {
+            const key = `${fee.feeYear}-${fee.feeMonth}`;
+            statusMap.set(key, { status: fee.status, paidOn: fee.paidOn });
+        });
+        return statusMap;
+    }, [feesData]);
+
 
     useEffect(() => {
         if (isUserLoading || isBatchLoading || isEnrollmentsLoading) return;
@@ -225,6 +224,8 @@ export default function StudentBatchPage() {
         const result = testResults?.find(res => res.testId === testId);
         return result ? result.marksObtained : 'N/A';
     };
+    
+    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long' });
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -244,12 +245,11 @@ export default function StudentBatchPage() {
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
+                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                             <TabsTrigger value="announcements">Announcements</TabsTrigger>
                             <TabsTrigger value="study-materials">Study Materials</TabsTrigger>
                             <TabsTrigger value="fees">Fees</TabsTrigger>
                             <TabsTrigger value="tests">Tests &amp; Results</TabsTrigger>
-                            {/*<TabsTrigger value="leaderboard">Leaderboard (Coming Soon)</TabsTrigger>*/}
                         </TabsList>
                         <TabsContent value="announcements" className="mt-4">
                             <Card className="rounded-2xl shadow-md">
@@ -315,34 +315,41 @@ export default function StudentBatchPage() {
                         <TabsContent value="fees" className="mt-4">
                             <Card className="rounded-2xl shadow-md">
                                 <CardHeader>
-                                    <CardTitle className="flex items-center"><Wallet className="mr-3 h-5 w-5 text-primary"/> Fee Details</CardTitle>
-                                    <CardDescription>View your fee payment status for the past months.</CardDescription>
+                                    <CardTitle className="flex items-center"><Wallet className="mr-3 h-5 w-5 text-primary"/> Fee History</CardTitle>
+                                    <CardDescription>Your complete fee payment history for this batch.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {fees && fees.length > 0 ? (
+                                    {allFeeMonths.length > 0 ? (
                                         <div className="grid gap-4">
-                                            {fees.map(fee => (
-                                                <div key={fee.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background">
-                                                    <div>
-                                                        <p className="font-semibold">{new Date(fee.feeYear, fee.feeMonth - 1, 1).toLocaleString('default', { month: 'long' })} {fee.feeYear}</p>
-                                                        <p className="text-sm text-muted-foreground">Status: {fee.status === 'paid' ? 'Paid' : 'Unpaid'}</p>
-                                                        {fee.status === 'paid' && (
-                                                            <p className="text-xs text-muted-foreground">Paid On: {formatDate(fee.paidOn || '')}</p>
+                                            {allFeeMonths.slice().reverse().map(({ month, year }) => {
+                                                const key = `${year}-${month}`;
+                                                const feeInfo = feeStatusByMonth.get(key);
+                                                const status = feeInfo?.status || 'unpaid';
+                                                const paidOn = feeInfo?.paidOn;
+
+                                                return (
+                                                    <div key={key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background">
+                                                        <div>
+                                                            <p className="font-semibold">{monthFormatter.format(new Date(year, month - 1))} {year}</p>
+                                                            <p className="text-sm text-muted-foreground">Status: <span className={status === 'paid' ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>{status}</span></p>
+                                                            {status === 'paid' && paidOn && (
+                                                                <p className="text-xs text-muted-foreground">Paid On: {new Date(paidOn).toLocaleDateString()}</p>
+                                                            )}
+                                                        </div>
+                                                        {status === 'unpaid' && (
+                                                            <Button variant="outline" className="self-end sm:self-center">
+                                                                Pay Now <CreditCard className="ml-2 h-4 w-4" />
+                                                            </Button>
                                                         )}
                                                     </div>
-                                                    {fee.status === 'unpaid' && (
-                                                        <Button variant="outline">
-                                                            Pay Now <CreditCard className="ml-2 h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="text-center py-12 flex flex-col items-center">
                                             <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
                                             <h3 className="text-lg font-semibold">No Fee Records Found</h3>
-                                            <p className="text-muted-foreground mt-1">Your fee payment history will appear here.</p>
+                                            <p className="text-muted-foreground mt-1">Your fee payment history will appear here once you are approved.</p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -358,12 +365,14 @@ export default function StudentBatchPage() {
                                     {tests && tests.length > 0 ? (
                                         <div className="grid gap-4">
                                             {tests.map(test => (
-                                                <div key={test.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background">
-                                                    <div>
+                                                <div key={test.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background">
+                                                    <div className="flex-1">
                                                         <p className="font-semibold">{test.title} ({test.subject})</p>
-                                                        <p className="text-sm text-muted-foreground">Date: {formatDate(test.testDate)}</p>
+                                                        <p className="text-sm text-muted-foreground">Date: {new Date(test.testDate).toLocaleDateString()}</p>
                                                         <p className="text-sm text-muted-foreground">Max Marks: {test.maxMarks}</p>
-                                                        <p className="text-sm text-muted-foreground">Marks Obtained: {getTestResult(test.id)}</p>
+                                                    </div>
+                                                    <div className="font-semibold text-lg self-end sm:self-center">
+                                                         Marks: {getTestResult(test.id)} / {test.maxMarks}
                                                     </div>
                                                 </div>
                                             ))}
@@ -384,5 +393,7 @@ export default function StudentBatchPage() {
         </div>
     );
 }
+
+    
 
     

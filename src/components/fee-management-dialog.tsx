@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -138,7 +139,7 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
                         </div>
                     ) : (
                         <div className="grid gap-4">
-                            {allMonths.reverse().map(({ month, year }) => { // Show recent months first
+                            {allMonths.slice().reverse().map(({ month, year }) => { // Show recent months first
                                 const key = `${year}-${month}`;
                                 const feeInfo = feeStatusByMonth.get(key);
                                 const isPaid = feeInfo?.status === 'paid';
@@ -181,3 +182,5 @@ export function FeeManagementDialog({ isOpen, onClose, student }: FeeManagementD
         </Dialog>
     );
 }
+
+    
