@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save } from 'lucide-react';
+import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -33,7 +33,7 @@ interface ClassEntry {
     id: string;
     name: string;
     section: string;
-    students: StudentEntry[];
+    students?: StudentEntry[];
 }
 
 interface School {
@@ -42,8 +42,8 @@ interface School {
     address: string;
     code: string;
     principalId: string;
-    teacherIds: string[];
-    classes: ClassEntry[];
+    teacherIds?: string[];
+    classes?: ClassEntry[];
 }
 
 interface TeacherProfile {
@@ -125,7 +125,7 @@ export default function SchoolDetailsPage() {
             const teacherDoc = querySnapshot.docs[0];
             const teacherId = teacherDoc.id;
 
-            if (school?.teacherIds.includes(teacherId)) {
+            if (school?.teacherIds?.includes(teacherId)) {
                 setAddTeacherError('This teacher is already in the school.');
                 return;
             }
@@ -167,7 +167,7 @@ export default function SchoolDetailsPage() {
     };
     
     const handleDeleteClass = async (classId: string) => {
-        if (!school) return;
+        if (!school || !school.classes) return;
         const updatedClasses = school.classes.filter(c => c.id !== classId);
         await updateDoc(schoolRef, { classes: updatedClasses });
     };
@@ -182,9 +182,9 @@ export default function SchoolDetailsPage() {
             rollNumber: newStudentRoll.trim(),
         };
 
-        const updatedClasses = school.classes.map(c => {
+        const updatedClasses = (school.classes || []).map(c => {
             if (c.id === classToManage.id) {
-                return { ...c, students: [...c.students, newStudent] };
+                return { ...c, students: [...(c.students || []), newStudent] };
             }
             return c;
         });
@@ -201,11 +201,11 @@ export default function SchoolDetailsPage() {
     };
 
     const handleRemoveStudent = async (studentId: string) => {
-        if (!classToManage || !school) return;
+        if (!classToManage || !school || !school.classes) return;
 
         const updatedClasses = school.classes.map(c => {
             if (c.id === classToManage.id) {
-                const updatedStudents = c.students.filter(s => s.id !== studentId);
+                const updatedStudents = (c.students || []).filter(s => s.id !== studentId);
                 return { ...c, students: updatedStudents };
             }
             return c;
@@ -260,8 +260,8 @@ export default function SchoolDetailsPage() {
 
                     <Tabs defaultValue="classes" className="w-full">
                         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                            <TabsTrigger value="teachers">Teachers ({school.teacherIds.length})</TabsTrigger>
-                            <TabsTrigger value="classes">Classes ({school.classes.length})</TabsTrigger>
+                            <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
                             <TabsTrigger value="students">Students</TabsTrigger>
                             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                         </TabsList>
@@ -313,7 +313,7 @@ export default function SchoolDetailsPage() {
                                                 <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
                                                     <div>
                                                         <p className="font-semibold">{c.name} - Section {c.section}</p>
-                                                        <p className="text-sm text-muted-foreground">{c.students.length} student(s)</p>
+                                                        <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Pen className="mr-2 h-4 w-4" />Manage Students</Button>
@@ -337,9 +337,9 @@ export default function SchoolDetailsPage() {
                              <Card className="rounded-2xl shadow-lg">
                                 <CardHeader><CardTitle>All Students</CardTitle></CardHeader>
                                 <CardContent>
-                                    {school.classes && school.classes.some(c => c.students.length > 0) ? (
+                                    {school.classes && school.classes.some(c => c.students && c.students.length > 0) ? (
                                         <div className="space-y-6">
-                                            {school.classes.map(c => c.students.length > 0 && (
+                                            {(school.classes || []).map(c => (c.students && c.students.length > 0) && (
                                                 <div key={c.id}>
                                                     <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
                                                      <div className="grid gap-2">
@@ -430,7 +430,7 @@ export default function SchoolDetailsPage() {
                                 </Button>
                             </div>
                             <div className="flex flex-col gap-4 overflow-y-auto pr-2">
-                                 <h4 className="font-semibold">Enrolled Students ({classToManage?.students.length || 0})</h4>
+                                 <h4 className="font-semibold">Enrolled Students ({classToManage?.students?.length || 0})</h4>
                                  {classToManage?.students && classToManage.students.length > 0 ? (
                                     <div className="grid gap-2">
                                         {classToManage.students.map(s => (
@@ -456,5 +456,3 @@ export default function SchoolDetailsPage() {
         </div>
     );
 }
-
-    

@@ -79,6 +79,7 @@ export default function SchoolManagementPage() {
                 principalName: userProfile.name,
                 code: schoolCode,
                 teacherIds: [user.uid], // Principal is the first teacher
+                classes: [],
                 createdAt: new Date().toISOString(),
             });
             setNewSchoolName('');
