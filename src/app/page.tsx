@@ -205,7 +205,7 @@ export default function HomePage() {
                 </motion.p>
                 <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild size="lg" className="shadow-lg shadow-primary/20">
-                    <Link href="/signup/teacher">
+                    <Link href="/signup">
                         {t.teacherApplyButton} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                     </Button>
@@ -311,7 +311,7 @@ export default function HomePage() {
                             <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.joinTeacherTitle}</h2>
                             <p className="mt-3 max-w-2xl mx-auto text-lg text-primary-foreground/90">{t.joinTeacherDescription}</p>
                             <Button asChild size="lg" variant="secondary" className="mt-8">
-                                <Link href="/signup/teacher">
+                                <Link href="/signup">
                                     {t.joinTeacherButton} <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
                             </Button>

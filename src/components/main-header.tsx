@@ -70,25 +70,9 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button>Sign Up</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                         <DropdownMenuItem asChild>
-                            <Link href="/signup">
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                <span>As a Student</span>
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/signup/teacher">
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                <span>As a Teacher</span>
-                            </Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Button asChild>
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
             </nav>
 
             {/* Mobile Navigation */}
@@ -136,12 +120,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                             </SheetClose>
                              <SheetClose asChild>
                                 <Button asChild className="w-full justify-start text-base py-6">
-                                    <Link href="/signup">Student Sign Up</Link>
-                                </Button>
-                            </SheetClose>
-                             <SheetClose asChild>
-                                <Button asChild className="w-full justify-start text-base py-6">
-                                    <Link href="/signup/teacher">Teacher Sign Up</Link>
+                                    <Link href="/signup">Sign Up</Link>
                                 </Button>
                             </SheetClose>
                         </div>

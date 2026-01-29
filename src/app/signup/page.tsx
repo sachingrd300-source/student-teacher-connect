@@ -16,8 +16,9 @@ import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-export default function StudentSignupPage() {
+export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -26,6 +27,7 @@ export default function StudentSignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -55,7 +57,7 @@ export default function StudentSignupPage() {
           id: user.uid,
           name: name.trim(),
           email: email.trim(), 
-          role: 'student', // Automatically set role
+          role: role,
           createdAt: new Date().toISOString(),
           coins: 0,
           streak: 0,
@@ -89,18 +91,31 @@ export default function StudentSignupPage() {
             <Link href="/" className="inline-block">
                 <UserIcon className="w-12 h-12 mx-auto text-primary" />
             </Link>
-            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Student Account</h1>
-            <p className="text-muted-foreground">Create your student account to get started.</p>
+            <h1 className="text-3xl font-bold font-serif text-foreground mt-2">Create an Account</h1>
+            <p className="text-muted-foreground">Join our community as a student or a teacher.</p>
           </div>
           <Card>
             <CardHeader>
-                <CardTitle className="text-xl font-serif">Student Sign Up</CardTitle>
+                <CardTitle className="text-xl font-serif">Sign Up</CardTitle>
             </CardHeader>
             <CardContent>
               {error && (
                 <p className="text-sm font-medium text-destructive mb-4">{error}</p>
               )}
               <form onSubmit={handleSignUp} className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>I am a...</Label>
+                  <RadioGroup defaultValue="student" onValueChange={(value) => setRole(value as 'student' | 'teacher')} className="flex gap-4 pt-1">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="student" id="role-student" />
+                      <Label htmlFor="role-student">Student</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="teacher" id="role-teacher" />
+                      <Label htmlFor="role-teacher">Teacher</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="full-name">Full Name</Label>
                   <Input id="full-name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
@@ -122,7 +137,11 @@ export default function StudentSignupPage() {
               <div className="mt-4 text-center text-sm">
                 Already have an account?{' '}
                 <Link href="/login" className="underline font-semibold">
-                  Login
+                  Student Login
+                </Link>
+                 {' or '}
+                 <Link href="/login/teacher" className="underline font-semibold">
+                  Teacher Login
                 </Link>
               </div>
             </CardContent>
