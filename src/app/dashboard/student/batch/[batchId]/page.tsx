@@ -120,17 +120,18 @@ export default function StudentBatchPage() {
     }, [firestore, batchId]);
     const { data: batch, isLoading: isBatchLoading } = useDoc<Batch>(batchRef);
 
-    const isEnrolledQuery = useMemoFirebase(() => {
+    const enrollmentQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid || !batchId) return null;
         return query(
             collection(firestore, 'enrollments'),
             where('studentId', '==', user.uid),
-            where('batchId', '==', batchId)
+            where('batchId', '==', batchId),
+            where('status', '==', 'approved')
         );
     }, [firestore, user?.uid, batchId]);
-    const { data: enrollments, isLoading: isEnrollmentsLoading } = useCollection<Enrollment>(isEnrolledQuery);
+    const { data: enrollments, isLoading: isEnrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
     const enrollment = useMemo(() => enrollments?.[0], [enrollments]);
-    const isEnrolled = enrollment?.status === 'approved';
+    const isEnrolledAndApproved = !!enrollment;
 
     const studyMaterialsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
@@ -195,7 +196,7 @@ export default function StudentBatchPage() {
 
 
     useEffect(() => {
-        if (isUserLoading || isBatchLoading || isEnrollmentsLoading) return;
+        if (isUserLoading || isBatchLoading || isEnrollmentLoading) return;
 
         if (!user) {
             router.replace('/login');
@@ -207,12 +208,12 @@ export default function StudentBatchPage() {
             return;
         }
 
-        if (!isEnrolled) {
+        if (!isEnrolledAndApproved) {
             router.replace('/dashboard/student');
         }
-    }, [user, batch, isUserLoading, isBatchLoading, isEnrollmentsLoading, isEnrolled, router]);
+    }, [user, batch, isUserLoading, isBatchLoading, isEnrollmentLoading, isEnrolledAndApproved, router]);
 
-    const isLoading = isUserLoading || isBatchLoading || isEnrollmentsLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
+    const isLoading = isUserLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
 
     if (isLoading || !currentUserProfile || !batch) {
         return (
