@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -6,13 +5,14 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download, FileText, Gift, ArrowLeft, School, Search } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
+import { motion } from 'framer-motion';
 
 interface UserProfile {
     name: string;
@@ -40,9 +40,6 @@ const formatDate = (dateString: string) => {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
     });
 };
 
@@ -92,6 +89,17 @@ export default function FreeMaterialsPage() {
         }
     }, [searchedMaterials]);
 
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.05,
+            },
+        }),
+    };
+
     const renderMaterialList = (materialList: FreeMaterial[]) => {
         const isSearchActive = searchQuery.trim() !== '';
 
@@ -118,25 +126,44 @@ export default function FreeMaterialsPage() {
             );
         }
         return (
-            <div className="grid gap-4">
-                {materialList.map(material => (
-                    <div key={material.id} className="flex items-center justify-between p-4 rounded-lg border bg-background">
-                        <div className="flex items-center gap-4">
-                            <FileText className="h-6 w-6 text-primary/80 flex-shrink-0" />
-                            <div>
-                                <p className="font-semibold">{material.title}</p>
-                                <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                                <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
-                            </div>
-                        </div>
-                        <Button asChild size="sm">
-                            <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
-                            <Download className="mr-2 h-4 w-4" /> Download
-                            </a>
-                        </Button>
-                    </div>
+            <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                    visible: {
+                        transition: {
+                            staggerChildren: 0.1
+                        }
+                    }
+                }}
+            >
+                {materialList.map((material, i) => (
+                    <motion.div key={material.id} variants={cardVariants} custom={i} whileHover={{ y: -5 }} className="h-full">
+                        <Card className="flex flex-col h-full overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-lg">
+                            <CardHeader>
+                                <div className="flex items-start gap-4">
+                                   <FileText className="h-7 w-7 text-primary flex-shrink-0" />
+                                   <div className="flex-1">
+                                        <CardTitle className="text-base leading-tight font-semibold">{material.title}</CardTitle>
+                                   </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                                <p className="text-sm text-muted-foreground line-clamp-2">{material.description || 'No description available.'}</p>
+                            </CardContent>
+                            <CardFooter className="flex flex-col items-start gap-3 bg-muted/50 p-4">
+                                <p className="text-xs text-muted-foreground">Uploaded: {formatDate(material.createdAt)}</p>
+                                <Button asChild size="sm" className="w-full">
+                                    <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
+                                        <Download className="mr-2 h-4 w-4" /> Download
+                                    </a>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </motion.div>
                 ))}
-            </div>
+            </motion.div>
         );
     };
 
@@ -157,7 +184,7 @@ export default function FreeMaterialsPage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto grid gap-8">
+                <div className="max-w-6xl mx-auto grid gap-8">
                      <div>
                         <Button variant="ghost" onClick={() => router.push('/dashboard/student')} className="mb-4">
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -171,7 +198,7 @@ export default function FreeMaterialsPage() {
                                 <p className="text-muted-foreground">Free resources and notes curated by our team to help you succeed.</p>
                             </CardHeader>
                             <CardContent className="grid gap-4">
-                                <div className="relative">
+                                <div className="relative max-w-lg">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                     <Input 
                                         placeholder="Search materials by title or description..."
@@ -189,7 +216,7 @@ export default function FreeMaterialsPage() {
                                         <TabsTrigger value="pyqs">PYQs</TabsTrigger>
                                         <TabsTrigger value="dpps">DPPs</TabsTrigger>
                                     </TabsList>
-                                    <TabsContent value="all" className="mt-4">
+                                    <TabsContent value="all" className="mt-6">
                                         {isOverallEmpty ? (
                                             <div className="text-center py-16">
                                                 <Gift className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -200,16 +227,16 @@ export default function FreeMaterialsPage() {
                                             </div>
                                         ) : renderMaterialList(searchedMaterials)}
                                     </TabsContent>
-                                    <TabsContent value="notes" className="mt-4">
+                                    <TabsContent value="notes" className="mt-6">
                                         {renderMaterialList(filteredMaterials.notes)}
                                     </TabsContent>
-                                    <TabsContent value="books" className="mt-4">
+                                    <TabsContent value="books" className="mt-6">
                                         {renderMaterialList(filteredMaterials.books)}
                                     </TabsContent>
-                                    <TabsContent value="pyqs" className="mt-4">
+                                    <TabsContent value="pyqs" className="mt-6">
                                         {renderMaterialList(filteredMaterials.pyqs)}
                                     </TabsContent>
-                                    <TabsContent value="dpps" className="mt-4">
+                                    <TabsContent value="dpps" className="mt-6">
                                         {renderMaterialList(filteredMaterials.dpps)}
                                     </TabsContent>
                                 </Tabs>
@@ -221,5 +248,3 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
-
-    
