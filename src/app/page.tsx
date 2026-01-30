@@ -6,7 +6,7 @@ import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award, Facebook, Twitter, Instagram, Building2 } from "lucide-react";
-import placeholderImages from '@/lib/placeholder-images';
+import placeholderImages from '@/lib/placeholder-images.json';
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
