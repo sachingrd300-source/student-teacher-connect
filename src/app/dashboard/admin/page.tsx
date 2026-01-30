@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, ChangeEvent, useMemo } from 'react';
-import { useUser, useFirestore, useStorage, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useStorage, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, addDoc, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
@@ -123,7 +122,7 @@ export default function AdminDashboardPage() {
 
     const handleMaterialUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !user) return;
+        if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !firestore || !user) return;
 
         setIsUploadingMaterial(true);
         const fileName = `${Date.now()}_${materialFile.name}`;
@@ -133,7 +132,7 @@ export default function AdminDashboardPage() {
             await uploadBytes(fileRef, materialFile);
             const downloadURL = await getDownloadURL(fileRef);
 
-            await addDoc(collection(firestore, 'freeMaterials'), {
+            const materialData = {
                 title: materialTitle.trim(),
                 description: materialDescription.trim(),
                 fileURL: downloadURL,
@@ -141,14 +140,29 @@ export default function AdminDashboardPage() {
                 fileType: materialFile.type,
                 category: materialCategory,
                 createdAt: new Date().toISOString(),
-            });
-            setMaterialTitle('');
-            setMaterialDescription('');
-            setMaterialFile(null);
-            setMaterialCategory('');
-            if (document.getElementById('material-file')) (document.getElementById('material-file') as HTMLInputElement).value = '';
+            };
+            
+            const freeMaterialsCol = collection(firestore, 'freeMaterials');
+
+            addDoc(freeMaterialsCol, materialData)
+                .then(() => {
+                    setMaterialTitle('');
+                    setMaterialDescription('');
+                    setMaterialFile(null);
+                    setMaterialCategory('');
+                    if (document.getElementById('material-file')) (document.getElementById('material-file') as HTMLInputElement).value = '';
+                })
+                .catch((error) => {
+                    const contextualError = new FirestorePermissionError({
+                        operation: 'create',
+                        path: 'freeMaterials',
+                        requestResourceData: materialData,
+                    });
+                    errorEmitter.emit('permission-error', contextualError);
+                });
+
         } catch (error) {
-            console.error("Error uploading free material: ", error);
+            console.error("Error uploading file to storage: ", error);
         } finally {
             setIsUploadingMaterial(false);
         }
@@ -160,15 +174,21 @@ export default function AdminDashboardPage() {
         const materialDocRef = doc(firestore, 'freeMaterials', material.id);
         try {
             await deleteObject(fileRef);
-            await deleteDoc(materialDocRef);
+            deleteDoc(materialDocRef).catch(error => {
+                const contextualError = new FirestorePermissionError({
+                    operation: 'delete',
+                    path: materialDocRef.path,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+            });
         } catch (error) {
-            console.error("Error deleting material: ", error);
+            console.error("Error deleting material from storage: ", error);
         }
     };
     
     const handleShopItemUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!itemImage || !itemName.trim() || !itemPrice || !itemPurchaseUrl.trim() || !storage || !user) return;
+        if (!itemImage || !itemName.trim() || !itemPrice || !itemPurchaseUrl.trim() || !storage || !firestore || !user) return;
 
         setIsUploadingItem(true);
         const imageName = `${Date.now()}_${itemImage.name}`;
@@ -177,8 +197,8 @@ export default function AdminDashboardPage() {
         try {
             await uploadBytes(imageRef, itemImage);
             const downloadURL = await getDownloadURL(imageRef);
-
-            await addDoc(collection(firestore, 'shopItems'), {
+            
+            const itemData = {
                 name: itemName.trim(),
                 description: itemDescription.trim(),
                 price: parseFloat(itemPrice),
@@ -186,15 +206,30 @@ export default function AdminDashboardPage() {
                 imageName: imageName,
                 purchaseUrl: itemPurchaseUrl.trim(),
                 createdAt: new Date().toISOString(),
-            });
-            setItemName('');
-            setItemDescription('');
-            setItemPrice('');
-            setItemPurchaseUrl('');
-            setItemImage(null);
-            if (document.getElementById('item-image')) (document.getElementById('item-image') as HTMLInputElement).value = '';
+            };
+
+            const shopItemsCol = collection(firestore, 'shopItems');
+
+            addDoc(shopItemsCol, itemData)
+                .then(() => {
+                    setItemName('');
+                    setItemDescription('');
+                    setItemPrice('');
+                    setItemPurchaseUrl('');
+                    setItemImage(null);
+                    if (document.getElementById('item-image')) (document.getElementById('item-image') as HTMLInputElement).value = '';
+                })
+                .catch((error) => {
+                    const contextualError = new FirestorePermissionError({
+                        operation: 'create',
+                        path: 'shopItems',
+                        requestResourceData: itemData,
+                    });
+                    errorEmitter.emit('permission-error', contextualError);
+                });
+
         } catch (error) {
-            console.error("Error uploading shop item: ", error);
+            console.error("Error uploading shop item image: ", error);
         } finally {
             setIsUploadingItem(false);
         }
@@ -206,19 +241,28 @@ export default function AdminDashboardPage() {
         const itemDocRef = doc(firestore, 'shopItems', item.id);
         try {
             await deleteObject(imageRef);
-            await deleteDoc(itemDocRef);
+            deleteDoc(itemDocRef).catch(error => {
+                const contextualError = new FirestorePermissionError({
+                    operation: 'delete',
+                    path: itemDocRef.path,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+            });
         } catch (error) {
-            console.error("Error deleting shop item: ", error);
+            console.error("Error deleting shop item image: ", error);
         }
     };
     
-    const handleDeleteBooking = async (bookingId: string) => {
+    const handleDeleteBooking = (bookingId: string) => {
         if (!firestore) return;
-        try {
-            await deleteDoc(doc(firestore, 'homeBookings', bookingId));
-        } catch (error) {
-            console.error("Error deleting home booking:", error);
-        }
+        const bookingDocRef = doc(firestore, 'homeBookings', bookingId);
+        deleteDoc(bookingDocRef).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'delete',
+                path: bookingDocRef.path,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
     };
     
     const renderMaterialList = (materialList: FreeMaterial[]) => {
@@ -472,5 +516,3 @@ export default function AdminDashboardPage() {
             </motion.main>
         </div>
     );
-
-    
