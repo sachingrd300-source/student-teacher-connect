@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -232,7 +232,7 @@ export default function CoachingManagementPage() {
                         <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
@@ -259,6 +259,18 @@ export default function CoachingManagementPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold">{pendingRequests.length}</div>
                                 {pendingRequests.length > 0 && <p className="text-xs text-muted-foreground">Review requests below.</p>}
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Home Tutor Program</CardTitle>
+                                <Home className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-xs text-muted-foreground">Join to get students for home tuition.</p>
+                                <Button asChild className="mt-3 w-full" size="sm">
+                                    <Link href="/dashboard/teacher/apply-home-tutor">Apply Now</Link>
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>

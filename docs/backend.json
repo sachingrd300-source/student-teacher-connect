@@ -28,6 +28,10 @@
           "description": "Specifies the management focus for a teacher.",
           "enum": ["coaching", "school"]
         },
+        "isHomeTutor": {
+          "type": "boolean",
+          "description": "Indicates if the teacher is approved to be a home tutor."
+        },
         "bio": {
           "type": "string",
           "description": "A short biography of the user."
@@ -236,6 +240,19 @@
         "createdAt"
       ]
     },
+    "HomeTutorApplication": {
+      "title": "Home Tutor Application",
+      "type": "object",
+      "description": "Represents a teacher's application to be listed as a home tutor.",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string", "description": "Admin notes on the application." }
+      },
+      "required": ["teacherId", "teacherName", "status", "createdAt"]
+    },
     "Activity": {
       "title": "Activity",
       "type": "object",
@@ -378,6 +395,10 @@
     "/homeBookings/{bookingId}": {
       "schema": { "$ref": "#/entities/HomeBooking" },
       "description": "Stores home teacher booking requests managed by admins."
+    },
+    "/homeTutorApplications/{applicationId}": {
+      "schema": { "$ref": "#/entities/HomeTutorApplication" },
+      "description": "Stores applications from teachers to become home tutors."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
