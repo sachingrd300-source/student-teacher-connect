@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -196,6 +196,7 @@ export default function StudentDashboardPage() {
     
     const actionCards = [
         { title: "Discover Teachers", description: "Find the right teacher for you.", href: "/dashboard/student/find-teachers", icon: <Search className="h-6 w-6 text-primary" /> },
+        { title: "Leaderboard", description: "See top student rankings.", href: "/dashboard/student/leaderboard", icon: <Trophy className="h-6 w-6 text-primary" /> },
         { title: "Book Home Teacher", description: "Request a personalized home tutor.", href: "/dashboard/student/book-home-teacher", icon: <Home className="h-6 w-6 text-primary" /> },
         { title: "Free Study Material", description: "Access free notes and resources.", href: "/dashboard/student/free-materials", icon: <Gift className="h-6 w-6 text-primary" /> },
         { title: "Shop", description: "Exclusive merchandise and kits.", href: "/dashboard/student/shop", icon: <ShoppingBag className="h-6 w-6 text-primary" /> },
@@ -217,7 +218,7 @@ export default function StudentDashboardPage() {
                         <p className="text-muted-foreground mt-2">{getMotivation()}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-6">
                         {actionCards.map((card, i) => (
                             <motion.div
                                 key={card.title}

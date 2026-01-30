@@ -9,6 +9,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "coins",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
