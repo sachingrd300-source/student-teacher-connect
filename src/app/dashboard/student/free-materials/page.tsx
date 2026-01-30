@@ -56,9 +56,9 @@ export default function FreeMaterialsPage() {
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
     const freeMaterialsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null;
         return query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
+    }, [firestore, user]);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
 
     useEffect(() => {
@@ -248,3 +248,5 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
+
+    

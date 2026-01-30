@@ -109,16 +109,16 @@ export default function AdminDashboardPage() {
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
-    const freeMaterialsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore]);
+    const freeMaterialsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, user]);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     
-    const shopItemsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore]);
+    const shopItemsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, user]);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
 
-    const homeBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore]);
+    const homeBookingsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, user]);
     const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
 
-    const homeTutorApplicationsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore]);
+    const homeTutorApplicationsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore, user]);
     const { data: homeTutorApplications, isLoading: applicationsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
 
     useEffect(() => {
@@ -625,3 +625,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
