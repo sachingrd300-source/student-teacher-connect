@@ -43,8 +43,8 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isAdmin() || isSignedIn() || get(/databases/$(database)/documents/users/$(userId)).data.role == 'teacher';
-      allow list: if isAdmin() || isSignedIn();
+      allow get: if isOwner(userId) || isAdmin() || isTeacher() || (isStudent() && resource.data.role == 'teacher');
+      allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() || isOwner(userId);
       allow delete: if isAdmin();
