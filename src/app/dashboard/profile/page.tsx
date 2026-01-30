@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Edit, Save, UserCircle } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -27,6 +27,7 @@ interface UserProfile {
     class?: string;
     coins?: number;
     streak?: number;
+    referralCode?: string;
 }
 
 export default function ProfilePage() {
@@ -316,6 +317,27 @@ export default function ProfilePage() {
                             </CardFooter>
                         )}
                     </Card>
+
+                    {userProfile.referralCode && (
+                        <Card className="rounded-2xl shadow-lg mt-8">
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Gift className="mr-3 h-6 w-6 text-primary"/> Refer & Earn
+                                </CardTitle>
+                                <CardDescription>Share your code with friends. You'll get 100 coins and they'll get 50 coins when they sign up!</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Label htmlFor="referral-code-display">Your Referral Code</Label>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <Input id="referral-code-display" readOnly value={userProfile.referralCode} className="font-mono text-lg tracking-widest bg-muted" />
+                                    <Button size="icon" variant="outline" onClick={() => navigator.clipboard.writeText(userProfile.referralCode || '')}>
+                                        <Clipboard className="h-5 w-5" />
+                                        <span className="sr-only">Copy Referral Code</span>
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </main>
         </div>

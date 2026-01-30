@@ -14,10 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, writeBatch, query, where, getDocs, limit, collection, increment } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { motion, AnimatePresence } from 'framer-motion';
+import { nanoid } from 'nanoid';
 
 export default function SignupPage() {
   const auth = useAuth();
@@ -30,6 +31,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [managementFocus, setManagementFocus] = useState<'coaching' | 'school'>('coaching');
+  const [referralCodeInput, setReferralCodeInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -52,27 +54,57 @@ export default function SignupPage() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      const userRef = doc(firestore, `users/${user.uid}`);
+      const newUser = userCredential.user;
       
+      const batch = writeBatch(firestore);
+      const newUserRef = doc(firestore, `users/${newUser.uid}`);
+      
+      const newUserReferralCode = nanoid(8).toUpperCase();
+      let newUserInitialCoins = 0;
+
       const dataToSet: { [key: string]: any } = {
-          id: user.uid,
+          id: newUser.uid,
           name: name.trim(),
           email: email.trim(), 
           role: role,
           createdAt: new Date().toISOString(),
-          coins: 0,
           streak: 0,
           lastLoginDate: '',
+          referralCode: newUserReferralCode,
       };
 
       if (role === 'teacher') {
         dataToSet.teacherType = managementFocus;
       }
       
-      await setDoc(userRef, dataToSet);
+      // Handle referral
+      const trimmedReferralCode = referralCodeInput.trim().toUpperCase();
+      if (trimmedReferralCode) {
+          const usersRef = collection(firestore, 'users');
+          const q = query(usersRef, where('referralCode', '==', trimmedReferralCode), limit(1));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+              const referrerDoc = querySnapshot.docs[0];
+              const referrerRef = doc(firestore, 'users', referrerDoc.id);
+
+              const REFERRER_REWARD = 100;
+              const NEW_USER_REWARD = 50;
+
+              newUserInitialCoins = NEW_USER_REWARD;
+              dataToSet.referredBy = trimmedReferralCode;
+
+              batch.update(referrerRef, { coins: increment(REFERRER_REWARD) });
+          } else {
+              console.warn("Invalid referral code used:", trimmedReferralCode);
+          }
+      }
       
-      // The useEffect will handle the redirect.
+      dataToSet.coins = newUserInitialCoins;
+      batch.set(newUserRef, dataToSet);
+      
+      await batch.commit();
+      
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setError('This email is already in use. Please log in or use a different email.');
@@ -163,6 +195,11 @@ export default function SignupPage() {
                    <p className="text-xs text-muted-foreground">Password must be at least 6 characters long.</p>
                 </div>
                 
+                <div className="grid gap-2">
+                  <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                  <Input id="referral-code" placeholder="Enter a friend's code" value={referralCodeInput} onChange={(e) => setReferralCodeInput(e.target.value)} />
+                </div>
+
                 <Button type="submit" className="w-full mt-2" disabled={isSigningUp}>
                   {isSigningUp ? 'Creating Account...' : 'Create Account'}
                 </Button>

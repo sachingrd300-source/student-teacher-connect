@@ -79,6 +79,14 @@
         "address": {
             "type": "string",
             "description": "The user's physical address."
+        },
+        "referralCode": {
+          "type": "string",
+          "description": "A unique code for this user to refer others."
+        },
+        "referredBy": {
+            "type": "string",
+            "description": "The referral code of the user who referred this user."
         }
       },
       "required": [
@@ -86,7 +94,8 @@
         "name",
         "email",
         "role",
-        "createdAt"
+        "createdAt",
+        "referralCode"
       ]
     },
     "Batch": {
