@@ -1,20 +1,17 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 
 
 interface UserProfile {
@@ -77,7 +74,6 @@ export default function StudentDashboardPage() {
     const [batchCode, setBatchCode] = useState('');
     const [joinMessage, setJoinMessage] = useState({ type: '', text: '' });
     const [isJoining, setIsJoining] = useState(false);
-    const [completedTasks, setCompletedTasks] = useState<string[]>([]);
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -91,24 +87,6 @@ export default function StudentDashboardPage() {
         return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
-
-    // Key for localStorage
-    const tasksStorageKey = `daily_tasks_${user?.uid}`;
-
-    // Load tasks from localStorage on mount and reset if it's a new day
-    useEffect(() => {
-        if (!user) return; // Don't run if user is not loaded
-        const storedTasks = localStorage.getItem(tasksStorageKey);
-        if (storedTasks) {
-            const { date, tasks } = JSON.parse(storedTasks);
-            const today = new Date().toISOString().split('T')[0];
-            if (date === today) {
-                setCompletedTasks(tasks);
-            } else {
-                localStorage.removeItem(tasksStorageKey);
-            }
-        }
-    }, [user, tasksStorageKey]);
 
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
@@ -132,28 +110,6 @@ export default function StudentDashboardPage() {
             router.replace('/dashboard');
         }
     }, [user, userProfile, isUserLoading, profileLoading, router]);
-
-    const handleTaskToggle = (taskId: string) => {
-        const isAlreadyCompleted = completedTasks.includes(taskId);
-
-        // Instantly update UI
-        const newCompletedTasks = isAlreadyCompleted
-            ? completedTasks.filter(id => id !== taskId)
-            : [...completedTasks, taskId];
-        
-        setCompletedTasks(newCompletedTasks);
-
-        // Persist to localStorage
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem(tasksStorageKey, JSON.stringify({ date: today, tasks: newCompletedTasks }));
-
-        // Award coins only when completing a task, not un-completing
-        if (!isAlreadyCompleted && userProfileRef && userProfile) {
-            const currentCoins = userProfile.coins || 0;
-            const newCoins = currentCoins + 2; // Award 2 coins per task
-            updateDoc(userProfileRef, { coins: newCoins }).catch(err => console.error("Failed to update coins", err));
-        }
-    };
 
     const handleJoinBatch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -244,13 +200,6 @@ export default function StudentDashboardPage() {
         { title: "Free Study Material", description: "Access free notes and resources.", href: "/dashboard/student/free-materials", icon: <Gift className="h-6 w-6 text-primary" /> },
         { title: "Shop", description: "Exclusive merchandise and kits.", href: "/dashboard/student/shop", icon: <ShoppingBag className="h-6 w-6 text-primary" /> },
     ];
-    
-    const todaysTasks = [
-        { id: 'task1', label: 'Watch 1 video lesson' },
-        { id: 'task2', label: 'Attempt 5 MCQ questions' },
-        { id: 'task3', label: 'Read 1 short note' },
-        { id: 'task4', label: 'Post a doubt (optional)' },
-    ];
 
 
     return (
@@ -293,128 +242,94 @@ export default function StudentDashboardPage() {
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                        <div className="md:col-span-2 grid gap-8">
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                    <CardTitle>Join a New Batch</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-                                    <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row sm:items-end gap-4">
-                                        <div className="grid gap-2 flex-1">
-                                            <Label htmlFor="batch-code">Enter Batch Code</Label>
-                                            <Input 
-                                                id="batch-code" 
-                                                placeholder="e.g., A1B2C3" 
-                                                value={batchCode}
-                                                onChange={(e) => setBatchCode(e.target.value)}
-                                            />
-                                        </div>
-                                        <Button type="submit" className="w-full sm:w-auto" disabled={isJoining || !batchCode.trim()}>
-                                            {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                            Send Request
-                                        </Button>
-                                    </form>
-                                    {joinMessage.text && (
-                                        <p className={`mt-4 text-sm font-medium ${
-                                            joinMessage.type === 'error' ? 'text-destructive' : 
-                                            joinMessage.type === 'success' ? 'text-green-600' : 'text-muted-foreground'
-                                        }`}>
-                                            {joinMessage.text}
-                                        </p>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                             <div>
-                                <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
-                                {enrollments && enrollments.length > 0 ? (
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        {enrollments.map((enrollment, i) => (
-                                            <motion.div
-                                                key={enrollment.id}
-                                                custom={i}
-                                                initial="hidden"
-                                                animate="visible"
-                                                variants={cardVariants}
-                                                whileHover={{ scale: 1.02, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
-                                                whileTap={{ scale: 0.98 }}
-                                            >
-                                                <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
-                                                    <div className="flex items-start gap-4 flex-grow">
-                                                        {renderStatusIcon(enrollment.status)}
-                                                        <div className="flex-grow min-w-0">
-                                                            <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
-                                                            <p className="text-sm text-muted-foreground break-words">Teacher: {enrollment.teacherName}</p>
-                                                            <p className="text-xs text-muted-foreground mt-1">
-                                                                {enrollment.status === 'pending' 
-                                                                    ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                                    : `Approved: ${formatDate(enrollment.approvedAt)}`}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2 self-end mt-4">
-                                                        {enrollment.status === 'pending' ? (
-                                                            <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                                Cancel Request
-                                                            </Button>
-                                                        ) : (
-                                                            <>
-                                                                <Button asChild variant="outline" size="sm">
-                                                                    <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
-                                                                </Button>
-                                                                <Button asChild size="sm">
-                                                                    <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                                        View Batch
-                                                                    </Link>
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </Card>
-                                            </motion.div>
-                                        ))}
+                    <div className="grid gap-8">
+                        <Card className="rounded-2xl shadow-lg">
+                            <CardHeader>
+                                <CardTitle>Join a New Batch</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+                                <form onSubmit={handleJoinBatch} className="flex flex-col sm:flex-row sm:items-end gap-4">
+                                    <div className="grid gap-2 flex-1">
+                                        <Label htmlFor="batch-code">Enter Batch Code</Label>
+                                        <Input 
+                                            id="batch-code" 
+                                            placeholder="e.g., A1B2C3" 
+                                            value={batchCode}
+                                            onChange={(e) => setBatchCode(e.target.value)}
+                                        />
                                     </div>
-                                ) : (
-                                    <div className="w-full bg-background border rounded-2xl p-12 text-center flex flex-col items-center">
-                                        <School className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
-                                        <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
-                                    </div>
+                                    <Button type="submit" className="w-full sm:w-auto" disabled={isJoining || !batchCode.trim()}>
+                                        {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        Send Request
+                                    </Button>
+                                </form>
+                                {joinMessage.text && (
+                                    <p className={`mt-4 text-sm font-medium ${
+                                        joinMessage.type === 'error' ? 'text-destructive' : 
+                                        joinMessage.type === 'success' ? 'text-green-600' : 'text-muted-foreground'
+                                    }`}>
+                                        {joinMessage.text}
+                                    </p>
                                 )}
-                            </div>
-                        </div>
+                            </CardContent>
+                        </Card>
 
-                        <div className="md:col-span-1 grid gap-8">
-                             <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center">
-                                        <Sparkles className="mr-2 h-5 w-5 text-primary" />
-                                        Today's Tasks
-                                    </CardTitle>
-                                    <CardDescription>Complete tasks to earn extra coins!</CardDescription>
-                                </CardHeader>
-                                <CardContent className="grid gap-3 p-4 pt-0">
-                                    {todaysTasks.map(task => (
-                                        <div key={task.id} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={task.id}
-                                                checked={completedTasks.includes(task.id)}
-                                                onCheckedChange={() => handleTaskToggle(task.id)}
-                                            />
-                                            <label
-                                                htmlFor={task.id}
-                                                className={cn(
-                                                    "text-sm font-medium leading-none transition-colors",
-                                                    completedTasks.includes(task.id) ? "text-muted-foreground line-through" : "text-foreground"
-                                                )}
-                                            >
-                                                {task.label}
-                                            </label>
-                                        </div>
+                         <div>
+                            <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
+                            {enrollments && enrollments.length > 0 ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {enrollments.map((enrollment, i) => (
+                                        <motion.div
+                                            key={enrollment.id}
+                                            custom={i}
+                                            initial="hidden"
+                                            animate="visible"
+                                            variants={cardVariants}
+                                            whileHover={{ scale: 1.02, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
+                                                <div className="flex items-start gap-4 flex-grow">
+                                                    {renderStatusIcon(enrollment.status)}
+                                                    <div className="flex-grow min-w-0">
+                                                        <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
+                                                        <p className="text-sm text-muted-foreground break-words">Teacher: {enrollment.teacherName}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            {enrollment.status === 'pending' 
+                                                                ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                                : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 self-end mt-4">
+                                                    {enrollment.status === 'pending' ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                            Cancel Request
+                                                        </Button>
+                                                    ) : (
+                                                        <>
+                                                            <Button asChild variant="outline" size="sm">
+                                                                <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                            </Button>
+                                                            <Button asChild size="sm">
+                                                                <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
+                                                                    View Batch
+                                                                </Link>
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </Card>
+                                        </motion.div>
                                     ))}
-                                </CardContent>
-                            </Card>
+                                </div>
+                            ) : (
+                                <div className="w-full bg-background border rounded-2xl p-12 text-center flex flex-col items-center">
+                                    <School className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
+                                    <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -422,5 +337,3 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
-
-    
