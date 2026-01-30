@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Edit, Save, UserCircle, Gift, Clipboard } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface UserProfile {
     name: string;
@@ -29,6 +30,8 @@ interface UserProfile {
     streak?: number;
     referralCode?: string;
 }
+
+const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
@@ -170,17 +173,24 @@ export default function ProfilePage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
                      <Card className="rounded-2xl shadow-lg">
-                        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className='w-full'>
-                                <CardTitle>My Profile</CardTitle>
-                                <CardDescription>View and edit your personal information.</CardDescription>
+                        <CardHeader>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="w-16 h-16">
+                                        <AvatarFallback className="text-2xl">{getInitials(userProfile.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <CardTitle>My Profile</CardTitle>
+                                        <CardDescription>View and edit your personal information.</CardDescription>
+                                    </div>
+                                </div>
+                                {!isEditing && (
+                                   <Button variant="outline" size="icon" onClick={() => setIsEditing(true)} className="self-end sm:self-center flex-shrink-0">
+                                        <Edit className="h-4 w-4" />
+                                        <span className="sr-only">Edit Profile</span>
+                                    </Button>
+                                )}
                             </div>
-                            {!isEditing && (
-                               <Button variant="outline" size="icon" onClick={() => setIsEditing(true)} className="self-end sm:self-center flex-shrink-0">
-                                    <Edit className="h-4 w-4" />
-                                    <span className="sr-only">Edit Profile</span>
-                                </Button>
-                            )}
                         </CardHeader>
                         <CardContent className="grid gap-6">
                            <div className="grid gap-2">
