@@ -124,13 +124,14 @@
             "studentId": { "type": "string" },
             "studentName": { "type": "string" },
             "teacherId": { "type": "string" },
+            "teacherName": { "type": "string", "description": "The name of the teacher for the batch." },
             "batchId": { "type": "string" },
             "batchName": { "type": "string" },
             "status": { "type": "string", "enum": ["pending", "approved"] },
             "createdAt": { "type": "string", "format": "date-time" },
             "approvedAt": { "type": "string", "format": "date-time", "description": "The date and time when the enrollment was approved." }
         },
-        "required": ["studentId", "studentName", "teacherId", "batchId", "batchName", "status", "createdAt"]
+        "required": ["studentId", "studentName", "teacherId", "teacherName", "batchId", "batchName", "status", "createdAt"]
     },
     "StudyMaterial": {
       "title": "Study Material",

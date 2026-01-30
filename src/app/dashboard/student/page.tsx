@@ -92,14 +92,6 @@ export default function StudentDashboardPage() {
         return enrollments?.map(e => e.batchId) || [];
     }, [enrollments]);
 
-    const approvedEnrollments = useMemo(() => {
-        return enrollments
-            ?.filter(e => e.status === 'approved' && e.approvedAt)
-            .sort((a, b) => new Date(b.approvedAt!).getTime() - new Date(a.approvedAt!).getTime()) 
-            || [];
-    }, [enrollments]);
-
-
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
         if (!user) {
@@ -144,6 +136,7 @@ export default function StudentDashboardPage() {
                 studentId: user.uid,
                 studentName: userProfile.name,
                 teacherId: batchData.teacherId,
+                teacherName: batchData.teacherName,
                 batchId: batchData.id,
                 batchName: batchData.name,
                 status: 'pending',
