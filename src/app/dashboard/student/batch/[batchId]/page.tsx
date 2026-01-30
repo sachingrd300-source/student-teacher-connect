@@ -112,7 +112,7 @@ export default function StudentBatchPage() {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
-    const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
+    const { data: currentUserProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
 
     const batchRef = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
@@ -196,7 +196,7 @@ export default function StudentBatchPage() {
 
 
     useEffect(() => {
-        if (isUserLoading || isBatchLoading || isEnrollmentLoading) return;
+        if (isUserLoading || isBatchLoading || isEnrollmentLoading || isProfileLoading) return;
 
         if (!user) {
             router.replace('/login');
@@ -211,9 +211,9 @@ export default function StudentBatchPage() {
         if (!isEnrolledAndApproved) {
             router.replace('/dashboard/student');
         }
-    }, [user, batch, isUserLoading, isBatchLoading, isEnrollmentLoading, isEnrolledAndApproved, router]);
+    }, [user, batch, isUserLoading, isBatchLoading, isEnrollmentLoading, isEnrolledAndApproved, router, isProfileLoading]);
 
-    const isLoading = isUserLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
+    const isLoading = isUserLoading || isProfileLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
 
     if (isLoading || !currentUserProfile || !batch) {
         return (
