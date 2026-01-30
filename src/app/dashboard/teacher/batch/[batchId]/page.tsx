@@ -286,9 +286,11 @@ export default function BatchManagementPage() {
         const fileRef = ref(storage, `materials/${batchId}/${fileName}`);
 
         try {
+            // This part is inherently slow and should be awaited.
             await uploadBytes(fileRef, materialFile);
             const downloadURL = await getDownloadURL(fileRef);
 
+            // Now, perform Firestore writes in a non-blocking way for the UI.
             const activityColRef = collection(firestore, 'batches', batchId, 'activity');
             const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
             
@@ -298,7 +300,7 @@ export default function BatchManagementPage() {
                 title: materialTitle.trim(),
                 description: materialDescription.trim(),
                 fileURL: downloadURL,
-                fileName: fileName,
+                fileName: fileName, // Keep filename for deletion
                 fileType: materialFile.type,
                 batchId: batchId,
                 teacherId: user.uid,
@@ -310,16 +312,22 @@ export default function BatchManagementPage() {
                 createdAt: new Date().toISOString(),
             });
 
-            await firestoreBatch.commit();
+            // Commit the batch without awaiting, allowing UI to update immediately.
+            firestoreBatch.commit().catch(error => {
+                console.error("Error committing material upload to Firestore:", error);
+                // Optionally show an error toast to the user
+            });
 
+            // Clear the form immediately after starting the Firestore write.
             setMaterialTitle('');
             setMaterialDescription('');
             setMaterialFile(null);
             if (document.getElementById('material-file')) {
                 (document.getElementById('material-file') as HTMLInputElement).value = '';
             }
+
         } catch (error) {
-            console.error("Error uploading material: ", error);
+            console.error("Error uploading file to storage: ", error);
         } finally {
             setIsUploading(false);
         }
@@ -347,62 +355,73 @@ export default function BatchManagementPage() {
         }
     };
 
-    const handlePostAnnouncement = async (e: React.FormEvent) => {
+    const handlePostAnnouncement = (e: React.FormEvent) => {
         e.preventDefault();
         if (!announcement.trim() || !firestore || !batchId) return;
     
         setIsPosting(true);
-        try {
-            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-            await addDoc(activityColRef, {
-                message: announcement.trim(),
-                createdAt: new Date().toISOString(),
+        
+        const announcementData = {
+            message: announcement.trim(),
+            createdAt: new Date().toISOString(),
+        };
+
+        // Clear the form immediately
+        setAnnouncement('');
+        
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        addDoc(activityColRef, announcementData)
+            .catch((error) => {
+                console.error("Error posting announcement:", error);
+                // Optionally, restore the input field on error
+                // setAnnouncement(announcementData.message); 
+            })
+            .finally(() => {
+                setIsPosting(false);
             });
-            setAnnouncement('');
-        } catch (error) {
-            console.error("Error posting announcement:", error);
-        } finally {
-            setIsPosting(false);
-        }
     };
 
-    const handleCreateTest = async (e: React.FormEvent) => {
+    const handleCreateTest = (e: React.FormEvent) => {
         e.preventDefault();
         if (!testTitle.trim() || !testSubject.trim() || !testDate || !maxMarks || !firestore || !batchId || !user) return;
         
         setIsCreatingTest(true);
-        try {
-            const testsColRef = collection(firestore, 'batches', batchId, 'tests');
-            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-            
-            const firestoreBatch = writeBatch(firestore);
 
-            firestoreBatch.set(doc(testsColRef), {
-                title: testTitle.trim(),
-                subject: testSubject.trim(),
-                testDate: new Date(testDate).toISOString(),
-                maxMarks: Number(maxMarks),
-                batchId,
-                teacherId: user.uid,
-                createdAt: new Date().toISOString(),
+        const testsColRef = collection(firestore, 'batches', batchId, 'tests');
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        
+        const firestoreBatch = writeBatch(firestore);
+
+        const newTestData = {
+            title: testTitle.trim(),
+            subject: testSubject.trim(),
+            testDate: new Date(testDate).toISOString(),
+            maxMarks: Number(maxMarks),
+            batchId,
+            teacherId: user.uid,
+            createdAt: new Date().toISOString(),
+        };
+
+        firestoreBatch.set(doc(testsColRef), newTestData);
+
+        firestoreBatch.set(doc(activityColRef), {
+            message: `New test scheduled: "${testTitle.trim()}" on ${new Date(testDate).toLocaleDateString()}`,
+            createdAt: new Date().toISOString(),
+        });
+        
+        // Clear form immediately
+        setTestTitle('');
+        setTestSubject('');
+        setTestDate('');
+        setMaxMarks('');
+        
+        firestoreBatch.commit()
+            .catch((error) => {
+                console.error("Error creating test:", error);
+            })
+            .finally(() => {
+                setIsCreatingTest(false);
             });
-
-            firestoreBatch.set(doc(activityColRef), {
-                message: `New test scheduled: "${testTitle.trim()}" on ${new Date(testDate).toLocaleDateString()}`,
-                createdAt: new Date().toISOString(),
-            });
-
-            await firestoreBatch.commit();
-
-            setTestTitle('');
-            setTestSubject('');
-            setTestDate('');
-            setMaxMarks('');
-        } catch (error) {
-            console.error("Error creating test:", error);
-        } finally {
-            setIsCreatingTest(false);
-        }
     };
 
     const handleApprove = async (enrollment: Enrollment) => {
