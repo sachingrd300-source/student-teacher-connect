@@ -20,11 +20,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
 
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
-    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight
+    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -504,26 +506,60 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col min-h-screen bg-muted/30">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8">
-                <div className="max-w-8xl mx-auto grid md:grid-cols-[250px_1fr] lg:grid-cols-[280px_1fr] gap-8">
-                    {/* Sidebar */}
-                    <aside className="hidden md:flex flex-col gap-4">
-                        <h2 className="text-lg font-semibold pl-4 font-serif tracking-tight">Management</h2>
-                        {renderNavItems()}
-                    </aside>
+                 <div className="max-w-8xl mx-auto">
+                    {/* Mobile Menu */}
+                    <div className="md:hidden mb-4">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button variant="outline" className="flex items-center gap-2">
+                                    <Menu className="h-5 w-5" />
+                                    <span>Menu</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-[300px] sm:w-[320px] p-0">
+                                <div className="p-6 pt-8">
+                                    <h2 className="text-lg font-semibold font-serif tracking-tight">Management</h2>
+                                </div>
+                                <nav className="grid gap-2 px-3">
+                                    {navItems.map(item => (
+                                        <SheetClose asChild key={item.id}>
+                                            <Button 
+                                                variant={activeView === item.id ? 'default' : 'ghost'}
+                                                onClick={() => setActiveView(item.id)}
+                                                className="justify-start gap-3 text-base h-12"
+                                            >
+                                                <item.icon className="h-5 w-5" />
+                                                <span>{item.label}</span>
+                                                <span className="ml-auto bg-muted text-muted-foreground text-xs font-mono rounded-full px-2 py-0.5">{item.count}</span>
+                                            </Button>
+                                        </SheetClose>
+                                    ))}
+                                </nav>
+                            </SheetContent>
+                        </Sheet>
+                    </div>
 
-                    {/* Main Content */}
-                    <div className="w-full">
-                      <AnimatePresence mode="wait">
-                          <motion.div
-                            key={activeView}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.25 }}
-                          >
-                            {renderContent()}
-                          </motion.div>
-                      </AnimatePresence>
+                    <div className="grid md:grid-cols-[250px_1fr] lg:grid-cols-[280px_1fr] gap-8">
+                        {/* Sidebar */}
+                        <aside className="hidden md:flex flex-col gap-4">
+                            <h2 className="text-lg font-semibold pl-4 font-serif tracking-tight">Management</h2>
+                            {renderNavItems()}
+                        </aside>
+
+                        {/* Main Content */}
+                        <div className="w-full">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeView}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.25 }}
+                            >
+                                {renderContent()}
+                            </motion.div>
+                        </AnimatePresence>
+                        </div>
                     </div>
                 </div>
             </main>
