@@ -633,7 +633,7 @@ export default function AdminDashboardPage() {
                             {filteredApplications.rejected.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.rejected.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-xl border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive self-end sm:self-center">Rejected</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Rejected Applications</h3></div>)}
                         </TabsContent>
                     </Tabs>
-                CardContent>
+                </CardContent>
             </Card>
         </div>
     );
@@ -656,7 +656,7 @@ export default function AdminDashboardPage() {
                             ))}
                         </motion.div>
                     ) : (<div className="text-center py-12 flex flex-col items-center"><Home className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Home Teacher Bookings</h3><p className="text-muted-foreground mt-1">New student requests will appear here.</p></div>)}
-                CardContent>
+                </CardContent>
             </Card>
         </div>
     );
