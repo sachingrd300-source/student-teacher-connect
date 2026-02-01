@@ -8,6 +8,8 @@ import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateD
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 
 // UI Components
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -25,17 +27,22 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
-    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap
+    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
+    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; createdAt: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; createdAt: string; lastLoginDate?: string; }
 interface HomeTutorApplication { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; imageUrl: string; imageName: string; purchaseUrl: string; createdAt: string; }
-type AdminView = 'users' | 'applications' | 'bookings' | 'materials' | 'shop';
+interface Batch { id: string; name: string; }
+interface Enrollment { id: string; studentId: string; teacherId: string; batchId: string; status: 'approved' | 'pending'; }
+interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications';
+
 
 // --- Helper Functions ---
 const formatDate = (dateString: string, withTime: boolean = false) => {
@@ -72,7 +79,7 @@ export default function AdminDashboardPage() {
     const storage = useStorage();
     const router = useRouter();
     
-    const [activeView, setActiveView] = useState<AdminView>('users');
+    const [activeView, setActiveView] = useState<AdminView>('dashboard');
 
     // --- Form States ---
     const [materialTitle, setMaterialTitle] = useState('');
@@ -88,6 +95,10 @@ export default function AdminDashboardPage() {
     const [itemImage, setItemImage] = useState<File | null>(null);
     const [isUploadingItem, setIsUploadingItem] = useState(false);
     const [userSearchQuery, setUserSearchQuery] = useState('');
+    
+    const [announcementMessage, setAnnouncementMessage] = useState('');
+    const [announcementTarget, setAnnouncementTarget] = useState<'all' | 'teachers' | 'students'>('all');
+    const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
 
 
     // --- Firestore Data Hooks ---
@@ -102,6 +113,9 @@ export default function AdminDashboardPage() {
     const homeBookingsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const allBatchesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'batches')) : null, [firestore, userRole]);
+    const allEnrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments')) : null, [firestore, userRole]);
+    const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
 
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -109,6 +123,9 @@ export default function AdminDashboardPage() {
     const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
+    const { data: batchesData, isLoading: batchesLoading } = useCollection<Batch>(allBatchesQuery);
+    const { data: enrollmentsData, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
+    const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
 
     
     // --- Auth & Role Check ---
@@ -121,7 +138,7 @@ export default function AdminDashboardPage() {
         }
     }, [user, userRole, isUserLoading, profileLoading, router]);
 
-    // --- Memoized Data Filtering ---
+    // --- Memoized Data Filtering & Computations ---
     const allUsers = useMemo(() => allUsersData?.filter(u => u.role !== 'admin') || [], [allUsersData]);
     
     const userStats = useMemo(() => ({
@@ -163,6 +180,72 @@ export default function AdminDashboardPage() {
             dpps: materials.filter(m => m.category === 'dpps'),
         };
     }, [materials]);
+
+    const dailyActiveUsers = useMemo(() => {
+        if (!allUsersData) return 0;
+        const today = new Date().toISOString().split('T')[0];
+        return allUsersData.filter(u => u.lastLoginDate === today).length;
+    }, [allUsersData]);
+
+    const topBatches = useMemo(() => {
+        if (!enrollmentsData || !batchesData) return [];
+        const studentCounts = enrollmentsData.reduce((acc, enrollment) => {
+            if (enrollment.status === 'approved') {
+                acc[enrollment.batchId] = (acc[enrollment.batchId] || 0) + 1;
+            }
+            return acc;
+        }, {} as { [key: string]: number });
+
+        return batchesData
+            .map(batch => ({ name: batch.name, students: studentCounts[batch.id] || 0 }))
+            .sort((a, b) => b.students - a.students)
+            .slice(0, 5);
+    }, [enrollmentsData, batchesData]);
+
+    const topTeachers = useMemo(() => {
+        if (!enrollmentsData || !allUsersData) return [];
+        const studentCounts = enrollmentsData.reduce((acc, enrollment) => {
+            if (enrollment.status === 'approved') {
+                acc[enrollment.teacherId] = (acc[enrollment.teacherId] || 0) + 1;
+            }
+            return acc;
+        }, {} as { [key: string]: number });
+        
+        return allUsersData
+            .filter(u => u.role === 'teacher')
+            .map(teacher => ({ name: teacher.name, students: studentCounts[teacher.id] || 0 }))
+            .sort((a, b) => b.students - a.students)
+            .slice(0, 5);
+    }, [enrollmentsData, allUsersData]);
+
+    const userSignupsByDate = useMemo(() => {
+        if (!allUsersData) return [];
+        const counts = allUsersData.reduce((acc, user) => {
+            const date = new Date(user.createdAt).toISOString().split('T')[0];
+            acc[date] = (acc[date] || 0) + 1;
+            return acc;
+        }, {} as { [key: string]: number });
+        
+        const sortedDates = Object.entries(counts)
+            .map(([date, count]) => ({ date, 'new users': count }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        // Ensure we have a smooth graph even with gaps in signups
+        if (sortedDates.length < 2) return sortedDates;
+        
+        const filledDates: {date: string, 'new users': number}[] = [];
+        let currentDate = new Date(sortedDates[0].date);
+        const endDate = new Date(sortedDates[sortedDates.length - 1].date);
+        
+        while(currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const existingEntry = sortedDates.find(d => d.date === dateStr);
+            filledDates.push({ date: dateStr, 'new users': existingEntry ? existingEntry['new users'] : 0 });
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        return filledDates;
+    }, [allUsersData]);
 
 
     // --- Event Handlers ---
@@ -238,8 +321,27 @@ export default function AdminDashboardPage() {
         } catch (error) { console.error("Error deleting shop item:", error); }
     };
 
+    const handleSendAnnouncement = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!announcementMessage.trim() || !firestore) return;
+        setIsSendingAnnouncement(true);
+        const announcementData = {
+            message: announcementMessage.trim(),
+            target: announcementTarget,
+            createdAt: new Date().toISOString(),
+        };
+        try {
+            await addDoc(collection(firestore, 'announcements'), announcementData);
+            setAnnouncementMessage('');
+        } catch (error) {
+            console.error("Error sending announcement:", error);
+        } finally {
+            setIsSendingAnnouncement(false);
+        }
+    };
+
     // --- Loading State ---
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -251,11 +353,13 @@ export default function AdminDashboardPage() {
     }
     
     const navItems = [
+        { id: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
         { id: 'users' as AdminView, label: 'Users', icon: Users, count: allUsers.length },
         { id: 'applications' as AdminView, label: 'Applications', icon: Briefcase, count: filteredApplications.pending.length },
         { id: 'bookings' as AdminView, label: 'Bookings', icon: Home, count: homeBookings?.length || 0 },
         { id: 'materials' as AdminView, label: 'Materials', icon: FileText, count: materials?.length || 0 },
         { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
+        { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell, count: announcements?.length || 0 },
     ];
     
     const renderNavItems = () => (
@@ -269,13 +373,102 @@ export default function AdminDashboardPage() {
                 >
                     <item.icon className="h-5 w-5" />
                     <span>{item.label}</span>
-                    <span className="ml-auto bg-muted text-muted-foreground text-xs font-mono rounded-full px-2 py-0.5">{item.count}</span>
+                    {item.count !== undefined && <span className="ml-auto bg-muted text-muted-foreground text-xs font-mono rounded-full px-2 py-0.5">{item.count}</span>}
                 </Button>
             ))}
         </nav>
     );
 
     // --- Render Functions ---
+    
+    const renderDashboardView = () => (
+        <div className="grid gap-8">
+             <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Dashboard</h1>
+                <p className="text-muted-foreground mt-2">A high-level overview of your platform's activity.</p>
+            </div>
+
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <motion.div variants={itemFadeInUp}>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Daily Active Users</CardTitle>
+                            <Users2 className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-3xl font-bold">{dailyActiveUsers}</div></CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={itemFadeInUp}>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                            <DollarSign className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-3xl font-bold">₹0</div><p className="text-xs text-muted-foreground">Feature in development</p></CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={itemFadeInUp}>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Top Teacher</CardTitle>
+                            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-3xl font-bold truncate">{topTeachers[0]?.name || 'N/A'}</div><p className="text-xs text-muted-foreground">{topTeachers[0]?.students || 0} students</p></CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={itemFadeInUp}>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                            <UserCheck className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-3xl font-bold">{filteredApplications.pending.length}</div></CardContent>
+                    </Card>
+                </motion.div>
+            </motion.div>
+
+             <div className="grid lg:grid-cols-5 gap-8">
+                <motion.div variants={itemFadeInUp} className="lg:col-span-3">
+                    <Card className="rounded-2xl shadow-lg h-96">
+                        <CardHeader>
+                            <CardTitle>New User Signups</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={userSignupsByDate}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickLine={{ stroke: 'hsl(var(--border))' }} />
+                                    <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickLine={{ stroke: 'hsl(var(--border))' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
+                                    <Legend />
+                                    <Line type="monotone" dataKey="new users" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 8 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={itemFadeInUp} className="lg:col-span-2">
+                     <Card className="rounded-2xl shadow-lg h-96">
+                        <CardHeader>
+                            <CardTitle>Top 5 Batches by Enrollment</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={topBatches} layout="vertical" margin={{ left: 10, right: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                    <YAxis type="category" width={80} dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
+                                    <Bar dataKey="students" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
+        </div>
+    );
+
     const renderUsersView = () => {
         const renderUserList = (userList: UserProfile[]) => {
             if (!userList || userList.length === 0) {
@@ -553,14 +746,72 @@ export default function AdminDashboardPage() {
         </div>
     );
     
+    const renderNotificationsView = () => (
+        <div className="grid gap-8">
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Notifications & Announcements</h1>
+                <p className="text-muted-foreground mt-2">Send targeted messages to your users.</p>
+            </div>
+             <div className="grid lg:grid-cols-3 gap-8">
+                <Card className="rounded-2xl shadow-lg lg:col-span-1">
+                    <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSendAnnouncement} className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="announcement-message">Message</Label>
+                                <Textarea id="announcement-message" value={announcementMessage} onChange={(e) => setAnnouncementMessage(e.target.value)} required placeholder="Your message here..." />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="announcement-target">Target Audience</Label>
+                                <Select value={announcementTarget} onValueChange={(v) => setAnnouncementTarget(v as any)} required>
+                                    <SelectTrigger id="announcement-target"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Users</SelectItem>
+                                        <SelectItem value="teachers">All Teachers</SelectItem>
+                                        <SelectItem value="students">All Students</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <Button type="submit" disabled={isSendingAnnouncement} className="w-fit">
+                                {isSendingAnnouncement ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />} Send
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+                <Card className="rounded-2xl shadow-lg lg:col-span-2">
+                    <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
+                    <CardContent>
+                        {announcements && announcements.length > 0 ? (
+                            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                                {announcements.map(ann => (
+                                    <motion.div variants={itemFadeInUp} key={ann.id} className="p-4 rounded-xl border bg-background/50">
+                                        <p className="text-sm">{ann.message}</p>
+                                        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                                            <span>Target: <span className="font-semibold capitalize">{ann.target}</span></span>
+                                            <span>{formatDate(ann.createdAt, true)}</span>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <div className="text-center py-12 flex flex-col items-center"><Bell className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Announcements Sent</h3><p className="text-muted-foreground mt-1">Send your first announcement to engage with users.</p></div>
+                        )}
+                    </CardContent>
+                </Card>
+             </div>
+        </div>
+    );
+
     const renderContent = () => {
         switch (activeView) {
+            case 'dashboard': return renderDashboardView();
             case 'users': return renderUsersView();
             case 'applications': return renderApplicationsView();
             case 'bookings': return renderBookingsView();
             case 'materials': return renderMaterialsView();
             case 'shop': return renderShopView();
-            default: return renderUsersView();
+            case 'notifications': return renderNotificationsView();
+            default: return renderDashboardView();
         }
     };
 
@@ -595,7 +846,7 @@ export default function AdminDashboardPage() {
                                             >
                                                 <item.icon className="h-5 w-5" />
                                                 <span>{item.label}</span>
-                                                <span className="ml-auto bg-muted text-muted-foreground text-xs font-mono rounded-full px-2 py-0.5">{item.count}</span>
+                                                 {item.count !== undefined && <span className="ml-auto bg-muted text-muted-foreground text-xs font-mono rounded-full px-2 py-0.5">{item.count}</span>}
                                             </Button>
                                         </SheetClose>
                                     ))}

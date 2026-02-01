@@ -264,6 +264,17 @@
       },
       "required": ["message", "createdAt"]
     },
+    "Announcement": {
+      "title": "Announcement",
+      "type": "object",
+      "description": "Represents a global announcement sent by an admin.",
+      "properties": {
+        "message": { "type": "string" },
+        "target": { "type": "string", "enum": ["all", "teachers", "students"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["message", "target", "createdAt"]
+    },
     "Fee": {
       "title": "Fee",
       "type": "object",
@@ -404,6 +415,10 @@
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
       "description": "Stores a log of recent activities for a batch."
+    },
+     "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Stores global announcements sent by the admin."
     },
     "/batches/{batchId}/tests/{testId}": {
       "schema": { "$ref": "#/entities/Test" },

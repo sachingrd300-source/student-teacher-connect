@@ -145,5 +145,10 @@ service cloud.firestore {
       allow update: if isSchoolPrincipal(schoolId) || isAdmin();
       allow delete: if isSchoolPrincipal(schoolId) || isAdmin();
     }
+
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }
