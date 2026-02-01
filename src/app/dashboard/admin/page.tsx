@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -26,7 +25,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
-    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu
+    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -88,6 +87,8 @@ export default function AdminDashboardPage() {
     const [itemPurchaseUrl, setItemPurchaseUrl] = useState('');
     const [itemImage, setItemImage] = useState<File | null>(null);
     const [isUploadingItem, setIsUploadingItem] = useState(false);
+    const [userSearchQuery, setUserSearchQuery] = useState('');
+
 
     // --- Firestore Data Hooks ---
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -122,10 +123,27 @@ export default function AdminDashboardPage() {
 
     // --- Memoized Data Filtering ---
     const allUsers = useMemo(() => allUsersData?.filter(u => u.role !== 'admin') || [], [allUsersData]);
-    const filteredUsers = useMemo(() => ({
-        teachers: allUsers.filter(u => u.role === 'teacher'),
-        students: allUsers.filter(u => u.role === 'student'),
+    
+    const userStats = useMemo(() => ({
+        teacherCount: allUsers.filter(u => u.role === 'teacher').length,
+        studentCount: allUsers.filter(u => u.role === 'student').length,
     }), [allUsers]);
+
+    const searchedUsers = useMemo(() => {
+        if (!userSearchQuery) return allUsers;
+        const lowercasedQuery = userSearchQuery.toLowerCase();
+        return allUsers.filter(user => 
+            user.name.toLowerCase().includes(lowercasedQuery) ||
+            user.email.toLowerCase().includes(lowercasedQuery)
+        );
+    }, [allUsers, userSearchQuery]);
+
+    const usersForDisplay = useMemo(() => ({
+        all: searchedUsers,
+        teachers: searchedUsers.filter(u => u.role === 'teacher'),
+        students: searchedUsers.filter(u => u.role === 'student'),
+    }), [searchedUsers]);
+
 
     const filteredApplications = useMemo(() => {
         if (!homeTutorApplications) return { pending: [], approved: [], rejected: [] };
@@ -261,7 +279,16 @@ export default function AdminDashboardPage() {
     const renderUsersView = () => {
         const renderUserList = (userList: UserProfile[]) => {
             if (!userList || userList.length === 0) {
-                return <div className="text-center py-12 flex flex-col items-center"><Users className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Users Found</h3><p className="text-muted-foreground mt-1">No users in this category yet.</p></div>;
+                if (userSearchQuery) {
+                    return (
+                        <div className="text-center py-16 flex flex-col items-center">
+                            <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Users Found</h3>
+                            <p className="text-muted-foreground mt-1">Your search for "{userSearchQuery}" did not match any users.</p>
+                        </div>
+                    );
+                }
+                return <div className="text-center py-16 flex flex-col items-center"><Users className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Users Found</h3><p className="text-muted-foreground mt-1">No users in this category yet.</p></div>;
             }
             return (
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -297,19 +324,54 @@ export default function AdminDashboardPage() {
             <div className="grid gap-8">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold font-serif">Manage Users</h1>
-                    <p className="text-muted-foreground mt-2">View all students and teachers on the platform.</p>
+                    <p className="text-muted-foreground mt-2">View, search, and manage all students and teachers on the platform.</p>
                 </div>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{allUsers.length}</div></CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Teachers</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{userStats.teacherCount}</div></CardContent>
+                    </Card>
+                    <Card>
+                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium">Students</CardTitle>
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold">{userStats.studentCount}</div></CardContent>
+                    </Card>
+                </div>
+
                 <Card className="rounded-2xl shadow-lg">
-                    <CardContent className="p-4">
+                    <CardHeader>
+                         <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by name or email..."
+                                className="pl-10 max-w-sm"
+                                value={userSearchQuery}
+                                onChange={(e) => setUserSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
                         <Tabs defaultValue="all">
                             <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
-                                <TabsTrigger value="teachers">Teachers ({filteredUsers.teachers.length})</TabsTrigger>
-                                <TabsTrigger value="students">Students ({filteredUsers.students.length})</TabsTrigger>
+                                <TabsTrigger value="all">All ({usersForDisplay.all.length})</TabsTrigger>
+                                <TabsTrigger value="teachers">Teachers ({usersForDisplay.teachers.length})</TabsTrigger>
+                                <TabsTrigger value="students">Students ({usersForDisplay.students.length})</TabsTrigger>
                             </TabsList>
-                            <TabsContent value="all" className="mt-6">{renderUserList(allUsers)}</TabsContent>
-                            <TabsContent value="teachers" className="mt-6">{renderUserList(filteredUsers.teachers)}</TabsContent>
-                            <TabsContent value="students" className="mt-6">{renderUserList(filteredUsers.students)}</TabsContent>
+                            <TabsContent value="all" className="mt-6">{renderUserList(usersForDisplay.all)}</TabsContent>
+                            <TabsContent value="teachers" className="mt-6">{renderUserList(usersForDisplay.teachers)}</TabsContent>
+                            <TabsContent value="students" className="mt-6">{renderUserList(usersForDisplay.students)}</TabsContent>
                         </Tabs>
                     </CardContent>
                 </Card>
@@ -569,5 +631,7 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
 
     
