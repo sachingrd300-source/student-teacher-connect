@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -49,9 +50,20 @@ export default function AdminDashboardPage() {
 
     // --- Auth Check ---
     useEffect(() => {
-        if (isUserLoading || profileLoading) return;
-        if (!user || userRole !== 'admin') {
+        if (isUserLoading || profileLoading) {
+            return;
+        }
+
+        // If user isn't logged in at all, go to login page.
+        if (!user) {
             router.replace('/login');
+            return;
+        }
+
+        // If user is logged in, but their profile doesn't say they are an admin,
+        // redirect to the main dashboard page to be sent to the correct place.
+        if (userRole !== 'admin') {
+            router.replace('/dashboard');
         }
     }, [user, userRole, isUserLoading, profileLoading, router]);
 
