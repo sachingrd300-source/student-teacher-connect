@@ -101,7 +101,7 @@ export default function LeaderboardPage() {
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Dashboard
                         </Button>
-                        <Card className="rounded-2xl shadow-lg">
+                        <Card className="rounded-lg shadow-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center text-2xl font-serif">
                                     <Trophy className="mr-3 h-6 w-6 text-primary"/> Student Leaderboard

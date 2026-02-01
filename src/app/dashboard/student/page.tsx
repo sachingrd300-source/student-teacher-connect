@@ -224,7 +224,7 @@ export default function StudentDashboardPage() {
                                 className="h-full"
                             >
                                 <Link href={card.href} className="block h-full">
-                                    <Card className="flex flex-col items-center justify-start text-center p-3 sm:p-4 h-full rounded-2xl shadow-lg hover:shadow-primary/10 transition-all duration-300">
+                                    <Card className="flex flex-col items-center justify-start text-center p-3 sm:p-4 h-full rounded-lg shadow-lg hover:shadow-primary/10 transition-all duration-300">
                                         <div className="p-3 bg-primary/10 rounded-full mb-3">
                                             {card.icon}
                                         </div>
@@ -237,7 +237,7 @@ export default function StudentDashboardPage() {
                     </div>
 
                     <div className="grid gap-8">
-                        <Card className="rounded-2xl shadow-lg">
+                        <Card className="rounded-lg shadow-lg">
                             <CardHeader>
                                 <CardTitle>Join a New Batch</CardTitle>
                             </CardHeader>
@@ -282,7 +282,7 @@ export default function StudentDashboardPage() {
                                             whileHover={{ scale: 1.02, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
                                             whileTap={{ scale: 0.98 }}
                                         >
-                                            <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
+                                            <Card className="p-4 flex flex-col h-full transition-shadow duration-300 rounded-lg shadow-lg">
                                                 <div className="flex items-start gap-4 flex-grow">
                                                     {renderStatusIcon(enrollment.status)}
                                                     <div className="flex-grow min-w-0">
@@ -318,7 +318,7 @@ export default function StudentDashboardPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="w-full bg-background border rounded-2xl p-12 text-center flex flex-col items-center">
+                                <div className="w-full bg-background border rounded-lg p-12 text-center flex flex-col items-center">
                                     <School className="h-12 w-12 text-muted-foreground mb-4" />
                                     <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
                                     <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
