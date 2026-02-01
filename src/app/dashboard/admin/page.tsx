@@ -6,7 +6,7 @@ import { collection, addDoc, deleteDoc, doc, orderBy, query, writeBatch, updateD
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -80,6 +80,8 @@ interface HomeTutorApplication {
     processedAt?: string;
 }
 
+type AdminView = 'users' | 'materials' | 'shop' | 'bookings' | 'applications';
+
 
 const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -99,6 +101,8 @@ export default function AdminDashboardPage() {
     const firestore = useFirestore();
     const storage = useStorage();
     const router = useRouter();
+
+    const [activeView, setActiveView] = useState<AdminView>('users');
 
     // State for free materials
     const [materialTitle, setMaterialTitle] = useState('');
@@ -368,6 +372,16 @@ export default function AdminDashboardPage() {
         }
     }, [allUsers]);
 
+    const summaryData = useMemo(() => {
+        return {
+            totalUsers: allUsers?.length || 0,
+            pendingApplications: homeTutorApplications?.filter(a => a.status === 'pending').length || 0,
+            pendingBookings: homeBookings?.filter(b => b.status === 'Pending').length || 0,
+            totalMaterials: materials?.length || 0,
+            totalShopItems: shopItems?.length || 0,
+        };
+    }, [allUsers, homeTutorApplications, homeBookings, materials, shopItems]);
+
     const renderUserList = (userList: UserProfile[]) => {
         if (userList.length === 0) {
             return <p className="text-center text-muted-foreground py-8">No users found in this category.</p>;
@@ -410,22 +424,89 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto grid gap-8">
+                <div className="max-w-6xl mx-auto grid gap-8">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Dashboard</h1>
-                        <p className="text-muted-foreground mt-2">Manage global settings, content, and the shop.</p>
+                        <p className="text-muted-foreground mt-2">Overview and management tools for the platform.</p>
                     </div>
 
-                    <motion.div>
-                        <Tabs defaultValue="users" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
-                                <TabsTrigger value="users">Manage Users</TabsTrigger>
-                                <TabsTrigger value="materials">Free Materials</TabsTrigger>
-                                <TabsTrigger value="shop">Shop</TabsTrigger>
-                                <TabsTrigger value="bookings">Home Bookings</TabsTrigger>
-                                <TabsTrigger value="applications">Teacher Apps</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="users" className="mt-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <Card
+                            className={`cursor-pointer transition-all ${activeView === 'users' ? 'ring-2 ring-primary' : 'hover:bg-muted'}`}
+                            onClick={() => setActiveView('users')}
+                        >
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Users</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{summaryData.totalUsers}</div>
+                                <p className="text-xs text-muted-foreground">Total users</p>
+                            </CardContent>
+                        </Card>
+                         <Card
+                            className={`cursor-pointer transition-all ${activeView === 'materials' ? 'ring-2 ring-primary' : 'hover:bg-muted'}`}
+                            onClick={() => setActiveView('materials')}
+                        >
+                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Materials</CardTitle>
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{summaryData.totalMaterials}</div>
+                                <p className="text-xs text-muted-foreground">Free materials</p>
+                            </CardContent>
+                        </Card>
+                         <Card
+                            className={`cursor-pointer transition-all ${activeView === 'shop' ? 'ring-2 ring-primary' : 'hover:bg-muted'}`}
+                            onClick={() => setActiveView('shop')}
+                        >
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Shop</CardTitle>
+                                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{summaryData.totalShopItems}</div>
+                                <p className="text-xs text-muted-foreground">Shop items</p>
+                            </CardContent>
+                        </Card>
+                         <Card
+                            className={`cursor-pointer transition-all ${activeView === 'bookings' ? 'ring-2 ring-primary' : 'hover:bg-muted'}`}
+                            onClick={() => setActiveView('bookings')}
+                        >
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Bookings</CardTitle>
+                                <Home className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{summaryData.pendingBookings}</div>
+                                <p className="text-xs text-muted-foreground">Pending requests</p>
+                            </CardContent>
+                        </Card>
+                         <Card
+                            className={`cursor-pointer transition-all ${activeView === 'applications' ? 'ring-2 ring-primary' : 'hover:bg-muted'}`}
+                            onClick={() => setActiveView('applications')}
+                        >
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Applications</CardTitle>
+                                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{summaryData.pendingApplications}</div>
+                                <p className="text-xs text-muted-foreground">Pending requests</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeView}
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -10, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {activeView === 'users' && (
                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center"><Users className="mr-3 h-6 w-6 text-primary"/> Manage Users</CardTitle>
@@ -450,8 +531,8 @@ export default function AdminDashboardPage() {
                                         </Tabs>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
-                            <TabsContent value="materials" className="mt-6">
+                            )}
+                             {activeView === 'materials' && (
                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center"><FileText className="mr-3 h-6 w-6 text-primary"/> Manage Free Study Materials</CardTitle>
@@ -522,8 +603,8 @@ export default function AdminDashboardPage() {
                                         </Tabs>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
-                            <TabsContent value="shop" className="mt-6">
+                            )}
+                             {activeView === 'shop' && (
                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center"><ShoppingBag className="mr-3 h-6 w-6 text-primary"/> Manage Shop</CardTitle>
@@ -574,8 +655,8 @@ export default function AdminDashboardPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
-                            <TabsContent value="bookings" className="mt-6">
+                            )}
+                            {activeView === 'bookings' && (
                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center"><Home className="mr-3 h-6 w-6 text-primary"/> Home Teacher Bookings</CardTitle>
@@ -611,8 +692,8 @@ export default function AdminDashboardPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
-                            <TabsContent value="applications" className="mt-6">
+                            )}
+                            {activeView === 'applications' && (
                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center"><Briefcase className="mr-3 h-6 w-6 text-primary"/> Home Tutor Applications</CardTitle>
@@ -682,9 +763,9 @@ export default function AdminDashboardPage() {
                                         </Tabs>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
-                        </Tabs>
-                    </motion.div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </main>
         </div>
