@@ -91,12 +91,13 @@ export default function AdminDashboardPage() {
     const { data: homeTutorApplications, isLoading: applicationsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
 
     // --- Effects ---
+    const userRole = userProfile?.role;
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
-        if (!user || userProfile?.role !== 'admin') {
+        if (!user || userRole !== 'admin') {
             router.replace('/login');
         }
-    }, [user, userProfile, isUserLoading, profileLoading, router]);
+    }, [user, userRole, isUserLoading, profileLoading, router]);
 
     // --- Memoized Derived Data ---
     const allUsers = useMemo(() => {
