@@ -280,119 +280,214 @@ export default function AdminDashboardPage() {
 
 
     // --- Event Handlers ---
-    const handleApplication = async (application: HomeTutorApplication, newStatus: 'approved' | 'rejected') => {
+    const handleApplication = (application: HomeTutorApplication, newStatus: 'approved' | 'rejected') => {
         if (!firestore) return;
         const batch = writeBatch(firestore);
+        
         const applicationRef = doc(firestore, 'homeTutorApplications', application.id);
-        batch.update(applicationRef, { status: newStatus, processedAt: new Date().toISOString() });
+        const applicationUpdate = { status: newStatus, processedAt: new Date().toISOString() };
+        batch.update(applicationRef, applicationUpdate);
+        
         const teacherRef = doc(firestore, 'users', application.teacherId);
-        batch.update(teacherRef, { isHomeTutor: newStatus === 'approved' });
-        try { 
-            await batch.commit(); 
-            logAdminAction(`Application for '${application.teacherName}' ${newStatus}`, application.id);
-        } catch (error) { console.error(`Error handling application:`, error); }
+        const teacherUpdate = { isHomeTutor: newStatus === 'approved' };
+        batch.update(teacherRef, teacherUpdate);
+        
+        batch.commit()
+            .then(() => {
+                logAdminAction(`Application for '${application.teacherName}' ${newStatus}`, application.id);
+            })
+            .catch(error => {
+                console.error(`Error handling application:`, error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'write',
+                    path: `batch update for application ${application.id}`,
+                    requestResourceData: { applicationUpdate, teacherUpdate }
+                }));
+            });
     };
     
     const handleDeleteBooking = (booking: HomeBooking) => {
         if (!firestore) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         deleteDoc(bookingDocRef)
-            .then(() => logAdminAction(`Deleted booking for '${booking.studentName}'`, booking.id))
-            .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: bookingDocRef.path })));
+            .then(() => {
+                logAdminAction(`Deleted booking for '${booking.studentName}'`, booking.id);
+            })
+            .catch(error => {
+                console.error(`Error deleting booking:`, error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: bookingDocRef.path }));
+            });
     };
 
     const handleMaterialUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !firestore || !user) return;
+        if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !firestore) return;
+        
         setIsUploadingMaterial(true);
         const fileName = `${Date.now()}_${materialFile.name}`;
         const fileRef = ref(storage, `freeMaterials/${fileName}`);
+
         try {
             await uploadBytes(fileRef, materialFile);
             const downloadURL = await getDownloadURL(fileRef);
-            const materialData = { title: materialTitle.trim(), description: materialDescription.trim(), fileURL: downloadURL, fileName, fileType: materialFile.type, category: materialCategory, createdAt: new Date().toISOString() };
+
+            const materialData = { 
+                title: materialTitle.trim(), 
+                description: materialDescription.trim(), 
+                fileURL: downloadURL, 
+                fileName, 
+                fileType: materialFile.type, 
+                category: materialCategory, 
+                createdAt: new Date().toISOString() 
+            };
             
             addDoc(collection(firestore, 'freeMaterials'), materialData)
-                .then(docRef => logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id))
-                .catch((error) => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'freeMaterials', requestResourceData: materialData })));
-            
-            setMaterialTitle(''); setMaterialDescription(''); setMaterialFile(null); setMaterialCategory('');
-            if (document.getElementById('material-file')) (document.getElementById('material-file') as HTMLInputElement).value = '';
-        } catch (error) { console.error("Error uploading file:", error); } 
-        finally { setIsUploadingMaterial(false); }
+                .then(docRef => {
+                    logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
+                })
+                .catch((error) => {
+                    console.error("Error adding material to Firestore:", error);
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'freeMaterials', requestResourceData: materialData }));
+                });
+
+            setMaterialTitle(''); 
+            setMaterialDescription(''); 
+            setMaterialFile(null); 
+            setMaterialCategory('');
+            if (document.getElementById('material-file')) {
+                (document.getElementById('material-file') as HTMLInputElement).value = '';
+            }
+
+        } catch (error) {
+            console.error("Error uploading file to storage:", error);
+        } finally {
+            setIsUploadingMaterial(false);
+        }
     };
     
     const handleDeleteMaterial = async (material: FreeMaterial) => {
         if (!firestore || !storage) return;
-        const fileRef = ref(storage, `freeMaterials/${material.fileName}`);
+
         const materialDocRef = doc(firestore, 'freeMaterials', material.id);
+        deleteDoc(materialDocRef)
+            .then(() => {
+                logAdminAction(`Deleted free material: "${material.title}"`, material.id);
+            })
+            .catch(error => {
+                console.error("Error deleting material from Firestore:", error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path }));
+            });
+        
+        const fileRef = ref(storage, `freeMaterials/${material.fileName}`);
         try {
             await deleteObject(fileRef);
-            deleteDoc(materialDocRef)
-                .then(() => logAdminAction(`Deleted free material: "${material.title}"`, material.id))
-                .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path })));
-        } catch (error) { console.error("Error deleting material:", error); }
+        } catch (error) {
+            console.warn("Could not delete file from storage:", error);
+        }
     };
 
     const handleShopItemUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!itemImage || !itemName.trim() || !itemPrice || !itemPurchaseUrl.trim() || !storage || !firestore) return;
+        
         setIsUploadingItem(true);
         const imageName = `${Date.now()}_${itemImage.name}`;
         const imageRef = ref(storage, `shopItems/${imageName}`);
+        
         try {
             await uploadBytes(imageRef, itemImage);
             const downloadURL = await getDownloadURL(imageRef);
-            const itemData = { name: itemName.trim(), description: itemDescription.trim(), price: parseFloat(itemPrice), imageUrl: downloadURL, imageName, purchaseUrl: itemPurchaseUrl.trim(), createdAt: new Date().toISOString() };
+            
+            const itemData = { 
+                name: itemName.trim(), 
+                description: itemDescription.trim(), 
+                price: parseFloat(itemPrice), 
+                imageUrl: downloadURL, 
+                imageName, 
+                purchaseUrl: itemPurchaseUrl.trim(), 
+                createdAt: new Date().toISOString() 
+            };
             
             addDoc(collection(firestore, 'shopItems'), itemData)
-                .then(docRef => logAdminAction(`Uploaded shop item: "${itemData.name}"`, docRef.id))
-                .catch((error) => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: itemData })));
+                .then(docRef => {
+                    logAdminAction(`Uploaded shop item: "${itemData.name}"`, docRef.id);
+                })
+                .catch((error) => {
+                    console.error("Error adding shop item to Firestore:", error);
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: itemData }));
+                });
             
             setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null);
-            if (document.getElementById('item-image')) (document.getElementById('item-image') as HTMLInputElement).value = '';
-        } catch (error) { console.error("Error uploading shop item:", error); } 
-        finally { setIsUploadingItem(false); }
+            if (document.getElementById('item-image')) {
+                (document.getElementById('item-image') as HTMLInputElement).value = '';
+            }
+        } catch (error) { 
+            console.error("Error uploading shop item image:", error); 
+        } finally { 
+            setIsUploadingItem(false); 
+        }
     };
     
     const handleDeleteShopItem = async (item: ShopItem) => {
         if (!firestore || !storage) return;
-        const imageRef = ref(storage, `shopItems/${item.imageName}`);
+        
         const itemDocRef = doc(firestore, 'shopItems', item.id);
+        deleteDoc(itemDocRef)
+            .then(() => {
+                logAdminAction(`Deleted shop item: "${item.name}"`, item.id);
+            })
+            .catch(error => {
+                console.error("Error deleting shop item from Firestore:", error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path }));
+            });
+
+        const imageRef = ref(storage, `shopItems/${item.imageName}`);
         try {
             await deleteObject(imageRef);
-            deleteDoc(itemDocRef)
-                .then(() => logAdminAction(`Deleted shop item: "${item.name}"`, item.id))
-                .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path })));
-        } catch (error) { console.error("Error deleting shop item:", error); }
+        } catch (error) {
+            console.warn("Could not delete shop item image from storage:", error);
+        }
     };
 
-    const handleSendAnnouncement = async (e: React.FormEvent) => {
+    const handleSendAnnouncement = (e: React.FormEvent) => {
         e.preventDefault();
         if (!announcementMessage.trim() || !firestore) return;
         setIsSendingAnnouncement(true);
+
         const announcementData = {
             message: announcementMessage.trim(),
             target: announcementTarget,
             createdAt: new Date().toISOString(),
         };
-        try {
-            const docRef = await addDoc(collection(firestore, 'announcements'), announcementData);
-            logAdminAction(`Sent announcement to ${announcementTarget}`, docRef.id);
-            setAnnouncementMessage('');
-        } catch (error) {
-            console.error("Error sending announcement:", error);
-        } finally {
-            setIsSendingAnnouncement(false);
-        }
+
+        addDoc(collection(firestore, 'announcements'), announcementData)
+            .then((docRef) => {
+                logAdminAction(`Sent announcement to ${announcementTarget}`, docRef.id);
+                setAnnouncementMessage('');
+            })
+            .catch((error) => {
+                console.error("Error sending announcement:", error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'create',
+                    path: 'announcements',
+                    requestResourceData: announcementData
+                }));
+            })
+            .finally(() => {
+                setIsSendingAnnouncement(false);
+            });
     };
 
-    const handleResolveComplaint = async (complaint: Complaint) => {
+    const handleResolveComplaint = (complaint: Complaint) => {
         if (!firestore) return;
         const complaintRef = doc(firestore, 'complaints', complaint.id);
-        updateDoc(complaintRef, { status: 'resolved', resolvedAt: new Date().toISOString() })
+        const updateData = { status: 'resolved', resolvedAt: new Date().toISOString() };
+        updateDoc(complaintRef, updateData)
             .then(() => logAdminAction(`Resolved complaint: "${complaint.subject}"`, complaint.id))
-            .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: complaintRef.path })));
+            .catch(error => {
+                console.error("Error resolving complaint:", error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: complaintRef.path, requestResourceData: updateData }));
+            });
     };
 
     const handleDeleteComplaint = (complaint: Complaint) => {
@@ -400,7 +495,10 @@ export default function AdminDashboardPage() {
         const complaintRef = doc(firestore, 'complaints', complaint.id);
         deleteDoc(complaintRef)
             .then(() => logAdminAction(`Deleted complaint: "${complaint.subject}"`, complaint.id))
-            .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: complaintRef.path })));
+            .catch(error => {
+                console.error("Error deleting complaint:", error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: complaintRef.path }));
+            });
     };
 
     // --- Loading State ---
@@ -1052,9 +1150,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    
-
-    
-
-
