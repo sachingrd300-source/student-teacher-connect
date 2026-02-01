@@ -11,22 +11,23 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    function getUserData(userId) {
-      // This is safe because any call to getUserData(request.auth.uid)
-      // will be allowed by the 'isOwner(userId)' check in the /users/{userId} rule.
-      return get(/databases/$(database)/documents/users/$(userId)).data;
+    // Helper to safely check a user's role
+    function isRole(role) {
+        let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        // Check for existence before trying to access data
+        return isSignedIn() && exists(userPath) && get(userPath).data.role == role;
     }
 
     function isStudent() {
-      return isSignedIn() && getUserData(request.auth.uid).role == 'student';
+      return isRole('student');
     }
 
     function isTeacher() {
-      return isSignedIn() && getUserData(request.auth.uid).role == 'teacher';
+      return isRole('teacher');
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData(request.auth.uid).role == 'admin';
+      return isRole('admin');
     }
 
     function isTeacherOwnerOfBatch(batchId) {
@@ -45,14 +46,12 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // This rule is structured to avoid recursion.
-      // A user's role is determined by reading their own document, which is always
-      // permitted by 'isOwner(userId)'. Subsequent role checks do not cause recursion.
+      // Replaced unsafe calls with safer role-checking functions
       allow get: if isOwner(userId)
-                 || getUserData(request.auth.uid).role == 'admin'
-                 || (getUserData(request.auth.uid).role == 'student' && resource.data.role == 'teacher')
-                 || (getUserData(request.auth.uid).role == 'teacher' && resource.data.role == 'student')
-                 || (getUserData(request.auth.uid).role == 'teacher' && resource.data.role == 'admin');
+                 || isAdmin()
+                 || (isStudent() && resource.data.role == 'teacher')
+                 || (isTeacher() && resource.data.role == 'student')
+                 || (isTeacher() && resource.data.role == 'admin');
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() || isOwner(userId);
