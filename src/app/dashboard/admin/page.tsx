@@ -107,6 +107,11 @@ export default function AdminDashboardPage() {
         };
     }, [allUsers]);
 
+    const nonAdminUsers = useMemo(() => {
+        if (!allUsers) return [];
+        return allUsers.filter(u => u.role !== 'admin');
+    }, [allUsers]);
+
     const filteredMaterials = useMemo(() => {
         if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
         return {
@@ -306,11 +311,11 @@ export default function AdminDashboardPage() {
                                 <CardContent>
                                     <Tabs defaultValue="all" className="w-full">
                                         <TabsList className="grid w-full grid-cols-3">
-                                            <TabsTrigger value="all">All ({allUsers?.length || 0})</TabsTrigger>
+                                            <TabsTrigger value="all">All ({nonAdminUsers.length})</TabsTrigger>
                                             <TabsTrigger value="teachers">Teachers ({filteredUsers.teachers.length})</TabsTrigger>
                                             <TabsTrigger value="students">Students ({filteredUsers.students.length})</TabsTrigger>
                                         </TabsList>
-                                        <TabsContent value="all" className="mt-4">{renderUserList(allUsers || [])}</TabsContent>
+                                        <TabsContent value="all" className="mt-4">{renderUserList(nonAdminUsers)}</TabsContent>
                                         <TabsContent value="teachers" className="mt-4">{renderUserList(filteredUsers.teachers)}</TabsContent>
                                         <TabsContent value="students" className="mt-4">{renderUserList(filteredUsers.students)}</TabsContent>
                                     </Tabs>
