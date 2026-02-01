@@ -38,7 +38,7 @@ interface HomeBooking { id: string; studentName: string; fatherName?: string; mo
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; imageUrl: string; imageName: string; purchaseUrl: string; createdAt: string; }
-interface Batch { id: string; name: string; }
+interface Batch { id: string; name: string; teacherId: string; }
 interface Enrollment { id: string; studentId: string; teacherId: string; batchId: string; status: 'approved' | 'pending'; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface Complaint { id: string; userId: string; userName: string; userRole: string; subject: string; message: string; status: 'open' | 'resolved'; createdAt: string; resolvedAt?: string; }
@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
     const { data: batchesData, isLoading: batchesLoading } = useCollection<Batch>(allBatchesQuery);
-    const { data: enrollmentsData, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    const { data: enrollmentsData, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
     const { data: complaints, isLoading: complaintsLoading } = useCollection<Complaint>(complaintsQuery);
 
@@ -982,3 +982,4 @@ export default function AdminDashboardPage() {
     
 
     
+
