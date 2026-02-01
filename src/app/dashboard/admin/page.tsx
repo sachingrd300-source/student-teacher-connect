@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
 interface UserProfileForHeader {
@@ -95,6 +96,8 @@ const formatDate = (dateString: string) => {
         hour12: true,
     });
 };
+
+const getInitials = (name = '') => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
 export default function AdminDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -387,22 +390,30 @@ export default function AdminDashboardPage() {
             return <p className="text-center text-muted-foreground py-8">No users found in this category.</p>;
         }
         return (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {userList.map(u => (
-                    <div key={u.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
-                        <div>
-                            <p className="font-semibold">{u.name} <span className="text-xs font-normal capitalize bg-muted px-2 py-1 rounded-full">{u.role}</span></p>
-                            <p className="text-sm text-muted-foreground">{u.email}</p>
-                            <p className="text-xs text-muted-foreground mt-1">Joined: {formatDate(u.createdAt)}</p>
-                        </div>
-                        <div className="flex gap-2 self-end sm:self-center">
-                            <Button asChild variant="outline" size="sm">
+                    <Card key={u.id} className="flex flex-col">
+                        <CardHeader className="flex flex-row items-center gap-4 pb-4">
+                            <Avatar>
+                                <AvatarFallback>{getInitials(u.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <CardTitle className="text-base">{u.name}</CardTitle>
+                                <CardDescription className="capitalize">{u.role}</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="grid gap-1 text-sm flex-grow">
+                           <p className="text-muted-foreground break-all">{u.email}</p>
+                           <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt)}</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild variant="outline" size="sm" className="w-full">
                                 <Link href={u.role === 'teacher' ? `/teachers/${u.id}` : `/students/${u.id}`}>
-                                    <Eye className="mr-2 h-4 w-4" />View
+                                    <Eye className="mr-2 h-4 w-4" />View Profile
                                 </Link>
                             </Button>
-                        </div>
-                    </div>
+                        </CardFooter>
+                    </Card>
                 ))}
             </div>
         );
