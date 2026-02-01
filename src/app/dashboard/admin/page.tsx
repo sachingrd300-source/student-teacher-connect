@@ -1,12 +1,14 @@
+
 'use client';
 
-import { useState, useMemo, useEffect, ChangeEvent } from 'react';
+import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useStorage, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // UI Components
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -22,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
-    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift
+    Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -32,7 +34,7 @@ interface HomeBooking { id: string; studentName: string; fatherName?: string; mo
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; imageUrl: string; imageName: string; purchaseUrl: string; createdAt: string; }
-
+type AdminView = 'users' | 'applications' | 'bookings' | 'materials' | 'shop';
 
 // --- Helper Functions ---
 const formatDate = (dateString: string, withTime: boolean = false) => {
@@ -47,6 +49,20 @@ const formatDate = (dateString: string, withTime: boolean = false) => {
 };
 const getInitials = (name = '') => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
+// Animation Variants
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
+const itemFadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
 // --- Main Component ---
 export default function AdminDashboardPage() {
@@ -54,6 +70,8 @@ export default function AdminDashboardPage() {
     const firestore = useFirestore();
     const storage = useStorage();
     const router = useRouter();
+    
+    const [activeView, setActiveView] = useState<AdminView>('users');
 
     // --- Form States ---
     const [materialTitle, setMaterialTitle] = useState('');
@@ -212,237 +230,305 @@ export default function AdminDashboardPage() {
         );
     }
     
+    const navItems = [
+        { id: 'users' as AdminView, label: 'Users', icon: Users, count: allUsers.length },
+        { id: 'applications' as AdminView, label: 'Applications', icon: Briefcase, count: filteredApplications.pending.length },
+        { id: 'bookings' as AdminView, label: 'Bookings', icon: Home, count: homeBookings?.length || 0 },
+        { id: 'materials' as AdminView, label: 'Materials', icon: FileText, count: materials?.length || 0 },
+        { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
+    ];
+    
+    const renderNavItems = () => (
+        <nav className="grid gap-2">
+            {navItems.map(item => (
+                <Button 
+                    key={item.id}
+                    variant={activeView === item.id ? 'default' : 'ghost'}
+                    onClick={() => setActiveView(item.id)}
+                    className="justify-start gap-3 text-base h-12"
+                >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                    <span className="ml-auto bg-muted text-muted-foreground text-xs font-mono rounded-full px-2 py-0.5">{item.count}</span>
+                </Button>
+            ))}
+        </nav>
+    );
+
     // --- Render Functions ---
-    const renderUserList = (userList: UserProfile[]) => {
-        if (!userList || userList.length === 0) {
-            return <div className="text-center py-12 flex flex-col items-center"><Users className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Users Found</h3><p className="text-muted-foreground mt-1">No users in this category yet.</p></div>;
-        }
+    const renderUsersView = () => {
+        const renderUserList = (userList: UserProfile[]) => {
+            if (!userList || userList.length === 0) {
+                return <div className="text-center py-12 flex flex-col items-center"><Users className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Users Found</h3><p className="text-muted-foreground mt-1">No users in this category yet.</p></div>;
+            }
+            return (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {userList.map(u => (
+                        <motion.div variants={itemFadeInUp} key={u.id}>
+                            <Card className="flex flex-col h-full rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                                <CardHeader className="flex flex-row items-center gap-4 pb-4">
+                                    <Avatar className="w-12 h-12 text-lg"><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
+                                    <div className="flex-1">
+                                        <CardTitle className="text-base">{u.name}</CardTitle>
+                                        <CardDescription className="capitalize">{u.role}</CardDescription>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="grid gap-1 text-sm flex-grow">
+                                   <p className="text-muted-foreground break-all">{u.email}</p>
+                                   <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt)}</p>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button asChild variant="outline" size="sm" className="w-full">
+                                        <Link href={u.role === 'teacher' ? `/teachers/${u.id}` : `/students/${u.id}`}>
+                                            <Eye className="mr-2 h-4 w-4" />View Profile
+                                        </Link>
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            );
+        };
+
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userList.map(u => (
-                    <Card key={u.id} className="flex flex-col">
-                        <CardHeader className="flex flex-row items-center gap-4 pb-4">
-                            <Avatar><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
-                            <div className="flex-1">
-                                <CardTitle className="text-base">{u.name}</CardTitle>
-                                <CardDescription className="capitalize">{u.role}</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="grid gap-1 text-sm flex-grow">
-                           <p className="text-muted-foreground break-all">{u.email}</p>
-                           <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt)}</p>
-                        </CardContent>
-                        <CardFooter>
-                            <Button asChild variant="outline" size="sm" className="w-full">
-                                <Link href={u.role === 'teacher' ? `/teachers/${u.id}` : `/students/${u.id}`}>
-                                    <Eye className="mr-2 h-4 w-4" />View Profile
-                                </Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                ))}
+            <div className="grid gap-8">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold font-serif">Manage Users</h1>
+                    <p className="text-muted-foreground mt-2">View all students and teachers on the platform.</p>
+                </div>
+                <Card className="rounded-2xl shadow-lg">
+                    <CardContent className="p-4">
+                        <Tabs defaultValue="all">
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
+                                <TabsTrigger value="teachers">Teachers ({filteredUsers.teachers.length})</TabsTrigger>
+                                <TabsTrigger value="students">Students ({filteredUsers.students.length})</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="all" className="mt-6">{renderUserList(allUsers)}</TabsContent>
+                            <TabsContent value="teachers" className="mt-6">{renderUserList(filteredUsers.teachers)}</TabsContent>
+                            <TabsContent value="students" className="mt-6">{renderUserList(filteredUsers.students)}</TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
             </div>
         );
     };
 
-    const renderMaterialList = (materialList: FreeMaterial[]) => {
-        if (!materialList || materialList.length === 0) {
-            return (
-                <div className="text-center py-12 flex flex-col items-center">
-                    <Gift className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">No Materials in this Category</h3>
-                </div>
-            );
-        }
-        return (
-            <div className="grid gap-4">
-                {materialList.map(material => (
-                    <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
-                        <div className="flex items-start gap-3 w-full">
-                            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
-                            <div className="w-full">
-                                <p className="font-semibold">{material.title}</p>
-                                <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                                <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
-                            </div>
-                        </div>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)} className="self-end sm:self-center flex-shrink-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                    </div>
-                ))}
+    const renderApplicationsView = () => (
+        <div className="grid gap-8">
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Teacher Applications</h1>
+                <p className="text-muted-foreground mt-2">Review applications for the home tutor program.</p>
             </div>
-        );
+            <Card className="rounded-2xl shadow-lg">
+                <CardContent className="p-4">
+                    <Tabs defaultValue="pending" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="pending">Pending ({filteredApplications.pending.length})</TabsTrigger>
+                            <TabsTrigger value="approved">Approved ({filteredApplications.approved.length})</TabsTrigger>
+                            <TabsTrigger value="rejected">Rejected ({filteredApplications.rejected.length})</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="pending" className="mt-6">
+                            {filteredApplications.pending.length > 0 ? (
+                                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                                    {filteredApplications.pending.map(app => (
+                                        <motion.div variants={itemFadeInUp} key={app.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-4 rounded-xl border bg-background/50">
+                                            <div><p className="font-semibold">{app.teacherName}</p><p className="text-xs text-muted-foreground mt-1">Applied: {formatDate(app.createdAt)}</p></div>
+                                            <div className="flex gap-2 self-end sm:self-center">
+                                                <Button size="sm" variant="outline" onClick={() => handleApplication(app, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                                <Button size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected')}><X className="mr-2 h-4 w-4" />Reject</Button>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            ) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Pending Applications</h3></div>)}
+                        </TabsContent>
+                        <TabsContent value="approved" className="mt-6">
+                            {filteredApplications.approved.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.approved.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-xl border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600 self-end sm:self-center">Approved</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Approved Applications</h3></div>)}
+                        </TabsContent>
+                        <TabsContent value="rejected" className="mt-6">
+                            {filteredApplications.rejected.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.rejected.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-xl border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive self-end sm:self-center">Rejected</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Rejected Applications</h3></div>)}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+        </div>
+    );
+
+    const renderBookingsView = () => (
+        <div className="grid gap-8">
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Home Teacher Bookings</h1>
+                <p className="text-muted-foreground mt-2">Review and manage all requests for home tutors.</p>
+            </div>
+            <Card className="rounded-2xl shadow-lg">
+                <CardContent className="p-4">
+                    {homeBookings && homeBookings.length > 0 ? (
+                        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                            {homeBookings.map(booking => (
+                                <motion.div variants={itemFadeInUp} key={booking.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-xl border bg-background/50">
+                                    <div className="grid gap-2 w-full"><p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p><p className="text-sm text-muted-foreground">Father: {booking.fatherName || 'N/A'}</p><p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p><p className="text-sm text-muted-foreground">Address: {booking.address}</p><div className="flex items-center gap-2 text-xs text-muted-foreground mt-2"><span>Status:</span><span className={`font-semibold ${booking.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'}`}>{booking.status}</span><span>|</span><span>Created: {formatDate(booking.createdAt, true)}</span></div></div>
+                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    ) : (<div className="text-center py-12 flex flex-col items-center"><Home className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Home Teacher Bookings</h3><p className="text-muted-foreground mt-1">New student requests will appear here.</p></div>)}
+                </CardContent>
+            </Card>
+        </div>
+    );
+    
+    const renderMaterialsView = () => {
+         const renderMaterialList = (materialList: FreeMaterial[]) => {
+            if (!materialList || materialList.length === 0) {
+                return (
+                    <div className="text-center py-12 flex flex-col items-center">
+                        <Gift className="h-12 w-12 text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold">No Materials Here</h3>
+                        <p className="text-muted-foreground mt-1">Upload materials to this category.</p>
+                    </div>
+                );
+            }
+            return (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                    {materialList.map(material => (
+                        <motion.div variants={itemFadeInUp} key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border bg-background/50">
+                            <div className="flex items-start gap-3 w-full">
+                                <FileText className="h-5 w-5 text-primary flex-shrink-0 mt-1 sm:mt-0" />
+                                <div className="w-full">
+                                    <p className="font-semibold">{material.title}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
+                                    <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                                </div>
+                            </div>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)} className="self-end sm:self-center flex-shrink-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            );
+        };
+        
+        return (
+            <div className="grid gap-8">
+                 <div>
+                    <h1 className="text-3xl md:text-4xl font-bold font-serif">Free Materials</h1>
+                    <p className="text-muted-foreground mt-2">Manage free resources for all students.</p>
+                </div>
+                <div className="grid lg:grid-cols-3 gap-8">
+                    <Card className="rounded-2xl shadow-lg lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>Upload New Material</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleMaterialUpload} className="grid gap-4">
+                                <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
+                                <div className="grid gap-2"><Label htmlFor="material-category">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
+                                <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
+                                <div className="grid gap-2"><Label htmlFor="material-description">Description (Optional)</Label><Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
+                                <Button type="submit" disabled={isUploadingMaterial} className="w-fit">{isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material</Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                     <Card className="rounded-2xl shadow-lg lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle>Uploaded Materials</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Tabs defaultValue="all" className="w-full">
+                                <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5"><TabsTrigger value="all">All</TabsTrigger><TabsTrigger value="notes">Notes</TabsTrigger><TabsTrigger value="books">Books</TabsTrigger><TabsTrigger value="pyqs">PYQs</TabsTrigger><TabsTrigger value="dpps">DPPs</TabsTrigger></TabsList>
+                                <TabsContent value="all" className="mt-6">{renderMaterialList(materials || [])}</TabsContent>
+                                <TabsContent value="notes" className="mt-6">{renderMaterialList(filteredMaterials.notes)}</TabsContent>
+                                <TabsContent value="books" className="mt-6">{renderMaterialList(filteredMaterials.books)}</TabsContent>
+                                <TabsContent value="pyqs" className="mt-6">{renderMaterialList(filteredMaterials.pyqs)}</TabsContent>
+                                <TabsContent value="dpps" className="mt-6">{renderMaterialList(filteredMaterials.dpps)}</TabsContent>
+                            </Tabs>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        )
+    };
+
+    const renderShopView = () => (
+        <div className="grid gap-8">
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Shop Management</h1>
+                <p className="text-muted-foreground mt-2">Manage items available in the public shop.</p>
+            </div>
+            <div className="grid lg:grid-cols-3 gap-8">
+                <Card className="rounded-2xl shadow-lg lg:col-span-1">
+                    <CardHeader><CardTitle>Add New Item</CardTitle></CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleShopItemUpload} className="grid gap-4">
+                            <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-price">Price (INR)</Label><Input id="item-price" type="number" step="0.01" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required /></div>
+                            <Button type="submit" disabled={isUploadingItem} className="w-fit">{isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item</Button>
+                        </form>
+                    </CardContent>
+                </Card>
+                <Card className="rounded-2xl shadow-lg lg:col-span-2">
+                    <CardHeader><CardTitle>Existing Shop Items</CardTitle></CardHeader>
+                    <CardContent>
+                        {shopItems && shopItems.length > 0 ? (
+                            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                                {shopItems.map(item => (
+                                    <motion.div variants={itemFadeInUp} key={item.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-xl border bg-background/50">
+                                        <div className="flex items-start gap-4 w-full"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover flex-shrink-0" /><div className="w-full"><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground mt-1">{item.description}</p><p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p></div></div>
+                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        ) : (<div className="text-center py-12 flex flex-col items-center"><PackageOpen className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">The Shop is Empty</h3><p className="text-muted-foreground mt-1">Add a new item to get started.</p></div>)}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+    
+    const renderContent = () => {
+        switch (activeView) {
+            case 'users': return renderUsersView();
+            case 'applications': return renderApplicationsView();
+            case 'bookings': return renderBookingsView();
+            case 'materials': return renderMaterialsView();
+            case 'shop': return renderShopView();
+            default: return renderUsersView();
+        }
     };
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-muted/30">
             <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-6xl mx-auto grid gap-8">
-                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Dashboard</h1>
-                        <p className="text-muted-foreground mt-2">Platform management and overview.</p>
+            <main className="flex-1 p-4 md:p-8">
+                <div className="max-w-8xl mx-auto grid md:grid-cols-[250px_1fr] lg:grid-cols-[280px_1fr] gap-8">
+                    {/* Sidebar */}
+                    <aside className="hidden md:flex flex-col gap-4">
+                        <h2 className="text-lg font-semibold pl-4 font-serif tracking-tight">Management</h2>
+                        {renderNavItems()}
+                    </aside>
+
+                    {/* Main Content */}
+                    <div className="w-full">
+                      <AnimatePresence mode="wait">
+                          <motion.div
+                            key={activeView}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.25 }}
+                          >
+                            {renderContent()}
+                          </motion.div>
+                      </AnimatePresence>
                     </div>
-                    
-                    <Tabs defaultValue="users" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
-                            <TabsTrigger value="users"><Users className="mr-2 h-4 w-4"/>Users ({allUsers.length})</TabsTrigger>
-                            <TabsTrigger value="applications"><Briefcase className="mr-2 h-4 w-4"/>Applications ({filteredApplications.pending.length})</TabsTrigger>
-                            <TabsTrigger value="bookings"><Home className="mr-2 h-4 w-4"/>Bookings ({homeBookings?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="materials"><FileText className="mr-2 h-4 w-4"/>Materials ({materials?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="shop"><ShoppingBag className="mr-2 h-4 w-4"/>Shop ({shopItems?.length || 0})</TabsTrigger>
-                        </TabsList>
-
-                        {/* --- Users Tab --- */}
-                        <TabsContent value="users" className="mt-6">
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                   <CardTitle>Manage Users</CardTitle>
-                                   <CardDescription>View all students and teachers on the platform.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                     <Tabs defaultValue="all">
-                                        <TabsList className="grid w-full grid-cols-3">
-                                            <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
-                                            <TabsTrigger value="teachers">Teachers ({filteredUsers.teachers.length})</TabsTrigger>
-                                            <TabsTrigger value="students">Students ({filteredUsers.students.length})</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent value="all" className="mt-4">{renderUserList(allUsers)}</TabsContent>
-                                        <TabsContent value="teachers" className="mt-4">{renderUserList(filteredUsers.teachers)}</TabsContent>
-                                        <TabsContent value="students" className="mt-4">{renderUserList(filteredUsers.students)}</TabsContent>
-                                    </Tabs>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* --- Applications Tab --- */}
-                        <TabsContent value="applications" className="mt-6">
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                    <CardTitle>Manage Teacher Applications</CardTitle>
-                                    <CardDescription>Review applications from teachers wanting to be listed as home tutors.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                     <Tabs defaultValue="pending" className="w-full">
-                                        <TabsList className="grid w-full grid-cols-3">
-                                            <TabsTrigger value="pending">Pending ({filteredApplications.pending.length})</TabsTrigger>
-                                            <TabsTrigger value="approved">Approved ({filteredApplications.approved.length})</TabsTrigger>
-                                            <TabsTrigger value="rejected">Rejected ({filteredApplications.rejected.length})</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent value="pending" className="mt-4">
-                                             {filteredApplications.pending.length > 0 ? (
-                                                <div className="grid gap-4">{filteredApplications.pending.map(app => (<div key={app.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-3 rounded-lg border bg-background"><div><p className="font-semibold">{app.teacherName}</p><p className="text-xs text-muted-foreground mt-1">Applied: {formatDate(app.createdAt)}</p></div><div className="flex gap-2 self-end sm:self-center"><Button size="sm" variant="outline" onClick={() => handleApplication(app, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button><Button size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected')}><X className="mr-2 h-4 w-4" />Reject</Button></div></div>))}</div>
-                                             ) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Pending Applications</h3></div>)}
-                                        </TabsContent>
-                                        <TabsContent value="approved" className="mt-4">
-                                            {filteredApplications.approved.length > 0 ? (<div className="grid gap-4">{filteredApplications.approved.map(app => (<div key={app.id} className="p-3 rounded-lg border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600 self-end sm:self-center">Approved</span></div>))}</div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Approved Applications</h3></div>)}
-                                        </TabsContent>
-                                        <TabsContent value="rejected" className="mt-4">
-                                             {filteredApplications.rejected.length > 0 ? (<div className="grid gap-4">{filteredApplications.rejected.map(app => (<div key={app.id} className="p-3 rounded-lg border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive self-end sm:self-center">Rejected</span></div>))}</div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Rejected Applications</h3></div>)}
-                                        </TabsContent>
-                                    </Tabs>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        
-                        {/* --- Bookings Tab --- */}
-                        <TabsContent value="bookings" className="mt-6">
-                             <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                    <CardTitle>Manage Home Teacher Bookings</CardTitle>
-                                    <CardDescription>Review and manage all requests for home tutors.</CardDescription>
-                                </CardHeader>
-                                 <CardContent>
-                                     <div className="grid gap-4">
-                                        {homeBookings && homeBookings.length > 0 ? (
-                                            homeBookings.map(booking => (
-                                                <div key={booking.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-lg border bg-background">
-                                                    <div className="grid gap-2 w-full"><p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p><p className="text-sm text-muted-foreground">Father: {booking.fatherName || 'N/A'}</p><p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p><p className="text-sm text-muted-foreground">Address: {booking.address}</p><div className="flex items-center gap-2 text-xs text-muted-foreground mt-2"><span>Status:</span><span className={`font-semibold ${booking.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'}`}>{booking.status}</span><span>|</span><span>Created: {formatDate(booking.createdAt, true)}</span></div></div>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                                                </div>
-                                            ))
-                                        ) : (<div className="text-center py-12 flex flex-col items-center"><Home className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Home Teacher Bookings</h3><p className="text-muted-foreground mt-1">New student requests will appear here.</p></div>)}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        
-                        {/* --- Materials Tab --- */}
-                        <TabsContent value="materials" className="mt-6">
-                            <div className="grid gap-6">
-                                <Card className="rounded-2xl shadow-lg">
-                                     <CardHeader>
-                                        <CardTitle>Upload New Material</CardTitle>
-                                        <CardDescription>Add free resources for all students.</CardDescription>
-                                    </CardHeader>
-                                     <CardContent>
-                                        <form onSubmit={handleMaterialUpload} className="grid gap-4">
-                                            <div className="grid gap-4 sm:grid-cols-2">
-                                                <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                                                <div className="grid gap-2"><Label htmlFor="material-category">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
-                                            </div>
-                                            <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
-                                            <div className="grid gap-2"><Label htmlFor="material-description">Description (Optional)</Label><Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
-                                            <Button type="submit" disabled={isUploadingMaterial} className="w-fit">{isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material</Button>
-                                        </form>
-                                    </CardContent>
-                                </Card>
-                                <Card className="rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle>Uploaded Free Materials</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Tabs defaultValue="all" className="w-full">
-                                            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5"><TabsTrigger value="all">All</TabsTrigger><TabsTrigger value="notes">Notes</TabsTrigger><TabsTrigger value="books">Books</TabsTrigger><TabsTrigger value="pyqs">PYQs</TabsTrigger><TabsTrigger value="dpps">DPPs</TabsTrigger></TabsList>
-                                            <TabsContent value="all" className="mt-4">{renderMaterialList(materials || [])}</TabsContent>
-                                            <TabsContent value="notes" className="mt-4">{renderMaterialList(filteredMaterials.notes)}</TabsContent>
-                                            <TabsContent value="books" className="mt-4">{renderMaterialList(filteredMaterials.books)}</TabsContent>
-                                            <TabsContent value="pyqs" className="mt-4">{renderMaterialList(filteredMaterials.pyqs)}</TabsContent>
-                                            <TabsContent value="dpps" className="mt-4">{renderMaterialList(filteredMaterials.dpps)}</TabsContent>
-                                        </Tabs>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-                        
-                        {/* --- Shop Tab --- */}
-                        <TabsContent value="shop" className="mt-6">
-                             <div className="grid gap-6">
-                                <Card className="rounded-2xl shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle>Add New Shop Item</CardTitle>
-                                        <CardDescription>Add a new product to the public shop.</CardDescription>
-                                    </CardHeader>
-                                     <CardContent>
-                                        <form onSubmit={handleShopItemUpload} className="grid gap-4">
-                                            <div className="grid gap-4 sm:grid-cols-2"><div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div><div className="grid gap-2"><Label htmlFor="item-price">Price (INR)</Label><Input id="item-price" type="number" step="0.01" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div></div>
-                                            <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
-                                            <div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required /></div>
-                                            <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required /></div>
-                                            <Button type="submit" disabled={isUploadingItem} className="w-fit">{isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item</Button>
-                                        </form>
-                                    </CardContent>
-                                </Card>
-                                <Card className="rounded-2xl shadow-lg">
-                                     <CardHeader><CardTitle>Existing Shop Items</CardTitle></CardHeader>
-                                     <CardContent>
-                                        {shopItems && shopItems.length > 0 ? (
-                                            <div className="grid gap-4">
-                                                {shopItems.map(item => (
-                                                    <div key={item.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-3 rounded-lg border bg-background">
-                                                        <div className="flex items-start gap-4 w-full"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover flex-shrink-0" /><div className="w-full"><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground mt-1">{item.description}</p><p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p></div></div>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (<div className="text-center py-12 flex flex-col items-center"><PackageOpen className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">The Shop is Empty</h3><p className="text-muted-foreground mt-1">Add a new item to get started.</p></div>)}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-
-                    </Tabs>
                 </div>
             </main>
         </div>
     );
 }
+
+    
