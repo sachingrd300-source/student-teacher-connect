@@ -28,7 +28,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, LifeBuoy, History
+    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -41,9 +41,8 @@ interface ShopItem { id: string; name: string; description?: string; price: numb
 interface Batch { id: string; name: string; teacherId: string; }
 interface Enrollment { id: string; studentId: string; teacherId: string; batchId: string; status: 'approved' | 'pending'; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
-interface Complaint { id: string; userId: string; userName: string; userRole: string; subject: string; message: string; status: 'open' | 'resolved'; createdAt: string; resolvedAt?: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'support' | 'activity';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity';
 
 
 // --- Helper Functions ---
@@ -118,7 +117,6 @@ export default function AdminDashboardPage() {
     const allBatchesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'batches')) : null, [firestore, userRole]);
     const allEnrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments')) : null, [firestore, userRole]);
     const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
-    const complaintsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'complaints'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
 
     // Data from hooks
@@ -130,7 +128,6 @@ export default function AdminDashboardPage() {
     const { data: batchesData, isLoading: batchesLoading } = useCollection<Batch>(allBatchesQuery);
     const { data: enrollmentsData, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
-    const { data: complaints, isLoading: complaintsLoading } = useCollection<Complaint>(complaintsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
 
     
@@ -204,14 +201,6 @@ export default function AdminDashboardPage() {
         };
     }, [materials]);
 
-    const filteredComplaints = useMemo(() => {
-        if (!complaints) return { open: [], resolved: [] };
-        return {
-            open: complaints.filter(c => c.status === 'open'),
-            resolved: complaints.filter(c => c.status === 'resolved'),
-        };
-    }, [complaints]);
-
     const dailyActiveUsers = useMemo(() => {
         if (!allUsersData) return 0;
         const today = new Date().toISOString().split('T')[0];
@@ -261,7 +250,6 @@ export default function AdminDashboardPage() {
             .map(([date, count]) => ({ date, 'new users': count }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
-        // Ensure we have a smooth graph even with gaps in signups
         if (sortedDates.length < 2) return sortedDates;
         
         const filledDates: {date: string, 'new users': number}[] = [];
@@ -478,31 +466,8 @@ export default function AdminDashboardPage() {
             });
     };
 
-    const handleResolveComplaint = (complaint: Complaint) => {
-        if (!firestore) return;
-        const complaintRef = doc(firestore, 'complaints', complaint.id);
-        const updateData = { status: 'resolved', resolvedAt: new Date().toISOString() };
-        updateDoc(complaintRef, updateData)
-            .then(() => logAdminAction(`Resolved complaint: "${complaint.subject}"`, complaint.id))
-            .catch(error => {
-                console.error("Error resolving complaint:", error);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: complaintRef.path, requestResourceData: updateData }));
-            });
-    };
-
-    const handleDeleteComplaint = (complaint: Complaint) => {
-        if (!firestore) return;
-        const complaintRef = doc(firestore, 'complaints', complaint.id);
-        deleteDoc(complaintRef)
-            .then(() => logAdminAction(`Deleted complaint: "${complaint.subject}"`, complaint.id))
-            .catch(error => {
-                console.error("Error deleting complaint:", error);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: complaintRef.path }));
-            });
-    };
-
     // --- Loading State ---
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || complaintsLoading || activitiesLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || activitiesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -521,7 +486,6 @@ export default function AdminDashboardPage() {
         { id: 'materials' as AdminView, label: 'Materials', icon: FileText, count: materials?.length || 0 },
         { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
         { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell, count: announcements?.length || 0 },
-        { id: 'support' as AdminView, label: 'Support', icon: LifeBuoy, count: filteredComplaints.open.length },
         { id: 'activity' as AdminView, label: 'Activity Log', icon: History },
     ];
     
@@ -964,76 +928,6 @@ export default function AdminDashboardPage() {
              </div>
         </div>
     );
-
-    const renderSupportView = () => (
-        <div className="grid gap-8">
-            <div>
-                <h1 className="text-3xl md:text-4xl font-bold font-serif">Support &amp; Complaints</h1>
-                <p className="text-muted-foreground mt-2">Manage and resolve user-submitted issues.</p>
-            </div>
-            <Card className="shadow-lg">
-                <CardContent className="p-4">
-                    <Tabs defaultValue="open">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="open">Open ({filteredComplaints.open.length})</TabsTrigger>
-                            <TabsTrigger value="resolved">Resolved ({filteredComplaints.resolved.length})</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="open" className="mt-6">
-                            {filteredComplaints.open.length > 0 ? (
-                                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
-                                    {filteredComplaints.open.map(c => (
-                                        <motion.div variants={itemFadeInUp} key={c.id} className="p-4 rounded-xl border bg-background/50">
-                                            <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-lg">{c.subject}</p>
-                                                    <p className="text-sm text-muted-foreground mt-2">{c.message}</p>
-                                                </div>
-                                                <div className="flex gap-2 self-end sm:self-start flex-shrink-0">
-                                                    <Button size="sm" variant="outline" onClick={() => handleResolveComplaint(c)}><Check className="mr-2 h-4 w-4" /> Mark Resolved</Button>
-                                                    <Button size="sm" variant="destructive" onClick={() => handleDeleteComplaint(c)}><Trash className="mr-2 h-4 w-4" /> Delete</Button>
-                                                </div>
-                                            </div>
-                                            <div className="border-t mt-4 pt-3 text-xs text-muted-foreground">
-                                                <p>From: <span className="font-semibold">{c.userName} ({c.userRole})</span> | Submitted: {formatDate(c.createdAt, true)}</p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
-                            ) : (
-                                <div className="text-center py-16 flex flex-col items-center">
-                                    <LifeBuoy className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold">All Clear!</h3>
-                                    <p className="text-muted-foreground mt-1">There are no open complaints.</p>
-                                </div>
-                            )}
-                        </TabsContent>
-                         <TabsContent value="resolved" className="mt-6">
-                            {filteredComplaints.resolved.length > 0 ? (
-                                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
-                                    {filteredComplaints.resolved.map(c => (
-                                        <motion.div variants={itemFadeInUp} key={c.id} className="p-4 rounded-xl border bg-background/50 opacity-70">
-                                            <p className="font-semibold">{c.subject}</p>
-                                            <p className="text-sm text-muted-foreground mt-2">{c.message}</p>
-                                            <div className="border-t mt-4 pt-3 text-xs text-muted-foreground">
-                                                <p>From: <span className="font-semibold">{c.userName} ({c.userRole})</span></p>
-                                                <p>Resolved: {formatDate(c.resolvedAt || '', true)}</p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
-                            ) : (
-                                <div className="text-center py-16 flex flex-col items-center">
-                                    <LifeBuoy className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold">No Resolved Complaints</h3>
-                                    <p className="text-muted-foreground mt-1">Previously resolved complaints will appear here.</p>
-                                </div>
-                            )}
-                        </TabsContent>
-                    </Tabs>
-                </CardContent>
-            </Card>
-        </div>
-    );
     
     const renderActivityLogView = () => (
         <div className="grid gap-8">
@@ -1077,7 +971,6 @@ export default function AdminDashboardPage() {
             case 'materials': return renderMaterialsView();
             case 'shop': return renderShopView();
             case 'notifications': return renderNotificationsView();
-            case 'support': return renderSupportView();
             case 'activity': return renderActivityLogView();
             default: return renderDashboardView();
         }

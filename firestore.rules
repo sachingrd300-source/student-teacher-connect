@@ -159,17 +159,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    match /complaints/{complaintId} {
-      function isComplaintOwner() {
-        return isSignedIn() && resource.data.userId == request.auth.uid;
-      }
-      
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAdmin() || isComplaintOwner();
-      allow list: if isAdmin();
-      allow update, delete: if isAdmin();
-    }
-
     match /adminActivities/{activityId} {
       allow read, list, write: if isAdmin();
     }

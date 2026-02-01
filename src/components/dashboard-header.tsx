@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, User as UserIcon, LifeBuoy } from 'lucide-react';
+import { School, UserCircle, LogOut, User as UserIcon } from 'lucide-react';
 
 
 interface UserProfileForHeader {
@@ -82,14 +82,6 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
                             <span>Profile</span>
                         </Link>
                     </DropdownMenuItem>
-                    {userProfile?.role !== 'admin' && (
-                        <DropdownMenuItem asChild>
-                            <Link href="/dashboard/support">
-                                <LifeBuoy className="mr-2 h-4 w-4" />
-                                <span>Support</span>
-                            </Link>
-                        </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Logout</span>

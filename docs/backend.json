@@ -387,22 +387,6 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "principalId", "principalName", "code", "createdAt"]
-    },
-    "Complaint": {
-      "title": "Complaint",
-      "type": "object",
-      "description": "Represents a support complaint or issue filed by a user.",
-      "properties": {
-        "userId": { "type": "string", "description": "The UID of the user who filed the complaint." },
-        "userName": { "type": "string", "description": "The name of the user." },
-        "userRole": { "type": "string", "description": "The role of the user (student, teacher)." },
-        "subject": { "type": "string", "description": "The subject or title of the complaint." },
-        "message": { "type": "string", "description": "The detailed message of the complaint." },
-        "status": { "type": "string", "enum": ["open", "resolved"], "description": "The current status of the complaint." },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "resolvedAt": { "type": "string", "format": "date-time", "description": "When the complaint was resolved." }
-      },
-      "required": ["userId", "userName", "userRole", "subject", "message", "status", "createdAt"]
     }
   },
   "auth": {
@@ -464,10 +448,6 @@
     "/schools/{schoolId}": {
       "schema": { "$ref": "#/entities/School" },
       "description": "Stores schools created and managed by principals."
-    },
-    "/complaints/{complaintId}": {
-      "schema": { "$ref": "#/entities/Complaint" },
-      "description": "Stores user-submitted support complaints."
     },
     "/adminActivities/{activityId}": {
       "schema": { "$ref": "#/entities/AdminActivity" },
