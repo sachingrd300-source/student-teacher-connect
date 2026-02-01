@@ -71,23 +71,23 @@ export default function AdminDashboardPage() {
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfileForHeader>(userProfileRef);
 
     // Users
-    const allUsersQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'users'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile]);
-    const { data: allUsers, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
+    const allUsersQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'users'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile?.role]);
+    const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
 
     // Materials
-    const freeMaterialsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile]);
+    const freeMaterialsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile?.role]);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
 
     // Shop
-    const shopItemsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile]);
+    const shopItemsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile?.role]);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
     
     // Bookings
-    const homeBookingsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile]);
+    const homeBookingsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile?.role]);
     const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
     
     // Applications
-    const homeTutorApplicationsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile]);
+    const homeTutorApplicationsQuery = useMemoFirebase(() => (firestore && userProfile?.role === 'admin') ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userProfile?.role]);
     const { data: homeTutorApplications, isLoading: applicationsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
 
     // --- Effects ---
@@ -99,17 +99,17 @@ export default function AdminDashboardPage() {
     }, [user, userProfile, isUserLoading, profileLoading, router]);
 
     // --- Memoized Derived Data ---
+    const allUsers = useMemo(() => {
+        if (!allUsersData) return [];
+        return allUsersData.filter(u => u.role !== 'admin');
+    }, [allUsersData]);
+
     const filteredUsers = useMemo(() => {
         if (!allUsers) return { teachers: [], students: [] };
         return {
             teachers: allUsers.filter(u => u.role === 'teacher'),
             students: allUsers.filter(u => u.role === 'student'),
         };
-    }, [allUsers]);
-
-    const nonAdminUsers = useMemo(() => {
-        if (!allUsers) return [];
-        return allUsers.filter(u => u.role !== 'admin');
     }, [allUsers]);
 
     const filteredMaterials = useMemo(() => {
@@ -311,11 +311,11 @@ export default function AdminDashboardPage() {
                                 <CardContent>
                                     <Tabs defaultValue="all" className="w-full">
                                         <TabsList className="grid w-full grid-cols-3">
-                                            <TabsTrigger value="all">All ({nonAdminUsers.length})</TabsTrigger>
+                                            <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
                                             <TabsTrigger value="teachers">Teachers ({filteredUsers.teachers.length})</TabsTrigger>
                                             <TabsTrigger value="students">Students ({filteredUsers.students.length})</TabsTrigger>
                                         </TabsList>
-                                        <TabsContent value="all" className="mt-4">{renderUserList(nonAdminUsers)}</TabsContent>
+                                        <TabsContent value="all" className="mt-4">{renderUserList(allUsers)}</TabsContent>
                                         <TabsContent value="teachers" className="mt-4">{renderUserList(filteredUsers.teachers)}</TabsContent>
                                         <TabsContent value="students" className="mt-4">{renderUserList(filteredUsers.students)}</TabsContent>
                                     </Tabs>
