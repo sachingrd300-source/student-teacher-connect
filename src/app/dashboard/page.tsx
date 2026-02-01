@@ -105,7 +105,7 @@ export default function DashboardPage() {
                  router.replace('/login');
             }
         }
-    }, [user, userProfile, isUserLoading, profileLoading, router, firestore]);
+    }, [user, isUserLoading, profileLoading, router, firestore, userProfile?.role, userProfile?.teacherType, userProfile?.lastLoginDate]);
 
 
     // Show a loading screen while we determine where to redirect.
