@@ -139,10 +139,10 @@ export default function AdminDashboardPage() {
         if (isUserLoading || profileLoading) return;
         if (!user) {
             router.replace('/login');
-        } else if (userRole && userRole !== 'admin') {
+        } else if (userProfile && userRole !== 'admin') {
             router.replace('/dashboard');
         }
-    }, [user, userRole, isUserLoading, profileLoading, router]);
+    }, [user, userRole, isUserLoading, profileLoading, router, userProfile]);
     
     // --- Admin Action Logger ---
     const logAdminAction = (action: string, targetId?: string) => {
@@ -592,7 +592,7 @@ export default function AdminDashboardPage() {
 
              <div className="grid lg:grid-cols-5 gap-8">
                 <motion.div variants={itemFadeInUp} className="lg:col-span-3">
-                    <Card className="rounded-2xl shadow-lg h-96">
+                    <Card className="shadow-lg h-96">
                         <CardHeader>
                             <CardTitle>New User Signups</CardTitle>
                         </CardHeader>
@@ -611,7 +611,7 @@ export default function AdminDashboardPage() {
                     </Card>
                 </motion.div>
                 <motion.div variants={itemFadeInUp} className="lg:col-span-2">
-                     <Card className="rounded-2xl shadow-lg h-96">
+                     <Card className="shadow-lg h-96">
                         <CardHeader>
                             <CardTitle>Top 5 Batches by Enrollment</CardTitle>
                         </CardHeader>
@@ -650,7 +650,7 @@ export default function AdminDashboardPage() {
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {userList.map(u => (
                         <motion.div variants={itemFadeInUp} key={u.id}>
-                            <Card className="flex flex-col h-full rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                            <Card className="flex flex-col h-full shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                                 <CardHeader className="flex flex-row items-center gap-4 pb-4">
                                     <Avatar className="w-12 h-12 text-lg"><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
                                     <div className="flex-1">
@@ -706,7 +706,7 @@ export default function AdminDashboardPage() {
                     </Card>
                 </div>
 
-                <Card className="rounded-2xl shadow-lg">
+                <Card className="shadow-lg">
                     <CardHeader>
                          <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -741,7 +741,7 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Teacher Applications</h1>
                 <p className="text-muted-foreground mt-2">Review applications for the home tutor program.</p>
             </div>
-            <Card className="rounded-2xl shadow-lg">
+            <Card className="shadow-lg">
                 <CardContent className="p-4">
                     <Tabs defaultValue="pending" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
@@ -782,7 +782,7 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Home Teacher Bookings</h1>
                 <p className="text-muted-foreground mt-2">Review and manage all requests for home tutors.</p>
             </div>
-            <Card className="rounded-2xl shadow-lg">
+            <Card className="shadow-lg">
                 <CardContent className="p-4">
                     {homeBookings && homeBookings.length > 0 ? (
                         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
@@ -836,7 +836,7 @@ export default function AdminDashboardPage() {
                     <p className="text-muted-foreground mt-2">Manage free resources for all students.</p>
                 </div>
                 <div className="grid lg:grid-cols-3 gap-8">
-                    <Card className="rounded-2xl shadow-lg lg:col-span-1">
+                    <Card className="shadow-lg lg:col-span-1">
                         <CardHeader>
                             <CardTitle>Upload New Material</CardTitle>
                         </CardHeader>
@@ -850,7 +850,7 @@ export default function AdminDashboardPage() {
                             </form>
                         </CardContent>
                     </Card>
-                     <Card className="rounded-2xl shadow-lg lg:col-span-2">
+                     <Card className="shadow-lg lg:col-span-2">
                         <CardHeader>
                             <CardTitle>Uploaded Materials</CardTitle>
                         </CardHeader>
@@ -877,7 +877,7 @@ export default function AdminDashboardPage() {
                 <p className="text-muted-foreground mt-2">Manage items available in the public shop.</p>
             </div>
             <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="rounded-2xl shadow-lg lg:col-span-1">
+                <Card className="shadow-lg lg:col-span-1">
                     <CardHeader><CardTitle>Add New Item</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleShopItemUpload} className="grid gap-4">
@@ -890,7 +890,7 @@ export default function AdminDashboardPage() {
                         </form>
                     </CardContent>
                 </Card>
-                <Card className="rounded-2xl shadow-lg lg:col-span-2">
+                <Card className="shadow-lg lg:col-span-2">
                     <CardHeader><CardTitle>Existing Shop Items</CardTitle></CardHeader>
                     <CardContent>
                         {shopItems && shopItems.length > 0 ? (
@@ -916,7 +916,7 @@ export default function AdminDashboardPage() {
                 <p className="text-muted-foreground mt-2">Send targeted messages to your users.</p>
             </div>
              <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="rounded-2xl shadow-lg lg:col-span-1">
+                <Card className="shadow-lg lg:col-span-1">
                     <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleSendAnnouncement} className="grid gap-4">
@@ -941,7 +941,7 @@ export default function AdminDashboardPage() {
                         </form>
                     </CardContent>
                 </Card>
-                <Card className="rounded-2xl shadow-lg lg:col-span-2">
+                <Card className="shadow-lg lg:col-span-2">
                     <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
                     <CardContent>
                         {announcements && announcements.length > 0 ? (
@@ -971,7 +971,7 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Support &amp; Complaints</h1>
                 <p className="text-muted-foreground mt-2">Manage and resolve user-submitted issues.</p>
             </div>
-            <Card className="rounded-2xl shadow-lg">
+            <Card className="shadow-lg">
                 <CardContent className="p-4">
                     <Tabs defaultValue="open">
                         <TabsList className="grid w-full grid-cols-2">
@@ -1041,7 +1041,7 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Activity Log</h1>
                 <p className="text-muted-foreground mt-2">A chronological record of all actions performed by administrators.</p>
             </div>
-             <Card className="rounded-2xl shadow-lg">
+             <Card className="shadow-lg">
                 <CardContent className="p-4">
                     {adminActivities && adminActivities.length > 0 ? (
                         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
@@ -1084,7 +1084,7 @@ export default function AdminDashboardPage() {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-muted/30">
+        <div className="flex flex-col min-h-screen bg-secondary">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8">
                  <div className="max-w-8xl mx-auto">
