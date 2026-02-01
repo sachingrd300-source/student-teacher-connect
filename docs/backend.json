@@ -249,6 +249,7 @@
         "teacherName": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
         "createdAt": { "type": "string", "format": "date-time" },
+        "processedAt": { "type": "string", "format": "date-time", "description": "The date the application was approved or rejected." },
         "notes": { "type": "string", "description": "Admin notes on the application." }
       },
       "required": ["teacherId", "teacherName", "status", "createdAt"]

@@ -14,16 +14,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign, Home, PackageOpen, Briefcase, Check, X, Building } from 'lucide-react';
+import { Loader2, Upload, FileText, Trash, School, ShoppingBag, DollarSign, Home, PackageOpen, Briefcase, Check, X, Building, Users, Eye, Trash2 } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
-interface UserProfile {
+interface UserProfileForHeader {
     name: string;
     role: 'admin';
+}
+
+interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    role: 'admin' | 'student' | 'teacher';
+    createdAt: string;
 }
 
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
@@ -68,6 +77,7 @@ interface HomeTutorApplication {
     teacherName: string;
     status: 'pending' | 'approved' | 'rejected';
     createdAt: string;
+    processedAt?: string;
 }
 
 
@@ -107,7 +117,7 @@ export default function AdminDashboardPage() {
 
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-    const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
+    const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfileForHeader>(userProfileRef);
 
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, user]);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
@@ -120,6 +130,9 @@ export default function AdminDashboardPage() {
 
     const homeTutorApplicationsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore, user]);
     const { data: homeTutorApplications, isLoading: applicationsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
+    
+    const allUsersQuery = useMemoFirebase(() => (firestore && user && userProfile?.role === 'admin') ? query(collection(firestore, 'users'), orderBy('createdAt', 'desc')) : null, [firestore, user, userProfile]);
+    const { data: allUsers, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
 
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
@@ -279,21 +292,42 @@ export default function AdminDashboardPage() {
 
     const handleApplication = async (application: HomeTutorApplication, newStatus: 'approved' | 'rejected') => {
         if (!firestore) return;
-
+    
         const batch = writeBatch(firestore);
-
+    
         const applicationRef = doc(firestore, 'homeTutorApplications', application.id);
-        batch.update(applicationRef, { status: newStatus });
-
+        batch.update(applicationRef, { status: newStatus, processedAt: new Date().toISOString() });
+    
+        const teacherRef = doc(firestore, 'users', application.teacherId);
         if (newStatus === 'approved') {
-            const teacherRef = doc(firestore, 'users', application.teacherId);
             batch.update(teacherRef, { isHomeTutor: true });
+        } else { // on rejected
+            batch.update(teacherRef, { isHomeTutor: false });
         }
         
         try {
             await batch.commit();
         } catch (error) {
             console.error(`Error ${newStatus === 'approved' ? 'approving' : 'rejecting'} application:`, error);
+        }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!firestore || !user || userId === user.uid) return;
+        if (window.confirm('Are you sure you want to delete this user profile? This also deletes their auth record and is irreversible.')) {
+            const userDocRef = doc(firestore, 'users', userId);
+            try {
+                await deleteDoc(userDocRef);
+                // Note: This does not delete the user from Firebase Authentication.
+                // A backend function would be required for that.
+            } catch (error) {
+                console.error("Error deleting user: ", error);
+                const contextualError = new FirestorePermissionError({
+                    operation: 'delete',
+                    path: userDocRef.path,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+            }
         }
     };
 
@@ -346,8 +380,47 @@ export default function AdminDashboardPage() {
         }
     }, [homeTutorApplications]);
 
+    const filteredUsers = useMemo(() => {
+        if (!allUsers) return { teachers: [], students: [] };
+        return {
+            teachers: allUsers.filter(u => u.role === 'teacher'),
+            students: allUsers.filter(u => u.role === 'student'),
+        }
+    }, [allUsers]);
 
-    const isLoading = isUserLoading || profileLoading || materialsLoading || shopItemsLoading || bookingsLoading || applicationsLoading;
+    const renderUserList = (userList: UserProfile[]) => {
+        if (userList.length === 0) {
+            return <p className="text-center text-muted-foreground py-8">No users found in this category.</p>;
+        }
+        return (
+            <div className="grid gap-4">
+                {userList.map(u => (
+                    <div key={u.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                        <div>
+                            <p className="font-semibold">{u.name} <span className="text-xs font-normal capitalize bg-muted px-2 py-1 rounded-full">{u.role}</span></p>
+                            <p className="text-sm text-muted-foreground">{u.email}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Joined: {formatDate(u.createdAt)}</p>
+                        </div>
+                        <div className="flex gap-2 self-end sm:self-center">
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={u.role === 'teacher' ? `/teachers/${u.id}` : `/students/${u.id}`}>
+                                    <Eye className="mr-2 h-4 w-4" />View
+                                </Link>
+                            </Button>
+                            {user?.uid !== u.id && (
+                                <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(u.id)}>
+                                    <Trash2 className="mr-2 h-4 w-4" />Delete
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+
+    const isLoading = isUserLoading || profileLoading || materialsLoading || shopItemsLoading || bookingsLoading || applicationsLoading || usersLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -358,22 +431,6 @@ export default function AdminDashboardPage() {
         );
     }
     
-    const staggerContainer = {
-        hidden: {},
-        visible: {
-            transition: {
-                staggerChildren: 0.2,
-            },
-        },
-    };
-    const fadeInUp = {
-      hidden: { y: 20, opacity: 0 },
-      visible: {
-        y: 0,
-        opacity: 1,
-      },
-    };
-
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
@@ -385,13 +442,40 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <motion.div>
-                        <Tabs defaultValue="materials" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                        <Tabs defaultValue="users" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+                                <TabsTrigger value="users">Manage Users</TabsTrigger>
                                 <TabsTrigger value="materials">Free Materials</TabsTrigger>
                                 <TabsTrigger value="shop">Shop</TabsTrigger>
                                 <TabsTrigger value="bookings">Home Bookings</TabsTrigger>
-                                <TabsTrigger value="applications">Teacher Applications</TabsTrigger>
+                                <TabsTrigger value="applications">Teacher Apps</TabsTrigger>
                             </TabsList>
+                            <TabsContent value="users" className="mt-6">
+                                <Card className="rounded-2xl shadow-lg">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center"><Users className="mr-3 h-6 w-6 text-primary"/> Manage Users</CardTitle>
+                                        <CardDescription>View, manage, and remove user profiles from the platform.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Tabs defaultValue="all" className="w-full">
+                                            <TabsList className="grid w-full grid-cols-3">
+                                                <TabsTrigger value="all">All ({allUsers?.length || 0})</TabsTrigger>
+                                                <TabsTrigger value="teachers">Teachers ({filteredUsers.teachers.length})</TabsTrigger>
+                                                <TabsTrigger value="students">Students ({filteredUsers.students.length})</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="all" className="mt-4">
+                                                {renderUserList(allUsers || [])}
+                                            </TabsContent>
+                                            <TabsContent value="teachers" className="mt-4">
+                                                {renderUserList(filteredUsers.teachers)}
+                                            </TabsContent>
+                                            <TabsContent value="students" className="mt-4">
+                                                {renderUserList(filteredUsers.students)}
+                                            </TabsContent>
+                                        </Tabs>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
                             <TabsContent value="materials" className="mt-6">
                                 <Card className="rounded-2xl shadow-lg">
                                     <CardHeader>
@@ -590,9 +674,12 @@ export default function AdminDashboardPage() {
                                                 {filteredApplications.approved.length > 0 ? (
                                                     <div className="grid gap-4">
                                                         {filteredApplications.approved.map(app => (
-                                                            <div key={app.id} className="p-3 rounded-lg border bg-background/50 flex justify-between items-center">
-                                                                <p className="font-semibold">{app.teacherName}</p>
-                                                                <span className="text-sm font-medium text-green-600">Approved</span>
+                                                            <div key={app.id} className="p-3 rounded-lg border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center">
+                                                                <div>
+                                                                    <p className="font-semibold">{app.teacherName}</p>
+                                                                    {app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}
+                                                                </div>
+                                                                <span className="text-sm font-medium text-green-600 self-end sm:self-center">Approved</span>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -604,9 +691,12 @@ export default function AdminDashboardPage() {
                                                  {filteredApplications.rejected.length > 0 ? (
                                                     <div className="grid gap-4">
                                                         {filteredApplications.rejected.map(app => (
-                                                            <div key={app.id} className="p-3 rounded-lg border bg-background/50 flex justify-between items-center">
-                                                                <p className="font-semibold">{app.teacherName}</p>
-                                                                <span className="text-sm font-medium text-destructive">Rejected</span>
+                                                             <div key={app.id} className="p-3 rounded-lg border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center">
+                                                                <div>
+                                                                    <p className="font-semibold">{app.teacherName}</p>
+                                                                    {app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}
+                                                                </div>
+                                                                <span className="text-sm font-medium text-destructive self-end sm:self-center">Rejected</span>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -625,5 +715,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    
