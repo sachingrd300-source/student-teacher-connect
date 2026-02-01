@@ -12,6 +12,8 @@ service cloud.firestore {
     }
     
     function getUserData(userId) {
+      // This is safe because any call to getUserData(request.auth.uid)
+      // will be allowed by the 'isOwner(userId)' check in the /users/{userId} rule.
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
@@ -43,7 +45,14 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin() || (isStudent() && resource.data.role == 'teacher') || (isTeacher() && resource.data.role == 'student') || (isTeacher() && resource.data.role == 'admin');
+      // This rule is structured to avoid recursion.
+      // A user's role is determined by reading their own document, which is always
+      // permitted by 'isOwner(userId)'. Subsequent role checks do not cause recursion.
+      allow get: if isOwner(userId)
+                 || getUserData(request.auth.uid).role == 'admin'
+                 || (getUserData(request.auth.uid).role == 'student' && resource.data.role == 'teacher')
+                 || (getUserData(request.auth.uid).role == 'teacher' && resource.data.role == 'student')
+                 || (getUserData(request.auth.uid).role == 'teacher' && resource.data.role == 'admin');
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() || isOwner(userId);
