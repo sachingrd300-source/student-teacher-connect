@@ -312,26 +312,6 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        if (!firestore || !user || userId === user.uid) return;
-        if (window.confirm('Are you sure you want to delete this user profile? This also deletes their auth record and is irreversible.')) {
-            const userDocRef = doc(firestore, 'users', userId);
-            try {
-                await deleteDoc(userDocRef);
-                // Note: This does not delete the user from Firebase Authentication.
-                // A backend function would be required for that.
-            } catch (error) {
-                console.error("Error deleting user: ", error);
-                const contextualError = new FirestorePermissionError({
-                    operation: 'delete',
-                    path: userDocRef.path,
-                });
-                errorEmitter.emit('permission-error', contextualError);
-            }
-        }
-    };
-
-    
     const renderMaterialList = (materialList: FreeMaterial[]) => {
         if (materialList.length === 0) {
             return (
@@ -407,11 +387,6 @@ export default function AdminDashboardPage() {
                                     <Eye className="mr-2 h-4 w-4" />View
                                 </Link>
                             </Button>
-                            {user?.uid !== u.id && (
-                                <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(u.id)}>
-                                    <Trash2 className="mr-2 h-4 w-4" />Delete
-                                </Button>
-                            )}
                         </div>
                     </div>
                 ))}
