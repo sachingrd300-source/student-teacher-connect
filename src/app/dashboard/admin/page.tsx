@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 
 // Icons
@@ -516,11 +516,14 @@ export default function AdminDashboardPage() {
                                     <span>Menu</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="left" className="w-[300px] sm:w-[320px] p-0">
-                                <div className="p-6 pt-8">
-                                    <h2 className="text-lg font-semibold font-serif tracking-tight">Management</h2>
-                                </div>
-                                <nav className="grid gap-2 px-3">
+                            <SheetContent side="left" className="w-[300px] sm:w-[320px]">
+                                <SheetHeader>
+                                    <SheetTitle>Admin Menu</SheetTitle>
+                                    <SheetDescription>
+                                        Select a section to manage.
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <nav className="grid gap-2 py-4">
                                     {navItems.map(item => (
                                         <SheetClose asChild key={item.id}>
                                             <Button 
@@ -566,5 +569,7 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
 
     
