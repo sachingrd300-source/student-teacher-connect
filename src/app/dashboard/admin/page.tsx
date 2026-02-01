@@ -28,7 +28,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, LifeBuoy
+    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, LifeBuoy, History
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -42,7 +42,8 @@ interface Batch { id: string; name: string; teacherId: string; }
 interface Enrollment { id: string; studentId: string; teacherId: string; batchId: string; status: 'approved' | 'pending'; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface Complaint { id: string; userId: string; userName: string; userRole: string; subject: string; message: string; status: 'open' | 'resolved'; createdAt: string; resolvedAt?: string; }
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'support';
+interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'support' | 'activity';
 
 
 // --- Helper Functions ---
@@ -118,6 +119,7 @@ export default function AdminDashboardPage() {
     const allEnrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments')) : null, [firestore, userRole]);
     const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const complaintsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'complaints'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
 
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -129,6 +131,7 @@ export default function AdminDashboardPage() {
     const { data: enrollmentsData, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
     const { data: complaints, isLoading: complaintsLoading } = useCollection<Complaint>(complaintsQuery);
+    const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
 
     
     // --- Auth & Role Check ---
@@ -140,6 +143,23 @@ export default function AdminDashboardPage() {
             router.replace('/dashboard');
         }
     }, [user, userRole, isUserLoading, profileLoading, router]);
+    
+    // --- Admin Action Logger ---
+    const logAdminAction = (action: string, targetId?: string) => {
+        if (!firestore || !userProfile || userProfile.role !== 'admin') return;
+        
+        const logData = {
+            adminId: userProfile.id,
+            adminName: userProfile.name,
+            action,
+            targetId: targetId || '',
+            createdAt: new Date().toISOString()
+        };
+        
+        addDoc(collection(firestore, 'adminActivities'), logData)
+            .catch(err => console.error("Failed to log admin action:", err));
+    };
+
 
     // --- Memoized Data Filtering & Computations ---
     const allUsers = useMemo(() => allUsersData?.filter(u => u.role !== 'admin') || [], [allUsersData]);
@@ -267,13 +287,18 @@ export default function AdminDashboardPage() {
         batch.update(applicationRef, { status: newStatus, processedAt: new Date().toISOString() });
         const teacherRef = doc(firestore, 'users', application.teacherId);
         batch.update(teacherRef, { isHomeTutor: newStatus === 'approved' });
-        try { await batch.commit(); } catch (error) { console.error(`Error handling application:`, error); }
+        try { 
+            await batch.commit(); 
+            logAdminAction(`Application for '${application.teacherName}' ${newStatus}`, application.id);
+        } catch (error) { console.error(`Error handling application:`, error); }
     };
     
-    const handleDeleteBooking = (bookingId: string) => {
+    const handleDeleteBooking = (booking: HomeBooking) => {
         if (!firestore) return;
-        const bookingDocRef = doc(firestore, 'homeBookings', bookingId);
-        deleteDoc(bookingDocRef).catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: bookingDocRef.path })));
+        const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
+        deleteDoc(bookingDocRef)
+            .then(() => logAdminAction(`Deleted booking for '${booking.studentName}'`, booking.id))
+            .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: bookingDocRef.path })));
     };
 
     const handleMaterialUpload = async (e: React.FormEvent) => {
@@ -286,8 +311,11 @@ export default function AdminDashboardPage() {
             await uploadBytes(fileRef, materialFile);
             const downloadURL = await getDownloadURL(fileRef);
             const materialData = { title: materialTitle.trim(), description: materialDescription.trim(), fileURL: downloadURL, fileName, fileType: materialFile.type, category: materialCategory, createdAt: new Date().toISOString() };
+            
             addDoc(collection(firestore, 'freeMaterials'), materialData)
+                .then(docRef => logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id))
                 .catch((error) => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'freeMaterials', requestResourceData: materialData })));
+            
             setMaterialTitle(''); setMaterialDescription(''); setMaterialFile(null); setMaterialCategory('');
             if (document.getElementById('material-file')) (document.getElementById('material-file') as HTMLInputElement).value = '';
         } catch (error) { console.error("Error uploading file:", error); } 
@@ -300,7 +328,9 @@ export default function AdminDashboardPage() {
         const materialDocRef = doc(firestore, 'freeMaterials', material.id);
         try {
             await deleteObject(fileRef);
-            deleteDoc(materialDocRef).catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path })));
+            deleteDoc(materialDocRef)
+                .then(() => logAdminAction(`Deleted free material: "${material.title}"`, material.id))
+                .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path })));
         } catch (error) { console.error("Error deleting material:", error); }
     };
 
@@ -314,8 +344,11 @@ export default function AdminDashboardPage() {
             await uploadBytes(imageRef, itemImage);
             const downloadURL = await getDownloadURL(imageRef);
             const itemData = { name: itemName.trim(), description: itemDescription.trim(), price: parseFloat(itemPrice), imageUrl: downloadURL, imageName, purchaseUrl: itemPurchaseUrl.trim(), createdAt: new Date().toISOString() };
+            
             addDoc(collection(firestore, 'shopItems'), itemData)
+                .then(docRef => logAdminAction(`Uploaded shop item: "${itemData.name}"`, docRef.id))
                 .catch((error) => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: itemData })));
+            
             setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null);
             if (document.getElementById('item-image')) (document.getElementById('item-image') as HTMLInputElement).value = '';
         } catch (error) { console.error("Error uploading shop item:", error); } 
@@ -328,7 +361,9 @@ export default function AdminDashboardPage() {
         const itemDocRef = doc(firestore, 'shopItems', item.id);
         try {
             await deleteObject(imageRef);
-            deleteDoc(itemDocRef).catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path })));
+            deleteDoc(itemDocRef)
+                .then(() => logAdminAction(`Deleted shop item: "${item.name}"`, item.id))
+                .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path })));
         } catch (error) { console.error("Error deleting shop item:", error); }
     };
 
@@ -342,7 +377,8 @@ export default function AdminDashboardPage() {
             createdAt: new Date().toISOString(),
         };
         try {
-            await addDoc(collection(firestore, 'announcements'), announcementData);
+            const docRef = await addDoc(collection(firestore, 'announcements'), announcementData);
+            logAdminAction(`Sent announcement to ${announcementTarget}`, docRef.id);
             setAnnouncementMessage('');
         } catch (error) {
             console.error("Error sending announcement:", error);
@@ -351,21 +387,24 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const handleResolveComplaint = async (complaintId: string) => {
+    const handleResolveComplaint = async (complaint: Complaint) => {
         if (!firestore) return;
-        const complaintRef = doc(firestore, 'complaints', complaintId);
+        const complaintRef = doc(firestore, 'complaints', complaint.id);
         updateDoc(complaintRef, { status: 'resolved', resolvedAt: new Date().toISOString() })
+            .then(() => logAdminAction(`Resolved complaint: "${complaint.subject}"`, complaint.id))
             .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: complaintRef.path })));
     };
 
-    const handleDeleteComplaint = (complaintId: string) => {
+    const handleDeleteComplaint = (complaint: Complaint) => {
         if (!firestore) return;
-        const complaintRef = doc(firestore, 'complaints', complaintId);
-        deleteDoc(complaintRef).catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: complaintRef.path })));
+        const complaintRef = doc(firestore, 'complaints', complaint.id);
+        deleteDoc(complaintRef)
+            .then(() => logAdminAction(`Deleted complaint: "${complaint.subject}"`, complaint.id))
+            .catch(error => errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: complaintRef.path })));
     };
 
     // --- Loading State ---
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || complaintsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || complaintsLoading || activitiesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -385,6 +424,7 @@ export default function AdminDashboardPage() {
         { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
         { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell, count: announcements?.length || 0 },
         { id: 'support' as AdminView, label: 'Support', icon: LifeBuoy, count: filteredComplaints.open.length },
+        { id: 'activity' as AdminView, label: 'Activity Log', icon: History },
     ];
     
     const renderNavItems = () => (
@@ -651,7 +691,7 @@ export default function AdminDashboardPage() {
                             {homeBookings.map(booking => (
                                 <motion.div variants={itemFadeInUp} key={booking.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-xl border bg-background/50">
                                     <div className="grid gap-2 w-full"><p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p><p className="text-sm text-muted-foreground">Father: {booking.fatherName || 'N/A'}</p><p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p><p className="text-sm text-muted-foreground">Address: {booking.address}</p><div className="flex items-center gap-2 text-xs text-muted-foreground mt-2"><span>Status:</span><span className={`font-semibold ${booking.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'}`}>{booking.status}</span><span>|</span><span>Created: {formatDate(booking.createdAt, true)}</span></div></div>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking.id)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -851,8 +891,8 @@ export default function AdminDashboardPage() {
                                                     <p className="text-sm text-muted-foreground mt-2">{c.message}</p>
                                                 </div>
                                                 <div className="flex gap-2 self-end sm:self-start flex-shrink-0">
-                                                    <Button size="sm" variant="outline" onClick={() => handleResolveComplaint(c.id)}><Check className="mr-2 h-4 w-4" /> Mark Resolved</Button>
-                                                    <Button size="sm" variant="destructive" onClick={() => handleDeleteComplaint(c.id)}><Trash className="mr-2 h-4 w-4" /> Delete</Button>
+                                                    <Button size="sm" variant="outline" onClick={() => handleResolveComplaint(c)}><Check className="mr-2 h-4 w-4" /> Mark Resolved</Button>
+                                                    <Button size="sm" variant="destructive" onClick={() => handleDeleteComplaint(c)}><Trash className="mr-2 h-4 w-4" /> Delete</Button>
                                                 </div>
                                             </div>
                                             <div className="border-t mt-4 pt-3 text-xs text-muted-foreground">
@@ -896,6 +936,39 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
     );
+    
+    const renderActivityLogView = () => (
+        <div className="grid gap-8">
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Activity Log</h1>
+                <p className="text-muted-foreground mt-2">A chronological record of all actions performed by administrators.</p>
+            </div>
+             <Card className="rounded-2xl shadow-lg">
+                <CardContent className="p-4">
+                    {adminActivities && adminActivities.length > 0 ? (
+                        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                            {adminActivities.map(activity => (
+                                <motion.div variants={itemFadeInUp} key={activity.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-4 rounded-xl border bg-background/50">
+                                    <div>
+                                        <p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground self-end sm:self-center flex-shrink-0">
+                                        {formatDate(activity.createdAt, true)}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    ) : (
+                         <div className="text-center py-16 flex flex-col items-center">
+                            <History className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Activity Recorded Yet</h3>
+                            <p className="text-muted-foreground mt-1">Admin actions will be logged here as they happen.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
 
     const renderContent = () => {
         switch (activeView) {
@@ -907,6 +980,7 @@ export default function AdminDashboardPage() {
             case 'shop': return renderShopView();
             case 'notifications': return renderNotificationsView();
             case 'support': return renderSupportView();
+            case 'activity': return renderActivityLogView();
             default: return renderDashboardView();
         }
     };
@@ -982,4 +1056,5 @@ export default function AdminDashboardPage() {
     
 
     
+
 

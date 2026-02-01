@@ -161,5 +161,9 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow update, delete: if isAdmin();
     }
+
+    match /adminActivities/{activityId} {
+      allow read, list, write: if isAdmin();
+    }
   }
 }

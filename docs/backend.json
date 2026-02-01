@@ -264,6 +264,19 @@
       },
       "required": ["message", "createdAt"]
     },
+    "AdminActivity": {
+      "title": "Admin Activity",
+      "type": "object",
+      "description": "Represents a logged action performed by an admin user.",
+      "properties": {
+        "adminId": { "type": "string", "description": "The UID of the admin who performed the action." },
+        "adminName": { "type": "string", "description": "The name of the admin." },
+        "action": { "type": "string", "description": "A human-readable description of the action taken." },
+        "targetId": { "type": "string", "description": "The ID of the document or entity that was affected." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminId", "adminName", "action", "createdAt"]
+    },
     "Announcement": {
       "title": "Announcement",
       "type": "object",
@@ -455,6 +468,10 @@
     "/complaints/{complaintId}": {
       "schema": { "$ref": "#/entities/Complaint" },
       "description": "Stores user-submitted support complaints."
+    },
+    "/adminActivities/{activityId}": {
+      "schema": { "$ref": "#/entities/AdminActivity" },
+      "description": "Stores a log of all actions performed by administrators."
     }
   }
 }
