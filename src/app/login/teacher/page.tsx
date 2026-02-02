@@ -46,7 +46,7 @@ export default function TeacherLoginPage() {
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists() && userSnap.data().role === 'student') {
-        setError('This account is registered as a student. Please use the student login.');
+        setError('This account is registered as a student. Please use the correct login portal.');
         await auth.signOut();
     } else {
         router.replace('/dashboard');
@@ -113,7 +113,7 @@ export default function TeacherLoginPage() {
       } else {
          const userData = userSnap.data();
         if (userData.role === 'student') {
-            setError('This account is registered as a student. Please use the student login.');
+            setError('This account is registered as a student. Please use the correct login portal.');
             if(auth) {
                 await auth.signOut();
             }

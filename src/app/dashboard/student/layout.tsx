@@ -76,7 +76,7 @@ export default function StudentDashboardLayout({
     </aside>
   );
 
-  if (isUserLoading || profileLoading) {
+  if (isUserLoading || profileLoading || !userProfile) {
     return (
         <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
             <School className="h-16 w-16 animate-pulse text-primary" />

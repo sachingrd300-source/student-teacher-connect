@@ -5,11 +5,11 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { useRouter } from 'next/navigation';
 import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import React, { useEffect, useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Megaphone, School } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -59,6 +59,20 @@ const formatDate = (dateString?: string) => {
         hour12: true,
     });
 };
+
+const ActionCard = ({ title, icon, href }: { title: string, icon: React.ReactNode, href: string }) => (
+    <Link href={href} className="block hover:scale-105 transition-transform duration-200">
+        <Card className="h-full shadow-md hover:shadow-lg">
+            <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
+                <div className="p-3 bg-primary/10 rounded-full">
+                    {icon && React.cloneElement(icon as React.ReactElement, { className: "h-6 w-6 text-primary" })}
+                </div>
+                <p className="text-sm font-semibold">{title}</p>
+            </CardContent>
+        </Card>
+    </Link>
+);
+
 
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -167,11 +181,25 @@ export default function StudentDashboardPage() {
         return <Clock className="h-5 w-5 text-yellow-500 flex-shrink-0" />;
     };
 
+    const actionItems = [
+        { title: 'Find Teachers', icon: <Search />, href: '/dashboard/student/find-teachers' },
+        { title: 'Free Materials', icon: <BookOpen />, href: '/dashboard/student/free-materials' },
+        { title: 'Book Home Tutor', icon: <Home />, href: '/dashboard/student/book-home-teacher' },
+        { title: 'My Rewards', icon: <Gift />, href: '/dashboard/student/rewards' },
+        { title: 'Leaderboard', icon: <Trophy />, href: '/dashboard/student/leaderboard' },
+        { title: 'Shop', icon: <ShoppingBag />, href: '/dashboard/student/shop' },
+    ];
+
+
     return (
         <div className="grid gap-8">
             <div>
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome, {userProfile?.name}!</h1>
                 <p className="text-muted-foreground mt-2">Manage your batches, explore resources, and track your progress.</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {actionItems.map(item => <ActionCard key={item.href} {...item} />)}
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
@@ -214,7 +242,7 @@ export default function StudentDashboardPage() {
                         {enrollments && enrollments.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {enrollments.map((enrollment) => (
-                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between">
+                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md">
                                         <div>
                                             <div className="flex items-start gap-4 mb-4">
                                                 {renderStatusIcon(enrollment.status)}
@@ -229,7 +257,7 @@ export default function StudentDashboardPage() {
                                                     : `Approved: ${formatDate(enrollment.approvedAt)}`}
                                             </p>
                                         </div>
-                                        <div className="flex gap-2 self-end mt-4">
+                                        <CardFooter className="p-0 pt-4 flex gap-2 self-end">
                                             {enrollment.status === 'pending' ? (
                                                 <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
                                                     Cancel Request
@@ -241,12 +269,12 @@ export default function StudentDashboardPage() {
                                                     </Button>
                                                     <Button asChild size="sm">
                                                         <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                            View Batch
+                                                           <ArrowRight className="mr-2 h-4 w-4"/> View Batch
                                                         </Link>
                                                     </Button>
                                                 </>
                                             )}
-                                        </div>
+                                        </CardFooter>
                                     </Card>
                                 ))}
                             </div>
