@@ -33,7 +33,8 @@ import {
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal
+    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal,
+    Award, Shield, Gem, Rocket, Star
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -42,12 +43,21 @@ interface HomeTutorApplication { id: string; teacherId: string; teacherName: str
 interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
-interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; imageUrl: string; imageName: string; purchaseUrl?: string; createdAt: string; }
+type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
+interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; createdAt: string; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 
 type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools';
+
+const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
+    award: <Award className="h-5 w-5" />,
+    shield: <Shield className="h-5 w-5" />,
+    gem: <Gem className="h-5 w-5" />,
+    rocket: <Rocket className="h-5 w-5" />,
+    star: <Star className="h-5 w-5" />,
+};
 
 // --- Main Component ---
 export default function AdminDashboardPage() {
@@ -78,6 +88,16 @@ export default function AdminDashboardPage() {
     const [announcementMessage, setAnnouncementMessage] = useState('');
     const [announcementTarget, setAnnouncementTarget] = useState<'all' | 'teachers' | 'students'>('all');
     const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
+
+    // Badge/Shop Item state
+    const [itemType, setItemType] = useState<'item' | 'badge'>('item');
+    const [badgeIcon, setBadgeIcon] = useState<BadgeIconType>('award');
+
+    useEffect(() => {
+        if (itemType === 'badge') {
+            setItemPriceType('coins');
+        }
+    }, [itemType]);
     
     const [stats, setStats] = useState({
         teacherCount: 0,
@@ -358,32 +378,40 @@ export default function AdminDashboardPage() {
 
     const handleShopItemUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!itemImage || !itemName.trim() || !itemPrice || !storage || !firestore) return;
-        if (itemPriceType === 'money' && !itemPurchaseUrl.trim()) {
+        if (!itemName.trim() || !itemPrice || !storage || !firestore) return;
+        if (itemType === 'item' && !itemImage) {
+            alert('Image is required for a regular item.');
+            return;
+        }
+        if (itemType === 'item' && itemPriceType === 'money' && !itemPurchaseUrl.trim()) {
             alert('Purchase URL is required for money items.');
             return;
         }
         
         setIsUploadingItem(true);
-        const imageName = `${Date.now()}_${itemImage.name}`;
-        const imageRef = ref(storage, `shopItems/${imageName}`);
         
         try {
-            const uploadTask = await uploadBytes(imageRef, itemImage);
-            const downloadURL = await getDownloadURL(uploadTask.ref);
-            
             const itemData: Omit<ShopItem, 'id'> = { 
                 name: itemName.trim(), 
                 description: itemDescription.trim(), 
                 priceType: itemPriceType,
                 price: parseFloat(itemPrice), 
-                imageUrl: downloadURL, 
-                imageName,
+                itemType: itemType,
                 createdAt: new Date().toISOString() 
             };
-            
-            if (itemPriceType === 'money') {
-                itemData.purchaseUrl = itemPurchaseUrl.trim();
+
+            if (itemType === 'item') {
+                const imageName = `${Date.now()}_${itemImage!.name}`;
+                const imageRef = ref(storage, `shopItems/${imageName}`);
+                const uploadTask = await uploadBytes(imageRef, itemImage!);
+                const downloadURL = await getDownloadURL(uploadTask.ref);
+                itemData.imageUrl = downloadURL;
+                itemData.imageName = imageName;
+                if (itemPriceType === 'money') {
+                    itemData.purchaseUrl = itemPurchaseUrl.trim();
+                }
+            } else { // Badge
+                itemData.badgeIcon = badgeIcon;
             }
 
             addDoc(collection(firestore, 'shopItems'), itemData)
@@ -395,12 +423,12 @@ export default function AdminDashboardPage() {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: itemData }));
                 });
             
-            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money');
+            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
             if (document.getElementById('item-image')) {
                 (document.getElementById('item-image') as HTMLInputElement).value = '';
             }
         } catch (error) { 
-            console.error("Error uploading shop item image:", error); 
+            console.error("Error uploading shop item:", error); 
         } finally { 
             setIsUploadingItem(false); 
         }
@@ -410,13 +438,15 @@ export default function AdminDashboardPage() {
         if (!firestore || !storage) return;
         
         const itemDocRef = doc(firestore, 'shopItems', item.id);
-        const imageRef = ref(storage, `shopItems/${item.imageName}`);
-
+        
         deleteDoc(itemDocRef).then(() => {
             logAdminAction(`Deleted shop item: "${item.name}"`, item.id);
-            deleteObject(imageRef).catch(error => {
-                console.warn("Could not delete shop item image from storage:", error);
-            });
+            if (item.itemType === 'item' && item.imageName) {
+                const imageRef = ref(storage, `shopItems/${item.imageName}`);
+                deleteObject(imageRef).catch(error => {
+                    console.warn("Could not delete shop item image from storage:", error);
+                });
+            }
         }).catch(error => {
             console.error("Error deleting shop item from Firestore:", error);
             errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path }));
@@ -791,8 +821,39 @@ export default function AdminDashboardPage() {
                     <CardContent>
                         <form onSubmit={handleShopItemUpload} className="grid gap-4">
                             <div className="grid gap-2">
+                                <Label>Item Type</Label>
+                                <RadioGroup value={itemType} onValueChange={(v) => setItemType(v as any)} className="flex gap-4 pt-1">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="item" id="type-item" /><Label htmlFor="type-item">Regular Item</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="badge" id="type-badge" /><Label htmlFor="type-badge">Badge</Label></div>
+                                </RadioGroup>
+                            </div>
+
+                            <AnimatePresence>
+                                {itemType === 'badge' && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
+                                        <Label htmlFor="badge-icon">Badge Icon</Label>
+                                        <Select value={badgeIcon} onValueChange={(v) => setBadgeIcon(v as any)}>
+                                            <SelectTrigger id="badge-icon">
+                                                <SelectValue placeholder="Select an icon" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Object.keys(badgeIcons).map(iconKey => (
+                                                    <SelectItem key={iconKey} value={iconKey}>
+                                                        <div className="flex items-center gap-2">
+                                                            {badgeIcons[iconKey as BadgeIconType]}
+                                                            <span className="capitalize">{iconKey}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="item-price-type">Price Type</Label>
-                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4">
+                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4" disabled={itemType === 'badge'}>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="money" id="money" /><Label htmlFor="money">Money</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="coins" id="coins" /><Label htmlFor="coins">Coins</Label></div>
                                 </RadioGroup>
@@ -803,15 +864,22 @@ export default function AdminDashboardPage() {
                             <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
                             
                             <AnimatePresence>
-                            {itemPriceType === 'money' && (
-                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
-                                    <Label htmlFor="item-purchase-url">Purchase URL</Label>
-                                    <Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} />
+                            {itemType === 'item' && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-4 overflow-hidden">
+                                    {itemPriceType === 'money' && (
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="item-purchase-url">Purchase URL</Label>
+                                            <Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} />
+                                        </div>
+                                    )}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="item-image">Item Image</Label>
+                                        <Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required={itemType === 'item'} />
+                                    </div>
                                 </motion.div>
                             )}
                             </AnimatePresence>
 
-                            <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required /></div>
                             <Button type="submit" disabled={isUploadingItem}>{isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item</Button>
                         </form>
                     </CardContent>
@@ -823,15 +891,24 @@ export default function AdminDashboardPage() {
                             <div className="grid gap-4">
                                 {shopItems.map(item => (
                                     <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-lg border">
-                                        <div className="flex items-start gap-4"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-lg object-cover" /><div><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground">{item.description}</p>
-                                        
-                                        {item.priceType === 'money' ? (
-                                             <p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p>
-                                        ) : (
-                                             <p className="font-semibold text-primary mt-2 flex items-center"><Coins className="h-4 w-4 mr-1" />{item.price} Coins</p>
-                                        )}
-                                       
-                                        </div></div>
+                                        <div className="flex items-start gap-4">
+                                            {item.itemType === 'badge' ? (
+                                                <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
+                                                    {React.cloneElement(badgeIcons[item.badgeIcon as BadgeIconType] as React.ReactElement, { className: "h-10 w-10"})}
+                                                </div>
+                                            ) : (
+                                                <Image src={item.imageUrl!} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
+                                            )}
+                                            
+                                            <div>
+                                                <p className="font-semibold">{item.name}</p>
+                                                <p className="text-sm text-muted-foreground">{item.description}</p>
+                                                <p className="font-semibold text-primary mt-2 flex items-center">
+                                                    {item.priceType === 'money' ? <DollarSign className="h-4 w-4 mr-1" /> : <Coins className="h-4 w-4 mr-1" />}
+                                                    {item.priceType === 'money' ? item.price.toFixed(2) : `${item.price} Coins`}
+                                                </p>
+                                            </div>
+                                        </div>
                                         <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                     </div>
                                 ))}

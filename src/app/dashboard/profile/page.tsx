@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
+
+type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 
 interface UserProfile {
     name: string;
@@ -30,6 +32,7 @@ interface UserProfile {
     coins?: number;
     streak?: number;
     referralCode?: string;
+    equippedBadgeIcon?: BadgeIconType;
 }
 
 interface UserInventoryItem {
@@ -39,6 +42,20 @@ interface UserInventoryItem {
     itemImageUrl: string;
     purchasedAt: string;
 }
+
+const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
+    award: <Award className="h-5 w-5 text-yellow-500" />,
+    shield: <Shield className="h-5 w-5 text-blue-500" />,
+    gem: <Gem className="h-5 w-5 text-emerald-500" />,
+    rocket: <Rocket className="h-5 w-5 text-rose-500" />,
+    star: <Star className="h-5 w-5 text-amber-500" />,
+};
+
+const BadgeIcon = ({ iconName }: { iconName?: BadgeIconType }) => {
+    if (!iconName || !badgeIcons[iconName]) return null;
+    return <div className="ml-2" title={iconName}>{badgeIcons[iconName]}</div>;
+};
+
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
@@ -194,7 +211,10 @@ export default function ProfilePage() {
                                         <AvatarFallback className="text-2xl">{getInitials(userProfile.name)}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <CardTitle>My Profile</CardTitle>
+                                        <div className="flex items-center">
+                                            <CardTitle>{isEditing ? name : userProfile.name}</CardTitle>
+                                            {!isEditing && <BadgeIcon iconName={userProfile.equippedBadgeIcon} />}
+                                        </div>
                                         <CardDescription>View and edit your personal information.</CardDescription>
                                     </div>
                                 </div>

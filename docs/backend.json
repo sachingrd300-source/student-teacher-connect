@@ -91,6 +91,10 @@
         "referredBy": {
             "type": "string",
             "description": "The referral code of the user who referred this user."
+        },
+        "equippedBadgeIcon": {
+          "type": "string",
+          "description": "The Lucide icon name for the user's equipped badge."
         }
       },
       "required": [
@@ -179,14 +183,16 @@
       "properties": {
         "name": { "type": "string", "description": "The name of the item." },
         "description": { "type": "string", "description": "A description of the item." },
+        "itemType": { "type": "string", "enum": ["item", "badge"], "description": "The type of shop item, e.g., a regular item or a displayable badge." },
+        "badgeIcon": { "type": "string", "enum": ["award", "shield", "gem", "rocket", "star"], "description": "If the item is a badge, this specifies the Lucide icon name to display." },
         "priceType": { "type": "string", "enum": ["money", "coins"], "description": "The type of currency for the price." },
         "price": { "type": "number", "description": "The price of the item, either in currency or coins." },
-        "imageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image." },
-        "imageName": { "type": "string", "description": "The file name of the image in storage, for deletion purposes." },
+        "imageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image (for 'item' type)." },
+        "imageName": { "type": "string", "description": "The file name of the image in storage (for 'item' type)." },
         "purchaseUrl": { "type": "string", "format": "uri", "description": "External link to purchase the item (for 'money' type)." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "price", "priceType", "imageUrl", "imageName", "createdAt"]
+      "required": ["name", "price", "priceType", "itemType", "createdAt"]
     },
     "UserInventoryItem": {
       "title": "User Inventory Item",

@@ -1,12 +1,15 @@
 
 'use client';
 
+import React from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Medal, Award, School, Users } from 'lucide-react';
+import { Trophy, Medal, Award as AwardIcon, School, Users, Shield, Gem, Rocket, Star } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
+
+type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 
 // Interfaces
 interface LeaderboardUser {
@@ -14,6 +17,7 @@ interface LeaderboardUser {
     name: string;
     coins: number;
     role: 'student';
+    equippedBadgeIcon?: BadgeIconType;
 }
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
@@ -21,8 +25,21 @@ const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 const RankIcon = ({ rank }: { rank: number }) => {
     if (rank === 1) return <Trophy className="h-6 w-6 text-yellow-500 fill-yellow-400" />;
     if (rank === 2) return <Medal className="h-6 w-6 text-gray-400 fill-gray-300" />;
-    if (rank === 3) return <Award className="h-6 w-6 text-amber-700 fill-amber-600" />;
+    if (rank === 3) return <AwardIcon className="h-6 w-6 text-amber-700 fill-amber-600" />;
     return <span className="font-bold text-lg w-6 text-center">{rank}</span>;
+};
+
+const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
+    award: <AwardIcon className="h-5 w-5 text-yellow-500" />,
+    shield: <Shield className="h-5 w-5 text-blue-500" />,
+    gem: <Gem className="h-5 w-5 text-emerald-500" />,
+    rocket: <Rocket className="h-5 w-5 text-rose-500" />,
+    star: <Star className="h-5 w-5 text-amber-500" />,
+};
+
+const BadgeIcon = ({ iconName }: { iconName?: BadgeIconType }) => {
+    if (!iconName || !badgeIcons[iconName]) return null;
+    return <div className="ml-2" title={iconName}>{badgeIcons[iconName]}</div>;
 };
 
 export default function LeaderboardPage() {
@@ -96,7 +113,10 @@ export default function LeaderboardPage() {
                                          <Avatar className="h-10 w-10">
                                             <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                                         </Avatar>
-                                        <p className="font-semibold">{student.name}</p>
+                                        <p className="font-semibold flex items-center">
+                                            {student.name}
+                                            <BadgeIcon iconName={student.equippedBadgeIcon} />
+                                        </p>
                                     </div>
                                     <div className="flex items-center gap-2 font-bold text-lg text-primary">
                                         <span role="img" aria-label="Coins">🪙</span>
