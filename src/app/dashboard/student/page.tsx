@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -38,6 +38,13 @@ interface Enrollment {
     status: 'pending' | 'approved';
     createdAt: string;
     approvedAt?: string;
+}
+
+interface Announcement {
+    id: string;
+    message: string;
+    target: 'all' | 'teachers' | 'students';
+    createdAt: string;
 }
 
 const formatDate = (dateString?: string) => {
@@ -74,6 +81,15 @@ export default function StudentDashboardPage() {
         return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, "announcements"),
+            where("target", "in", ["all", "students"])
+        );
+    }, [firestore, user]);
+    const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
 
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
@@ -144,7 +160,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -229,56 +245,77 @@ export default function StudentDashboardPage() {
                                </Button>
                                 <Button asChild variant="outline">
                                     <Link href="/dashboard/student/book-home-teacher">Book Home Teacher</Link>
-                               </Button>
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>
 
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
-                        {enrollments && enrollments.length > 0 ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {enrollments.map((enrollment) => (
-                                    <Card key={enrollment.id} className="p-4 flex flex-col">
-                                        <div className="flex items-start gap-4 flex-grow">
-                                            {renderStatusIcon(enrollment.status)}
-                                            <div className="flex-grow min-w-0">
-                                                <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
-                                                <p className="text-sm text-muted-foreground break-words">Teacher: {enrollment.teacherName}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {enrollment.status === 'pending' 
-                                                        ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                        : `Approved: ${formatDate(enrollment.approvedAt)}`}
-                                                </p>
+                    <div className="grid gap-8">
+                        {announcements && announcements.length > 0 && (
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements from Admin</CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid gap-4">
+                                    {announcements.map((ann) => (
+                                        <div key={ann.id} className="p-4 rounded-lg border bg-background">
+                                            <p className="text-sm">{ann.message}</p>
+                                            <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                                                <span>Target: <span className="font-semibold capitalize">{ann.target}</span></span>
+                                                <span>{formatDate(ann.createdAt)}</span>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 self-end mt-4">
-                                            {enrollment.status === 'pending' ? (
-                                                <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                    Cancel Request
-                                                </Button>
-                                            ) : (
-                                                <>
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
-                                                    </Button>
-                                                    <Button asChild size="sm">
-                                                        <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                            View Batch
-                                                        </Link>
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="w-full bg-background border rounded-lg p-12 text-center">
-                                <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
-                                <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
-                            </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
                         )}
+                        
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
+                            {enrollments && enrollments.length > 0 ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {enrollments.map((enrollment) => (
+                                        <Card key={enrollment.id} className="p-4 flex flex-col">
+                                            <div className="flex items-start gap-4 flex-grow">
+                                                {renderStatusIcon(enrollment.status)}
+                                                <div className="flex-grow min-w-0">
+                                                    <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
+                                                    <p className="text-sm text-muted-foreground break-words">Teacher: {enrollment.teacherName}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        {enrollment.status === 'pending' 
+                                                            ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                            : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 self-end mt-4">
+                                                {enrollment.status === 'pending' ? (
+                                                    <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                        Cancel Request
+                                                    </Button>
+                                                ) : (
+                                                    <>
+                                                        <Button asChild variant="outline" size="sm">
+                                                            <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                        </Button>
+                                                        <Button asChild size="sm">
+                                                            <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
+                                                                View Batch
+                                                            </Link>
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="w-full bg-background border rounded-lg p-12 text-center">
+                                    <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
+                                    <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </main>
