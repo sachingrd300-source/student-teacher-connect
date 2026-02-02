@@ -138,7 +138,9 @@ service cloud.firestore {
 
     match /homeBookings/{bookingId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
-      allow read: if isAdmin() || (isStudent() && resource.data.studentId == request.auth.uid);
+      allow read: if isAdmin() || 
+                    (resource.data.studentId == request.auth.uid) ||
+                    (resource.data.assignedTeacherId == request.auth.uid);
       allow update, delete: if isAdmin();
     }
     
