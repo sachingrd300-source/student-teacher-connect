@@ -5,15 +5,16 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 // Interfaces can be copied
 interface UserProfile {
@@ -67,6 +68,9 @@ export default function CoachingManagementPage() {
     const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
     const [newBatchName, setNewBatchName] = useState('');
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
+
+    const [announcementMessage, setAnnouncementMessage] = useState('');
+    const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -144,6 +148,32 @@ export default function CoachingManagementPage() {
             console.error("Error creating batch:", error);
         } finally {
             setIsCreatingBatch(false);
+        }
+    };
+    
+    const handleSendAnnouncement = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!firestore || !batches || batches.length === 0 || !announcementMessage.trim()) return;
+        
+        setIsSendingAnnouncement(true);
+        
+        const message = announcementMessage.trim();
+        const createdAt = new Date().toISOString();
+        
+        const batch = writeBatch(firestore);
+
+        batches.forEach(b => {
+            const activityRef = doc(collection(firestore, 'batches', b.id, 'activity'));
+            batch.set(activityRef, { message, createdAt });
+        });
+
+        try {
+            await batch.commit();
+            setAnnouncementMessage('');
+        } catch (error) {
+            console.error("Error sending centralized announcement:", error);
+        } finally {
+            setIsSendingAnnouncement(false);
         }
     };
     
@@ -258,7 +288,7 @@ export default function CoachingManagementPage() {
                     </div>
                     
                     <div className="grid gap-8 lg:grid-cols-3">
-                        <div className="lg:col-span-2 grid gap-8">
+                        <div className="lg:col-span-2">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
@@ -307,44 +337,71 @@ export default function CoachingManagementPage() {
                             </Card>
                         </div>
 
-                        <Card className="lg:col-span-1">
-                            <CardHeader>
-                                <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {pendingRequests && pendingRequests.length > 0 ? (
-                                    <div className="grid gap-4">
-                                        {pendingRequests.map(req => (
-                                            <div key={req.id} className="p-4 rounded-lg border">
-                                                <div className="flex items-center gap-4">
-                                                    <Avatar>
-                                                        <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-semibold break-words">{req.studentName}</p>
-                                                        <p className="text-sm text-muted-foreground break-words">Wants to join: <span className="font-medium">{req.batchName}</span></p>
-                                                        <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
+                        <div className="lg:col-span-1 grid gap-8 content-start">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {pendingRequests && pendingRequests.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {pendingRequests.map(req => (
+                                                <div key={req.id} className="p-4 rounded-lg border">
+                                                    <div className="flex items-center gap-4">
+                                                        <Avatar>
+                                                            <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold break-words">{req.studentName}</p>
+                                                            <p className="text-sm text-muted-foreground break-words">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                            <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 justify-end mt-4">
+                                                        <Button size="sm" onClick={() => handleApproveRequest(req)}>
+                                                            <Check className="mr-2 h-4 w-4" /> Approve
+                                                        </Button>
+                                                        <Button size="sm" variant="destructive" onClick={() => handleDeclineRequest(req)}>
+                                                            <X className="mr-2 h-4 w-4" /> Decline
+                                                        </Button>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2 justify-end mt-4">
-                                                    <Button size="sm" onClick={() => handleApproveRequest(req)}>
-                                                        <Check className="mr-2 h-4 w-4" /> Approve
-                                                    </Button>
-                                                    <Button size="sm" variant="destructive" onClick={() => handleDeclineRequest(req)}>
-                                                        <X className="mr-2 h-4 w-4" /> Decline
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <h3 className="text-lg font-semibold">All Caught Up!</h3>
-                                        <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <h3 className="text-lg font-semibold">All Caught Up!</h3>
+                                            <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                            
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Send Centralized Announcement</CardTitle>
+                                    <CardDescription>Send a message to all your batches at once.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleSendAnnouncement} className="grid gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="announcement-message">Message</Label>
+                                            <Textarea
+                                                id="announcement-message"
+                                                value={announcementMessage}
+                                                onChange={(e) => setAnnouncementMessage(e.target.value)}
+                                                placeholder="e.g., All classes are cancelled tomorrow due to..."
+                                                required
+                                            />
+                                        </div>
+                                        <Button type="submit" disabled={isSendingAnnouncement || !announcementMessage.trim() || !batches || batches.length === 0}>
+                                            {isSendingAnnouncement ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                            Send to All
+                                        </Button>
+                                    </form>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </div>
             </main>
