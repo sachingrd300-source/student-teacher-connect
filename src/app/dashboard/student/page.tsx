@@ -2,14 +2,14 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, getDocs, orderBy, limit } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -40,6 +40,13 @@ interface Enrollment {
     status: 'pending' | 'approved';
     createdAt: string;
     approvedAt?: string;
+}
+
+interface Announcement {
+    id: string;
+    message: string;
+    target: 'all' | 'teachers' | 'students';
+    createdAt: string;
 }
 
 const formatDate = (dateString?: string) => {
@@ -87,6 +94,18 @@ export default function StudentDashboardPage() {
         return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'announcements'), 
+            where('target', 'in', ['all', 'students']),
+            orderBy('createdAt', 'desc'),
+            limit(5)
+        );
+    }, [firestore]);
+    const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
 
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
@@ -157,7 +176,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading;
     
 
     if (isLoading || !userProfile) {
@@ -264,6 +283,37 @@ export default function StudentDashboardPage() {
                                     }`}>
                                         {joinMessage.text}
                                     </p>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="rounded-lg shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Megaphone className="mr-3 h-6 w-6 text-primary"/>
+                                    Announcements
+                                </CardTitle>
+                                <CardDescription>
+                                    Important updates and announcements from the admin.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {announcements && announcements.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        {announcements.map(ann => (
+                                            <div key={ann.id} className="p-4 rounded-lg border bg-background">
+                                                <p className="text-sm font-medium">{ann.message}</p>
+                                                <p className="text-xs text-muted-foreground mt-2">
+                                                    Posted: {formatDate(ann.createdAt)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 flex flex-col items-center">
+                                        <Megaphone className="h-10 w-10 text-muted-foreground mb-4" />
+                                        <h3 className="font-semibold">No new announcements right now.</h3>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
