@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -221,7 +222,7 @@ export default function StudentDashboardPage() {
                         
                         <ActionCard title="Find Teachers" icon={<Search/>} href="/dashboard/student/find-teachers" />
                         <ActionCard title="Free Materials" icon={<BookOpen/>} href="/dashboard/student/free-materials" />
-                        <ActionCard title="Book Home Tutor" icon={<Home/>} href="/dashboard/student/book-home-teacher" />
+                        <ActionCard title="Book Home Tutor" icon={<Home/>} href="/dashboard/student/book-home-tutor" />
                         <ActionCard title="My Rewards" icon={<Trophy/>} href="/dashboard/student/rewards" />
                         <ActionCard title="Leaderboard" icon={<Trophy/>} href="/dashboard/student/leaderboard" />
                         <ActionCard title="Shop" icon={<ShoppingBag/>} href="/dashboard/student/shop" />
