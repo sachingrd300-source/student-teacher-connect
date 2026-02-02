@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     heroTitle: "Your Gateway to Quality Education",
@@ -71,6 +72,12 @@ export const translations = {
     joinTeacherTitle: "Join Our Community of Achievers",
     joinTeacherDescription: "Become part of a growing network of dedicated educators in Giridih. Get a steady stream of students, manage your batches effortlessly, and grow your career.",
     joinTeacherButton: "Apply to be a Teacher",
+    comprehensiveCoverageTitle: "Comprehensive Educational Coverage",
+    comprehensiveCoverageDescription: "From foundational learning to advanced studies, we have expert tutors for every level.",
+    individualTuitionTitle: "Classes 0 to 12",
+    individualTuitionDescription: "Find dedicated home tutors for any subject from kindergarten to 12th grade. Get personalized attention and achieve academic excellence.",
+    coachingCenterTitle: "Connected Coaching Centers",
+    coachingCenterDescription: "We are partnered with numerous coaching centers. Easily connect with teachers from your preferred center through our platform.",
   },
   hi: {
     heroTitle: "गुणवत्तापूर्ण शिक्षा का आपका प्रवेश द्वार",
@@ -144,5 +151,13 @@ export const translations = {
     joinTeacherTitle: "हमारे अचीवर्स समुदाय में शामिल हों",
     joinTeacherDescription: "गिरिडीह में समर्पित शिक्षकों के बढ़ते नेटवर्क का हिस्सा बनें। छात्रों की एक स्थिर धारा प्राप्त करें, अपने बैचों को सहजता से प्रबंधित करें और अपना करियर बढ़ाएं।",
     joinTeacherButton: "शिक्षक बनने के लिए आवेदन करें",
+    comprehensiveCoverageTitle: "व्यापक शैक्षिक कवरेज",
+    comprehensiveCoverageDescription: "बुनियादी शिक्षा से लेकर उन्नत अध्ययन तक, हमारे पास हर स्तर के लिए विशेषज्ञ ट्यूटर हैं।",
+    individualTuitionTitle: "कक्षा 0 से 12 तक",
+    individualTuitionDescription: "किंडरगार्टन से 12वीं कक्षा तक किसी भी विषय के लिए समर्पित होम ट्यूटर खोजें। व्यक्तिगत ध्यान प्राप्त करें और अकादमिक उत्कृष्टता प्राप्त करें।",
+    coachingCenterTitle: "जुड़े हुए कोचिंग सेंटर",
+    coachingCenterDescription: "हम कई कोचिंग सेंटरों के साथ जुड़े हुए हैं। हमारे प्लेटफॉर्म के माध्यम से आसानी से अपने पसंदीदा सेंटर के शिक्षकों से जुड़ें।",
   },
 };
+
+    

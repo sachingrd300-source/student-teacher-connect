@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from "react";
@@ -295,8 +296,58 @@ export default function HomePage() {
             </div>
         </section>
 
-        {/* Join as Teacher CTA Section */}
+        {/* Comprehensive Coverage Section */}
         <section className="py-16 md:py-24 bg-muted/40">
+          <div className="container px-4 md:px-6">
+            <motion.div 
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.5 }}
+                variants={fadeInUp}
+                className="text-center mb-16"
+            >
+                <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.comprehensiveCoverageTitle}</h2>
+                <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.comprehensiveCoverageDescription}</p>
+            </motion.div>
+            <div className="grid md:grid-cols-2 gap-8">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                    variants={fadeInUp}
+                >
+                    <Card className="h-full rounded-lg shadow-lg border-transparent hover:border-primary/50 hover:shadow-primary/10 transition-all duration-300 p-8 text-center">
+                        <div className="flex justify-center mb-5">
+                            <div className="p-4 bg-primary/10 rounded-full">
+                                <School className="w-10 h-10 text-primary" />
+                            </div>
+                        </div>
+                        <h3 className="text-2xl font-bold">{t.individualTuitionTitle}</h3>
+                        <p className="mt-2 text-muted-foreground">{t.individualTuitionDescription}</p>
+                    </Card>
+                </motion.div>
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                    variants={fadeInUp}
+                >
+                    <Card className="h-full rounded-lg shadow-lg border-transparent hover:border-primary/50 hover:shadow-primary/10 transition-all duration-300 p-8 text-center">
+                        <div className="flex justify-center mb-5">
+                            <div className="p-4 bg-primary/10 rounded-full">
+                                <Building2 className="w-10 h-10 text-primary" />
+                            </div>
+                        </div>
+                        <h3 className="text-2xl font-bold">{t.coachingCenterTitle}</h3>
+                        <p className="mt-2 text-muted-foreground">{t.coachingCenterDescription}</p>
+                    </Card>
+                </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Join as Teacher CTA Section */}
+        <section className="py-16 md:py-24 bg-background">
             <div className="container px-4 md:px-6">
                 <motion.div 
                     initial="hidden"
@@ -322,7 +373,7 @@ export default function HomePage() {
 
 
         {/* Platform Features Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -391,7 +442,7 @@ export default function HomePage() {
         </section>
 
         {/* Numbers Section */}
-        <section className="py-16 md:py-24 bg-muted/40">
+        <section className="py-16 md:py-24 bg-background">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -430,7 +481,7 @@ export default function HomePage() {
         </section>
 
         {/* New Study Hub Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
             <motion.div
               initial="hidden"
@@ -481,7 +532,7 @@ export default function HomePage() {
 
         {/* Featured Tutors Section */}
         {featuredTeachers && featuredTeachers.length > 0 && (
-          <section className="py-16 md:py-24 bg-muted/40">
+          <section className="py-16 md:py-24 bg-background">
             <div className="container px-4 md:px-6">
               <motion.div
                 initial="hidden"
@@ -535,7 +586,7 @@ export default function HomePage() {
         )}
 
         {/* Testimonials Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
             <motion.div 
               initial="hidden"
@@ -589,7 +640,7 @@ export default function HomePage() {
         </section>
         
          {/* Final CTA */}
-        <section className="py-16 md:py-32 bg-muted/40">
+        <section className="py-16 md:py-32 bg-background">
             <div className="container px-4 md:px-6 text-center">
                 <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
                     <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.ctaTitle}</h2>
@@ -638,3 +689,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
