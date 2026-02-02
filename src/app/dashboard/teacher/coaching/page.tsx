@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ interface UserProfile {
     name: string;
     email: string;
     role: 'teacher' | 'student' | 'admin' | 'parent';
+    isHomeTutor?: boolean;
 }
 
 interface Batch {
@@ -40,6 +41,17 @@ interface Enrollment {
     status: 'pending' | 'approved';
     createdAt: string;
     approvedAt?: string;
+}
+
+interface HomeBooking {
+    id: string;
+    studentId: string;
+    studentName: string;
+    mobileNumber: string;
+    address: string;
+    studentClass: string;
+    status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+    createdAt: string;
 }
 
 const getInitials = (name: string) => {
@@ -90,6 +102,13 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const assignedBookingsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid || !userProfile?.isHomeTutor) return null;
+        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid));
+    }, [firestore, user?.uid, userProfile?.isHomeTutor]);
+    const { data: assignedBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
+
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
         if (!enrollments) return [[], []];
@@ -223,7 +242,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || bookingsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -288,7 +307,7 @@ export default function CoachingManagementPage() {
                     </div>
                     
                     <div className="grid gap-8 lg:grid-cols-3">
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-2 grid gap-8 content-start">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
@@ -335,6 +354,40 @@ export default function CoachingManagementPage() {
                                     )}
                                 </CardContent>
                             </Card>
+
+                            {userProfile.isHomeTutor && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary"/> My Home Tuition Assignments</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {assignedBookings && assignedBookings.length > 0 ? (
+                                            <div className="grid gap-4">
+                                                {assignedBookings.map(booking => (
+                                                    <div key={booking.id} className="p-4 rounded-lg border bg-background">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="font-semibold">{booking.studentName} - {booking.studentClass}</p>
+                                                                <p className="text-sm text-muted-foreground">{booking.address}</p>
+                                                                <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
+                                                            </div>
+                                                            <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                                booking.status === 'Assigned' ? 'bg-blue-100 text-blue-800' :
+                                                                booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                                            }`}>{booking.status}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12">
+                                                <h3 className="text-lg font-semibold">No Assignments Yet</h3>
+                                                <p className="text-muted-foreground mt-1">Check back later for new home tuition assignments.</p>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
 
                         <div className="lg:col-span-1 grid gap-8 content-start">
@@ -440,3 +493,5 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
+
+    

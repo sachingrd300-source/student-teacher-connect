@@ -238,6 +238,10 @@
           "type": "string",
           "description": "UID of the assigned teacher."
         },
+        "assignedTeacherName": {
+          "type": "string",
+          "description": "Name of the assigned teacher."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -472,3 +476,5 @@
     }
   }
 }
+
+    

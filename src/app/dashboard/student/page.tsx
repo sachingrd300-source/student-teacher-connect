@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -44,6 +44,14 @@ interface Announcement {
     id: string;
     message: string;
     target: 'all' | 'teachers' | 'students';
+    createdAt: string;
+}
+
+interface HomeBooking {
+    id: string;
+    studentId: string;
+    status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+    assignedTeacherName?: string;
     createdAt: string;
 }
 
@@ -105,6 +113,16 @@ export default function StudentDashboardPage() {
     }, [firestore, user]);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
 
+    const homeBookingsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, "homeBookings"),
+            where("studentId", "==", user.uid)
+        );
+    }, [firestore, user]);
+    const { data: homeBookings, isLoading: homeBookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
+    const lastBooking = useMemo(() => homeBookings?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
+
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
     }, [enrollments]);
@@ -163,7 +181,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading || homeBookingsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -288,7 +306,7 @@ export default function StudentDashboardPage() {
                     </Card>
                 </div>
                 
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 grid gap-8 content-start">
                      <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
@@ -307,8 +325,51 @@ export default function StudentDashboardPage() {
                             )}
                         </CardContent>
                     </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> Home Tutor Request Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           {lastBooking ? (
+                                <div className="p-4 rounded-lg border bg-background">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-semibold">Your Latest Request</p>
+                                            <p className="text-xs text-muted-foreground">Requested on {formatDate(lastBooking.createdAt)}</p>
+                                        </div>
+                                         <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                            lastBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                            lastBooking.status === 'Assigned' ? 'bg-blue-100 text-blue-800' :
+                                            lastBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}>
+                                            {lastBooking.status}
+                                        </span>
+                                    </div>
+                                    {lastBooking.status === 'Assigned' && (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
+                                            <p className="font-semibold text-primary">{lastBooking.assignedTeacherName}</p>
+                                        </div>
+                                    )}
+                                    <Button asChild variant="link" size="sm" className="p-0 h-auto mt-2">
+                                        <Link href="/dashboard/student/book-home-teacher">View Details or Book Again</Link>
+                                    </Button>
+                                </div>
+                           ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-sm text-muted-foreground mb-3">You haven't requested a home tutor yet.</p>
+                                    <Button asChild>
+                                        <Link href="/dashboard/student/book-home-teacher">Book a Tutor</Link>
+                                    </Button>
+                                </div>
+                           )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>
     );
 }
+
+    

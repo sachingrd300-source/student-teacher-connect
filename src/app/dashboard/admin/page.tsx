@@ -21,19 +21,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins
+    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; createdAt: string; lastLoginDate?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; createdAt: string; lastLoginDate?: string; }
 interface HomeTutorApplication { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; }
+interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; imageUrl: string; imageName: string; purchaseUrl?: string; createdAt: string; }
@@ -96,6 +102,7 @@ export default function AdminDashboardPage() {
     const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -106,7 +113,7 @@ export default function AdminDashboardPage() {
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
     const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
-
+    const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     
     // --- Auth & Role Check ---
     useEffect(() => {
@@ -226,6 +233,53 @@ export default function AdminDashboardPage() {
             });
     };
     
+    const handleAssignTeacher = (booking: HomeBooking, teacherId: string) => {
+        const teacher = approvedTutors?.find(t => t.id === teacherId);
+        if (!firestore || !teacher) return;
+        const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
+        
+        updateDoc(bookingDocRef, {
+            assignedTeacherId: teacher.id,
+            assignedTeacherName: teacher.name,
+            status: 'Assigned'
+        })
+        .then(() => {
+            logAdminAction(`Assigned teacher ${teacher.name} to booking for ${booking.studentName}`, booking.id);
+        })
+        .catch(error => {
+            console.error('Error assigning teacher:', error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: bookingDocRef.path,
+                requestResourceData: { assignedTeacherId: teacher.id, status: 'Assigned' }
+            }));
+        });
+    };
+
+    const handleUpdateBookingStatus = (booking: HomeBooking, status: 'Pending' | 'Completed' | 'Cancelled') => {
+        if (!firestore) return;
+        const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
+        const updateData: { status: string; assignedTeacherId?: null; assignedTeacherName?: null } = { status };
+        // If moving back to pending, clear the assignment
+        if (status === 'Pending') {
+            updateData.assignedTeacherId = null;
+            updateData.assignedTeacherName = null;
+        }
+
+        updateDoc(bookingDocRef, updateData)
+            .then(() => {
+                logAdminAction(`Updated booking for ${booking.studentName} to ${status}`, booking.id);
+            })
+            .catch(error => {
+                console.error('Error updating booking status:', error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'update',
+                    path: bookingDocRef.path,
+                    requestResourceData: { status }
+                }));
+            });
+    };
+
     const handleDeleteBooking = (booking: HomeBooking) => {
         if (!firestore) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
@@ -399,7 +453,7 @@ export default function AdminDashboardPage() {
             });
     };
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -621,9 +675,53 @@ export default function AdminDashboardPage() {
                     {homeBookings && homeBookings.length > 0 ? (
                         <div className="grid gap-4">
                             {homeBookings.map(booking => (
-                                <div key={booking.id} className="flex items-start justify-between gap-4 p-4 rounded-lg border">
-                                    <div className="grid gap-2"><p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p><p className="text-sm text-muted-foreground">Father: {booking.fatherName || 'N/A'}</p><p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p><p className="text-sm text-muted-foreground">Address: {booking.address}</p><div className="flex items-center gap-2 text-xs text-muted-foreground mt-2"><span>Status:</span><span className={`font-semibold ${booking.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'}`}>{booking.status}</span><span>|</span><span>Created: {formatDate(booking.createdAt, true)}</span></div></div>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                <div key={booking.id} className="p-4 rounded-lg border">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="grid gap-1">
+                                            <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
+                                            <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
+                                            <p className="text-sm text-muted-foreground">Address: {booking.address}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                booking.status === 'Assigned' ? 'bg-blue-100 text-blue-800' :
+                                                booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {booking.status}
+                                            </span>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDeleteBooking(booking)} className="text-destructive">Delete</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </div>
+                                    {booking.status === 'Pending' && (
+                                        <div className="mt-4 pt-4 border-t flex items-center gap-2">
+                                            <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
+                                                <SelectTrigger className="w-full sm:w-[250px]">
+                                                    <SelectValue placeholder="Assign a Teacher" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
+                                                        <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
+                                                    )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    {booking.status === 'Assigned' && (
+                                        <div className="mt-4 pt-4 border-t">
+                                            <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -900,3 +998,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
