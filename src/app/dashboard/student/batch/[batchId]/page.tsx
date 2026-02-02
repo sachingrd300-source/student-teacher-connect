@@ -6,11 +6,13 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 
 interface UserProfile {
     name: string;
@@ -168,7 +170,7 @@ export default function StudentBatchPage() {
     const { data: tests, isLoading: isTestsLoading } = useCollection<Test>(testsQuery);
 
     const testResultsQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user?.uid) return null;
+        if (!firestore || !batchId || !user?.uid || !tests || tests.length === 0) return null;
         const testIds = (tests && tests.length > 0) ? tests.map(t => t.id) : [' '];
         return query(
             collection(firestore, 'testResults'),
@@ -177,6 +179,50 @@ export default function StudentBatchPage() {
         );
     }, [firestore, batchId, user?.uid, tests]);
     const { data: testResults, isLoading: isTestResultsLoading } = useCollection<TestResult>(testResultsQuery);
+
+    const performanceData = useMemo(() => {
+        if (!tests || tests.length === 0 || !testResults || testResults.length === 0) {
+            return null;
+        }
+
+        const testMap = new Map(tests.map(t => [t.id, t]));
+        
+        const resultsWithPercentage = testResults.map(result => {
+            const test = testMap.get(result.testId);
+            if (!test || test.maxMarks <= 0) return null;
+            return {
+                ...result,
+                testTitle: test.title,
+                testDate: test.testDate,
+                maxMarks: test.maxMarks,
+                percentage: (result.marksObtained / test.maxMarks) * 100,
+            };
+        }).filter(Boolean) as (TestResult & { testTitle: string, testDate: string, maxMarks: number, percentage: number })[];
+
+        if (resultsWithPercentage.length === 0) return null;
+
+        const totalPercentage = resultsWithPercentage.reduce((sum, r) => sum + r.percentage, 0);
+        const averageScore = totalPercentage / resultsWithPercentage.length;
+
+        const highestScoreTest = [...resultsWithPercentage].sort((a, b) => b.percentage - a.percentage)[0];
+        const lowestScoreTest = [...resultsWithPercentage].sort((a, b) => a.percentage - b.percentage)[0];
+
+        const chartData = resultsWithPercentage.map(r => ({
+            name: r.testTitle,
+            'Score (%)': parseFloat(r.percentage.toFixed(2)),
+            'Your Marks': r.marksObtained,
+            'Max Marks': r.maxMarks,
+        })).reverse();
+
+        return {
+            averageScore,
+            highestScoreTest,
+            lowestScoreTest,
+            chartData,
+            resultsTable: resultsWithPercentage.sort((a, b) => new Date(b.testDate).getTime() - new Date(a.testDate).getTime()),
+        };
+
+    }, [tests, testResults]);
 
     const allFeeMonths = useMemo(() => {
         if (!enrollment?.approvedAt) return [];
@@ -256,11 +302,12 @@ export default function StudentBatchPage() {
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
                             <TabsTrigger value="announcements">Announcements</TabsTrigger>
                             <TabsTrigger value="study-materials">Study Materials</TabsTrigger>
                             <TabsTrigger value="fees">Fees</TabsTrigger>
-                            <TabsTrigger value="tests">Tests &amp; Results</TabsTrigger>
+                            <TabsTrigger value="tests">Tests</TabsTrigger>
+                            <TabsTrigger value="performance">Performance</TabsTrigger>
                         </TabsList>
                         <TabsContent value="announcements" className="mt-4">
                             <Card className="rounded-2xl shadow-md">
@@ -370,7 +417,7 @@ export default function StudentBatchPage() {
                             <Card className="rounded-2xl shadow-md">
                                 <CardHeader>
                                     <CardTitle className="flex items-center"><ClipboardCheck className="mr-3 h-5 w-5 text-primary"/> Tests &amp; Results</CardTitle>
-                                    <CardDescription>View upcoming tests and your previous results.</CardDescription>
+                                    <CardDescription>View your test schedule and past results.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {tests && tests.length > 0 ? (
@@ -397,6 +444,67 @@ export default function StudentBatchPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+                        <TabsContent value="performance" className="mt-4">
+                            {performanceData ? (
+                                <div className="grid gap-6">
+                                    <div className="grid gap-4 md:grid-cols-3">
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                                                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{performanceData.averageScore.toFixed(1)}%</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Highest Score</CardTitle>
+                                                <Trophy className="h-4 w-4 text-muted-foreground" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{performanceData.highestScoreTest.percentage.toFixed(1)}%</div>
+                                                <p className="text-xs text-muted-foreground">in {performanceData.highestScoreTest.testTitle}</p>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Area for Improvement</CardTitle>
+                                                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{performanceData.lowestScoreTest.percentage.toFixed(1)}%</div>
+                                                <p className="text-xs text-muted-foreground">in {performanceData.lowestScoreTest.testTitle}</p>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Performance Over Time</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <BarChart data={performanceData.chartData}>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis dataKey="name" tick={{fontSize: 12}} interval={0} angle={-30} textAnchor="end" height={70} />
+                                                    <YAxis unit="%" />
+                                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                                    <Legend />
+                                                    <Bar dataKey="Score (%)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            ) : (
+                                <div className="text-center py-16 flex flex-col items-center">
+                                    <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold">No Performance Data Yet</h3>
+                                    <p className="text-muted-foreground mt-1">Your performance analytics will appear here once your test results are uploaded.</p>
+                                </div>
+                            )}
                         </TabsContent>
                     </Tabs>
                 </div>
