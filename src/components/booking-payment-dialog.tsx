@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle } from 'lucide-react';
 
 interface HomeBooking {
     id: string;
@@ -21,81 +19,62 @@ interface BookingPaymentDialogProps {
 
 const PLATFORM_FEE = 99;
 
-export function BookingPaymentDialog({ isOpen, onClose, booking, onPaymentSuccess }: BookingPaymentDialogProps) {
-    const firestore = useFirestore();
-    const [paymentState, setPaymentState] = useState<'idle' | 'processing' | 'success'>('idle');
-    const [error, setError] = useState<string | null>(null);
+export function BookingPaymentDialog({ isOpen, onClose, booking }: BookingPaymentDialogProps) {
+    const [paymentState, setPaymentState] = useState<'idle' | 'show_qr'>('idle');
 
-    const handleConfirmPayment = async () => {
-        if (!firestore || !booking) return;
-        setPaymentState('processing');
-        setError(null);
+    const handlePayNowClick = () => {
+        setPaymentState('show_qr');
+    };
 
-        try {
-            // Simulate payment processing
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            const bookingRef = doc(firestore, 'homeBookings', booking.id);
-            await updateDoc(bookingRef, {
-                status: 'Confirmed',
-                bookingFee: PLATFORM_FEE,
-                paymentId: `sim_${new Date().getTime()}` // Simulated payment ID
-            });
-            
-            setPaymentState('success');
-            setTimeout(() => {
-                onPaymentSuccess();
-                onClose();
-                setPaymentState('idle'); // Reset for next time
-            }, 1500);
-
-        } catch (err) {
-            console.error("Booking payment failed:", err);
-            setError("Something went wrong. Please try again.");
-            setPaymentState('idle');
-        }
+    const handleClose = () => {
+        setPaymentState('idle');
+        onClose();
     };
 
     if (!booking) return null;
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); setPaymentState('idle'); } }}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose() }}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Confirm Home Tutor Booking</DialogTitle>
-                    <DialogDescription>
-                        A one-time platform fee is required to confirm the booking and connect with the teacher.
-                    </DialogDescription>
+                    {paymentState === 'idle' ? (
+                        <>
+                            <DialogTitle>Confirm Home Tutor Booking</DialogTitle>
+                            <DialogDescription>
+                                A one-time platform fee is required to confirm the booking and connect with the teacher.
+                            </DialogDescription>
+                        </>
+                    ) : (
+                        <DialogTitle>Scan & Pay Booking Fee</DialogTitle>
+                    )}
                 </DialogHeader>
 
-                {paymentState === 'idle' && (
+                {paymentState === 'idle' ? (
                     <div className="py-4">
                         <p><strong>Student:</strong> {booking.studentName}</p>
                         <p className="font-bold text-lg mt-2">Platform Fee: ₹{PLATFORM_FEE.toFixed(2)}</p>
-                        {error && <p className="text-destructive text-sm mt-4">{error}</p>}
                     </div>
-                )}
-                
-                {paymentState === 'processing' && (
-                     <div className="flex flex-col items-center justify-center py-10 gap-4">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-muted-foreground">Processing payment...</p>
-                    </div>
-                )}
-
-                {paymentState === 'success' && (
-                    <div className="flex flex-col items-center justify-center py-10 gap-4">
-                        <CheckCircle className="h-10 w-10 text-green-500" />
-                        <p className="font-semibold">Payment Successful! Booking Confirmed.</p>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-4 gap-4">
+                        <p className="font-semibold">Scan to pay: Sachin Pandit</p>
+                        <div className="p-4 bg-white rounded-lg border">
+                           <Image src="/payment-qr.png" width={250} height={250} alt="Payment QR Code for Sachin Pandit" />
+                        </div>
+                        <p className="text-sm text-muted-foreground text-center max-w-sm">
+                            Scan to pay the ₹{PLATFORM_FEE.toFixed(2)} platform fee using any UPI app.<br/>
+                            After payment, the admin will confirm your booking and connect you with your tutor.
+                        </p>
                     </div>
                 )}
 
                 <DialogFooter>
-                    {paymentState === 'idle' && (
+                    {paymentState === 'idle' ? (
                         <>
-                            <Button variant="outline" onClick={onClose}>Cancel</Button>
-                            <Button onClick={handleConfirmPayment}>Pay ₹{PLATFORM_FEE.toFixed(2)}</Button>
+                            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                            <Button onClick={handlePayNowClick}>Pay ₹{PLATFORM_FEE.toFixed(2)}</Button>
                         </>
+                    ) : (
+                        <Button variant="outline" onClick={handleClose}>Close</Button>
                     )}
                 </DialogFooter>
             </DialogContent>
