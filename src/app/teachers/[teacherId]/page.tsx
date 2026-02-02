@@ -1,12 +1,12 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useEffect } from 'react';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where, addDoc } from 'firebase/firestore';
+import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCopy, Send, Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +29,19 @@ interface UserProfile {
     streak?: number;
 }
 
+interface Batch {
+    id: string;
+    name: string;
+    teacherId: string;
+    teacherName: string;
+}
+
+interface Enrollment {
+    id: string;
+    batchId: string;
+    status: 'pending' | 'approved';
+}
+
 const getInitials = (name: string) => {
     if (!name) return '';
     return name.split(' ').map((n) => n[0]).join('');
@@ -40,6 +53,8 @@ export default function TeacherProfilePage() {
     const router = useRouter();
     const params = useParams();
     const teacherId = params.teacherId as string;
+
+    const [joiningState, setJoiningState] = useState<{[batchId: string]: boolean}>({});
 
     // Memoize the ref for the teacher being viewed
     const teacherProfileRef = useMemoFirebase(() => {
@@ -56,7 +71,24 @@ export default function TeacherProfilePage() {
     }, [firestore, user?.uid]);
 
     const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
-    
+
+    // New queries for batches and enrollments
+    const batchesQuery = useMemoFirebase(() => {
+        if (!firestore || !teacherId) return null;
+        return query(collection(firestore, 'batches'), where('teacherId', '==', teacherId));
+    }, [firestore, teacherId]);
+    const { data: batches, isLoading: batchesLoading } = useCollection<Batch>(batchesQuery);
+
+    const studentEnrollmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid || currentUserProfile?.role !== 'student') return null;
+        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
+    }, [firestore, user?.uid, currentUserProfile?.role]);
+    const { data: studentEnrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(studentEnrollmentsQuery);
+
+    const enrolledBatchIds = useMemo(() => {
+        return new Set(studentEnrollments?.map(e => e.batchId));
+    }, [studentEnrollments]);
+
     // Redirect if user is not logged in
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -64,7 +96,31 @@ export default function TeacherProfilePage() {
         }
     }, [user, isUserLoading, router]);
 
-    const isLoading = isUserLoading || profileLoading;
+    const handleJoinRequest = async (batch: Batch) => {
+        if (!firestore || !user || !currentUserProfile || currentUserProfile.role !== 'student' || !teacherProfile) return;
+
+        setJoiningState(prev => ({ ...prev, [batch.id]: true }));
+
+        try {
+            await addDoc(collection(firestore, 'enrollments'), {
+                studentId: user.uid,
+                studentName: currentUserProfile.name,
+                teacherId: teacherId,
+                teacherName: teacherProfile.name,
+                batchId: batch.id,
+                batchName: batch.name,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+            });
+            // The real-time hook for studentEnrollments will update the UI.
+        } catch (error) {
+            console.error("Error sending join request:", error);
+            setJoiningState(prev => ({ ...prev, [batch.id]: false }));
+        }
+    };
+
+
+    const isLoading = isUserLoading || profileLoading || batchesLoading || (currentUserProfile?.role === 'student' && enrollmentsLoading);
 
     if (isLoading || !teacherProfile) {
         return (
@@ -116,6 +172,46 @@ export default function TeacherProfilePage() {
 
                         </CardContent>
                     </Card>
+
+                    {currentUserProfile?.role === 'student' && batches && batches.length > 0 && (
+                        <Card className="mt-8 rounded-2xl shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="flex items-center"><BookCopy className="mr-3 h-5 w-5"/>Available Batches</CardTitle>
+                                <CardDescription>Send a request to join any of the available batches.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                                {batches.map(batch => {
+                                    const isEnrolled = enrolledBatchIds.has(batch.id);
+                                    const isJoining = joiningState[batch.id];
+                                    return (
+                                        <div key={batch.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border bg-background">
+                                            <p className="font-semibold">{batch.name}</p>
+                                            <Button 
+                                                onClick={() => handleJoinRequest(batch)}
+                                                disabled={isEnrolled || isJoining}
+                                                variant={isEnrolled ? "outline" : "default"}
+                                                className="mt-3 sm:mt-0"
+                                            >
+                                                {isJoining ? (
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : isEnrolled ? (
+                                                    <>
+                                                        <Check className="mr-2 h-4 w-4" />
+                                                        Request Sent
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Send className="mr-2 h-4 w-4" />
+                                                        Send Join Request
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </main>
         </div>
