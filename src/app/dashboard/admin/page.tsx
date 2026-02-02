@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useStorage, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateDoc, getCountFromServer, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // UI Components
@@ -65,8 +65,10 @@ export default function AdminDashboardPage() {
     const firestore = useFirestore();
     const storage = useStorage();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
-    const [view, setView] = useState<AdminView>('dashboard');
+    const initialView = searchParams.get('view') as AdminView | null;
+    const [view, setView] = useState<AdminView>(initialView || 'dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
 
     // --- Form States ---

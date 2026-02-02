@@ -367,6 +367,15 @@ export default function SchoolDetailsPage() {
         const updatedClass = updatedClasses.find(c => c.id === classToManage.id);
         if (updatedClass) setClassToManage(updatedClass);
     };
+    
+    const handleBack = () => {
+        if (userProfile?.role === 'admin') {
+            router.push('/dashboard/admin?view=schools');
+        } else {
+            router.push('/dashboard/teacher/school');
+        }
+    };
+
 
     // --- Loading and Render ---
 
@@ -644,7 +653,7 @@ export default function SchoolDetailsPage() {
                  <main className="flex-1 p-4 md:p-8">
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">
-                            <Button variant="ghost" onClick={() => router.back()} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                            <Button variant="ghost" onClick={handleBack} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
                              <h1 className="text-xl font-bold font-serif capitalize">{school?.name}</h1>
                              <Sheet open={isSidebarOpen} onOpenChange={setSidebarOpen}>
                                 <SheetTrigger asChild>
@@ -660,7 +669,7 @@ export default function SchoolDetailsPage() {
                             </Sheet>
                         </div>
                         <div className="hidden md:block mb-4">
-                             <Button variant="ghost" onClick={() => router.back()} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Teacher Dashboard</Button>
+                             <Button variant="ghost" onClick={handleBack} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Button>
                         </div>
                         {renderCurrentView()}
                     </div>
