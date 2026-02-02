@@ -3,27 +3,24 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, orderBy } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, PlusCircle, Clipboard, Settings, School, ArrowLeft, Building2, Megaphone } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, ArrowLeft, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Textarea } from '@/components/ui/textarea';
-import Image from 'next/image';
 
 // Interfaces
 interface UserProfile {
     name: string;
     email: string;
     role: 'teacher';
-    teacherType?: 'coaching' | 'school';
 }
 
 interface School {
@@ -35,17 +32,6 @@ interface School {
     principalId: string;
     academicYear: string;
 }
-
-interface Advertisement {
-    id: string;
-    title: string;
-    message: string;
-    imageUrl: string;
-    ctaLink?: string;
-    targetAudience: 'all' | 'students' | 'teachers';
-    targetTeacherType?: 'all' | 'coaching' | 'school';
-}
-
 
 // Main component
 export default function SchoolManagementPage() {
@@ -74,24 +60,6 @@ export default function SchoolManagementPage() {
         return query(collection(firestore, 'schools'), where('principalId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: schools, isLoading: schoolsLoading } = useCollection<School>(schoolsQuery);
-
-    const advertisementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, 'advertisements'),
-            where('targetAudience', 'in', ['all', 'teachers']),
-            orderBy('createdAt', 'desc')
-        );
-    }, [firestore]);
-    const { data: rawAdvertisements, isLoading: advertisementsLoading } = useCollection<Advertisement>(advertisementsQuery);
-
-    const advertisements = useMemo(() => {
-        if (!rawAdvertisements || !userProfile) return [];
-        return rawAdvertisements.filter(ad => 
-            ad.targetAudience === 'all' || 
-            (ad.targetAudience === 'teachers' && (ad.targetTeacherType === 'all' || ad.targetTeacherType === userProfile.teacherType))
-        );
-    }, [rawAdvertisements, userProfile]);
 
     // Effect for auth redirection
     useEffect(() => {
@@ -144,7 +112,7 @@ export default function SchoolManagementPage() {
         });
     };
 
-    const isLoading = isUserLoading || profileLoading || schoolsLoading || advertisementsLoading;
+    const isLoading = isUserLoading || profileLoading || schoolsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -154,69 +122,18 @@ export default function SchoolManagementPage() {
             </div>
         );
     }
-    
-    const cardVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: { delay: i * 0.1 },
-        }),
-    };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <motion.main 
-                className="flex-1 p-4 md:p-8 bg-muted/20"
-                initial="hidden"
-                animate="visible"
-                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
-            >
-                <div className="max-w-6xl mx-auto grid gap-8">
+            <main className="flex-1 p-4 md:p-8 bg-muted/20">
+                <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif">School Management</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold">School Management</h1>
                         <p className="text-muted-foreground mt-2">Create and manage your school sessions.</p>
                     </div>
-
-                    {advertisements && advertisements.length > 0 && (
-                        <Card className="rounded-lg shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <Megaphone className="mr-3 h-6 w-6 text-primary"/>
-                                For You
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {advertisements.map(ad => (
-                                    <motion.div
-                                        key={ad.id}
-                                        variants={cardVariants}
-                                        initial="hidden"
-                                        animate="visible"
-                                        whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
-                                    >
-                                        <Card className="overflow-hidden h-full flex flex-col">
-                                            <Image src={ad.imageUrl} alt={ad.title} width={400} height={200} className="w-full h-32 object-cover"/>
-                                            <div className="p-4 flex flex-col flex-grow">
-                                                <h3 className="font-semibold">{ad.title}</h3>
-                                                <p className="text-sm text-muted-foreground mt-1 flex-grow">{ad.message}</p>
-                                                {ad.ctaLink && (
-                                                    <Button asChild size="sm" className="mt-4 w-full">
-                                                        <a href={ad.ctaLink} target="_blank" rel="noopener noreferrer">Learn More</a>
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    )}
                     
-                    <Card className="rounded-lg shadow-lg">
+                    <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>My Sessions ({schools?.length || 0})</CardTitle>
                             <Button size="sm" onClick={() => setCreateSessionOpen(true)}>
@@ -226,19 +143,10 @@ export default function SchoolManagementPage() {
                         <CardContent>
                             {schools && schools.length > 0 ? (
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    {schools.map((school, i) => (
-                                        <motion.div
-                                            key={school.id}
-                                            custom={i}
-                                            initial="hidden"
-                                            animate="visible"
-                                            variants={cardVariants}
-                                            whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
-                                            whileTap={{ scale: 0.98 }}
-                                        >
-                                          <Card className="flex flex-col h-full">
+                                    {schools.map(school => (
+                                          <Card key={school.id} className="flex flex-col">
                                             <CardHeader>
-                                              <CardTitle className="font-serif text-xl">{school.name}</CardTitle>
+                                              <CardTitle>{school.name}</CardTitle>
                                               <CardDescription>{school.address}</CardDescription>
                                             </CardHeader>
                                             <CardContent className="flex-grow">
@@ -259,14 +167,12 @@ export default function SchoolManagementPage() {
                                               </Button>
                                             </CardFooter>
                                           </Card>
-                                        </motion.div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-16 flex flex-col items-center">
-                                    <School className="h-16 w-16 text-muted-foreground mb-4" />
+                                <div className="text-center py-16">
                                     <h3 className="text-xl font-semibold">You haven't created any sessions yet.</h3>
-                                    <p className="text-muted-foreground mt-2 mb-6 max-w-md">Create a session to manage classes, teachers, and students all in one place.</p>
+                                    <p className="text-muted-foreground mt-2 mb-6">Create a session to manage classes, teachers, and students all in one place.</p>
                                     <Button onClick={() => setCreateSessionOpen(true)}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Session
                                     </Button>
@@ -275,7 +181,7 @@ export default function SchoolManagementPage() {
                         </CardContent>
                     </Card>
                 </div>
-            </motion.main>
+            </main>
 
             <Dialog open={isCreateSessionOpen} onOpenChange={setCreateSessionOpen}>
                 <DialogContent>
@@ -319,5 +225,3 @@ export default function SchoolManagementPage() {
         </div>
     );
 }
-
-    

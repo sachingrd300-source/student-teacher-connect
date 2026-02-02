@@ -11,19 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Megaphone } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 // Interfaces can be copied
 interface UserProfile {
     name: string;
     email: string;
     role: 'teacher';
-    teacherType?: 'coaching' | 'school';
 }
 
 interface Batch {
@@ -44,17 +41,6 @@ interface Enrollment {
     createdAt: string;
     approvedAt?: string;
 }
-
-interface Advertisement {
-    id: string;
-    title: string;
-    message: string;
-    imageUrl: string;
-    ctaLink?: string;
-    targetAudience: 'all' | 'students' | 'teachers';
-    targetTeacherType?: 'all' | 'coaching' | 'school';
-}
-
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -101,24 +87,6 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
-
-    const advertisementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, 'advertisements'),
-            where('targetAudience', 'in', ['all', 'teachers']),
-            orderBy('createdAt', 'desc')
-        );
-    }, [firestore]);
-    const { data: rawAdvertisements, isLoading: advertisementsLoading } = useCollection<Advertisement>(advertisementsQuery);
-
-    const advertisements = useMemo(() => {
-        if (!rawAdvertisements || !userProfile) return [];
-        return rawAdvertisements.filter(ad => 
-            ad.targetAudience === 'all' || 
-            (ad.targetAudience === 'teachers' && (ad.targetTeacherType === 'all' || ad.targetTeacherType === userProfile.teacherType))
-        );
-    }, [rawAdvertisements, userProfile]);
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
         if (!enrollments) return [[], []];
@@ -226,7 +194,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || advertisementsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -236,30 +204,14 @@ export default function CoachingManagementPage() {
             </div>
         );
     }
-    
-    const cardVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: {
-                delay: i * 0.05,
-            },
-        }),
-    };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <motion.main 
-                className="flex-1 p-4 md:p-8 bg-muted/20"
-                initial="hidden"
-                animate="visible"
-                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
-            >
+            <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold">Coaching Management</h1>
                         <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
                     </div>
 
@@ -306,117 +258,64 @@ export default function CoachingManagementPage() {
                         </Card>
                     </div>
                     
-                    <div className="grid gap-8">
-                        {advertisements && advertisements.length > 0 && (
-                             <Card className="rounded-lg shadow-lg">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center">
-                                        <Megaphone className="mr-3 h-6 w-6 text-primary"/>
-                                        For You
-                                    </CardTitle>
+                    <div className="grid gap-8 lg:grid-cols-3">
+                        <div className="lg:col-span-2 grid gap-8">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
+                                    <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
+                                    </Button>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {advertisements.map(ad => (
-                                            <motion.div
-                                                key={ad.id}
-                                                variants={cardVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
-                                            >
-                                                <Card className="overflow-hidden h-full flex flex-col">
-                                                    <Image src={ad.imageUrl} alt={ad.title} width={400} height={200} className="w-full h-32 object-cover"/>
-                                                    <div className="p-4 flex flex-col flex-grow">
-                                                        <h3 className="font-semibold">{ad.title}</h3>
-                                                        <p className="text-sm text-muted-foreground mt-1 flex-grow">{ad.message}</p>
-                                                        {ad.ctaLink && (
-                                                            <Button asChild size="sm" className="mt-4 w-full">
-                                                                <a href={ad.ctaLink} target="_blank" rel="noopener noreferrer">Learn More</a>
+                                    {batches && batches.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {batches.map(batch => (
+                                                <div key={batch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
+                                                    <div className="flex-grow">
+                                                        <p className="font-semibold text-lg break-words">{batch.name}</p>
+                                                        <div className="flex items-center gap-2 pt-1">
+                                                            <p className="text-sm text-muted-foreground">Code:</p>
+                                                            <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
+                                                                <Clipboard className="h-4 w-4" />
                                                             </Button>
-                                                        )}
+                                                        </div>
+                                                        <p className="text-sm text-muted-foreground mt-1">{studentCountsByBatch[batch.id] || 0} Students</p>
                                                     </div>
-                                                </Card>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                        <Card className="rounded-lg shadow-lg">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
-                                <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
-                                </Button>
-                            </CardHeader>
-                            <CardContent>
-                                {batches && batches.length > 0 ? (
-                                    <div className="grid gap-4">
-                                        {batches.map((batch, i) => (
-                                            <motion.div
-                                                key={batch.id}
-                                                custom={i}
-                                                initial="hidden"
-                                                animate="visible"
-                                                variants={cardVariants}
-                                                whileHover={{ scale: 1.02, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                                whileTap={{ scale: 0.98 }}
-                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background"
-                                            >
-                                                <div className="flex-grow">
-                                                    <p className="font-semibold text-lg break-words">{batch.name}</p>
-                                                    <div className="flex items-center gap-2 pt-1">
-                                                        <p className="text-sm text-muted-foreground">Code:</p>
-                                                        <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
-                                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
-                                                            <Clipboard className="h-4 w-4" />
+                                                    <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                        <Button asChild>
+                                                            <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                                <Settings className="mr-2 h-4 w-4" /> Manage
+                                                            </Link>
                                                         </Button>
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground mt-1">{studentCountsByBatch[batch.id] || 0} Students</p>
                                                 </div>
-                                                <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                                    <Button asChild>
-                                                        <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                            <Settings className="mr-2 h-4 w-4" /> Manage
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 flex flex-col items-center">
-                                        <School className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">You haven't created any batches yet.</h3>
-                                        <p className="text-muted-foreground mt-1 mb-4">Let's create your first one to get started! 🎉</p>
-                                        <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
-                                            <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
-                                        </Button>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <h3 className="text-lg font-semibold">You haven't created any batches yet.</h3>
+                                            <p className="text-muted-foreground mt-1 mb-4">Let's create your first one to get started! 🎉</p>
+                                            <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
+                                                <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
+                                            </Button>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                        <Card className="rounded-lg shadow-lg">
+                        <Card className="lg:col-span-1">
                             <CardHeader>
                                 <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 {pendingRequests && pendingRequests.length > 0 ? (
                                     <div className="grid gap-4">
-                                        {pendingRequests.map((req, i) => (
-                                            <motion.div
-                                                key={req.id}
-                                                custom={i}
-                                                initial="hidden"
-                                                animate="visible"
-                                                variants={cardVariants}
-                                                whileHover={{ scale: 1.02, x: 5, boxShadow: "0px 5px 15px rgba(0,0,0,0.05)" }}
-                                                whileTap={{ scale: 0.98 }}
-                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background"
-                                            >
-                                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        {pendingRequests.map(req => (
+                                            <div key={req.id} className="p-4 rounded-lg border">
+                                                <div className="flex items-center gap-4">
                                                     <Avatar>
                                                         <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
                                                     </Avatar>
@@ -426,7 +325,7 @@ export default function CoachingManagementPage() {
                                                         <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                <div className="flex gap-2 justify-end mt-4">
                                                     <Button size="sm" onClick={() => handleApproveRequest(req)}>
                                                         <Check className="mr-2 h-4 w-4" /> Approve
                                                     </Button>
@@ -434,12 +333,11 @@ export default function CoachingManagementPage() {
                                                         <X className="mr-2 h-4 w-4" /> Decline
                                                     </Button>
                                                 </div>
-                                            </motion.div>
+                                            </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-12 flex flex-col items-center">
-                                        <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <div className="text-center py-12">
                                         <h3 className="text-lg font-semibold">All Caught Up!</h3>
                                         <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
                                     </div>
@@ -448,7 +346,7 @@ export default function CoachingManagementPage() {
                         </Card>
                     </div>
                 </div>
-            </motion.main>
+            </main>
 
             <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
                 <DialogContent>
@@ -484,5 +382,3 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
-
-    
