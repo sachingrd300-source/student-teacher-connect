@@ -155,7 +155,7 @@ service cloud.firestore {
     }
 
     match /announcements/{announcementId} {
-      allow read: if isSignedIn();
+      allow read: if isStudent() || isAdmin();
       allow write: if isAdmin();
     }
     
@@ -169,5 +169,4 @@ service cloud.firestore {
     }
   }
 }
-
     
