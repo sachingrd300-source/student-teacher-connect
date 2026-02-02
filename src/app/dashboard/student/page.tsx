@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 
 interface UserProfile {
     name: string;
@@ -40,17 +41,10 @@ interface Enrollment {
     approvedAt?: string;
 }
 
-interface Announcement {
-    id: string;
-    message: string;
-    target: 'all' | 'teachers' | 'students';
-    createdAt: string;
-}
-
 interface HomeBooking {
     id: string;
     studentId: string;
-    status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+    status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     assignedTeacherName?: string;
     createdAt: string;
 }
@@ -90,6 +84,7 @@ export default function StudentDashboardPage() {
     const [batchCode, setBatchCode] = useState('');
     const [joinMessage, setJoinMessage] = useState({ type: '', text: '' });
     const [isJoining, setIsJoining] = useState(false);
+    const [bookingToPay, setBookingToPay] = useState<HomeBooking | null>(null);
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -340,21 +335,26 @@ export default function StudentDashboardPage() {
                                         </div>
                                          <span className={`text-xs font-bold py-1 px-2 rounded-full ${
                                             lastBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            lastBooking.status === 'Assigned' ? 'bg-blue-100 text-blue-800' :
+                                            lastBooking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
+                                            lastBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
                                             lastBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>
                                             {lastBooking.status}
                                         </span>
                                     </div>
-                                    {lastBooking.status === 'Assigned' && (
+                                    {lastBooking.status === 'Awaiting Payment' ? (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <p className="text-sm font-medium mb-2">Your booking is ready! Please pay the platform fee to confirm.</p>
+                                            <Button size="sm" className="w-full" onClick={() => setBookingToPay(lastBooking)}>
+                                                <CreditCard className="mr-2 h-4 w-4"/> Pay Now
+                                            </Button>
+                                        </div>
+                                    ) : (lastBooking.status === 'Confirmed' || lastBooking.status === 'Completed') && lastBooking.assignedTeacherName ? (
                                         <div className="mt-3 pt-3 border-t">
                                             <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
                                             <p className="font-semibold text-primary">{lastBooking.assignedTeacherName}</p>
                                         </div>
-                                    )}
-                                    <Button asChild variant="link" size="sm" className="p-0 h-auto mt-2">
-                                        <Link href="/dashboard/student/book-home-teacher">View Details or Book Again</Link>
-                                    </Button>
+                                    ) : null}
                                 </div>
                            ) : (
                                 <div className="text-center py-8">
@@ -368,6 +368,14 @@ export default function StudentDashboardPage() {
                     </Card>
                 </div>
             </div>
+            {bookingToPay && (
+                <BookingPaymentDialog
+                    isOpen={!!bookingToPay}
+                    onClose={() => setBookingToPay(null)}
+                    booking={bookingToPay}
+                    onPaymentSuccess={() => { /* Real-time listener will update UI */ }}
+                />
+            )}
         </div>
     );
 }

@@ -238,7 +238,7 @@
         "status": {
           "type": "string",
           "description": "Status of the booking.",
-          "enum": ["Pending", "Assigned", "Completed", "Cancelled"]
+          "enum": ["Pending", "Awaiting Payment", "Confirmed", "Completed", "Cancelled"]
         },
         "assignedTeacherId": {
           "type": "string",
@@ -251,6 +251,14 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "bookingFee": {
+            "type": "number",
+            "description": "The one-time platform fee for securing the home tutor booking."
+        },
+        "paymentId": {
+            "type": "string",
+            "description": "The transaction ID for the booking fee payment."
         }
       },
       "required": [

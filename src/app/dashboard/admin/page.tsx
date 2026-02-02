@@ -40,7 +40,7 @@ import {
 // --- Interfaces ---
 interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; createdAt: string; lastLoginDate?: string; }
 interface HomeTutorApplication { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; }
+interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
         updateDoc(bookingDocRef, {
             assignedTeacherId: teacher.id,
             assignedTeacherName: teacher.name,
-            status: 'Assigned'
+            status: 'Awaiting Payment'
         })
         .then(() => {
             logAdminAction(`Assigned teacher ${teacher.name} to booking for ${booking.studentName}`, booking.id);
@@ -271,16 +271,16 @@ export default function AdminDashboardPage() {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'update',
                 path: bookingDocRef.path,
-                requestResourceData: { assignedTeacherId: teacher.id, status: 'Assigned' }
+                requestResourceData: { assignedTeacherId: teacher.id, status: 'Awaiting Payment' }
             }));
         });
     };
 
-    const handleUpdateBookingStatus = (booking: HomeBooking, status: 'Pending' | 'Completed' | 'Cancelled') => {
+    const handleUpdateBookingStatus = (booking: HomeBooking, status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled') => {
         if (!firestore) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         const updateData: { status: string; assignedTeacherId?: null; assignedTeacherName?: null } = { status };
-        // If moving back to pending, clear the assignment
+        
         if (status === 'Pending') {
             updateData.assignedTeacherId = null;
             updateData.assignedTeacherName = null;
@@ -715,7 +715,8 @@ export default function AdminDashboardPage() {
                                         <div className="flex items-center gap-2">
                                             <span className={`text-xs font-bold py-1 px-2 rounded-full ${
                                                 booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                booking.status === 'Assigned' ? 'bg-blue-100 text-blue-800' :
+                                                booking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
+                                                booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
                                                 booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                             }`}>
                                                 {booking.status}
@@ -747,7 +748,7 @@ export default function AdminDashboardPage() {
                                             </Select>
                                         </div>
                                     )}
-                                    {booking.status === 'Assigned' && (
+                                    {(booking.status === 'Awaiting Payment' || booking.status === 'Confirmed' || booking.status === 'Completed') && (
                                         <div className="mt-4 pt-4 border-t">
                                             <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
                                         </div>

@@ -110,7 +110,7 @@ export default function BookHomeTeacherPage() {
                      <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle>Book a Home Teacher</CardTitle>
-                            <CardDescription>Fill out the details below to request a personalized home tutor. Our team will review your request and get in touch with you.</CardDescription>
+                            <CardDescription>Fill out the details below to request a personalized home tutor. A one-time platform fee of ₹99 will be required upon teacher assignment to confirm the booking.</CardDescription>
                         </CardHeader>
                         <form onSubmit={handleSubmit}>
                             <CardContent className="grid gap-6">

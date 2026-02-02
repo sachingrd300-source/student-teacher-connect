@@ -50,7 +50,7 @@ interface HomeBooking {
     mobileNumber: string;
     address: string;
     studentClass: string;
-    status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+    status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     createdAt: string;
 }
 
@@ -105,7 +105,11 @@ export default function CoachingManagementPage() {
 
     const assignedBookingsQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid || !userProfile?.isHomeTutor) return null;
-        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid));
+        return query(
+            collection(firestore, 'homeBookings'), 
+            where('assignedTeacherId', '==', user.uid),
+            where('status', 'in', ['Confirmed', 'Completed', 'Cancelled'])
+        );
     }, [firestore, user?.uid, userProfile?.isHomeTutor]);
     const { data: assignedBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
 
@@ -372,7 +376,7 @@ export default function CoachingManagementPage() {
                                                                 <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
                                                             </div>
                                                             <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                                                booking.status === 'Assigned' ? 'bg-blue-100 text-blue-800' :
+                                                                booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
                                                                 booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                                                             }`}>{booking.status}</span>
                                                         </div>
