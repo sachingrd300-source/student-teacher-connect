@@ -28,7 +28,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History, Megaphone
+    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History, Megaphone, Building2
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -43,7 +43,17 @@ interface Enrollment { id: string; studentId: string; teacherId: string; batchId
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface Advertisement { id: string; title: string; message: string; imageUrl: string; imageName: string; ctaLink?: string; targetAudience: 'all' | 'students' | 'teachers'; targetTeacherType?: 'all' | 'coaching' | 'school'; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'advertisements' | 'activity';
+interface School {
+    id: string;
+    name: string;
+    address: string;
+    principalId: string;
+    principalName: string;
+    createdAt: string;
+    teacherIds?: string[];
+    classes?: { students?: any[] }[];
+}
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'schools' | 'materials' | 'shop' | 'notifications' | 'advertisements' | 'activity';
 
 
 // --- Helper Functions ---
@@ -128,6 +138,8 @@ export default function AdminDashboardPage() {
     const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const advertisementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'advertisements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+
 
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -140,6 +152,7 @@ export default function AdminDashboardPage() {
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
     const { data: advertisements, isLoading: advertisementsLoading } = useCollection<Advertisement>(advertisementsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
+    const { data: schoolsData, isLoading: schoolsLoading } = useCollection<School>(schoolsQuery);
 
     
     // --- Auth & Role Check ---
@@ -533,7 +546,7 @@ export default function AdminDashboardPage() {
     };
 
     // --- Loading State ---
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || advertisementsLoading || activitiesLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || advertisementsLoading || activitiesLoading || schoolsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -549,6 +562,7 @@ export default function AdminDashboardPage() {
         { id: 'users' as AdminView, label: 'Users', icon: Users, count: allUsers.length },
         { id: 'applications' as AdminView, label: 'Applications', icon: Briefcase, count: filteredApplications.pending.length },
         { id: 'bookings' as AdminView, label: 'Bookings', icon: Home, count: homeBookings?.length || 0 },
+        { id: 'schools' as AdminView, label: 'Schools', icon: Building2, count: schoolsData?.length || 0 },
         { id: 'materials' as AdminView, label: 'Materials', icon: FileText, count: materials?.length || 0 },
         { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
         { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell },
@@ -829,6 +843,55 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
     );
+
+    const renderSchoolsView = () => {
+        const getTotalStudents = (school: School) => {
+            if (!school.classes) return 0;
+            return school.classes.reduce((acc, c) => acc + (c.students?.length || 0), 0);
+        };
+    
+        return (
+            <div className="grid gap-8">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold font-serif">School Management</h1>
+                    <p className="text-muted-foreground mt-2">Overview of all registered schools on the platform.</p>
+                </div>
+                <Card>
+                    <CardContent className="p-4">
+                        {schoolsData && schoolsData.length > 0 ? (
+                            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                                {schoolsData.map(school => (
+                                    <motion.div variants={itemFadeInUp} key={school.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-lg border bg-background/50">
+                                        <div className="grid gap-2 w-full">
+                                            <p className="font-semibold text-lg">{school.name}</p>
+                                            <p className="text-sm text-muted-foreground">{school.address}</p>
+                                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
+                                                <span><strong>Principal:</strong> {school.principalName}</span>
+                                                <span><strong>Teachers:</strong> {school.teacherIds?.length || 0}</span>
+                                                <span><strong>Students:</strong> {getTotalStudents(school)}</span>
+                                            </div>
+                                             <p className="text-xs text-muted-foreground pt-1">Created: {formatDate(school.createdAt)}</p>
+                                        </div>
+                                        <Button asChild variant="outline" size="sm" className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0">
+                                            <Link href={`/dashboard/teacher/school/${school.id}`}>
+                                                <Eye className="mr-2 h-4 w-4" />View Details
+                                            </Link>
+                                        </Button>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <div className="text-center py-16 flex flex-col items-center">
+                                <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold">No Schools Found</h3>
+                                <p className="text-muted-foreground mt-1">No principals have created a school session yet.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    };
     
     const renderMaterialsView = () => {
          const renderMaterialList = (materialList: FreeMaterial[]) => {
@@ -1107,6 +1170,7 @@ export default function AdminDashboardPage() {
             case 'users': return renderUsersView();
             case 'applications': return renderApplicationsView();
             case 'bookings': return renderBookingsView();
+            case 'schools': return renderSchoolsView();
             case 'materials': return renderMaterialsView();
             case 'shop': return renderShopView();
             case 'notifications': return renderNotificationsView();
