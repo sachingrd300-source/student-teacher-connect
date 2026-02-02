@@ -28,7 +28,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History, Bullhorn
+    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History, Megaphone
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -552,7 +552,7 @@ export default function AdminDashboardPage() {
         { id: 'materials' as AdminView, label: 'Materials', icon: FileText, count: materials?.length || 0 },
         { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
         { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell },
-        { id: 'advertisements' as AdminView, label: 'Advertisements', icon: Bullhorn, count: advertisements?.length || 0 },
+        { id: 'advertisements' as AdminView, label: 'Advertisements', icon: Megaphone, count: advertisements?.length || 0 },
         { id: 'activity' as AdminView, label: 'Activity Log', icon: History },
     ];
     
@@ -561,7 +561,7 @@ export default function AdminDashboardPage() {
             {navItems.map(item => (
                 <Button 
                     key={item.id}
-                    variant={activeView === item.id ? 'default' : 'ghost'}
+                    variant={activeView === item.id ? 'secondary' : 'ghost'}
                     onClick={() => setActiveView(item.id)}
                     className="justify-start gap-3 text-base h-12"
                 >
@@ -928,7 +928,7 @@ export default function AdminDashboardPage() {
                             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                                 {shopItems.map(item => (
                                     <motion.div variants={itemFadeInUp} key={item.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-lg border bg-background/50">
-                                        <div className="flex items-start gap-4 w-full"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover flex-shrink-0" /><div className="w-full"><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground mt-1">{item.description}</p><p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p></div></div>
+                                        <div className="flex items-start gap-4 w-full"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-lg object-cover flex-shrink-0" /><div className="w-full"><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground mt-1">{item.description}</p><p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p></div></div>
                                         <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                     </motion.div>
                                 ))}
@@ -1046,7 +1046,7 @@ export default function AdminDashboardPage() {
                             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                                 {advertisements.map(ad => (
                                     <motion.div variants={itemFadeInUp} key={ad.id} className="flex items-start gap-4 p-4 rounded-lg border bg-background/50">
-                                        <Image src={ad.imageUrl} alt={ad.title} width={100} height={100} className="rounded-md object-cover flex-shrink-0" />
+                                        <Image src={ad.imageUrl} alt={ad.title} width={100} height={100} className="rounded-lg object-cover flex-shrink-0" />
                                         <div className="w-full flex flex-col h-full">
                                             <div className="flex-grow">
                                                 <p className="font-semibold">{ad.title}</p>
@@ -1061,7 +1061,7 @@ export default function AdminDashboardPage() {
                                     </motion.div>
                                 ))}
                             </motion.div>
-                        ) : (<div className="text-center py-12 flex flex-col items-center"><Bullhorn className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Advertisements Running</h3><p className="text-muted-foreground mt-1">Create an advertisement to get started.</p></div>)}
+                        ) : (<div className="text-center py-12 flex flex-col items-center"><Megaphone className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Advertisements Running</h3><p className="text-muted-foreground mt-1">Create an advertisement to get started.</p></div>)}
                     </CardContent>
                 </Card>
             </div>
@@ -1132,7 +1132,7 @@ export default function AdminDashboardPage() {
                             </SheetTrigger>
                             <SheetContent side="left" className="w-[300px] sm:w-[320px]">
                                 <SheetHeader>
-                                    <SheetTitle>Admin Menu</SheetTitle>
+                                    <SheetTitle className="font-serif">Admin Menu</SheetTitle>
                                     <SheetDescription>
                                         Select a section to manage.
                                     </SheetDescription>
@@ -1141,7 +1141,7 @@ export default function AdminDashboardPage() {
                                     {navItems.map(item => (
                                         <SheetClose asChild key={item.id}>
                                             <Button 
-                                                variant={activeView === item.id ? 'default' : 'ghost'}
+                                                variant={activeView === item.id ? 'secondary' : 'ghost'}
                                                 onClick={() => setActiveView(item.id)}
                                                 className="justify-start gap-3 text-base h-12"
                                             >
@@ -1183,5 +1183,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    

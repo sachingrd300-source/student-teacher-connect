@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, PlusCircle, Clipboard, Settings, School, ArrowLeft, Building2, Bullhorn } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, ArrowLeft, Building2, Megaphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -183,7 +183,7 @@ export default function SchoolManagementPage() {
                         <Card className="rounded-lg shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center">
-                                <Bullhorn className="mr-3 h-6 w-6 text-primary"/>
+                                <Megaphone className="mr-3 h-6 w-6 text-primary"/>
                                 For You
                             </CardTitle>
                         </CardHeader>
@@ -216,7 +216,7 @@ export default function SchoolManagementPage() {
                     </Card>
                     )}
                     
-                    <Card className="rounded-2xl shadow-lg">
+                    <Card className="rounded-lg shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>My Sessions ({schools?.length || 0})</CardTitle>
                             <Button size="sm" onClick={() => setCreateSessionOpen(true)}>

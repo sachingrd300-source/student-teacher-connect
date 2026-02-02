@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Bullhorn } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Megaphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -311,7 +311,7 @@ export default function CoachingManagementPage() {
                              <Card className="rounded-lg shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
-                                        <Bullhorn className="mr-3 h-6 w-6 text-primary"/>
+                                        <Megaphone className="mr-3 h-6 w-6 text-primary"/>
                                         For You
                                     </CardTitle>
                                 </CardHeader>
@@ -343,7 +343,7 @@ export default function CoachingManagementPage() {
                                 </CardContent>
                             </Card>
                         )}
-                        <Card className="rounded-2xl shadow-lg">
+                        <Card className="rounded-lg shadow-lg">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
                                 <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
@@ -398,7 +398,7 @@ export default function CoachingManagementPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-2xl shadow-lg">
+                        <Card className="rounded-lg shadow-lg">
                             <CardHeader>
                                 <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
                             </CardHeader>

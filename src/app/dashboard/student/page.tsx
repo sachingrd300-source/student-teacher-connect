@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy, Megaphone, Bullhorn } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -281,7 +281,7 @@ export default function StudentDashboardPage() {
                              <Card className="rounded-lg shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
-                                        <Bullhorn className="mr-3 h-6 w-6 text-primary"/>
+                                        <Megaphone className="mr-3 h-6 w-6 text-primary"/>
                                         For You
                                     </CardTitle>
                                 </CardHeader>
@@ -438,5 +438,3 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
-
-    
