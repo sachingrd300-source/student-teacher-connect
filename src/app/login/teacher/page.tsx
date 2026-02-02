@@ -45,7 +45,7 @@ export default function TeacherLoginPage() {
     const userRef = doc(firestore, 'users', loggedInUser.uid);
     const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists() && userSnap.data().role !== 'teacher') {
+    if (userSnap.exists() && userSnap.data().role === 'student') {
         setError('This account is registered as a student. Please use the student login.');
         await auth.signOut();
     } else {
@@ -112,7 +112,7 @@ export default function TeacherLoginPage() {
         router.replace('/dashboard');
       } else {
          const userData = userSnap.data();
-        if (userData.role !== 'teacher') {
+        if (userData.role === 'student') {
             setError('This account is registered as a student. Please use the student login.');
             if(auth) {
                 await auth.signOut();

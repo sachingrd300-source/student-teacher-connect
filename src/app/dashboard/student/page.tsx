@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Megaphone } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Megaphone, BookOpen, User, ShoppingBag, Trophy, Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -182,29 +182,21 @@ export default function StudentDashboardPage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-4xl mx-auto grid gap-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-bold">Welcome, {userProfile?.name}!</h1>
-                            <p className="text-muted-foreground mt-2">Manage your batches and find new teachers.</p>
-                        </div>
-                        <Button asChild>
-                            <Link href="/dashboard/student/find-teachers">
-                                <Search className="mr-2 h-4 w-4" /> Find Teachers
-                            </Link>
-                        </Button>
+                <div className="max-w-6xl mx-auto grid gap-8">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome, {userProfile?.name}!</h1>
+                        <p className="text-muted-foreground mt-2">Manage your batches, explore resources, and track your progress.</p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Join a New Batch</CardTitle>
-                                <CardDescription>Enter the 6-character code from your teacher.</CardDescription>
+                                <CardTitle className="text-lg">Join a New Batch</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <form onSubmit={handleJoinBatch} className="flex items-end gap-4">
-                                    <div className="grid gap-2 flex-1">
-                                        <Label htmlFor="batch-code">Batch Code</Label>
+                                <form onSubmit={handleJoinBatch} className="flex items-end gap-2">
+                                    <div className="grid gap-1.5 flex-1">
+                                        <Label htmlFor="batch-code" className="sr-only">Batch Code</Label>
                                         <Input 
                                             id="batch-code" 
                                             placeholder="e.g., A1B2C3" 
@@ -213,12 +205,11 @@ export default function StudentDashboardPage() {
                                         />
                                     </div>
                                     <Button type="submit" disabled={isJoining || !batchCode.trim()}>
-                                        {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        Join
+                                        {isJoining ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Join'}
                                     </Button>
                                 </form>
                                 {joinMessage.text && (
-                                    <p className={`mt-4 text-sm font-medium ${
+                                    <p className={`mt-3 text-xs font-medium ${
                                         joinMessage.type === 'error' ? 'text-destructive' : 
                                         joinMessage.type === 'success' ? 'text-green-600' : 'text-muted-foreground'
                                     }`}>
@@ -227,37 +218,79 @@ export default function StudentDashboardPage() {
                                 )}
                             </CardContent>
                         </Card>
+                        
+                        <ActionCard title="Find Teachers" icon={<Search/>} href="/dashboard/student/find-teachers" />
+                        <ActionCard title="Free Materials" icon={<BookOpen/>} href="/dashboard/student/free-materials" />
+                        <ActionCard title="Book Home Tutor" icon={<Home/>} href="/dashboard/student/book-home-teacher" />
+                        <ActionCard title="My Rewards" icon={<Trophy/>} href="/dashboard/student/rewards" />
+                        <ActionCard title="Leaderboard" icon={<Trophy/>} href="/dashboard/student/leaderboard" />
+                        <ActionCard title="Shop" icon={<ShoppingBag/>} href="/dashboard/student/shop" />
 
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Explore</CardTitle>
-                                <CardDescription>Check out free resources, your rewards, and our shop.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-4">
-                               <Button asChild variant="outline">
-                                    <Link href="/dashboard/student/free-materials">Free Materials</Link>
-                               </Button>
-                               <Button asChild variant="outline">
-                                    <Link href="/dashboard/student/rewards">My Rewards</Link>
-                               </Button>
-                               <Button asChild variant="outline">
-                                    <Link href="/dashboard/student/shop">Shop</Link>
-                               </Button>
-                                <Button asChild variant="outline">
-                                    <Link href="/dashboard/student/book-home-teacher">Book Home Teacher</Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
                     </div>
 
-                    <div className="grid gap-8">
-                        {announcements && announcements.length > 0 && (
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2">
+                            <Card>
+                                <CardHeader>
+                                    <h2 className="text-xl font-semibold">My Enrollments</h2>
+                                </CardHeader>
+                                <CardContent>
+                                {enrollments && enrollments.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {enrollments.map((enrollment) => (
+                                            <Card key={enrollment.id} className="p-4 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="flex items-start gap-4 mb-4">
+                                                        {renderStatusIcon(enrollment.status)}
+                                                        <div className="flex-grow min-w-0">
+                                                            <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
+                                                            <p className="text-sm text-muted-foreground break-words">by {enrollment.teacherName}</p>
+                                                        </div>
+                                                    </div>
+                                                     <p className="text-xs text-muted-foreground mt-1">
+                                                        {enrollment.status === 'pending' 
+                                                            ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                            : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2 self-end mt-4">
+                                                    {enrollment.status === 'pending' ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                            Cancel Request
+                                                        </Button>
+                                                    ) : (
+                                                        <>
+                                                            <Button asChild variant="ghost" size="sm">
+                                                                <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                            </Button>
+                                                            <Button asChild size="sm">
+                                                                <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
+                                                                    View Batch
+                                                                </Link>
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="w-full bg-background border-2 border-dashed rounded-lg p-12 text-center">
+                                        <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
+                                        <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
+                                    </div>
+                                )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                        
+                        <div className="lg:col-span-1">
                              <Card>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements from Admin</CardTitle>
+                                    <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
-                                    {announcements.map((ann) => (
+                                    {announcements && announcements.length > 0 ? announcements.slice(0, 3).map((ann) => (
                                         <div key={ann.id} className="p-4 rounded-lg border bg-background">
                                             <p className="text-sm">{ann.message}</p>
                                             <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
@@ -265,56 +298,11 @@ export default function StudentDashboardPage() {
                                                 <span>{formatDate(ann.createdAt)}</span>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <p className="text-sm text-center text-muted-foreground py-8">No new announcements from admin.</p>
+                                    )}
                                 </CardContent>
                             </Card>
-                        )}
-                        
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight mb-4">My Enrollments</h2>
-                            {enrollments && enrollments.length > 0 ? (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {enrollments.map((enrollment) => (
-                                        <Card key={enrollment.id} className="p-4 flex flex-col">
-                                            <div className="flex items-start gap-4 flex-grow">
-                                                {renderStatusIcon(enrollment.status)}
-                                                <div className="flex-grow min-w-0">
-                                                    <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
-                                                    <p className="text-sm text-muted-foreground break-words">Teacher: {enrollment.teacherName}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        {enrollment.status === 'pending' 
-                                                            ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                            : `Approved: ${formatDate(enrollment.approvedAt)}`}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 self-end mt-4">
-                                                {enrollment.status === 'pending' ? (
-                                                    <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                        Cancel Request
-                                                    </Button>
-                                                ) : (
-                                                    <>
-                                                        <Button asChild variant="outline" size="sm">
-                                                            <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
-                                                        </Button>
-                                                        <Button asChild size="sm">
-                                                            <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                                View Batch
-                                                            </Link>
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="w-full bg-background border rounded-lg p-12 text-center">
-                                    <h3 className="text-lg font-semibold">You haven't joined any batches yet.</h3>
-                                    <p className="text-muted-foreground mt-1">Find a teacher or enter a batch code to begin! 🚀</p>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -322,3 +310,16 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
+
+const ActionCard = ({ title, icon, href }: { title: string, icon: React.ReactNode, href: string }) => (
+    <Link href={href}>
+        <Card className="h-full hover:bg-muted/50 transition-colors">
+            <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
+                <div className="p-3 bg-primary/10 rounded-full">
+                    {icon && React.cloneElement(icon as React.ReactElement, { className: "h-6 w-6 text-primary" })}
+                </div>
+                <p className="text-sm font-semibold">{title}</p>
+            </CardContent>
+        </Card>
+    </Link>
+);

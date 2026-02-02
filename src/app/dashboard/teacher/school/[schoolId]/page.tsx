@@ -5,6 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, updateDoc, arrayUnion, arrayRemove, where, query, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { useEffect, useState, useMemo, Fragment } from 'react';
 import { nanoid } from 'nanoid';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -12,12 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX, GraduationCap, Wallet, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX, GraduationCap, Wallet, CheckCircle, XCircle, Menu, LayoutDashboard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SchoolFeeManagementDialog } from '@/components/school-fee-management-dialog';
+import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 
 
 // Interfaces
@@ -70,6 +72,8 @@ interface TeacherProfile {
     role: 'teacher';
 }
 
+type SchoolView = 'dashboard' | 'teachers' | 'classes' | 'students' | 'fees';
+
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 const formatDate = (dateString?: string) => {
@@ -79,9 +83,6 @@ const formatDate = (dateString?: string) => {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
     });
 };
 
@@ -93,6 +94,9 @@ export default function SchoolDetailsPage() {
     const schoolId = params.schoolId as string;
 
     // State
+    const [view, setView] = useState<SchoolView>('dashboard');
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    
     const [isAddTeacherOpen, setAddTeacherOpen] = useState(false);
     const [newTeacherEmail, setNewTeacherEmail] = useState('');
     const [addTeacherError, setAddTeacherError] = useState('');
@@ -138,8 +142,9 @@ export default function SchoolDetailsPage() {
     // Fetch profiles of teachers in the school
     const teachersQuery = useMemoFirebase(() => {
         if (!firestore || !school || !school.teacherIds || school.teacherIds.length === 0) return null;
-        // Firestore 'in' query is limited to 30 elements. For larger schools, this would need pagination or a different data model.
-        return query(collection(firestore, 'users'), where('__name__', 'in', (school.teacherIds || []).slice(0, 30)));
+        const teacherIds = school.teacherIds.slice(0, 30);
+        if (teacherIds.length === 0) return null;
+        return query(collection(firestore, 'users'), where('__name__', 'in', teacherIds));
     }, [firestore, school]);
     const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
 
@@ -159,8 +164,11 @@ export default function SchoolDetailsPage() {
 
         if (school && userProfile) {
             if (userProfile.role !== 'admin' && school.principalId !== user.uid) {
-                router.replace('/dashboard/teacher');
+                router.replace('/dashboard');
             }
+        } else if (!schoolLoading && !school) {
+            // If school is not found after loading, redirect
+            router.replace('/dashboard');
         }
     }, [school, user, userProfile, router, isUserLoading, profileLoading, schoolLoading]);
 
@@ -180,6 +188,11 @@ export default function SchoolDetailsPage() {
             setEditingClassTeacherId(classToEdit.teacherId || '');
         }
     }, [classToEdit]);
+    
+    const handleViewChange = (newView: SchoolView) => {
+        setView(newView);
+        setSidebarOpen(false);
+    };
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -188,7 +201,7 @@ export default function SchoolDetailsPage() {
     // --- Handler Functions ---
 
      const handleUpdateSchool = async () => {
-        if (!schoolName.trim() || !school) return;
+        if (!schoolName.trim() || !school || !schoolRef) return;
         setIsSavingSchool(true);
         try {
             await updateDoc(schoolRef, {
@@ -205,7 +218,7 @@ export default function SchoolDetailsPage() {
     };
 
     const handleAddTeacher = async () => {
-        if (!newTeacherEmail.trim()) return;
+        if (!newTeacherEmail.trim() || !schoolRef) return;
         setIsAddingTeacher(true);
         setAddTeacherError('');
 
@@ -240,12 +253,12 @@ export default function SchoolDetailsPage() {
     };
     
     const handleRemoveTeacher = async (teacherId: string) => {
-        if (teacherId === school?.principalId) return; // Cannot remove the principal
+        if (teacherId === school?.principalId || !schoolRef) return;
         await updateDoc(schoolRef, { teacherIds: arrayRemove(teacherId) });
     };
 
     const handleAddClass = async () => {
-        if (!newClassName.trim() || !newClassSection.trim() || !school) return;
+        if (!newClassName.trim() || !newClassSection.trim() || !school || !schoolRef) return;
         setIsAddingClass(true);
 
         const selectedTeacher = teachers?.find(t => t.id === newClassTeacherId);
@@ -269,7 +282,7 @@ export default function SchoolDetailsPage() {
     };
 
     const handleUpdateClass = async () => {
-        if (!editingClassName.trim() || !editingClassSection.trim() || !school || !classToEdit) return;
+        if (!editingClassName.trim() || !editingClassSection.trim() || !school || !classToEdit || !schoolRef) return;
         setIsUpdatingClass(true);
 
         const selectedTeacher = teachers?.find(t => t.id === editingClassTeacherId);
@@ -298,13 +311,13 @@ export default function SchoolDetailsPage() {
     };
     
     const handleDeleteClass = async (classId: string) => {
-        if (!school || !school.classes) return;
+        if (!school || !school.classes || !schoolRef) return;
         const updatedClasses = school.classes.filter(c => c.id !== classId);
         await updateDoc(schoolRef, { classes: updatedClasses });
     };
 
     const handleAddStudent = async () => {
-        if (!newStudentName.trim() || !classToManage || !school) return;
+        if (!newStudentName.trim() || !classToManage || !school || !schoolRef) return;
         setIsAddingStudent(true);
 
         const newStudent: StudentEntry = {
@@ -326,7 +339,6 @@ export default function SchoolDetailsPage() {
 
         await updateDoc(schoolRef, { classes: updatedClasses });
         
-        // update local state to re-render dialog
         const updatedClass = updatedClasses.find(c => c.id === classToManage.id);
         if (updatedClass) setClassToManage(updatedClass);
 
@@ -340,7 +352,7 @@ export default function SchoolDetailsPage() {
     };
 
     const handleRemoveStudent = async (studentId: string) => {
-        if (!classToManage || !school || !school.classes) return;
+        if (!classToManage || !school || !school.classes || !schoolRef) return;
 
         const updatedClasses = school.classes.map(c => {
             if (c.id === classToManage.id) {
@@ -369,419 +381,470 @@ export default function SchoolDetailsPage() {
         );
     }
     
-    return (
-        <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-6xl mx-auto grid gap-8">
-                    <div>
-                        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back
-                        </Button>
-                        <Card className="rounded-2xl shadow-lg">
-                             <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                                <div className='w-full'>
-                                    <CardTitle className="text-2xl font-serif">{school.name}</CardTitle>
-                                    <CardDescription>{school.address}</CardDescription>
-                                </div>
-                                <div className="self-end sm:self-start flex-shrink-0">
-                                    <Button variant="outline" size="icon" onClick={() => setIsEditingSchool(true)}>
-                                        <Pen className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    </div>
-
-                    <Tabs defaultValue="dashboard" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
-                            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                            <TabsTrigger value="teachers">Teachers ({school.teacherIds?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="classes">Classes ({school.classes?.length || 0})</TabsTrigger>
-                            <TabsTrigger value="students">Students ({totalStudents})</TabsTrigger>
-                            <TabsTrigger value="fees">Fees</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="dashboard" className="mt-6">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
-                                        <Users className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{school.teacherIds?.length || 0}</div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{totalStudents}</div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="teachers" className="mt-6">
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle>Manage Teachers</CardTitle>
-                                    <Button size="sm" onClick={() => setAddTeacherOpen(true)}><UserPlus className="mr-2 h-4 w-4" /> Add Teacher</Button>
-                                </CardHeader>
-                                <CardContent>
-                                    {teachersLoading ? <Loader2 className="animate-spin" /> :
-                                        teachers && teachers.length > 0 ? (
-                                        <div className="grid gap-4">
-                                            {teachers.map(teacher => (
-                                                <div key={teacher.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
-                                                    <div className="flex items-center gap-3 w-full">
-                                                        <Avatar><AvatarFallback>{getInitials(teacher.name)}</AvatarFallback></Avatar>
-                                                        <div>
-                                                            <p className="font-semibold">{teacher.name}</p>
-                                                            <p className="text-sm text-muted-foreground">{teacher.email}</p>
-                                                        </div>
-                                                    </div>
-                                                    {teacher.id !== school.principalId ? (
-                                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center mt-2 sm:mt-0"><UserX className="mr-2 h-4 w-4" />Remove</Button>
-                                                    ) : (
-                                                        <span className="text-xs font-semibold text-primary px-3 self-end sm:self-center">PRINCIPAL</span>
-                                                    )}
-                                                </div>
-                                            ))}
+    // --- Render Functions ---
+    
+    const renderSidebar = () => (
+        <aside className="flex flex-col gap-2 p-4">
+            <div className="px-4 mb-4">
+                <h2 className="text-lg font-semibold tracking-tight font-serif">{school.name}</h2>
+                <p className="text-sm text-muted-foreground">{school.academicYear}</p>
+            </div>
+            <div className="flex flex-col gap-1">
+                <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
+                <Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button>
+                <Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button>
+                <Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button>
+                <Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button>
+            </div>
+             <div className="mt-auto p-4 text-center">
+                <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
+            </div>
+        </aside>
+    );
+    
+    const renderDashboardView = () => (
+         <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">School Dashboard</h1>
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{school.teacherIds?.length || 0}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalStudents}</div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+    
+    const renderTeachersView = () => (
+        <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">Manage Teachers</h1>
+            <Card className="rounded-2xl shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>School Staff</CardTitle>
+                    <Button size="sm" onClick={() => setAddTeacherOpen(true)}><UserPlus className="mr-2 h-4 w-4" /> Add Teacher</Button>
+                </CardHeader>
+                <CardContent>
+                    {teachersLoading ? <Loader2 className="animate-spin" /> :
+                        teachers && teachers.length > 0 ? (
+                        <div className="grid gap-4">
+                            {teachers.map(teacher => (
+                                <div key={teacher.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                    <div className="flex items-center gap-3 w-full">
+                                        <Avatar><AvatarFallback>{getInitials(teacher.name)}</AvatarFallback></Avatar>
+                                        <div>
+                                            <p className="font-semibold">{teacher.name}</p>
+                                            <p className="text-sm text-muted-foreground">{teacher.email}</p>
                                         </div>
-                                    ) : (
-                                         <p className="text-muted-foreground text-center py-8">No teachers found. The principal is the only member.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="classes" className="mt-6">
-                           <Card className="rounded-2xl shadow-lg">
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle>Manage Classes</CardTitle>
-                                    <Button size="sm" onClick={() => setAddClassOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Class</Button>
-                                </CardHeader>
-                                <CardContent>
-                                    {school.classes && school.classes.length > 0 ? (
-                                         <div className="grid gap-4">
-                                            {school.classes.map(c => (
-                                                <div key={c.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
-                                                    <div className='w-full'>
-                                                        <p className="font-semibold">{c.name} - Section {c.section}</p>
-                                                        <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
-                                                         {c.teacherName ? (
-                                                            <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>
-                                                         ) : (
-                                                            <p className="text-sm text-yellow-600 mt-1 font-semibold">No teacher assigned</p>
-                                                         )}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 self-end sm:self-center mt-2 sm:mt-0">
-                                                        <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Users className="mr-2 h-4 w-4" />Students</Button>
-                                                        <Button variant="outline" size="icon" onClick={() => setClassToEdit(c)}><Pen className="h-4 w-4" /></Button>
-                                                        <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-12 flex flex-col items-center">
-                                            <Book className="h-12 w-12 text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold">No Classes Created</h3>
-                                            <p className="text-muted-foreground mt-1">Add a class to get started.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                         <TabsContent value="students" className="mt-6">
-                             <Card className="rounded-2xl shadow-lg">
-                                <CardHeader><CardTitle>All Students</CardTitle></CardHeader>
-                                <CardContent>
-                                    {school.classes && school.classes.some(c => c.students && c.students.length > 0) ? (
-                                        <div className="space-y-6">
-                                            {(school.classes || []).map(c => (c.students && c.students.length > 0) && (
-                                                <div key={c.id}>
-                                                    <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
-                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        {c.students.map(s => (
-                                                            <div key={s.id} className="p-3 rounded-lg border bg-background">
-                                                                <p className="font-semibold">{s.name}</p>
-                                                                <div className="mt-2 text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                                                                    <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
-                                                                    <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
-                                                                    <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
-                                                                    <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
-                                                                    {s.admissionDate && (
-                                                                        <p className="col-span-2"><strong>Admission:</strong> {formatDate(s.admissionDate)}</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-12 flex flex-col items-center">
-                                            <UserIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold">No Students Enrolled</h3>
-                                            <p className="text-muted-foreground mt-1">Add students to classes in the 'Classes' tab.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        
-                        <TabsContent value="fees" className="mt-6">
-                            <Card className="rounded-2xl shadow-lg">
-                                <CardHeader>
-                                    <CardTitle>Fee Management</CardTitle>
-                                    <CardDescription>Track and update monthly fee payments for all students.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {school.classes && school.classes.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {school.classes.map(c => (
-                                                <div key={c.id}>
-                                                    <h4 className="font-semibold text-lg mb-3 border-b pb-2">Class {c.name} - Section {c.section}</h4>
-                                                    {c.students && c.students.length > 0 ? (
-                                                        <div className="grid gap-3">
-                                                            {c.students.map(s => {
-                                                                const currentMonth = new Date().getMonth() + 1;
-                                                                const currentYear = new Date().getFullYear();
-                                                                const currentMonthFee = s.fees?.find(f => f.feeMonth === currentMonth && f.feeYear === currentYear);
-                                                                const status = currentMonthFee?.status || 'unpaid';
-                                                                
-                                                                return (
-                                                                    <div key={s.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background">
-                                                                        <div>
-                                                                            <p className="font-semibold">{s.name}</p>
-                                                                            <p className="text-sm text-muted-foreground">Roll No: {s.rollNumber || 'N/A'}</p>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-4 self-end sm:self-center mt-2 sm:mt-0">
-                                                                            <div className="flex items-center gap-2 text-sm">
-                                                                                {status === 'paid' ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-destructive" />}
-                                                                                <span className="font-medium">
-                                                                                    {new Date().toLocaleString('default', { month: 'long' })} Fee: <span className={status === 'paid' ? 'text-green-600' : 'text-destructive'}>{status}</span>
-                                                                                </span>
-                                                                            </div>
-                                                                            <Button variant="outline" size="sm" onClick={() => setStudentForFees({ student: s, classId: c.id })}>
-                                                                                <Wallet className="mr-2 h-4 w-4" /> Manage Fees
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-sm text-muted-foreground px-2">No students in this class.</p>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-12 flex flex-col items-center">
-                                            <Book className="h-12 w-12 text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold">No Classes Created</h3>
-                                            <p className="text-muted-foreground mt-1">Add a class to manage student fees.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                    </Tabs>
-                </div>
-
-                {/* Dialogs */}
-                <Dialog open={isEditingSchool} onOpenChange={setIsEditingSchool}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Edit School Details</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="school-name-edit">School Name</Label>
-                                <Input id="school-name-edit" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="school-address-edit">School Address</Label>
-                                <Textarea id="school-address-edit" value={schoolAddress} onChange={e => setSchoolAddress(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="school-year-edit">Academic Year</Label>
-                                <Input id="school-year-edit" value={academicYear} onChange={e => setAcademicYear(e.target.value)} placeholder="e.g., 2024-2025" />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                            <Button onClick={handleUpdateSchool} disabled={isSavingSchool}>
-                                {isSavingSchool ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Changes
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog open={isAddTeacherOpen} onOpenChange={setAddTeacherOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add Teacher</DialogTitle>
-                            <DialogDescription>Enter the email address of the teacher you want to add. They must have a 'teacher' account on this platform.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <Label htmlFor="teacher-email">Teacher's Email</Label>
-                            <Input id="teacher-email" value={newTeacherEmail} onChange={(e) => setNewTeacherEmail(e.target.value)} placeholder="teacher@example.com"/>
-                             {addTeacherError && <p className="text-sm text-destructive">{addTeacherError}</p>}
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                            <Button onClick={handleAddTeacher} disabled={isAddingTeacher}>
-                                {isAddingTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4" />} Add Teacher
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog open={isAddClassOpen} onOpenChange={setAddClassOpen}>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Add New Class</DialogTitle></DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2"><Label htmlFor="class-name">Class Name</Label><Input id="class-name" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g., 10th"/></div>
-                            <div className="grid gap-2"><Label htmlFor="class-section">Section</Label><Input id="class-section" value={newClassSection} onChange={e => setNewClassSection(e.target.value)} placeholder="e.g., A"/></div>
-                             <div className="grid gap-2">
-                                <Label htmlFor="class-teacher">Assign Teacher (Optional)</Label>
-                                <Select value={newClassTeacherId} onValueChange={setNewClassTeacherId}>
-                                    <SelectTrigger id="class-teacher">
-                                        <SelectValue placeholder="Select a teacher" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {(teachers || []).map(teacher => (
-                                            <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                            <Button onClick={handleAddClass} disabled={isAddingClass || !newClassName || !newClassSection}>
-                                {isAddingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FilePlus className="mr-2 h-4 w-4" />} Create Class
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                 <Dialog open={!!classToEdit} onOpenChange={(isOpen) => !isOpen && setClassToEdit(null)}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Edit Class</DialogTitle>
-                            <DialogDescription>
-                                Update the class details and assign a teacher.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-class-name">Class Name</Label>
-                                <Input id="edit-class-name" value={editingClassName} onChange={e => setEditingClassName(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-class-section">Section</Label>
-                                <Input id="edit-class-section" value={editingClassSection} onChange={e => setEditingClassSection(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-class-teacher">Assign Teacher</Label>
-                                <Select value={editingClassTeacherId} onValueChange={setEditingClassTeacherId}>
-                                    <SelectTrigger id="edit-class-teacher">
-                                        <SelectValue placeholder="Select a teacher" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">No Teacher</SelectItem>
-                                        {(teachers || []).map(teacher => (
-                                            <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                            <Button onClick={handleUpdateClass} disabled={isUpdatingClass || !editingClassName || !editingClassSection}>
-                                {isUpdatingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Changes
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog open={!!classToManage} onOpenChange={(isOpen) => { if (!isOpen) { setClassToManage(null); setStudentForFees(null); } }}>
-                    <DialogContent className="max-w-2xl md:max-w-4xl">
-                        <DialogHeader>
-                            <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[70vh] md:max-h-[60vh] overflow-y-auto">
-                             <div className="flex flex-col gap-4 md:pr-4 md:border-r border-b md:border-b-0 pb-8 md:pb-0 mb-8 md:mb-0">
-                                <h4 className="font-semibold">Add New Student</h4>
-                                <div className="grid gap-3 overflow-y-auto pr-2">
-                                    <div className="grid gap-1.5"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} required/></div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="grid gap-1.5"><Label htmlFor="student-roll">Roll Number</Label><Input id="student-roll" value={newStudentRoll} onChange={e => setNewStudentRoll(e.target.value)} /></div>
-                                        <div className="grid gap-1.5"><Label htmlFor="student-father">Father's Name</Label><Input id="student-father" value={newStudentFatherName} onChange={e => setNewStudentFatherName(e.target.value)} /></div>
                                     </div>
-                                    <div className="grid gap-1.5"><Label htmlFor="student-mobile">Mobile Number</Label><Input id="student-mobile" value={newStudentMobileNumber} onChange={e => setNewStudentMobileNumber(e.target.value)} /></div>
-                                    <div className="grid gap-1.5"><Label htmlFor="student-address">Address</Label><Textarea id="student-address" value={newStudentAddress} onChange={e => setNewStudentAddress(e.target.value)} rows={2} /></div>
-                                    <div className="grid gap-1.5"><Label htmlFor="student-admission-date">Admission Date</Label><Input id="student-admission-date" type="date" value={newStudentAdmissionDate} onChange={e => setNewStudentAdmissionDate(e.target.value)} /></div>
+                                    {teacher.id !== school.principalId ? (
+                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center mt-2 sm:mt-0"><UserX className="mr-2 h-4 w-4" />Remove</Button>
+                                    ) : (
+                                        <span className="text-xs font-semibold text-primary px-3 self-end sm:self-center">PRINCIPAL</span>
+                                    )}
                                 </div>
-                                <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-auto w-fit">
-                                    {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4"/>} Add Student
-                                </Button>
-                            </div>
-                            <div className="flex flex-col gap-4 overflow-y-auto">
-                                 <h4 className="font-semibold">Enrolled Students ({classToManage?.students?.length || 0})</h4>
-                                 {classToManage?.students && classToManage.students.length > 0 ? (
-                                    <div className="grid gap-3">
-                                        {classToManage.students.map(s => (
-                                             <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="font-semibold">{s.name}</p>
-                                                    <Button size="icon" variant="ghost" className="text-destructive h-7 w-7" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>
-                                                </div>
-                                                <div className="mt-2 text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                            ))}
+                        </div>
+                    ) : (
+                         <p className="text-muted-foreground text-center py-8">No teachers found. The principal is the only member.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+    
+    const renderClassesView = () => (
+         <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">Manage Classes</h1>
+            <Card className="rounded-2xl shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>All Classes</CardTitle>
+                    <Button size="sm" onClick={() => setAddClassOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Class</Button>
+                </CardHeader>
+                <CardContent>
+                    {school.classes && school.classes.length > 0 ? (
+                         <div className="grid gap-4">
+                            {school.classes.map(c => (
+                                <div key={c.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                    <div className='w-full'>
+                                        <p className="font-semibold">{c.name} - Section {c.section}</p>
+                                        <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
+                                         {c.teacherName ? (
+                                            <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>
+                                         ) : (
+                                            <p className="text-sm text-yellow-600 mt-1 font-semibold">No teacher assigned</p>
+                                         )}
+                                    </div>
+                                    <div className="flex items-center gap-2 self-end sm:self-center mt-2 sm:mt-0">
+                                        <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Users className="mr-2 h-4 w-4" />Students</Button>
+                                        <Button variant="outline" size="icon" onClick={() => setClassToEdit(c)}><Pen className="h-4 w-4" /></Button>
+                                        <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 flex flex-col items-center">
+                            <Book className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Classes Created</h3>
+                            <p className="text-muted-foreground mt-1">Add a class to get started.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+    
+    const renderStudentsView = () => (
+        <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">All Students</h1>
+             <Card className="rounded-2xl shadow-lg">
+                <CardHeader><CardTitle>Student Roster</CardTitle></CardHeader>
+                <CardContent>
+                    {school.classes && school.classes.some(c => c.students && c.students.length > 0) ? (
+                        <div className="space-y-6">
+                            {(school.classes || []).map(c => (c.students && c.students.length > 0) && (
+                                <div key={c.id}>
+                                    <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {c.students.map(s => (
+                                            <div key={s.id} className="p-3 rounded-lg border bg-background">
+                                                <p className="font-semibold">{s.name}</p>
+                                                <div className="mt-2 text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
                                                     <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
                                                     <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
                                                     <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
                                                     <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
                                                     {s.admissionDate && (
-                                                        <p className="col-span-2"><strong>Admission:</strong> {new Date(s.admissionDate).toLocaleDateString()}</p>
+                                                        <p className="col-span-2"><strong>Admission:</strong> {formatDate(s.admissionDate)}</p>
                                                     )}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                 ) : <p className="text-sm text-muted-foreground text-center pt-8">No students in this class yet.</p>}
-                            </div>
+                                </div>
+                            ))}
                         </div>
-                         <DialogFooter>
-                            <DialogClose asChild><Button variant="outline">Done</Button></DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-                
-                {studentForFees && (
-                    <SchoolFeeManagementDialog 
-                        isOpen={!!studentForFees} 
-                        onClose={() => setStudentForFees(null)}
-                        school={school}
-                        classId={studentForFees.classId}
-                        student={studentForFees.student}
-                    />
-                )}
+                    ) : (
+                        <div className="text-center py-12 flex flex-col items-center">
+                            <UserIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Students Enrolled</h3>
+                            <p className="text-muted-foreground mt-1">Add students to classes in the 'Classes' tab.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+    
+    const renderFeesView = () => (
+         <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">Fee Management</h1>
+            <Card className="rounded-2xl shadow-lg">
+                <CardHeader>
+                    <CardTitle>Student Fee Status</CardTitle>
+                    <CardDescription>Track and update monthly fee payments for all students.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {school.classes && school.classes.length > 0 ? (
+                        <div className="space-y-6">
+                            {school.classes.map(c => (
+                                <div key={c.id}>
+                                    <h4 className="font-semibold text-lg mb-3 border-b pb-2">Class {c.name} - Section {c.section}</h4>
+                                    {c.students && c.students.length > 0 ? (
+                                        <div className="grid gap-3">
+                                            {c.students.map(s => {
+                                                const currentMonth = new Date().getMonth() + 1;
+                                                const currentYear = new Date().getFullYear();
+                                                const currentMonthFee = s.fees?.find(f => f.feeMonth === currentMonth && f.feeYear === currentYear);
+                                                const status = currentMonthFee?.status || 'unpaid';
+                                                
+                                                return (
+                                                    <div key={s.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background">
+                                                        <div>
+                                                            <p className="font-semibold">{s.name}</p>
+                                                            <p className="text-sm text-muted-foreground">Roll No: {s.rollNumber || 'N/A'}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-4 self-end sm:self-center mt-2 sm:mt-0">
+                                                            <div className="flex items-center gap-2 text-sm">
+                                                                {status === 'paid' ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-destructive" />}
+                                                                <span className="font-medium">
+                                                                    {new Date().toLocaleString('default', { month: 'long' })} Fee: <span className={status === 'paid' ? 'text-green-600' : 'text-destructive'}>{status}</span>
+                                                                </span>
+                                                            </div>
+                                                            <Button variant="outline" size="sm" onClick={() => setStudentForFees({ student: s, classId: c.id })}>
+                                                                <Wallet className="mr-2 h-4 w-4" /> Manage Fees
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground px-2">No students in this class.</p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 flex flex-col items-center">
+                            <Book className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Classes Created</h3>
+                            <p className="text-muted-foreground mt-1">Add a class to manage student fees.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+    
+    const renderCurrentView = () => {
+        const views: Record<SchoolView, React.ReactNode> = {
+            dashboard: renderDashboardView(),
+            teachers: renderTeachersView(),
+            classes: renderClassesView(),
+            students: renderStudentsView(),
+            fees: renderFeesView()
+        };
 
-            </main>
+        return (
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={view}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {views[view]}
+                </motion.div>
+            </AnimatePresence>
+        );
+    };
+    
+    return (
+        <div className="flex flex-col min-h-screen">
+            <DashboardHeader userProfile={userProfile} />
+             <div className="flex flex-1">
+                <div className="hidden md:flex md:w-64 flex-col border-r">
+                    {renderSidebar()}
+                </div>
+                 <main className="flex-1 p-4 md:p-8">
+                     <div className="max-w-6xl mx-auto">
+                        <div className="md:hidden mb-4 flex items-center justify-between">
+                            <Button variant="ghost" onClick={() => router.back()} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                             <h1 className="text-xl font-bold font-serif capitalize">{school?.name}</h1>
+                             <Sheet open={isSidebarOpen} onOpenChange={setSidebarOpen}>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
+                                </SheetTrigger>
+                                <SheetContent side="left" className="w-64 p-0">
+                                    {renderSidebar()}
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+                        <div className="hidden md:block mb-4">
+                             <Button variant="ghost" onClick={() => router.back()} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Teacher Dashboard</Button>
+                        </div>
+                        {renderCurrentView()}
+                    </div>
+                </main>
+            </div>
+
+            {/* Dialogs */}
+            <Dialog open={isEditingSchool} onOpenChange={setIsEditingSchool}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit School Details</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="school-name-edit">School Name</Label>
+                            <Input id="school-name-edit" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="school-address-edit">School Address</Label>
+                            <Textarea id="school-address-edit" value={schoolAddress} onChange={e => setSchoolAddress(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="school-year-edit">Academic Year</Label>
+                            <Input id="school-year-edit" value={academicYear} onChange={e => setAcademicYear(e.target.value)} placeholder="e.g., 2024-2025" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleUpdateSchool} disabled={isSavingSchool}>
+                            {isSavingSchool ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddTeacherOpen} onOpenChange={setAddTeacherOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Teacher</DialogTitle>
+                        <DialogDescription>Enter the email address of the teacher you want to add. They must have a 'teacher' account on this platform.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <Label htmlFor="teacher-email">Teacher's Email</Label>
+                        <Input id="teacher-email" value={newTeacherEmail} onChange={(e) => setNewTeacherEmail(e.target.value)} placeholder="teacher@example.com"/>
+                         {addTeacherError && <p className="text-sm text-destructive">{addTeacherError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleAddTeacher} disabled={isAddingTeacher}>
+                            {isAddingTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4" />} Add Teacher
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddClassOpen} onOpenChange={setAddClassOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Add New Class</DialogTitle></DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2"><Label htmlFor="class-name">Class Name</Label><Input id="class-name" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g., 10th"/></div>
+                        <div className="grid gap-2"><Label htmlFor="class-section">Section</Label><Input id="class-section" value={newClassSection} onChange={e => setNewClassSection(e.target.value)} placeholder="e.g., A"/></div>
+                         <div className="grid gap-2">
+                            <Label htmlFor="class-teacher">Assign Teacher (Optional)</Label>
+                            <Select value={newClassTeacherId} onValueChange={setNewClassTeacherId}>
+                                <SelectTrigger id="class-teacher">
+                                    <SelectValue placeholder="Select a teacher" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(teachers || []).map(teacher => (
+                                        <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleAddClass} disabled={isAddingClass || !newClassName || !newClassSection}>
+                            {isAddingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FilePlus className="mr-2 h-4 w-4" />} Create Class
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+             <Dialog open={!!classToEdit} onOpenChange={(isOpen) => !isOpen && setClassToEdit(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Class</DialogTitle>
+                        <DialogDescription>
+                            Update the class details and assign a teacher.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-class-name">Class Name</Label>
+                            <Input id="edit-class-name" value={editingClassName} onChange={e => setEditingClassName(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-class-section">Section</Label>
+                            <Input id="edit-class-section" value={editingClassSection} onChange={e => setEditingClassSection(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-class-teacher">Assign Teacher</Label>
+                            <Select value={editingClassTeacherId} onValueChange={setEditingClassTeacherId}>
+                                <SelectTrigger id="edit-class-teacher">
+                                    <SelectValue placeholder="Select a teacher" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">No Teacher</SelectItem>
+                                    {(teachers || []).map(teacher => (
+                                        <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleUpdateClass} disabled={isUpdatingClass || !editingClassName || !editingClassSection}>
+                            {isUpdatingClass ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!classToManage} onOpenChange={(isOpen) => { if (!isOpen) { setClassToManage(null); setStudentForFees(null); } }}>
+                <DialogContent className="max-w-2xl md:max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>Manage Students for {classToManage?.name} - Section {classToManage?.section}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid md:grid-cols-2 gap-8 py-4 max-h-[70vh] md:max-h-[60vh] overflow-y-auto">
+                         <div className="flex flex-col gap-4 md:pr-4 md:border-r border-b md:border-b-0 pb-8 md:pb-0 mb-8 md:mb-0">
+                            <h4 className="font-semibold">Add New Student</h4>
+                            <div className="grid gap-3 overflow-y-auto pr-2">
+                                <div className="grid gap-1.5"><Label htmlFor="student-name">Student Name</Label><Input id="student-name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} required/></div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid gap-1.5"><Label htmlFor="student-roll">Roll Number</Label><Input id="student-roll" value={newStudentRoll} onChange={e => setNewStudentRoll(e.target.value)} /></div>
+                                    <div className="grid gap-1.5"><Label htmlFor="student-father">Father's Name</Label><Input id="student-father" value={newStudentFatherName} onChange={e => setNewStudentFatherName(e.target.value)} /></div>
+                                </div>
+                                <div className="grid gap-1.5"><Label htmlFor="student-mobile">Mobile Number</Label><Input id="student-mobile" value={newStudentMobileNumber} onChange={e => setNewStudentMobileNumber(e.target.value)} /></div>
+                                <div className="grid gap-1.5"><Label htmlFor="student-address">Address</Label><Textarea id="student-address" value={newStudentAddress} onChange={e => setNewStudentAddress(e.target.value)} rows={2} /></div>
+                                <div className="grid gap-1.5"><Label htmlFor="student-admission-date">Admission Date</Label><Input id="student-admission-date" type="date" value={newStudentAdmissionDate} onChange={e => setNewStudentAdmissionDate(e.target.value)} /></div>
+                            </div>
+                            <Button onClick={handleAddStudent} disabled={isAddingStudent || !newStudentName} className="mt-auto w-fit">
+                                {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UserPlus className="mr-2 h-4 w-4"/>} Add Student
+                            </Button>
+                        </div>
+                        <div className="flex flex-col gap-4 overflow-y-auto">
+                             <h4 className="font-semibold">Enrolled Students ({classToManage?.students?.length || 0})</h4>
+                             {classToManage?.students && classToManage.students.length > 0 ? (
+                                <div className="grid gap-3">
+                                    {classToManage.students.map(s => (
+                                         <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50">
+                                            <div className="flex items-center justify-between">
+                                                <p className="font-semibold">{s.name}</p>
+                                                <Button size="icon" variant="ghost" className="text-destructive h-7 w-7" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </div>
+                                            <div className="mt-2 text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                                                <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
+                                                <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
+                                                <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
+                                                <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
+                                                {s.admissionDate && (
+                                                    <p className="col-span-2"><strong>Admission:</strong> {formatDate(s.admissionDate)}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                             ) : <p className="text-sm text-muted-foreground text-center pt-8">No students in this class yet.</p>}
+                        </div>
+                    </div>
+                     <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Done</Button></DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            
+            {studentForFees && (
+                <SchoolFeeManagementDialog 
+                    isOpen={!!studentForFees} 
+                    onClose={() => setStudentForFees(null)}
+                    school={school}
+                    classId={studentForFees.classId}
+                    student={studentForFees.student}
+                />
+            )}
+
         </div>
     );
 }

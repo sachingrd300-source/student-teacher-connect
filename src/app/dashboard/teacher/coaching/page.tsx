@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -20,7 +19,7 @@ import Link from 'next/link';
 interface UserProfile {
     name: string;
     email: string;
-    role: 'teacher';
+    role: 'teacher' | 'student' | 'admin' | 'parent';
 }
 
 interface Batch {
@@ -211,7 +210,7 @@ export default function CoachingManagementPage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <div className="mb-8">
-                        <h1 className="text-3xl md:text-4xl font-bold">Coaching Management</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
                         <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
                     </div>
 
@@ -269,11 +268,13 @@ export default function CoachingManagementPage() {
                                 </CardHeader>
                                 <CardContent>
                                     {batches && batches.length > 0 ? (
-                                        <div className="grid gap-4">
+                                        <div className="grid gap-4 md:grid-cols-2">
                                             {batches.map(batch => (
-                                                <div key={batch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-background">
-                                                    <div className="flex-grow">
-                                                        <p className="font-semibold text-lg break-words">{batch.name}</p>
+                                                <Card key={batch.id} className="flex flex-col">
+                                                    <CardHeader>
+                                                        <CardTitle className="font-serif">{batch.name}</CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent className="flex-grow">
                                                         <div className="flex items-center gap-2 pt-1">
                                                             <p className="text-sm text-muted-foreground">Code:</p>
                                                             <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
@@ -281,16 +282,16 @@ export default function CoachingManagementPage() {
                                                                 <Clipboard className="h-4 w-4" />
                                                             </Button>
                                                         </div>
-                                                        <p className="text-sm text-muted-foreground mt-1">{studentCountsByBatch[batch.id] || 0} Students</p>
-                                                    </div>
-                                                    <div className="flex gap-2 self-end sm:self-center mt-4 sm:mt-0">
-                                                        <Button asChild>
+                                                        <p className="text-sm text-muted-foreground mt-2">{studentCountsByBatch[batch.id] || 0} Students</p>
+                                                    </CardContent>
+                                                    <div className="p-4 pt-0">
+                                                        <Button asChild className="w-full">
                                                             <Link href={`/dashboard/teacher/batch/${batch.id}`}>
                                                                 <Settings className="mr-2 h-4 w-4" /> Manage
                                                             </Link>
                                                         </Button>
                                                     </div>
-                                                </div>
+                                                </Card>
                                             ))}
                                         </div>
                                     ) : (

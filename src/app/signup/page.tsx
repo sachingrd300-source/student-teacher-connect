@@ -30,7 +30,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
-  const [managementFocus, setManagementFocus] = useState<'coaching' | 'school'>('coaching');
+  const [teacherType, setTeacherType] = useState<'coaching' | 'school'>('coaching');
   const [referralCodeInput, setReferralCodeInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -74,7 +74,7 @@ export default function SignupPage() {
       };
 
       if (role === 'teacher') {
-        dataToSet.teacherType = managementFocus;
+        dataToSet.teacherType = teacherType;
       }
       
       // Handle referral
@@ -166,7 +166,7 @@ export default function SignupPage() {
                     >
                       <div className="grid gap-2">
                         <Label>I want to manage...</Label>
-                        <RadioGroup defaultValue="coaching" onValueChange={(value) => setManagementFocus(value as 'coaching' | 'school')} className="flex gap-4 pt-1">
+                        <RadioGroup defaultValue="coaching" onValueChange={(value) => setTeacherType(value as 'coaching' | 'school')} className="flex gap-4 pt-1">
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="coaching" id="focus-coaching" />
                             <Label htmlFor="focus-coaching">My Coaching</Label>

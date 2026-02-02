@@ -4,10 +4,10 @@ import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useStorage, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateDoc, getCountFromServer } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // UI Components
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -17,14 +17,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
 
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History 
+    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -34,11 +35,11 @@ interface HomeBooking { id: string; studentName: string; fatherName?: string; mo
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; imageUrl: string; imageName: string; purchaseUrl: string; createdAt: string; }
-interface Batch { id: string; name: string; teacherId: string; }
-interface Enrollment { id: string; studentId: string; teacherId: string; batchId: string; status: 'approved' | 'pending'; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
-interface SchoolData { id: string; name: string; principalName: string; }
+interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
+
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools';
 
 // --- Main Component ---
 export default function AdminDashboardPage() {
@@ -46,6 +47,9 @@ export default function AdminDashboardPage() {
     const firestore = useFirestore();
     const storage = useStorage();
     const router = useRouter();
+
+    const [view, setView] = useState<AdminView>('dashboard');
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
 
     // --- Form States ---
     const [materialTitle, setMaterialTitle] = useState('');
@@ -65,6 +69,14 @@ export default function AdminDashboardPage() {
     const [announcementMessage, setAnnouncementMessage] = useState('');
     const [announcementTarget, setAnnouncementTarget] = useState<'all' | 'teachers' | 'students'>('all');
     const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
+    
+    const [stats, setStats] = useState({
+        teacherCount: 0,
+        studentCount: 0,
+        schoolCount: 0,
+        bookingCount: 0
+    });
+
 
     // --- Firestore Data Hooks ---
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -80,6 +92,7 @@ export default function AdminDashboardPage() {
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -89,6 +102,7 @@ export default function AdminDashboardPage() {
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
+    const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
 
     
     // --- Auth & Role Check ---
@@ -100,6 +114,32 @@ export default function AdminDashboardPage() {
             router.replace('/dashboard');
         }
     }, [user, userRole, isUserLoading, profileLoading, router, userProfile]);
+
+    useEffect(() => {
+        if (firestore && userRole === 'admin') {
+            const fetchStats = async () => {
+                const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
+                const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
+                const schoolsQuery = query(collection(firestore, 'schools'));
+                const bookingsQuery = query(collection(firestore, 'homeBookings'));
+
+                const [teacherSnapshot, studentSnapshot, schoolSnapshot, bookingSnapshot] = await Promise.all([
+                    getCountFromServer(teachersQuery),
+                    getCountFromServer(studentsQuery),
+                    getCountFromServer(schoolsQuery),
+                    getCountFromServer(bookingsQuery)
+                ]);
+
+                setStats({
+                    teacherCount: teacherSnapshot.data().count,
+                    studentCount: studentSnapshot.data().count,
+                    schoolCount: schoolSnapshot.data().count,
+                    bookingCount: bookingSnapshot.data().count
+                });
+            };
+            fetchStats();
+        }
+    }, [firestore, userRole]);
     
     // --- Admin Action Logger ---
     const logAdminAction = (action: string, targetId?: string) => {
@@ -119,11 +159,6 @@ export default function AdminDashboardPage() {
 
     // --- Memoized Data Filtering ---
     const allUsers = useMemo(() => allUsersData?.filter(u => u.role !== 'admin') || [], [allUsersData]);
-    
-    const userStats = useMemo(() => ({
-        teacherCount: allUsers.filter(u => u.role === 'teacher').length,
-        studentCount: allUsers.filter(u => u.role === 'student').length,
-    }), [allUsers]);
 
     const searchedUsers = useMemo(() => {
         if (!userSearchQuery) return allUsers;
@@ -255,7 +290,6 @@ export default function AdminDashboardPage() {
 
         deleteDoc(materialDocRef).then(() => {
             logAdminAction(`Deleted free material: "${material.title}"`, material.id);
-            // Delete file from storage after doc is deleted from firestore
             deleteObject(fileRef).catch(error => {
                 console.warn("Could not delete file from storage:", error);
             });
@@ -354,13 +388,12 @@ export default function AdminDashboardPage() {
             });
     };
 
-    // --- Loading State ---
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading;
 
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <School className="h-16 w-16 animate-pulse text-primary" />
+                <LayoutDashboard className="h-16 w-16 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         );
@@ -378,8 +411,103 @@ export default function AdminDashboardPage() {
         }
         return date.toLocaleString('en-US', options);
     };
+    
+    const handleViewChange = (newView: AdminView) => {
+        setView(newView);
+        setSidebarOpen(false);
+    };
 
     // --- Render Functions ---
+    const renderSidebar = () => (
+         <aside className="flex flex-col gap-2 p-4">
+            <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
+            <div className="flex flex-col gap-1">
+                 <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
+                 <Button variant={view === 'users' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('users')}><Users className="mr-2 h-4 w-4" />Users</Button>
+                 <Button variant={view === 'schools' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('schools')}><Building2 className="mr-2 h-4 w-4" />Schools</Button>
+                 <Button variant={view === 'applications' ? 'secondary' : 'ghost'} className="justify-start relative" onClick={() => handleViewChange('applications')}>
+                    <Briefcase className="mr-2 h-4 w-4" />Applications
+                    {filteredApplications.pending.length > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{filteredApplications.pending.length}</span>}
+                 </Button>
+                 <Button variant={view === 'bookings' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('bookings')}><Home className="mr-2 h-4 w-4" />Bookings</Button>
+                 <Button variant={view === 'materials' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('materials')}><FileText className="mr-2 h-4 w-4" />Materials</Button>
+                 <Button variant={view === 'shop' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('shop')}><ShoppingBag className="mr-2 h-4 w-4" />Shop</Button>
+                 <Button variant={view === 'notifications' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('notifications')}><Megaphone className="mr-2 h-4 w-4" />Notifications</Button>
+                 <Button variant={view === 'activity' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('activity')}><History className="mr-2 h-4 w-4" />Activity</Button>
+            </div>
+        </aside>
+    );
+    
+    const renderDashboardView = () => (
+         <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">Dashboard</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{stats.teacherCount}</div></CardContent>
+                </Card>
+                <Card>
+                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{stats.studentCount}</div></CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                        <CardTitle className="text-sm font-medium">Registered Schools</CardTitle>
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{stats.schoolCount}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                        <CardTitle className="text-sm font-medium">Home Bookings</CardTitle>
+                        <Home className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{stats.bookingCount}</div></CardContent>
+                </Card>
+            </div>
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Users</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {allUsers.slice(0, 5).map(u => (
+                            <div key={u.id} className="flex items-center gap-4 mb-4">
+                                <Avatar><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
+                                <div>
+                                    <p className="font-semibold">{u.name}</p>
+                                    <p className="text-sm text-muted-foreground capitalize">{u.role}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Admin Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         {adminActivities && adminActivities.length > 0 ? (
+                            <div className="grid gap-3">
+                                {adminActivities.slice(0, 5).map(activity => (
+                                    <div key={activity.id} className="flex justify-between items-center text-sm">
+                                        <p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p>
+                                        <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (<p className="text-muted-foreground text-center py-4">No activity recorded yet.</p>)}
+                    </CardContent>
+                 </Card>
+             </div>
+        </div>
+    );
     
     const renderUsersView = () => {
         const renderUserList = (userList: UserProfile[]) => {
@@ -419,32 +547,7 @@ export default function AdminDashboardPage() {
 
         return (
             <div className="grid gap-8">
-                <h1 className="text-3xl font-bold">Manage Users</h1>
-                
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent><div className="text-2xl font-bold">{allUsers.length}</div></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Teachers</CardTitle>
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent><div className="text-2xl font-bold">{userStats.teacherCount}</div></CardContent>
-                    </Card>
-                    <Card>
-                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Students</CardTitle>
-                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent><div className="text-2xl font-bold">{userStats.studentCount}</div></CardContent>
-                    </Card>
-                </div>
-
+                <h1 className="text-3xl font-bold font-serif">Manage Users</h1>
                 <Card>
                     <CardHeader>
                          <Input 
@@ -473,7 +576,7 @@ export default function AdminDashboardPage() {
 
     const renderApplicationsView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold">Teacher Applications</h1>
+            <h1 className="text-3xl font-bold font-serif">Teacher Applications</h1>
             <Card>
                 <CardContent className="p-4">
                     <Tabs defaultValue="pending" className="w-full">
@@ -488,7 +591,7 @@ export default function AdminDashboardPage() {
                             ) : (<div className="text-center py-12">No pending applications.</div>)}
                         </TabsContent>
                         <TabsContent value="approved" className="mt-4">
-                            {filteredApplications.approved.length > 0 ? (<div className="grid gap-4">{filteredApplications.approved.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-success">Approved</span></div>))}</div>) : (<div className="text-center py-12">No approved applications.</div>)}
+                            {filteredApplications.approved.length > 0 ? (<div className="grid gap-4">{filteredApplications.approved.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600">Approved</span></div>))}</div>) : (<div className="text-center py-12">No approved applications.</div>)}
                         </TabsContent>
                         <TabsContent value="rejected" className="mt-4">
                             {filteredApplications.rejected.length > 0 ? (<div className="grid gap-4">{filteredApplications.rejected.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive">Rejected</span></div>))}</div>) : (<div className="text-center py-12">No rejected applications.</div>)}
@@ -501,7 +604,7 @@ export default function AdminDashboardPage() {
 
     const renderBookingsView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold">Home Teacher Bookings</h1>
+            <h1 className="text-3xl font-bold font-serif">Home Teacher Bookings</h1>
             <Card>
                 <CardContent className="p-4">
                     {homeBookings && homeBookings.length > 0 ? (
@@ -538,7 +641,7 @@ export default function AdminDashboardPage() {
         
         return (
             <div className="grid gap-8">
-                <h1 className="text-3xl font-bold">Free Materials</h1>
+                <h1 className="text-3xl font-bold font-serif">Free Materials</h1>
                 <div className="grid lg:grid-cols-3 gap-8">
                     <Card className="lg:col-span-1">
                         <CardHeader><CardTitle>Upload New Material</CardTitle></CardHeader>
@@ -572,7 +675,7 @@ export default function AdminDashboardPage() {
 
     const renderShopView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold">Shop Management</h1>
+            <h1 className="text-3xl font-bold font-serif">Shop Management</h1>
             <div className="grid lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-1">
                     <CardHeader><CardTitle>Add New Item</CardTitle></CardHeader>
@@ -608,7 +711,7 @@ export default function AdminDashboardPage() {
     
     const renderNotificationsView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold">Notifications & Announcements</h1>
+            <h1 className="text-3xl font-bold font-serif">Notifications & Announcements</h1>
              <div className="grid lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-1">
                     <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
@@ -643,7 +746,7 @@ export default function AdminDashboardPage() {
     
     const renderActivityLogView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold">Admin Activity Log</h1>
+            <h1 className="text-3xl font-bold font-serif">Admin Activity Log</h1>
              <Card>
                 <CardContent className="p-4">
                     {adminActivities && adminActivities.length > 0 ? (
@@ -660,32 +763,100 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
     );
+    
+    const renderSchoolsView = () => (
+        <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">School Management</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Registered Schools</CardTitle>
+                    <CardDescription>An overview of all schools registered on the platform.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {schoolsData && schoolsData.length > 0 ? (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {schoolsData.map(school => {
+                                const teacherCount = school.teacherIds?.length || 0;
+                                const studentCount = school.classes?.reduce((acc, c) => acc + (c.students?.length || 0), 0) || 0;
+                                return (
+                                    <Card key={school.id}>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">{school.name}</CardTitle>
+                                            <CardDescription>Principal: {school.principalName}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                            <div className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-muted-foreground" /> <span>{teacherCount} Teachers</span></div>
+                                            <div className="flex items-center gap-2"><GraduationCap className="h-4 w-4 text-muted-foreground" /> <span>{studentCount} Students</span></div>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`/dashboard/teacher/school/${school.id}`}>View Details</Link>
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">No schools have been created yet.</div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+
+    const renderCurrentView = () => {
+        const views: Record<AdminView, React.ReactNode> = {
+            dashboard: renderDashboardView(),
+            users: renderUsersView(),
+            applications: renderApplicationsView(),
+            bookings: renderBookingsView(),
+            materials: renderMaterialsView(),
+            shop: renderShopView(),
+            notifications: renderNotificationsView(),
+            activity: renderActivityLogView(),
+            schools: renderSchoolsView(),
+        };
+
+        return (
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={view}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {views[view]}
+                </motion.div>
+            </AnimatePresence>
+        );
+    };
 
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8">
-                 <div className="max-w-6xl mx-auto">
-                    <Tabs defaultValue="users" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-7 mb-4">
-                            <TabsTrigger value="users">Users</TabsTrigger>
-                            <TabsTrigger value="applications">Applications</TabsTrigger>
-                            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-                            <TabsTrigger value="materials">Materials</TabsTrigger>
-                            <TabsTrigger value="shop">Shop</TabsTrigger>
-                            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                            <TabsTrigger value="activity">Activity</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="users">{renderUsersView()}</TabsContent>
-                        <TabsContent value="applications">{renderApplicationsView()}</TabsContent>
-                        <TabsContent value="bookings">{renderBookingsView()}</TabsContent>
-                        <TabsContent value="materials">{renderMaterialsView()}</TabsContent>
-                        <TabsContent value="shop">{renderShopView()}</TabsContent>
-                        <TabsContent value="notifications">{renderNotificationsView()}</TabsContent>
-                        <TabsContent value="activity">{renderActivityLogView()}</TabsContent>
-                    </Tabs>
+            <div className="flex flex-1">
+                <div className="hidden md:flex md:w-64 flex-col border-r">
+                    {renderSidebar()}
                 </div>
-            </main>
+                <main className="flex-1 p-4 md:p-8">
+                     <div className="max-w-6xl mx-auto">
+                        <div className="md:hidden mb-4 flex items-center justify-between">
+                            <h1 className="text-xl font-bold font-serif capitalize">{view}</h1>
+                             <Sheet open={isSidebarOpen} onOpenChange={setSidebarOpen}>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
+                                </SheetTrigger>
+                                <SheetContent side="left" className="w-64 p-0">
+                                    {renderSidebar()}
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+                        {renderCurrentView()}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }

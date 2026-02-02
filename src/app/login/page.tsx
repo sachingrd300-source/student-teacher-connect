@@ -23,6 +23,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
+import { nanoid } from 'nanoid';
 
 export default function StudentLoginPage() {
   const auth = useAuth();
@@ -47,7 +48,7 @@ export default function StudentLoginPage() {
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists() && userSnap.data().role !== 'student') {
-        setError('This account is registered as a teacher. Please use the teacher login.');
+        setError('This account is registered as a teacher or admin. Please use the teacher login.');
         await auth.signOut();
     } else {
         router.replace('/dashboard');
@@ -112,7 +113,7 @@ export default function StudentLoginPage() {
       } else {
         const userData = userSnap.data();
         if (userData.role !== 'student') {
-            setError('This account is registered as a teacher. Please use the teacher login.');
+            setError('This account is registered as a teacher or admin. Please use the teacher login.');
             if (auth) {
                 await auth.signOut();
             }

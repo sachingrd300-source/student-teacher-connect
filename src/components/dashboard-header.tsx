@@ -13,10 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, User as UserIcon } from 'lucide-react';
+import { School, UserCircle, LogOut, User as UserIcon, Trophy, Home } from 'lucide-react';
 
 
-interface UserProfileForHeader {
+interface UserProfile {
   name?: string | null;
   role?: 'student' | 'teacher' | 'admin' | 'parent';
   coins?: number;
@@ -24,7 +24,7 @@ interface UserProfileForHeader {
 }
 
 interface DashboardHeaderProps {
-  userProfile: UserProfileForHeader | null | undefined;
+  userProfile: UserProfile | null | undefined;
 }
 
 export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
@@ -40,10 +40,12 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
       console.error('Error signing out: ', error);
     }
   };
+  
+  const dashboardHomeLink = userProfile?.role === 'teacher' ? (userProfile as any).teacherType === 'school' ? '/dashboard/teacher/school' : '/dashboard/teacher/coaching' : '/dashboard';
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-        <Link className="flex items-center gap-2 font-semibold" href="/dashboard">
+        <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
             <School className="h-6 w-6 mr-1 text-primary" />
             <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
         </Link>
@@ -76,12 +78,29 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
                         <p className="text-sm font-normal text-muted-foreground">{userProfile?.name}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                     {userProfile?.role === 'student' && (
+                        <DropdownMenuItem asChild>
+                           <Link href="/dashboard/student/leaderboard">
+                                <Trophy className="mr-2 h-4 w-4" />
+                                <span>Leaderboard</span>
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
+                     {userProfile?.role === 'teacher' && (
+                        <DropdownMenuItem asChild>
+                           <Link href="/dashboard/teacher/apply-home-tutor">
+                                <Home className="mr-2 h-4 w-4" />
+                                <span>Home Tutor Program</span>
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                         <Link href="/dashboard/profile">
                             <UserIcon className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                         </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Logout</span>
