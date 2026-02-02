@@ -18,6 +18,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import { ThemeToggle } from './theme-toggle';
 
 interface MainHeaderProps {
     currentLanguage: 'en' | 'hi';
@@ -34,6 +35,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-2 ml-auto">
+                <ThemeToggle />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -77,6 +79,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
 
             {/* Mobile Navigation */}
             <div className="md:hidden ml-auto flex items-center gap-2">
+                <ThemeToggle />
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="outline" size="icon">

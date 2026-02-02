@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { School, UserCircle, LogOut, User as UserIcon, Trophy, Home } from 'lucide-react';
+import { ThemeToggle } from './theme-toggle';
 
 
 interface UserProfile {
@@ -50,9 +51,9 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
             <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
         </Link>
         
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-4 ml-auto">
              {userProfile?.role === 'student' && (
-                <div className="flex items-center sm:border-r sm:pr-4 sm:mr-2">
+                <div className="flex items-center sm:border-r sm:pr-4">
                     <Link href="/dashboard/student/rewards" className="flex items-center gap-2 sm:gap-4 p-2 -m-2 rounded-md hover:bg-muted transition-colors" title="View Daily Rewards">
                         <div className="flex items-center gap-1 sm:gap-2 font-semibold text-sm">
                             <span role="img" aria-label="Coins">🪙</span>
@@ -65,6 +66,7 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
                     </Link>
                 </div>
             )}
+            <ThemeToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="secondary" size="icon" className="rounded-full">

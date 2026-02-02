@@ -5,6 +5,7 @@ import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { cn } from "@/lib/utils";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,8 +30,15 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        <OfflineIndicator />
-        <FirebaseClientProvider>{children}</FirebaseClientProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <OfflineIndicator />
+          <FirebaseClientProvider>{children}</FirebaseClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
