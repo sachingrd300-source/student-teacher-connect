@@ -207,10 +207,10 @@ export default function HomePage() {
                         {t.teacherApplyButton} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                     </Button>
-                    <Button asChild size="lg" variant="secondary">
-                    <Link href="/signup">
-                        {t.studentFindButton}
-                    </Link>
+                    <Button asChild size="lg" variant="outline" className="bg-transparent backdrop-blur-sm border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground hover:text-background">
+                        <Link href="/signup">
+                            {t.studentFindButton}
+                        </Link>
                     </Button>
                 </motion.div>
             </div>
@@ -232,7 +232,7 @@ export default function HomePage() {
                             variants={fadeInUp}
                             whileHover={{ y: -5, scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="p-8 bg-card rounded-2xl shadow-lg border border-transparent hover:border-primary/50 hover:shadow-primary/10 transition-all duration-300"
+                            className="p-8 bg-card rounded-lg shadow-lg border border-transparent hover:border-primary/50 hover:shadow-primary/10 transition-all duration-300"
                         >
                             <div className="flex justify-center mb-5">
                                 <div className="p-4 bg-primary/10 rounded-full">
@@ -264,7 +264,7 @@ export default function HomePage() {
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer(0.3, 0)}>
                         <h3 className="text-2xl font-bold mb-8">{t.forStudentsTitle}</h3>
                         <div className="relative flex flex-col gap-12">
-                            <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-border -z-10"></div>
+                            <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-primary/20 -z-10"></div>
                             {howItWorks.students.map((item, index) => (
                                 <motion.div key={index} variants={fadeInUp} className="flex items-start gap-6">
                                     <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold z-10 shadow-lg shadow-primary/30">{item.icon}</div>
@@ -279,7 +279,7 @@ export default function HomePage() {
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer(0.3, 0)}>
                         <h3 className="text-2xl font-bold mb-8">{t.forTeachersTitle}</h3>
                         <div className="relative flex flex-col gap-12">
-                             <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-border -z-10"></div>
+                             <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-primary/20 -z-10"></div>
                             {howItWorks.teachers.map((item, index) => (
                                 <motion.div key={index} variants={fadeInUp} className="flex items-start gap-6">
                                     <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold z-10 shadow-lg shadow-primary/30">{item.icon}</div>
@@ -304,7 +304,7 @@ export default function HomePage() {
                     viewport={{ once: true, amount: 0.5 }}
                     variants={fadeInUp}
                 >
-                    <Card className="rounded-2xl shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-primary">
+                    <Card className="rounded-lg shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-primary">
                         <div className="p-8 md:p-12 text-center text-primary-foreground">
                             <Award className="h-12 w-12 mx-auto mb-4" />
                             <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.joinTeacherTitle}</h2>
@@ -342,7 +342,7 @@ export default function HomePage() {
                     viewport={{ once: true, amount: 0.5 }}
                     variants={fadeInUp}
                 >
-                    <Card className="overflow-hidden rounded-2xl shadow-2xl">
+                    <Card className="overflow-hidden rounded-lg shadow-2xl border-4 border-primary/10">
                         <Image 
                             src={placeholderImages.dashboardPreview.src} 
                             alt={placeholderImages.dashboardPreview.alt}
@@ -410,17 +410,17 @@ export default function HomePage() {
               variants={staggerContainer(0.2, 0)}
               className="grid grid-cols-1 sm:grid-cols-3 gap-8"
             >
-              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-lg shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-4xl font-bold">{teacherCount !== undefined ? teacherCount : '50+'}</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
-              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-lg shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-4xl font-bold">{studentCount !== undefined ? studentCount : '500+'}</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
-              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-2xl shadow-lg text-center">
+              <motion.div variants={fadeInUp} whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="p-8 bg-card rounded-lg shadow-lg text-center">
                 <Book className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-4xl font-bold">10+</p>
                 <p className="text-muted-foreground mt-2">{t.subjectsLabel}</p>
@@ -508,8 +508,8 @@ export default function HomePage() {
                         whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
                         whileTap={{ scale: 0.98 }}
                     >
-                     <Card className="flex flex-col h-full rounded-2xl shadow-lg overflow-hidden">
-                        <CardHeader className="items-center text-center p-6 bg-card">
+                     <Card className="flex flex-col h-full rounded-lg shadow-lg overflow-hidden">
+                        <CardHeader className="items-center text-center p-6 bg-muted/30">
                             <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
                                 <AvatarFallback className="text-3xl">{getInitials(teacher.name)}</AvatarFallback>
                             </Avatar>
@@ -606,18 +606,18 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="py-12 bg-gray-900 text-gray-300">
-        <div className="container px-4 md:px-6 text-center">
+      <footer className="py-12 bg-card border-t">
+        <div className="container px-4 md:px-6 text-center text-muted-foreground">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
             <Link className="flex items-center justify-center gap-2 mb-6" href="/">
                 <School className="h-7 w-7 text-primary" />
-                <span className="text-2xl font-semibold font-serif text-white">EduConnect Pro</span>
+                <span className="text-2xl font-semibold font-serif text-foreground">EduConnect Pro</span>
             </Link>
             <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8">
-                <a href="tel:+911234567890" className="flex items-center gap-2 hover:text-white transition-colors">
+                <a href="tel:+911234567890" className="flex items-center gap-2 hover:text-primary transition-colors">
                 <span>+91 12345 67890</span>
                 </a>
-                <a href="mailto:contact@educonnectpro.com" className="flex items-center gap-2 hover:text-white transition-colors">
+                <a href="mailto:contact@educonnectpro.com" className="flex items-center gap-2 hover:text-primary transition-colors">
                 <span>contact@educonnectpro.com</span>
                 </a>
                 <div className="flex items-center gap-2">
@@ -625,11 +625,11 @@ export default function HomePage() {
                 </div>
             </div>
              <div className="flex justify-center gap-4 mt-8">
-                <a href="#" className="text-gray-400 hover:text-white"><Facebook className="h-6 w-6"/></a>
-                <a href="#" className="text-gray-400 hover:text-white"><Twitter className="h-6 w-6"/></a>
-                <a href="#" className="text-gray-400 hover:text-white"><Instagram className="h-6 w-6"/></a>
+                <a href="#" className="text-muted-foreground hover:text-primary"><Facebook className="h-6 w-6"/></a>
+                <a href="#" className="text-muted-foreground hover:text-primary"><Twitter className="h-6 w-6"/></a>
+                <a href="#" className="text-muted-foreground hover:text-primary"><Instagram className="h-6 w-6"/></a>
             </div>
-            <p className="mt-8 text-gray-500 text-sm">
+            <p className="mt-8 text-sm">
                 © {new Date().getFullYear()} EduConnect Pro. All Rights Reserved.
             </p>
           </motion.div>
