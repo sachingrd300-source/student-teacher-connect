@@ -316,8 +316,8 @@ export default function AdminDashboardPage() {
         const fileRef = ref(storage, `freeMaterials/${fileName}`);
 
         try {
-            await uploadBytes(fileRef, materialFile);
-            const downloadURL = await getDownloadURL(fileRef);
+            const uploadTask = await uploadBytes(fileRef, materialFile);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
 
             const materialData = { 
                 title: materialTitle.trim(), 
@@ -353,25 +353,22 @@ export default function AdminDashboardPage() {
         }
     };
     
-    const handleDeleteMaterial = async (material: FreeMaterial) => {
+    const handleDeleteMaterial = (material: FreeMaterial) => {
         if (!firestore || !storage) return;
 
         const materialDocRef = doc(firestore, 'freeMaterials', material.id);
-        deleteDoc(materialDocRef)
-            .then(() => {
-                logAdminAction(`Deleted free material: "${material.title}"`, material.id);
-            })
-            .catch(error => {
-                console.error("Error deleting material from Firestore:", error);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path }));
-            });
-        
         const fileRef = ref(storage, `freeMaterials/${material.fileName}`);
-        try {
-            await deleteObject(fileRef);
-        } catch (error) {
-            console.warn("Could not delete file from storage:", error);
-        }
+
+        deleteDoc(materialDocRef).then(() => {
+            logAdminAction(`Deleted free material: "${material.title}"`, material.id);
+            // Delete file from storage after doc is deleted from firestore
+            deleteObject(fileRef).catch(error => {
+                console.warn("Could not delete file from storage:", error);
+            });
+        }).catch(error => {
+            console.error("Error deleting material from Firestore:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path }));
+        });
     };
 
     const handleShopItemUpload = async (e: React.FormEvent) => {
@@ -383,8 +380,8 @@ export default function AdminDashboardPage() {
         const imageRef = ref(storage, `shopItems/${imageName}`);
         
         try {
-            await uploadBytes(imageRef, itemImage);
-            const downloadURL = await getDownloadURL(imageRef);
+            const uploadTask = await uploadBytes(imageRef, itemImage);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
             
             const itemData = { 
                 name: itemName.trim(), 
@@ -416,30 +413,27 @@ export default function AdminDashboardPage() {
         }
     };
     
-    const handleDeleteShopItem = async (item: ShopItem) => {
+    const handleDeleteShopItem = (item: ShopItem) => {
         if (!firestore || !storage) return;
         
         const itemDocRef = doc(firestore, 'shopItems', item.id);
-        deleteDoc(itemDocRef)
-            .then(() => {
-                logAdminAction(`Deleted shop item: "${item.name}"`, item.id);
-            })
-            .catch(error => {
-                console.error("Error deleting shop item from Firestore:", error);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path }));
-            });
-
         const imageRef = ref(storage, `shopItems/${item.imageName}`);
-        try {
-            await deleteObject(imageRef);
-        } catch (error) {
-            console.warn("Could not delete shop item image from storage:", error);
-        }
+
+        deleteDoc(itemDocRef).then(() => {
+            logAdminAction(`Deleted shop item: "${item.name}"`, item.id);
+            deleteObject(imageRef).catch(error => {
+                console.warn("Could not delete shop item image from storage:", error);
+            });
+        }).catch(error => {
+            console.error("Error deleting shop item from Firestore:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: itemDocRef.path }));
+        });
     };
 
     const handleSendAnnouncement = (e: React.FormEvent) => {
         e.preventDefault();
         if (!announcementMessage.trim() || !firestore) return;
+        
         setIsSendingAnnouncement(true);
 
         const announcementData = {
@@ -556,7 +550,7 @@ export default function AdminDashboardPage() {
 
              <div className="grid lg:grid-cols-5 gap-8">
                 <motion.div variants={itemFadeInUp} className="lg:col-span-3">
-                    <Card className="shadow-lg h-96">
+                    <Card className="h-96">
                         <CardHeader>
                             <CardTitle>New User Signups</CardTitle>
                         </CardHeader>
@@ -575,7 +569,7 @@ export default function AdminDashboardPage() {
                     </Card>
                 </motion.div>
                 <motion.div variants={itemFadeInUp} className="lg:col-span-2">
-                     <Card className="shadow-lg h-96">
+                     <Card className="h-96">
                         <CardHeader>
                             <CardTitle>Top 5 Batches by Enrollment</CardTitle>
                         </CardHeader>
@@ -614,7 +608,7 @@ export default function AdminDashboardPage() {
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {userList.map(u => (
                         <motion.div variants={itemFadeInUp} key={u.id}>
-                            <Card className="flex flex-col h-full shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                            <Card className="flex flex-col h-full shadow-md transition-all duration-300 hover:shadow-primary/10 hover:-translate-y-1">
                                 <CardHeader className="flex flex-row items-center gap-4 pb-4">
                                     <Avatar className="w-12 h-12 text-lg"><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
                                     <div className="flex-1">
@@ -670,7 +664,7 @@ export default function AdminDashboardPage() {
                     </Card>
                 </div>
 
-                <Card className="shadow-lg">
+                <Card>
                     <CardHeader>
                          <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -705,7 +699,7 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Teacher Applications</h1>
                 <p className="text-muted-foreground mt-2">Review applications for the home tutor program.</p>
             </div>
-            <Card className="shadow-lg">
+            <Card>
                 <CardContent className="p-4">
                     <Tabs defaultValue="pending" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
@@ -717,7 +711,7 @@ export default function AdminDashboardPage() {
                             {filteredApplications.pending.length > 0 ? (
                                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                                     {filteredApplications.pending.map(app => (
-                                        <motion.div variants={itemFadeInUp} key={app.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-4 rounded-xl border bg-background/50">
+                                        <motion.div variants={itemFadeInUp} key={app.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-4 rounded-lg border bg-background/50">
                                             <div><p className="font-semibold">{app.teacherName}</p><p className="text-xs text-muted-foreground mt-1">Applied: {formatDate(app.createdAt)}</p></div>
                                             <div className="flex gap-2 self-end sm:self-center">
                                                 <Button size="sm" variant="outline" onClick={() => handleApplication(app, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
@@ -729,10 +723,10 @@ export default function AdminDashboardPage() {
                             ) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Pending Applications</h3></div>)}
                         </TabsContent>
                         <TabsContent value="approved" className="mt-6">
-                            {filteredApplications.approved.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.approved.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-xl border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600 self-end sm:self-center">Approved</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Approved Applications</h3></div>)}
+                            {filteredApplications.approved.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.approved.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-lg border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-success self-end sm:self-center">Approved</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Approved Applications</h3></div>)}
                         </TabsContent>
                         <TabsContent value="rejected" className="mt-6">
-                            {filteredApplications.rejected.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.rejected.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-xl border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive self-end sm:self-center">Rejected</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Rejected Applications</h3></div>)}
+                            {filteredApplications.rejected.length > 0 ? (<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">{filteredApplications.rejected.map(app => (<motion.div variants={itemFadeInUp} key={app.id} className="p-4 rounded-lg border bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive self-end sm:self-center">Rejected</span></motion.div>))} </motion.div>) : (<div className="text-center py-12 flex flex-col items-center"><UserCheck className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Rejected Applications</h3></div>)}
                         </TabsContent>
                     </Tabs>
                 </CardContent>
@@ -746,12 +740,12 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Home Teacher Bookings</h1>
                 <p className="text-muted-foreground mt-2">Review and manage all requests for home tutors.</p>
             </div>
-            <Card className="shadow-lg">
+            <Card>
                 <CardContent className="p-4">
                     {homeBookings && homeBookings.length > 0 ? (
                         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                             {homeBookings.map(booking => (
-                                <motion.div variants={itemFadeInUp} key={booking.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-xl border bg-background/50">
+                                <motion.div variants={itemFadeInUp} key={booking.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-lg border bg-background/50">
                                     <div className="grid gap-2 w-full"><p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p><p className="text-sm text-muted-foreground">Father: {booking.fatherName || 'N/A'}</p><p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p><p className="text-sm text-muted-foreground">Address: {booking.address}</p><div className="flex items-center gap-2 text-xs text-muted-foreground mt-2"><span>Status:</span><span className={`font-semibold ${booking.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'}`}>{booking.status}</span><span>|</span><span>Created: {formatDate(booking.createdAt, true)}</span></div></div>
                                     <Button variant="destructive" size="sm" onClick={() => handleDeleteBooking(booking)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                 </motion.div>
@@ -777,7 +771,7 @@ export default function AdminDashboardPage() {
             return (
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                     {materialList.map(material => (
-                        <motion.div variants={itemFadeInUp} key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border bg-background/50">
+                        <motion.div variants={itemFadeInUp} key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg border bg-background/50">
                             <div className="flex items-start gap-3 w-full">
                                 <FileText className="h-5 w-5 text-primary flex-shrink-0 mt-1 sm:mt-0" />
                                 <div className="w-full">
@@ -800,7 +794,7 @@ export default function AdminDashboardPage() {
                     <p className="text-muted-foreground mt-2">Manage free resources for all students.</p>
                 </div>
                 <div className="grid lg:grid-cols-3 gap-8">
-                    <Card className="shadow-lg lg:col-span-1">
+                    <Card className="lg:col-span-1">
                         <CardHeader>
                             <CardTitle>Upload New Material</CardTitle>
                         </CardHeader>
@@ -814,7 +808,7 @@ export default function AdminDashboardPage() {
                             </form>
                         </CardContent>
                     </Card>
-                     <Card className="shadow-lg lg:col-span-2">
+                     <Card className="lg:col-span-2">
                         <CardHeader>
                             <CardTitle>Uploaded Materials</CardTitle>
                         </CardHeader>
@@ -841,7 +835,7 @@ export default function AdminDashboardPage() {
                 <p className="text-muted-foreground mt-2">Manage items available in the public shop.</p>
             </div>
             <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="shadow-lg lg:col-span-1">
+                <Card className="lg:col-span-1">
                     <CardHeader><CardTitle>Add New Item</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleShopItemUpload} className="grid gap-4">
@@ -854,13 +848,13 @@ export default function AdminDashboardPage() {
                         </form>
                     </CardContent>
                 </Card>
-                <Card className="shadow-lg lg:col-span-2">
+                <Card className="lg:col-span-2">
                     <CardHeader><CardTitle>Existing Shop Items</CardTitle></CardHeader>
                     <CardContent>
                         {shopItems && shopItems.length > 0 ? (
                             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                                 {shopItems.map(item => (
-                                    <motion.div variants={itemFadeInUp} key={item.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-xl border bg-background/50">
+                                    <motion.div variants={itemFadeInUp} key={item.id} className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 rounded-lg border bg-background/50">
                                         <div className="flex items-start gap-4 w-full"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-md object-cover flex-shrink-0" /><div className="w-full"><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground mt-1">{item.description}</p><p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p></div></div>
                                         <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                     </motion.div>
@@ -880,7 +874,7 @@ export default function AdminDashboardPage() {
                 <p className="text-muted-foreground mt-2">Send targeted messages to your users.</p>
             </div>
              <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="shadow-lg lg:col-span-1">
+                <Card className="lg:col-span-1">
                     <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleSendAnnouncement} className="grid gap-4">
@@ -905,13 +899,13 @@ export default function AdminDashboardPage() {
                         </form>
                     </CardContent>
                 </Card>
-                <Card className="shadow-lg lg:col-span-2">
+                <Card className="lg:col-span-2">
                     <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
                     <CardContent>
                         {announcements && announcements.length > 0 ? (
                             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                                 {announcements.map(ann => (
-                                    <motion.div variants={itemFadeInUp} key={ann.id} className="p-4 rounded-xl border bg-background/50">
+                                    <motion.div variants={itemFadeInUp} key={ann.id} className="p-4 rounded-lg border bg-background/50">
                                         <p className="text-sm">{ann.message}</p>
                                         <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                                             <span>Target: <span className="font-semibold capitalize">{ann.target}</span></span>
@@ -935,12 +929,12 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Admin Activity Log</h1>
                 <p className="text-muted-foreground mt-2">A chronological record of all actions performed by administrators.</p>
             </div>
-             <Card className="shadow-lg">
+             <Card>
                 <CardContent className="p-4">
                     {adminActivities && adminActivities.length > 0 ? (
                         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
                             {adminActivities.map(activity => (
-                                <motion.div variants={itemFadeInUp} key={activity.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-4 rounded-xl border bg-background/50">
+                                <motion.div variants={itemFadeInUp} key={activity.id} className="flex flex-col sm:flex-row items-start justify-between gap-3 p-4 rounded-lg border bg-background/50">
                                     <div>
                                         <p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p>
                                     </div>
