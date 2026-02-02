@@ -23,7 +23,7 @@ import { SchoolFeeManagementDialog } from '@/components/school-fee-management-di
 // Interfaces
 interface UserProfile {
     name: string;
-    role?: 'teacher';
+    role?: 'teacher' | 'admin' | 'student' | 'parent';
 }
 interface FeeEntry {
     feeMonth: number;
@@ -129,7 +129,7 @@ export default function SchoolDetailsPage() {
 
     // Fetch current user's profile for header
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-    const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+    const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
     // Fetch school data
     const schoolRef = useMemoFirebase(() => (user && schoolId) ? doc(firestore, 'schools', schoolId) : null, [firestore, schoolId, user]);
@@ -148,12 +148,22 @@ export default function SchoolDetailsPage() {
         return school.classes.reduce((acc, currentClass) => acc + (currentClass.students?.length || 0), 0);
     }, [school]);
 
-    // Security check: ensure user is the principal
+    // Security check: ensure user is the principal or an admin
     useEffect(() => {
-        if (school && user && school.principalId !== user.uid) {
-            router.replace('/dashboard/teacher');
+        if (isUserLoading || profileLoading || schoolLoading) return;
+
+        if (!user) {
+            router.replace('/login');
+            return;
         }
-    }, [school, user, router]);
+
+        if (school && userProfile) {
+            if (userProfile.role !== 'admin' && school.principalId !== user.uid) {
+                router.replace('/dashboard/teacher');
+            }
+        }
+    }, [school, user, userProfile, router, isUserLoading, profileLoading, schoolLoading]);
+
 
     useEffect(() => {
         if (school) {
@@ -348,7 +358,7 @@ export default function SchoolDetailsPage() {
 
     // --- Loading and Render ---
 
-    const isLoading = isUserLoading || schoolLoading;
+    const isLoading = isUserLoading || schoolLoading || profileLoading;
 
     if (isLoading || !school) {
         return (
@@ -365,9 +375,9 @@ export default function SchoolDetailsPage() {
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto grid gap-8">
                     <div>
-                        <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/school')} className="mb-4">
+                        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to My Sessions
+                            Back
                         </Button>
                         <Card className="rounded-2xl shadow-lg">
                              <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-4">

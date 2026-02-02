@@ -19,6 +19,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  UserCredential
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { User as UserIcon } from 'lucide-react';
@@ -39,6 +40,19 @@ export default function StudentLoginPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const handleSuccessfulLogin = async (userCredential: UserCredential) => {
+    if (!firestore || !auth) return;
+    const loggedInUser = userCredential.user;
+    const userRef = doc(firestore, 'users', loggedInUser.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists() && userSnap.data().role !== 'student') {
+        setError('This account is registered as a teacher. Please use the teacher login.');
+        await auth.signOut();
+    } else {
+        router.replace('/dashboard');
+    }
+  };
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -51,8 +65,8 @@ export default function StudentLoginPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // The useEffect will handle the redirect
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await handleSuccessfulLogin(userCredential);
     } catch (error: any) {
        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setError('Invalid login credentials. Please check your email and password.');
@@ -91,8 +105,10 @@ export default function StudentLoginPage() {
           coins: 0,
           streak: 0,
           lastLoginDate: '',
+          referralCode: nanoid(8).toUpperCase(),
         };
         await setDoc(userRef, userProfileData);
+        router.replace('/dashboard');
       } else {
         const userData = userSnap.data();
         if (userData.role !== 'student') {
@@ -100,11 +116,10 @@ export default function StudentLoginPage() {
             if (auth) {
                 await auth.signOut();
             }
-            setIsLoading(false);
-            return;
+        } else {
+            router.replace('/dashboard');
         }
       }
-      // The useEffect will handle the redirect
     } catch (error: any)
     {
         if (error.code !== 'auth/popup-closed-by-user') {
