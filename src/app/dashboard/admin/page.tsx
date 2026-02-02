@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -850,6 +850,10 @@ export default function AdminDashboardPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
+                                    <SheetHeader>
+                                        <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
+                                        <SheetDescription className="sr-only">A list of links to navigate the admin dashboard.</SheetDescription>
+                                    </SheetHeader>
                                     {renderSidebar()}
                                 </SheetContent>
                             </Sheet>

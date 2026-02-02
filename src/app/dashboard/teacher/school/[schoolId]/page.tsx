@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SchoolFeeManagementDialog } from '@/components/school-fee-management-dialog';
-import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 
 // Interfaces
@@ -651,6 +651,10 @@ export default function SchoolDetailsPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
+                                    <SheetHeader>
+                                        <SheetTitle className="sr-only">School Management Menu</SheetTitle>
+                                        <SheetDescription className="sr-only">A list of links to navigate the school management dashboard.</SheetDescription>
+                                    </SheetHeader>
                                     {renderSidebar()}
                                 </SheetContent>
                             </Sheet>
