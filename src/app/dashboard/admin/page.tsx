@@ -20,13 +20,14 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 // Icons
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone
+    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -35,7 +36,7 @@ interface HomeTutorApplication { id: string; teacherId: string; teacherName: str
 interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
-interface ShopItem { id: string; name: string; description?: string; price: number; imageUrl: string; imageName: string; purchaseUrl: string; createdAt: string; }
+interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; imageUrl: string; imageName: string; purchaseUrl?: string; createdAt: string; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
@@ -62,6 +63,7 @@ export default function AdminDashboardPage() {
     const [itemName, setItemName] = useState('');
     const [itemDescription, setItemDescription] = useState('');
     const [itemPrice, setItemPrice] = useState('');
+    const [itemPriceType, setItemPriceType] = useState<'money' | 'coins'>('money');
     const [itemPurchaseUrl, setItemPurchaseUrl] = useState('');
     const [itemImage, setItemImage] = useState<File | null>(null);
     const [isUploadingItem, setIsUploadingItem] = useState(false);
@@ -302,7 +304,11 @@ export default function AdminDashboardPage() {
 
     const handleShopItemUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!itemImage || !itemName.trim() || !itemPrice || !itemPurchaseUrl.trim() || !storage || !firestore) return;
+        if (!itemImage || !itemName.trim() || !itemPrice || !storage || !firestore) return;
+        if (itemPriceType === 'money' && !itemPurchaseUrl.trim()) {
+            alert('Purchase URL is required for money items.');
+            return;
+        }
         
         setIsUploadingItem(true);
         const imageName = `${Date.now()}_${itemImage.name}`;
@@ -312,16 +318,20 @@ export default function AdminDashboardPage() {
             const uploadTask = await uploadBytes(imageRef, itemImage);
             const downloadURL = await getDownloadURL(uploadTask.ref);
             
-            const itemData = { 
+            const itemData: Omit<ShopItem, 'id'> = { 
                 name: itemName.trim(), 
                 description: itemDescription.trim(), 
+                priceType: itemPriceType,
                 price: parseFloat(itemPrice), 
                 imageUrl: downloadURL, 
-                imageName, 
-                purchaseUrl: itemPurchaseUrl.trim(), 
+                imageName,
                 createdAt: new Date().toISOString() 
             };
             
+            if (itemPriceType === 'money') {
+                itemData.purchaseUrl = itemPurchaseUrl.trim();
+            }
+
             addDoc(collection(firestore, 'shopItems'), itemData)
                 .then(docRef => {
                     logAdminAction(`Uploaded shop item: "${itemData.name}"`, docRef.id);
@@ -331,7 +341,7 @@ export default function AdminDashboardPage() {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: itemData }));
                 });
             
-            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null);
+            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money');
             if (document.getElementById('item-image')) {
                 (document.getElementById('item-image') as HTMLInputElement).value = '';
             }
@@ -682,10 +692,27 @@ export default function AdminDashboardPage() {
                     <CardHeader><CardTitle>Add New Item</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleShopItemUpload} className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="item-price-type">Price Type</Label>
+                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="money" id="money" /><Label htmlFor="money">Money</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="coins" id="coins" /><Label htmlFor="coins">Coins</Label></div>
+                                </RadioGroup>
+                            </div>
+
                             <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="item-price">Price (INR)</Label><Input id="item-price" type="number" step="0.01" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-price">{itemPriceType === 'money' ? 'Price (INR)' : 'Price (Coins)'}</Label><Input id="item-price" type="number" step="1" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
                             <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
-                            <div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required /></div>
+                            
+                            <AnimatePresence>
+                            {itemPriceType === 'money' && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
+                                    <Label htmlFor="item-purchase-url">Purchase URL</Label>
+                                    <Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} />
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+
                             <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required /></div>
                             <Button type="submit" disabled={isUploadingItem}>{isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item</Button>
                         </form>
@@ -698,7 +725,15 @@ export default function AdminDashboardPage() {
                             <div className="grid gap-4">
                                 {shopItems.map(item => (
                                     <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-lg border">
-                                        <div className="flex items-start gap-4"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-lg object-cover" /><div><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground">{item.description}</p><p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p></div></div>
+                                        <div className="flex items-start gap-4"><Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-lg object-cover" /><div><p className="font-semibold">{item.name}</p><p className="text-sm text-muted-foreground">{item.description}</p>
+                                        
+                                        {item.priceType === 'money' ? (
+                                             <p className="font-semibold text-primary mt-2 flex items-center"><DollarSign className="h-4 w-4 mr-1" />{item.price.toFixed(2)}</p>
+                                        ) : (
+                                             <p className="font-semibold text-primary mt-2 flex items-center"><Coins className="h-4 w-4 mr-1" />{item.price} Coins</p>
+                                        )}
+                                       
+                                        </div></div>
                                         <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                     </div>
                                 ))}

@@ -56,6 +56,11 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() || isOwner(userId);
       allow delete: if isAdmin();
+      
+      match /inventory/{inventoryId} {
+        allow read, create: if isOwner(userId);
+        allow write: if isAdmin();
+      }
     }
 
     match /batches/{batchId} {
@@ -155,7 +160,7 @@ service cloud.firestore {
     }
 
     match /announcements/{announcementId} {
-      allow read: if isSignedIn();
+      allow read: if isStudent() || isAdmin();
       allow write: if isAdmin();
     }
     

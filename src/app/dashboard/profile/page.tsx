@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, collection, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Image from 'next/image';
 
 interface UserProfile {
     name: string;
@@ -29,6 +30,14 @@ interface UserProfile {
     coins?: number;
     streak?: number;
     referralCode?: string;
+}
+
+interface UserInventoryItem {
+    id: string;
+    itemId: string;
+    itemName: string;
+    itemImageUrl: string;
+    purchasedAt: string;
 }
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
@@ -63,8 +72,13 @@ export default function ProfilePage() {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
-
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
+
+    const inventoryQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(collection(firestore, 'users', user.uid, 'inventory'), orderBy('purchasedAt', 'desc'));
+    }, [firestore, user?.uid]);
+    const { data: inventory, isLoading: inventoryLoading } = useCollection<UserInventoryItem>(inventoryQuery);
     
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -156,7 +170,7 @@ export default function ProfilePage() {
         setIsEditing(false);
     };
 
-    const isLoading = isUserLoading || profileLoading;
+    const isLoading = isUserLoading || profileLoading || inventoryLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -171,7 +185,7 @@ export default function ProfilePage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-2xl mx-auto grid gap-8">
                      <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -328,8 +342,38 @@ export default function ProfilePage() {
                         )}
                     </Card>
 
+                    {userProfile.role === 'student' && (
+                        <Card className="rounded-2xl shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Package className="mr-3 h-6 w-6 text-primary"/> My Inventory
+                                </CardTitle>
+                                <CardDescription>Digital items you've purchased with your coins.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {inventory && inventory.length > 0 ? (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                        {inventory.map(item => (
+                                            <div key={item.id} className="flex flex-col items-center text-center gap-2">
+                                                <div className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                                                    <Image src={item.itemImageUrl} alt={item.itemName} layout="fill" objectFit="cover" />
+                                                </div>
+                                                <p className="text-xs font-semibold leading-tight">{item.itemName}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        <p>Your inventory is empty.</p>
+                                        <Button variant="link" asChild><Link href="/dashboard/student/shop">Visit the shop to get items!</Link></Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {userProfile.referralCode && (
-                        <Card className="rounded-2xl shadow-lg mt-8">
+                        <Card className="rounded-2xl shadow-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center">
                                     <Gift className="mr-3 h-6 w-6 text-primary"/> Refer & Earn

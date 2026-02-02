@@ -1,29 +1,92 @@
-
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc, writeBatch, increment } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, School, DollarSign } from 'lucide-react';
+import { ShoppingBag, School, DollarSign, Coins, BadgeCheck, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
 
 interface ShopItem {
     id: string;
     name: string;
     description?: string;
     price: number;
+    priceType: 'money' | 'coins';
     imageUrl: string;
-    purchaseUrl: string;
+    purchaseUrl?: string;
     createdAt: string;
 }
 
+interface UserProfile {
+    name: string;
+    coins?: number;
+}
+
+interface UserInventoryItem {
+    id: string;
+    itemId: string;
+}
+
 export default function ShopPage() {
+    const { user } = useUser();
     const firestore = useFirestore();
+
+    const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+
+    const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+    
+    const inventoryQuery = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'inventory')) : null, [firestore, user]);
+    const { data: inventory } = useCollection<UserInventoryItem>(inventoryQuery);
 
     const shopItemsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore]);
     const { data: items, isLoading: itemsLoading } = useCollection<ShopItem>(shopItemsQuery);
+
+    const ownedItemIds = useMemo(() => {
+        if (!inventory) return new Set();
+        return new Set(inventory.map(item => item.itemId));
+    }, [inventory]);
+
+    const handlePurchaseWithCoins = async (item: ShopItem) => {
+        if (!user || !firestore || !userProfile || (userProfile.coins ?? 0) < item.price) {
+            // maybe show a toast later
+            console.error("Cannot purchase. Not enough coins or user not loaded.");
+            return;
+        }
+
+        setIsPurchasing(item.id);
+
+        const userRef = doc(firestore, 'users', user.uid);
+        const inventoryRef = doc(collection(firestore, 'users', user.uid, 'inventory'));
+        
+        const batch = writeBatch(firestore);
+
+        // Deduct coins from user
+        batch.update(userRef, { coins: increment(-item.price) });
+        
+        // Add item to user's inventory
+        batch.set(inventoryRef, {
+            itemId: item.id,
+            itemName: item.name,
+            itemImageUrl: item.imageUrl,
+            purchasedAt: new Date().toISOString()
+        });
+
+        try {
+            await batch.commit();
+            // maybe show success toast later
+        } catch (error) {
+            console.error("Error purchasing item:", error);
+            // maybe show error toast
+        } finally {
+            setIsPurchasing(null);
+        }
+    };
 
     if (itemsLoading) {
         return (
@@ -53,6 +116,95 @@ export default function ShopPage() {
         },
     };
 
+    const moneyItems = items?.filter(item => item.priceType === 'money') || [];
+    const coinItems = items?.filter(item => item.priceType === 'coins') || [];
+
+    const renderItemList = (list: ShopItem[], isCoinShop: boolean) => {
+        if (list.length === 0) {
+            return (
+                <div className="text-center py-16">
+                    <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">{isCoinShop ? 'No Digital Rewards' : 'No Merchandise Available'}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Our admins are curating new items. Check back soon!
+                    </p>
+                </div>
+            );
+        }
+
+        return (
+             <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+            >
+                {list.map((item, i) => {
+                    const hasEnoughCoins = isCoinShop && (userProfile?.coins ?? 0) >= item.price;
+                    const isOwned = isCoinShop && ownedItemIds.has(item.id);
+                    const canPurchase = hasEnoughCoins && !isOwned;
+                    
+                    return (
+                         <motion.div
+                            key={item.id}
+                            variants={cardVariants}
+                            custom={i}
+                            whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                            whileTap={{ scale: 0.98 }}
+                            className="h-full"
+                        >
+                            <Card className="flex flex-col h-full overflow-hidden rounded-2xl shadow-lg">
+                                <div className="relative w-full h-56">
+                                    <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" />
+                                    {isOwned && (
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                            <BadgeCheck className="h-16 w-16 text-white"/>
+                                        </div>
+                                    )}
+                                </div>
+                                <CardHeader>
+                                    <CardTitle>{item.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="flex-grow">
+                                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                                </CardContent>
+                                <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
+                                     {item.priceType === 'money' ? (
+                                        <p className="text-xl font-bold text-primary flex items-center">
+                                            <DollarSign className="h-5 w-5 mr-1" />
+                                            {item.price.toFixed(2)}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xl font-bold text-primary flex items-center">
+                                            <Coins className="h-5 w-5 mr-1" />
+                                            {item.price}
+                                        </p>
+                                    )}
+                                    
+                                    {isCoinShop ? (
+                                        isOwned ? (
+                                            <Button disabled variant="outline"><CheckCircle className="mr-2 h-4 w-4"/> Owned</Button>
+                                        ) : (
+                                            <Button onClick={() => handlePurchaseWithCoins(item)} disabled={!canPurchase || isPurchasing === item.id}>
+                                                {isPurchasing === item.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                                Purchase
+                                            </Button>
+                                        )
+                                    ) : (
+                                         <Button asChild>
+                                            <a href={item.purchaseUrl} target="_blank" rel="noopener noreferrer">
+                                                Buy Now
+                                            </a>
+                                        </Button>
+                                    )}
+                                </CardFooter>
+                            </Card>
+                        </motion.div>
+                    )
+                })}
+            </motion.div>
+        )
+    }
 
     return (
         <motion.div 
@@ -66,60 +218,22 @@ export default function ShopPage() {
                     <ShoppingBag className="mr-4 h-10 w-10 text-primary"/> Our Shop
                 </h1>
                 <p className="mt-4 max-w-2xl mx-auto text-foreground/80 md:text-xl">
-                    Browse exclusive merchandise and study kits, curated just for you.
+                    Browse exclusive merchandise or spend your coins on digital rewards!
                 </p>
             </div>
             
-            {items && items.length > 0 ? (
-                <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                >
-                    {items.map((item, i) => (
-                        <motion.div
-                            key={item.id}
-                            variants={cardVariants}
-                            custom={i}
-                            whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
-                            whileTap={{ scale: 0.98 }}
-                            className="h-full"
-                        >
-                            <Card className="flex flex-col h-full overflow-hidden rounded-2xl shadow-lg">
-                                <div className="relative w-full h-56">
-                                    <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" />
-                                </div>
-                                <CardHeader>
-                                    <CardTitle>{item.name}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                                </CardContent>
-                                <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
-                                    <p className="text-xl font-bold text-primary flex items-center">
-                                        <DollarSign className="h-5 w-5 mr-1" />
-                                        {item.price.toFixed(2)}
-                                    </p>
-                                    <Button asChild>
-                                        <a href={item.purchaseUrl} target="_blank" rel="noopener noreferrer">
-                                            Buy Now
-                                        </a>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </motion.div>
-            ) : (
-                <div className="text-center py-16">
-                    <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">The Shop is Empty</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Our admins are curating new items. Check back soon!
-                    </p>
-                </div>
-            )}
+            <Tabs defaultValue="rewards" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+                    <TabsTrigger value="rewards">Digital Rewards</TabsTrigger>
+                    <TabsTrigger value="merchandise">Merchandise</TabsTrigger>
+                </TabsList>
+                <TabsContent value="rewards" className="mt-8">
+                    {renderItemList(coinItems, true)}
+                </TabsContent>
+                <TabsContent value="merchandise" className="mt-8">
+                     {renderItemList(moneyItems, false)}
+                </TabsContent>
+            </Tabs>
         </motion.div>
     );
 }

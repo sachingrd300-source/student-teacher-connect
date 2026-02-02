@@ -179,13 +179,26 @@
       "properties": {
         "name": { "type": "string", "description": "The name of the item." },
         "description": { "type": "string", "description": "A description of the item." },
-        "price": { "type": "number", "description": "The price of the item." },
+        "priceType": { "type": "string", "enum": ["money", "coins"], "description": "The type of currency for the price." },
+        "price": { "type": "number", "description": "The price of the item, either in currency or coins." },
         "imageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image." },
         "imageName": { "type": "string", "description": "The file name of the image in storage, for deletion purposes." },
-        "purchaseUrl": { "type": "string", "format": "uri", "description": "External link to purchase the item." },
+        "purchaseUrl": { "type": "string", "format": "uri", "description": "External link to purchase the item (for 'money' type)." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "price", "imageUrl", "imageName", "purchaseUrl", "createdAt"]
+      "required": ["name", "price", "priceType", "imageUrl", "imageName", "createdAt"]
+    },
+    "UserInventoryItem": {
+      "title": "User Inventory Item",
+      "type": "object",
+      "description": "Represents a digital item a user has purchased with coins.",
+      "properties": {
+        "itemId": { "type": "string", "description": "The ID of the original shop item." },
+        "itemName": { "type": "string", "description": "The name of the item." },
+        "itemImageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image." },
+        "purchasedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "itemName", "purchasedAt"]
     },
     "HomeBooking": {
       "title": "Home Booking",
@@ -396,6 +409,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/User" },
       "description": "Stores user profiles."
+    },
+    "/users/{userId}/inventory/{inventoryId}": {
+      "schema": { "$ref": "#/entities/UserInventoryItem" },
+      "description": "Stores the digital items a user has acquired from the shop."
     },
     "/batches/{batchId}": {
         "schema": { "$ref": "#/entities/Batch" },
