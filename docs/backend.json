@@ -288,6 +288,22 @@
       },
       "required": ["message", "target", "createdAt"]
     },
+    "Advertisement": {
+      "title": "Advertisement",
+      "type": "object",
+      "description": "Represents a targeted advertisement created by an admin.",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "imageName": { "type": "string", "description": "The file name of the ad image in storage for deletion." },
+        "ctaLink": { "type": "string", "format": "uri", "description": "Call-to-action link." },
+        "targetAudience": { "type": "string", "enum": ["all", "students", "teachers"] },
+        "targetTeacherType": { "type": "string", "enum": ["all", "coaching", "school"], "description": "Specifies teacher type if target is teachers." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "imageUrl", "imageName", "targetAudience", "createdAt"]
+    },
     "Fee": {
       "title": "Fee",
       "type": "object",
@@ -433,6 +449,10 @@
       "schema": { "$ref": "#/entities/Announcement" },
       "description": "Stores global announcements sent by the admin."
     },
+    "/advertisements/{advertisementId}": {
+      "schema": { "$ref": "#/entities/Advertisement" },
+      "description": "Stores targeted advertisements created by admins."
+    },
     "/batches/{batchId}/tests/{testId}": {
       "schema": { "$ref": "#/entities/Test" },
       "description": "Stores tests for a specific batch."
@@ -455,3 +475,5 @@
     }
   }
 }
+
+    

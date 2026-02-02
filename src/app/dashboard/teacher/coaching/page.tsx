@@ -11,17 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Bullhorn } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 // Interfaces can be copied
 interface UserProfile {
     name: string;
     email: string;
-    role: 'student' | 'teacher' | 'admin' | 'parent';
+    role: 'teacher';
+    teacherType?: 'coaching' | 'school';
 }
 
 interface Batch {
@@ -42,6 +44,17 @@ interface Enrollment {
     createdAt: string;
     approvedAt?: string;
 }
+
+interface Advertisement {
+    id: string;
+    title: string;
+    message: string;
+    imageUrl: string;
+    ctaLink?: string;
+    targetAudience: 'all' | 'students' | 'teachers';
+    targetTeacherType?: 'all' | 'coaching' | 'school';
+}
+
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -88,6 +101,24 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const advertisementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'advertisements'),
+            where('targetAudience', 'in', ['all', 'teachers']),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore]);
+    const { data: rawAdvertisements, isLoading: advertisementsLoading } = useCollection<Advertisement>(advertisementsQuery);
+
+    const advertisements = useMemo(() => {
+        if (!rawAdvertisements || !userProfile) return [];
+        return rawAdvertisements.filter(ad => 
+            ad.targetAudience === 'all' || 
+            (ad.targetAudience === 'teachers' && (ad.targetTeacherType === 'all' || ad.targetTeacherType === userProfile.teacherType))
+        );
+    }, [rawAdvertisements, userProfile]);
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
         if (!enrollments) return [[], []];
@@ -195,7 +226,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || advertisementsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -276,6 +307,42 @@ export default function CoachingManagementPage() {
                     </div>
                     
                     <div className="grid gap-8">
+                        {advertisements && advertisements.length > 0 && (
+                             <Card className="rounded-lg shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Bullhorn className="mr-3 h-6 w-6 text-primary"/>
+                                        For You
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {advertisements.map(ad => (
+                                            <motion.div
+                                                key={ad.id}
+                                                variants={cardVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                                            >
+                                                <Card className="overflow-hidden h-full flex flex-col">
+                                                    <Image src={ad.imageUrl} alt={ad.title} width={400} height={200} className="w-full h-32 object-cover"/>
+                                                    <div className="p-4 flex flex-col flex-grow">
+                                                        <h3 className="font-semibold">{ad.title}</h3>
+                                                        <p className="text-sm text-muted-foreground mt-1 flex-grow">{ad.message}</p>
+                                                        {ad.ctaLink && (
+                                                            <Button asChild size="sm" className="mt-4 w-full">
+                                                                <a href={ad.ctaLink} target="_blank" rel="noopener noreferrer">Learn More</a>
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </Card>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                         <Card className="rounded-2xl shadow-lg">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
@@ -417,3 +484,5 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
+
+    

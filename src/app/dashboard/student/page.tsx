@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy, Megaphone } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Search, School, Gift, ShoppingBag, Home, Check, Trophy, Megaphone, Bullhorn } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 
 interface UserProfile {
@@ -48,6 +49,15 @@ interface Announcement {
     target: 'all' | 'teachers' | 'students';
     createdAt: string;
 }
+
+interface Advertisement {
+    id: string;
+    title: string;
+    message: string;
+    imageUrl: string;
+    ctaLink?: string;
+}
+
 
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -105,6 +115,17 @@ export default function StudentDashboardPage() {
         );
     }, [firestore]);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
+    const advertisementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'advertisements'),
+            where('targetAudience', 'in', ['all', 'students']),
+            orderBy('createdAt', 'desc'),
+            limit(3)
+        );
+    }, [firestore]);
+    const { data: advertisements, isLoading: advertisementsLoading } = useCollection<Advertisement>(advertisementsQuery);
 
 
     const enrolledBatchIds = useMemo(() => {
@@ -176,7 +197,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading || advertisementsLoading;
     
 
     if (isLoading || !userProfile) {
@@ -256,6 +277,42 @@ export default function StudentDashboardPage() {
                     </div>
 
                     <div className="grid gap-8">
+                        {advertisements && advertisements.length > 0 && (
+                             <Card className="rounded-lg shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Bullhorn className="mr-3 h-6 w-6 text-primary"/>
+                                        For You
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {advertisements.map(ad => (
+                                            <motion.div
+                                                key={ad.id}
+                                                variants={cardVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                whileHover={{ y: -5, scale: 1.02, boxShadow: "0px 10px 20px -5px rgba(0,0,0,0.1)" }}
+                                            >
+                                                <Card className="overflow-hidden h-full flex flex-col">
+                                                    <Image src={ad.imageUrl} alt={ad.title} width={400} height={200} className="w-full h-32 object-cover"/>
+                                                    <div className="p-4 flex flex-col flex-grow">
+                                                        <h3 className="font-semibold">{ad.title}</h3>
+                                                        <p className="text-sm text-muted-foreground mt-1 flex-grow">{ad.message}</p>
+                                                        {ad.ctaLink && (
+                                                            <Button asChild size="sm" className="mt-4 w-full">
+                                                                <a href={ad.ctaLink} target="_blank" rel="noopener noreferrer">Learn More</a>
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </Card>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                         <Card className="rounded-lg shadow-lg">
                             <CardHeader>
                                 <CardTitle>Join a New Batch</CardTitle>
@@ -381,3 +438,5 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
+
+    

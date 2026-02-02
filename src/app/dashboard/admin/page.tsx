@@ -28,7 +28,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History
+    LayoutDashboard, Bell, BarChart2, TrendingUp, Users2, Send, History, Bullhorn
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -41,8 +41,9 @@ interface ShopItem { id: string; name: string; description?: string; price: numb
 interface Batch { id: string; name: string; teacherId: string; }
 interface Enrollment { id: string; studentId: string; teacherId: string; batchId: string; status: 'approved' | 'pending'; }
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
+interface Advertisement { id: string; title: string; message: string; imageUrl: string; imageName: string; ctaLink?: string; targetAudience: 'all' | 'students' | 'teachers'; targetTeacherType?: 'all' | 'coaching' | 'school'; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'advertisements' | 'activity';
 
 
 // --- Helper Functions ---
@@ -101,6 +102,14 @@ export default function AdminDashboardPage() {
     const [announcementTarget, setAnnouncementTarget] = useState<'all' | 'teachers' | 'students'>('all');
     const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
 
+    const [adTitle, setAdTitle] = useState('');
+    const [adMessage, setAdMessage] = useState('');
+    const [adCtaLink, setAdCtaLink] = useState('');
+    const [adImage, setAdImage] = useState<File | null>(null);
+    const [adTarget, setAdTarget] = useState<'all' | 'students' | 'teachers'>('all');
+    const [adTeacherType, setAdTeacherType] = useState<'all' | 'coaching' | 'school'>('all');
+    const [isUploadingAd, setIsUploadingAd] = useState(false);
+
 
     // --- Firestore Data Hooks ---
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -117,6 +126,7 @@ export default function AdminDashboardPage() {
     const allBatchesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'batches')) : null, [firestore, userRole]);
     const allEnrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments')) : null, [firestore, userRole]);
     const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const advertisementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'advertisements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
 
     // Data from hooks
@@ -128,6 +138,7 @@ export default function AdminDashboardPage() {
     const { data: batchesData, isLoading: batchesLoading } = useCollection<Batch>(allBatchesQuery);
     const { data: enrollmentsData, isLoading: enrollmentsLoading } = useCollection<Enrollment>(allEnrollmentsQuery);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+    const { data: advertisements, isLoading: advertisementsLoading } = useCollection<Advertisement>(advertisementsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
 
     
@@ -460,8 +471,69 @@ export default function AdminDashboardPage() {
             });
     };
 
+    const handleAdvertisementUpload = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!adImage || !adTitle.trim() || !adMessage.trim() || !storage || !firestore) return;
+        
+        setIsUploadingAd(true);
+        const imageName = `${Date.now()}_${adImage.name}`;
+        const imageRef = ref(storage, `advertisements/${imageName}`);
+        
+        try {
+            const uploadTask = await uploadBytes(imageRef, adImage);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
+            
+            const adData = {
+                title: adTitle.trim(),
+                message: adMessage.trim(),
+                ctaLink: adCtaLink.trim(),
+                imageUrl: downloadURL,
+                imageName,
+                targetAudience: adTarget,
+                ...(adTarget === 'teachers' && { targetTeacherType: adTeacherType }),
+                createdAt: new Date().toISOString(),
+            };
+            
+            addDoc(collection(firestore, 'advertisements'), adData)
+                .then(docRef => {
+                    logAdminAction(`Created advertisement: "${adData.title}"`, docRef.id);
+                })
+                .catch(error => {
+                    console.error("Error adding advertisement to Firestore:", error);
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'advertisements', requestResourceData: adData }));
+                });
+            
+            setAdTitle(''); setAdMessage(''); setAdCtaLink(''); setAdImage(null); setAdTarget('all');
+            if (document.getElementById('ad-image')) {
+                (document.getElementById('ad-image') as HTMLInputElement).value = '';
+            }
+
+        } catch (error) {
+            console.error("Error uploading ad image:", error);
+        } finally {
+            setIsUploadingAd(false);
+        }
+    };
+
+    const handleDeleteAdvertisement = (ad: Advertisement) => {
+        if (!firestore || !storage) return;
+
+        const adDocRef = doc(firestore, 'advertisements', ad.id);
+        const imageRef = ref(storage, `advertisements/${ad.imageName}`);
+
+        deleteDoc(adDocRef).then(() => {
+            logAdminAction(`Deleted advertisement: "${ad.title}"`, ad.id);
+            deleteObject(imageRef).catch(error => {
+                console.warn("Could not delete ad image from storage:", error);
+            });
+        }).catch(error => {
+            console.error("Error deleting advertisement from Firestore:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: adDocRef.path }));
+        });
+    };
+
     // --- Loading State ---
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || activitiesLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || batchesLoading || enrollmentsLoading || announcementsLoading || advertisementsLoading || activitiesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -479,7 +551,8 @@ export default function AdminDashboardPage() {
         { id: 'bookings' as AdminView, label: 'Bookings', icon: Home, count: homeBookings?.length || 0 },
         { id: 'materials' as AdminView, label: 'Materials', icon: FileText, count: materials?.length || 0 },
         { id: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag, count: shopItems?.length || 0 },
-        { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell, count: announcements?.length || 0 },
+        { id: 'notifications' as AdminView, label: 'Notifications', icon: Bell },
+        { id: 'advertisements' as AdminView, label: 'Advertisements', icon: Bullhorn, count: advertisements?.length || 0 },
         { id: 'activity' as AdminView, label: 'Activity Log', icon: History },
     ];
     
@@ -922,6 +995,78 @@ export default function AdminDashboardPage() {
              </div>
         </div>
     );
+
+    const renderAdvertisementsView = () => (
+        <div className="grid gap-8">
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-serif">Advertisements</h1>
+                <p className="text-muted-foreground mt-2">Create and manage targeted advertisements.</p>
+            </div>
+            <div className="grid lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-1">
+                    <CardHeader><CardTitle>Create Advertisement</CardTitle></CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleAdvertisementUpload} className="grid gap-4">
+                            <div className="grid gap-2"><Label htmlFor="ad-title">Title</Label><Input id="ad-title" value={adTitle} onChange={e => setAdTitle(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="ad-message">Message</Label><Textarea id="ad-message" value={adMessage} onChange={e => setAdMessage(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="ad-cta-link">Call-to-Action Link (Optional)</Label><Input id="ad-cta-link" type="url" value={adCtaLink} onChange={e => setAdCtaLink(e.target.value)} /></div>
+                            <div className="grid gap-2"><Label htmlFor="ad-image">Image</Label><Input id="ad-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setAdImage(e.target.files ? e.target.files[0] : null)} required /></div>
+                            <div className="grid gap-2">
+                                <Label>Target Audience</Label>
+                                <Select value={adTarget} onValueChange={v => setAdTarget(v as any)} required>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Users</SelectItem>
+                                        <SelectItem value="students">Students</SelectItem>
+                                        <SelectItem value="teachers">Teachers</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {adTarget === 'teachers' && (
+                                <div className="grid gap-2">
+                                    <Label>Target Teacher Type</Label>
+                                    <Select value={adTeacherType} onValueChange={v => setAdTeacherType(v as any)} required>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Teachers</SelectItem>
+                                            <SelectItem value="coaching">Coaching Teachers</SelectItem>
+                                            <SelectItem value="school">School Teachers</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                            <Button type="submit" disabled={isUploadingAd} className="w-fit">{isUploadingAd ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Create Ad</Button>
+                        </form>
+                    </CardContent>
+                </Card>
+                <Card className="lg:col-span-2">
+                    <CardHeader><CardTitle>Active Advertisements</CardTitle></CardHeader>
+                    <CardContent>
+                        {advertisements && advertisements.length > 0 ? (
+                            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid gap-4">
+                                {advertisements.map(ad => (
+                                    <motion.div variants={itemFadeInUp} key={ad.id} className="flex items-start gap-4 p-4 rounded-lg border bg-background/50">
+                                        <Image src={ad.imageUrl} alt={ad.title} width={100} height={100} className="rounded-md object-cover flex-shrink-0" />
+                                        <div className="w-full flex flex-col h-full">
+                                            <div className="flex-grow">
+                                                <p className="font-semibold">{ad.title}</p>
+                                                <p className="text-sm text-muted-foreground mt-1">{ad.message}</p>
+                                                <p className="text-xs text-muted-foreground mt-2">Target: <span className="font-medium capitalize">{ad.targetAudience}{ad.targetAudience === 'teachers' && ` (${ad.targetTeacherType})`}</span></p>
+                                            </div>
+                                            <div className="flex items-center justify-end gap-2 mt-2">
+                                                {ad.ctaLink && <Button asChild size="sm" variant="outline"><a href={ad.ctaLink} target="_blank" rel="noopener noreferrer">View Link</a></Button>}
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteAdvertisement(ad)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        ) : (<div className="text-center py-12 flex flex-col items-center"><Bullhorn className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">No Advertisements Running</h3><p className="text-muted-foreground mt-1">Create an advertisement to get started.</p></div>)}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
     
     const renderActivityLogView = () => (
         <div className="grid gap-8">
@@ -965,6 +1110,7 @@ export default function AdminDashboardPage() {
             case 'materials': return renderMaterialsView();
             case 'shop': return renderShopView();
             case 'notifications': return renderNotificationsView();
+            case 'advertisements': return renderAdvertisementsView();
             case 'activity': return renderActivityLogView();
             default: return renderDashboardView();
         }
@@ -1037,3 +1183,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    

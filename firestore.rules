@@ -159,8 +159,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    match /advertisements/{advertisementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
     match /adminActivities/{activityId} {
       allow read, list, write: if isAdmin();
     }
   }
 }
+
+    
