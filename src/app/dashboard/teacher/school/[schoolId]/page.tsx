@@ -616,7 +616,7 @@ export default function SchoolDetailsPage() {
             teachers: renderTeachersView(),
             classes: renderClassesView(),
             students: renderStudentsView(),
-            fees: renderFeesView()
+            fees: renderFeesView(),
         };
 
         return (
