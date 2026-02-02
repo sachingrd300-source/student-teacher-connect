@@ -14,11 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
 import { TestMarksDialog } from '@/components/test-marks-dialog';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UserProfile {
     name: string;
@@ -72,6 +74,18 @@ interface Test {
     createdAt: string;
 }
 
+interface TestResult {
+    id: string;
+    testId: string;
+    studentId: string;
+    studentName: string;
+    batchId: string;
+    teacherId: string;
+    marksObtained: number;
+    uploadedAt: string;
+}
+
+
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 const formatDate = (dateString: string) => {
@@ -123,6 +137,9 @@ export default function BatchManagementPage() {
     const [testDate, setTestDate] = useState('');
     const [maxMarks, setMaxMarks] = useState('');
     const [isCreatingTest, setIsCreatingTest] = useState(false);
+    
+    // Performance tab state
+    const [selectedTestForAnalysis, setSelectedTestForAnalysis] = useState<string>('all');
 
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -171,6 +188,12 @@ export default function BatchManagementPage() {
     }, [firestore, batchId]);
     const { data: tests, isLoading: testsLoading } = useCollection<Test>(testsQuery);
 
+    const testResultsQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'testResults'), where('batchId', '==', batchId));
+    }, [firestore, batchId]);
+    const { data: testResults, isLoading: resultsLoading } = useCollection<TestResult>(testResultsQuery);
+
 
     useEffect(() => {
         if (!isAuthLoading && !user) {
@@ -186,6 +209,97 @@ export default function BatchManagementPage() {
             }
         }
     }, [batch, user, router]);
+
+    const performanceData = useMemo(() => {
+        if (!enrolledStudents || !tests || !testResults) {
+            return null;
+        }
+    
+        const testIdToMaxMarks: { [id: string]: number } = {};
+        tests.forEach(t => {
+            testIdToMaxMarks[t.id] = t.maxMarks;
+        });
+        
+        const studentPerformance: { [studentId: string]: { name: string; results: { testId: string; marksObtained: number; maxMarks: number; percentage: number }[]; totalMarks: number; totalMaxMarks: number; avgPercentage: number | null; } } = {};
+    
+        enrolledStudents.forEach(student => {
+            studentPerformance[student.studentId] = {
+                name: student.studentName,
+                results: [],
+                totalMarks: 0,
+                totalMaxMarks: 0,
+                avgPercentage: null
+            };
+        });
+        
+        testResults.forEach(result => {
+            if (studentPerformance[result.studentId] && testIdToMaxMarks[result.testId] !== undefined) {
+                const maxMarks = testIdToMaxMarks[result.testId];
+                const percentage = maxMarks > 0 ? (result.marksObtained / maxMarks) * 100 : 0;
+                studentPerformance[result.studentId].results.push({
+                    testId: result.testId,
+                    marksObtained: result.marksObtained,
+                    maxMarks: maxMarks,
+                    percentage: percentage
+                });
+            }
+        });
+    
+        let totalPercentageSum = 0;
+        let studentsWithScores = 0;
+    
+        Object.keys(studentPerformance).forEach(studentId => {
+            const student = studentPerformance[studentId];
+            if (student.results.length > 0) {
+                student.totalMarks = student.results.reduce((acc, r) => acc + r.marksObtained, 0);
+                student.totalMaxMarks = student.results.reduce((acc, r) => acc + r.maxMarks, 0);
+                student.avgPercentage = student.totalMaxMarks > 0 ? (student.totalMarks / student.totalMaxMarks) * 100 : 0;
+                totalPercentageSum += student.avgPercentage;
+                studentsWithScores++;
+            }
+        });
+    
+        const overallClassAverage = studentsWithScores > 0 ? totalPercentageSum / studentsWithScores : 0;
+        
+        const rankedStudents = Object.values(studentPerformance)
+            .filter(s => s.avgPercentage !== null)
+            .sort((a, b) => (b.avgPercentage!) - (a.avgPercentage!));
+    
+        const topPerformer = rankedStudents[0] || null;
+        const lowestPerformer = rankedStudents.length > 1 ? rankedStudents[rankedStudents.length - 1] : null;
+        
+        const selectedTestChartData = () => {
+            if (selectedTestForAnalysis === 'all' || !tests.find(t => t.id === selectedTestForAnalysis)) {
+                 return enrolledStudents.map(student => {
+                    const perf = studentPerformance[student.studentId];
+                    return {
+                        name: student.studentName.split(' ')[0],
+                        "Score (%)": perf.avgPercentage ? parseFloat(perf.avgPercentage.toFixed(2)) : 0
+                    }
+                })
+            }
+            
+            const test = tests.find(t => t.id === selectedTestForAnalysis)!;
+            const resultsForTest = testResults.filter(r => r.testId === test.id);
+            
+            return enrolledStudents.map(student => {
+                const result = resultsForTest.find(r => r.studentId === student.studentId);
+                const score = result && test.maxMarks > 0 ? (result.marksObtained / test.maxMarks) * 100 : 0;
+                return {
+                    name: student.studentName.split(' ')[0],
+                    "Score (%)": parseFloat(score.toFixed(2))
+                }
+            });
+        }
+    
+        return {
+            overallClassAverage,
+            topPerformer,
+            lowestPerformer,
+            rankedStudents,
+            selectedTestChartData: selectedTestChartData()
+        };
+    }, [enrolledStudents, tests, testResults, selectedTestForAnalysis]);
 
     const handleUpdateBatch = async () => {
         if (!batchRef || !batchName.trim() || !firestore || !batchId) return;
@@ -470,7 +584,7 @@ export default function BatchManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading;
+    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading || resultsLoading;
 
     if (isLoading || !batch) {
         return (
@@ -479,6 +593,108 @@ export default function BatchManagementPage() {
                 <p className="text-muted-foreground">Loading Batch Details...</p>
             </div>
         );
+    }
+    
+    const renderPerformanceView = () => {
+        if (!performanceData) {
+            return (
+                <div className="text-center py-12 flex flex-col items-center">
+                    <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold">Not Enough Data</h3>
+                    <p className="text-muted-foreground mt-1">Conduct tests and upload marks to see performance analytics.</p>
+                </div>
+            )
+        }
+    
+        const { overallClassAverage, topPerformer, lowestPerformer, rankedStudents, selectedTestChartData } = performanceData;
+    
+        return (
+            <div className="grid gap-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Class Average</CardTitle>
+                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{overallClassAverage.toFixed(1)}%</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Top Performer</CardTitle>
+                            <Trophy className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{topPerformer?.name || 'N/A'}</div>
+                            <p className="text-xs text-muted-foreground">{topPerformer ? `${topPerformer.avgPercentage?.toFixed(1)}% avg` : ''}</p>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Needs Attention</CardTitle>
+                            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{lowestPerformer?.name || 'N/A'}</div>
+                             <p className="text-xs text-muted-foreground">{lowestPerformer ? `${lowestPerformer.avgPercentage?.toFixed(1)}% avg` : ''}</p>
+                        </CardContent>
+                    </Card>
+                </div>
+    
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Score Distribution</CardTitle>
+                        <div className="flex items-center gap-2 pt-2">
+                            <Label htmlFor="test-analysis-select" className="text-sm">Analyze:</Label>
+                            <Select value={selectedTestForAnalysis} onValueChange={setSelectedTestForAnalysis}>
+                                <SelectTrigger id="test-analysis-select" className="w-full sm:w-[250px]">
+                                    <SelectValue placeholder="Select a test" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Overall Performance</SelectItem>
+                                    {tests && tests.map(test => (
+                                        <SelectItem key={test.id} value={test.id}>{test.title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                         <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={selectedTestChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" tick={{fontSize: 12}} interval={0} />
+                                <YAxis unit="%" />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="Score (%)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+    
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Student Rankings</CardTitle>
+                        <CardDescription>Based on average percentage across all tests.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid gap-3">
+                            {rankedStudents.length > 0 ? rankedStudents.map((student, index) => (
+                                 <div key={student.name} className="flex items-center justify-between p-2 border-b">
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold w-6 text-center">{index + 1}</span>
+                                        <p>{student.name}</p>
+                                    </div>
+                                    <p className="font-semibold">{student.avgPercentage?.toFixed(1)}%</p>
+                                </div>
+                            )) : <p className="text-center text-muted-foreground py-4">No ranked students yet.</p>}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
 
     return (
@@ -518,9 +734,10 @@ export default function BatchManagementPage() {
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
                             <TabsTrigger value="tests">Tests ({tests?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="performance">Performance</TabsTrigger>
                             <TabsTrigger value="materials">Materials ({materials?.length || 0})</TabsTrigger>
                             <TabsTrigger value="announcements">Announcements</TabsTrigger>
                         </TabsList>
@@ -651,6 +868,10 @@ export default function BatchManagementPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+
+                        <TabsContent value="performance" className="mt-4">
+                            {renderPerformanceView()}
                         </TabsContent>
                         
                         <TabsContent value="materials" className="mt-4 grid gap-6">
