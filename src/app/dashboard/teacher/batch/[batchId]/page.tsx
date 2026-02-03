@@ -391,60 +391,56 @@ export default function BatchManagementPage() {
         await firestoreBatch.commit();
     };
 
-    const handleFileUpload = async (e: React.FormEvent) => {
+    const handleFileUpload = (e: React.FormEvent) => {
         e.preventDefault();
         if (!materialFile || !materialTitle.trim() || !storage || !batchId || !user) return;
-
+    
         setIsUploading(true);
         const fileName = `${Date.now()}_${materialFile.name}`;
         const fileRef = ref(storage, `materials/${batchId}/${fileName}`);
-
-        try {
-            // This part is inherently slow and should be awaited.
-            await uploadBytes(fileRef, materialFile);
-            const downloadURL = await getDownloadURL(fileRef);
-
-            // Now, perform Firestore writes in a non-blocking way for the UI.
-            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-            const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
-            
-            const firestoreBatch = writeBatch(firestore);
-
-            firestoreBatch.set(doc(materialsColRef), {
-                title: materialTitle.trim(),
-                description: materialDescription.trim(),
-                fileURL: downloadURL,
-                fileName: fileName, // Keep filename for deletion
-                fileType: materialFile.type,
-                batchId: batchId,
-                teacherId: user.uid,
-                createdAt: new Date().toISOString(),
-            });
-
-            firestoreBatch.set(doc(activityColRef), {
-                message: `New material uploaded: "${materialTitle.trim()}"`,
-                createdAt: new Date().toISOString(),
-            });
-
-            // Commit the batch without awaiting, allowing UI to update immediately.
-            firestoreBatch.commit().catch(error => {
-                console.error("Error committing material upload to Firestore:", error);
-                // Optionally show an error toast to the user
-            });
-
-            // Clear the form immediately after starting the Firestore write.
-            setMaterialTitle('');
-            setMaterialDescription('');
-            setMaterialFile(null);
-            if (document.getElementById('material-file')) {
-                (document.getElementById('material-file') as HTMLInputElement).value = '';
-            }
-
-        } catch (error) {
-            console.error("Error uploading file to storage: ", error);
-        } finally {
-            setIsUploading(false);
+    
+        const currentTitle = materialTitle.trim();
+        const currentDescription = materialDescription.trim();
+        const currentFile = materialFile;
+    
+        // Optimistic UI Update
+        setMaterialTitle('');
+        setMaterialDescription('');
+        setMaterialFile(null);
+        if (document.getElementById('material-file')) {
+            (document.getElementById('material-file') as HTMLInputElement).value = '';
         }
+        setIsUploading(false); // Make the UI responsive immediately
+    
+        // Background upload
+        uploadBytes(fileRef, currentFile)
+            .then(uploadTask => getDownloadURL(uploadTask.ref))
+            .then(downloadURL => {
+                const firestoreBatch = writeBatch(firestore);
+                const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
+                const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+    
+                firestoreBatch.set(doc(materialsColRef), {
+                    title: currentTitle,
+                    description: currentDescription,
+                    fileURL: downloadURL,
+                    fileName: fileName,
+                    fileType: currentFile.type,
+                    batchId: batchId,
+                    teacherId: user.uid,
+                    createdAt: new Date().toISOString(),
+                });
+    
+                firestoreBatch.set(doc(activityColRef), {
+                    message: `New material uploaded: "${currentTitle}"`,
+                    createdAt: new Date().toISOString(),
+                });
+    
+                return firestoreBatch.commit();
+            })
+            .catch(error => {
+                console.error("Error during background material upload:", error);
+            });
     };
     
     const handleDeleteMaterial = async (material: StudyMaterial) => {
