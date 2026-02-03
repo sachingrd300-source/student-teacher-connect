@@ -9,9 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard, Wallet, BookCheck } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, Wallet, BookCheck } from 'lucide-react';
 import Link from 'next/link';
-import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 import { motion } from 'framer-motion';
 
 interface UserProfile {
@@ -121,7 +120,6 @@ export default function StudentDashboardPage() {
     const [batchCode, setBatchCode] = useState('');
     const [joinMessage, setJoinMessage] = useState({ type: '', text: '' });
     const [isJoining, setIsJoining] = useState(false);
-    const [bookingToPay, setBookingToPay] = useState<HomeBooking | null>(null);
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -402,14 +400,7 @@ export default function StudentDashboardPage() {
                                             {lastHomeTutorBooking.status}
                                         </span>
                                     </div>
-                                    {lastHomeTutorBooking.status === 'Awaiting Payment' ? (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <p className="text-sm font-medium mb-2">Your booking is ready! Please pay the platform fee to confirm.</p>
-                                            <Button size="sm" className="w-full" onClick={() => setBookingToPay(lastHomeTutorBooking)}>
-                                                <CreditCard className="mr-2 h-4 w-4"/> Pay Now
-                                            </Button>
-                                        </div>
-                                    ) : (lastHomeTutorBooking.status === 'Confirmed' || lastHomeTutorBooking.status === 'Completed') && lastHomeTutorBooking.assignedTeacherName ? (
+                                    {(lastHomeTutorBooking.status === 'Awaiting Payment' || lastHomeTutorBooking.status === 'Confirmed' || lastHomeTutorBooking.status === 'Completed') && lastHomeTutorBooking.assignedTeacherName ? (
                                         <div className="mt-3 pt-3 border-t">
                                             <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
                                             <p className="font-semibold text-primary">{lastHomeTutorBooking.assignedTeacherName}</p>
@@ -465,14 +456,6 @@ export default function StudentDashboardPage() {
                     </Card>
                 </div>
             </motion.div>
-            {bookingToPay && (
-                <BookingPaymentDialog
-                    isOpen={!!bookingToPay}
-                    onClose={() => setBookingToPay(null)}
-                    booking={bookingToPay}
-                    onPaymentSuccess={() => { /* Real-time listener will update UI */ }}
-                />
-            )}
         </motion.div>
     );
 }

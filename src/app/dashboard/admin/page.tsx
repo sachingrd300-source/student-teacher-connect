@@ -398,7 +398,7 @@ export default function AdminDashboardPage() {
         updateDoc(bookingDocRef, {
             assignedTeacherId: teacher.id,
             assignedTeacherName: teacher.name,
-            status: 'Awaiting Payment'
+            status: 'Confirmed'
         })
         .then(() => {
             logAdminAction(`Assigned teacher ${teacher.name} to booking for ${booking.studentName}`, booking.id);
@@ -408,7 +408,7 @@ export default function AdminDashboardPage() {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'update',
                 path: bookingDocRef.path,
-                requestResourceData: { assignedTeacherId: teacher.id, status: 'Awaiting Payment' }
+                requestResourceData: { assignedTeacherId: teacher.id, status: 'Confirmed' }
             }));
         });
     };
