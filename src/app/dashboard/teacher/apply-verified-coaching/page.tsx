@@ -1,19 +1,25 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, FirestorePermissionError, errorEmitter } from '@/firebase';
-import { doc, addDoc, collection, query, where, limit } from 'firebase/firestore';
+import { doc, addDoc, collection, query, where, limit, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Send, CheckCircle, Clock, XCircle, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface UserProfile {
     name: string;
     role?: 'student' | 'teacher' | 'admin' | 'parent';
+    whatsappNumber?: string;
+    subject?: string;
+    address?: string;
+    bio?: string;
 }
 
 interface CommunityAssociateApplication {
@@ -39,6 +45,10 @@ export default function ApplyCommunityAssociatePage() {
     const router = useRouter();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [whatsappNumber, setWhatsappNumber] = useState('');
+    const [subject, setSubject] = useState('');
+    const [address, setAddress] = useState('');
+    const [bio, setBio] = useState('');
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -57,24 +67,45 @@ export default function ApplyCommunityAssociatePage() {
         }
     }, [user, isUserLoading, router, userProfile]);
 
-    const handleSubmitApplication = async () => {
-        if (!firestore || !user || !userProfile || existingApplication) return;
+    useEffect(() => {
+        if (userProfile) {
+            setWhatsappNumber(userProfile.whatsappNumber || '');
+            setSubject(userProfile.subject || '');
+            setAddress(userProfile.address || '');
+            setBio(userProfile.bio || '');
+        }
+    }, [userProfile]);
+
+    const handleSubmitApplication = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!firestore || !user || !userProfile || !userProfileRef || existingApplication) return;
         
         setIsSubmitting(true);
-        const applicationData = {
-            teacherId: user.uid,
-            teacherName: userProfile.name,
-            status: 'pending' as const,
-            createdAt: new Date().toISOString(),
+        const profileUpdateData = {
+            whatsappNumber: whatsappNumber.trim(),
+            subject: subject.trim(),
+            address: address.trim(),
+            bio: bio.trim(),
         };
+
         try {
+             // First, update the teacher's profile with the new details
+            await updateDoc(userProfileRef, profileUpdateData);
+            
+            // Then, create the application
+            const applicationData = {
+                teacherId: user.uid,
+                teacherName: userProfile.name,
+                status: 'pending' as const,
+                createdAt: new Date().toISOString(),
+            };
             await addDoc(collection(firestore, 'verifiedCoachingApplications'), applicationData);
         } catch (error) {
             console.error("Error submitting application:", error);
             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                operation: 'create',
-                path: 'verifiedCoachingApplications',
-                requestResourceData: applicationData,
+                operation: 'update',
+                path: userProfileRef.path,
+                requestResourceData: profileUpdateData,
             }));
         } finally {
             setIsSubmitting(false);
@@ -98,14 +129,38 @@ export default function ApplyCommunityAssociatePage() {
                 <Card className="rounded-2xl shadow-lg">
                     <CardHeader>
                         <CardTitle>Apply to be an Achievers Community Associate</CardTitle>
-                        <CardDescription>Get a verified badge on your profile and join our community of educators. Submit your application for review by our admin team.</CardDescription>
+                        <CardDescription>Please fill out your details below. This will be used for your public profile if your application is approved.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button onClick={handleSubmitApplication} disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            Submit Application
-                        </Button>
-                    </CardContent>
+                    <form onSubmit={handleSubmitApplication}>
+                        <CardContent className="grid gap-4">
+                             <div className="grid gap-2">
+                                <Label htmlFor="subject">Subject(s)</Label>
+                                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Physics, Mathematics" required />
+                                <CardDescription className="text-xs">The main subjects you teach.</CardDescription>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="whatsapp">WhatsApp Number</Label>
+                                <Input id="whatsapp" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g., +91..." required />
+                                <CardDescription className="text-xs">Your contact number for students.</CardDescription>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="address">Tuition Address</Label>
+                                <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Your primary teaching location" required />
+                                <CardDescription className="text-xs">This address will be visible to students.</CardDescription>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="bio">Bio</Label>
+                                <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell students a little about your teaching style." required />
+                                <CardDescription className="text-xs">A short introduction about yourself.</CardDescription>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                Submit Application
+                            </Button>
+                        </CardFooter>
+                    </form>
                 </Card>
             );
         }
@@ -160,5 +215,3 @@ export default function ApplyCommunityAssociatePage() {
         </div>
     )
 }
-
-    
