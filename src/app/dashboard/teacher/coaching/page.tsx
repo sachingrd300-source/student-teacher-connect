@@ -285,7 +285,15 @@ export default function CoachingManagementPage() {
                         animate="visible"
                         variants={fadeInUp}
                     >
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
+                             {isCommunityAssociate && (
+                                <div className="flex items-center gap-2 text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 px-3 py-1.5 rounded-full">
+                                    <CheckCircle className="h-5 w-5" />
+                                    <span>Verified Community Associate</span>
+                                </div>
+                            )}
+                        </div>
                         <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
                     </motion.div>
 
@@ -540,3 +548,5 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
+
+    
