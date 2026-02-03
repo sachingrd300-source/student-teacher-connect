@@ -63,6 +63,28 @@ const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
     star: <Star className="h-5 w-5" />,
 };
 
+const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: staggerChildren,
+      delayChildren: delayChildren,
+    },
+  },
+});
+
+const fadeInUp = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
 // --- Main Component ---
 export default function AdminDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -146,6 +168,9 @@ export default function AdminDashboardPage() {
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
+    const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
+    const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
+
     // --- Auth & Role Check ---
     useEffect(() => {
         if (isUserLoading || profileLoading) return;
@@ -274,10 +299,6 @@ export default function AdminDashboardPage() {
             dpps: materials.filter(m => m.category === 'dpps'),
         };
     }, [materials]);
-
-    const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
-    const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
-
 
     // --- Event Handlers ---
     const handleApplication = (application: ApplicationBase, newStatus: 'approved' | 'rejected', type: ApplicationType) => {
@@ -652,74 +673,93 @@ export default function AdminDashboardPage() {
     );
     
     const renderDashboardView = () => (
-         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">Dashboard</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{stats.teacherCount}</div></CardContent>
-                </Card>
-                <Card>
-                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{stats.studentCount}</div></CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Registered Schools</CardTitle>
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{stats.schoolCount}</div></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                        <Home className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{stats.bookingCount}</div></CardContent>
-                </Card>
-            </div>
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Users</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {allUsers.slice(0, 5).map(u => (
-                            <div key={u.id} className="flex items-center gap-4 mb-4">
-                                <Avatar><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
-                                <div>
-                                    <p className="font-semibold">{u.name}</p>
-                                    <p className="text-sm text-muted-foreground capitalize">{u.role}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Admin Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         {adminActivities && adminActivities.length > 0 ? (
-                            <div className="grid gap-3">
-                                {adminActivities.slice(0, 5).map(activity => (
-                                    <div key={activity.id} className="flex justify-between items-center text-sm">
-                                        <p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p>
-                                        <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
+        <motion.div 
+            className="grid gap-8"
+            variants={staggerContainer(0.1, 0)}
+            initial="hidden"
+            animate="visible"
+        >
+            <motion.h1 variants={fadeInUp} className="text-3xl font-bold font-serif">Dashboard</motion.h1>
+            
+            <motion.div variants={staggerContainer(0.1, 0.2)} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <motion.div variants={fadeInUp}>
+                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-900/50 border-indigo-200 dark:border-indigo-800">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium text-indigo-900 dark:text-indigo-200">Total Teachers</CardTitle>
+                            <Briefcase className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold text-indigo-950 dark:text-indigo-50">{stats.teacherCount}</div></CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-green-500/10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-900/50 border-green-200 dark:border-green-800">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium text-green-900 dark:text-green-200">Total Students</CardTitle>
+                            <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold text-green-950 dark:text-green-50">{stats.studentCount}</div></CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/10 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-900/50 border-amber-200 dark:border-amber-800">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-200">Registered Schools</CardTitle>
+                            <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold text-amber-950 dark:text-amber-50">{stats.schoolCount}</div></CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-rose-500/10 bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/30 dark:to-rose-900/50 border-rose-200 dark:border-rose-800">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <CardTitle className="text-sm font-medium text-rose-900 dark:text-rose-200">Total Bookings</CardTitle>
+                            <Home className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                        </CardHeader>
+                        <CardContent><div className="text-2xl font-bold text-rose-950 dark:text-rose-50">{stats.bookingCount}</div></CardContent>
+                    </Card>
+                </motion.div>
+            </motion.div>
+    
+            <motion.div variants={staggerContainer(0.2, 0.4)} initial="hidden" animate="visible" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div variants={fadeInUp}>
+                    <Card className="transition-all duration-300 hover:shadow-xl">
+                        <CardHeader>
+                            <CardTitle>Recent Users</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {allUsers.slice(0, 5).map(u => (
+                                <div key={u.id} className="flex items-center gap-4 mb-4">
+                                    <Avatar><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
+                                    <div>
+                                        <p className="font-semibold">{u.name}</p>
+                                        <p className="text-sm text-muted-foreground capitalize">{u.role}</p>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (<p className="text-muted-foreground text-center py-4">No activity recorded yet.</p>)}
-                    </CardContent>
-                 </Card>
-             </div>
-        </div>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                    <Card className="transition-all duration-300 hover:shadow-xl">
+                        <CardHeader>
+                            <CardTitle>Recent Admin Activity</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                                {adminActivities && adminActivities.length > 0 ? (
+                                <div className="grid gap-3">
+                                    {adminActivities.slice(0, 5).map(activity => (
+                                        <div key={activity.id} className="flex justify-between items-center text-sm">
+                                            <p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p>
+                                            <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (<p className="text-muted-foreground text-center py-4">No activity recorded yet.</p>)}
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </motion.div>
+        </motion.div>
     );
     
     const renderUsersView = () => {
