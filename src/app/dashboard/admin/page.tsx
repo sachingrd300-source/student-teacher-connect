@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 
 // Icons
@@ -34,11 +35,11 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle
+    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; isVerifiedCoachingTutor?: boolean; createdAt: string; lastLoginDate?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; isVerifiedCoachingTutor?: boolean; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; address?: string; }
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
@@ -52,7 +53,7 @@ interface AdminActivity { id: string; adminId: string; adminName: string; action
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools' | 'achievers';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -121,6 +122,12 @@ export default function AdminDashboardPage() {
     // Badge/Shop Item state
     const [itemType, setItemType] = useState<'item' | 'badge'>('item');
     const [badgeIcon, setBadgeIcon] = useState<BadgeIconType>('award');
+
+    // Achievers Edit State
+    const [editingAchiever, setEditingAchiever] = useState<UserProfile | null>(null);
+    const [achieverFormState, setAchieverFormState] = useState({ fee: '', address: '', coachingCenterName: '' });
+    const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
+
 
     useEffect(() => {
         if (itemType === 'badge') {
@@ -266,7 +273,7 @@ export default function AdminDashboardPage() {
         if (!allUsersData) return new Set<string>();
         return new Set(
             allUsersData
-                .filter(user => user.role === 'teacher' && (user.isHomeTutor || user.isVerifiedCoachingTutor))
+                .filter(user => user.role === 'teacher' && user.isVerifiedCoachingTutor)
                 .map(teacher => teacher.id)
         );
     }, [allUsersData]);
@@ -301,6 +308,10 @@ export default function AdminDashboardPage() {
             dpps: materials.filter(m => m.category === 'dpps'),
         };
     }, [materials]);
+
+    const achieverTeachers = useMemo(() => 
+        allUsers?.filter(u => u.role === 'teacher' && u.isVerifiedCoachingTutor) || [],
+    [allUsers]);
 
     // --- Event Handlers ---
     const handleApplication = (application: ApplicationBase, newStatus: 'approved' | 'rejected', type: ApplicationType) => {
@@ -624,6 +635,37 @@ export default function AdminDashboardPage() {
             });
     };
 
+    const handleOpenEditAchieverDialog = (teacher: UserProfile) => {
+        setEditingAchiever(teacher);
+        setAchieverFormState({
+            fee: teacher.fee || '',
+            address: teacher.address || '',
+            coachingCenterName: teacher.coachingCenterName || ''
+        });
+    };
+
+    const handleUpdateAchiever = async () => {
+        if (!firestore || !editingAchiever) return;
+        setIsUpdatingAchiever(true);
+        const achieverRef = doc(firestore, 'users', editingAchiever.id);
+        
+        try {
+            await updateDoc(achieverRef, achieverFormState);
+            logAdminAction(`Updated profile for Achiever teacher: ${editingAchiever.name}`, editingAchiever.id);
+            setEditingAchiever(null);
+        } catch (error) {
+            console.error("Error updating achiever teacher:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: achieverRef.path,
+                requestResourceData: achieverFormState
+            }));
+        } finally {
+            setIsUpdatingAchiever(false);
+        }
+    };
+
+
     const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
@@ -661,6 +703,7 @@ export default function AdminDashboardPage() {
                  <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
                  <Button variant={view === 'users' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('users')}><Users className="mr-2 h-4 w-4" />Users</Button>
                  <Button variant={view === 'schools' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('schools')}><Building2 className="mr-2 h-4 w-4" />Schools</Button>
+                 <Button variant={view === 'achievers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('achievers')}><Award className="mr-2 h-4 w-4" />Achievers</Button>
                  <Button variant={view === 'applications' ? 'secondary' : 'ghost'} className="justify-start relative" onClick={() => handleViewChange('applications')}>
                     <Briefcase className="mr-2 h-4 w-4" />Applications
                     {totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
@@ -1335,6 +1378,47 @@ export default function AdminDashboardPage() {
         </div>
     );
 
+    const renderAchieversView = () => (
+        <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">Achievers Community Teachers</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manage Teacher Profiles</CardTitle>
+                    <CardDescription>Edit the fee, address, and coaching center name for verified community teachers.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {achieverTeachers.length > 0 ? (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {achieverTeachers.map(teacher => (
+                                <Card key={teacher.id}>
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg">{teacher.name}</CardTitle>
+                                            <CardDescription>{teacher.email}</CardDescription>
+                                        </div>
+                                        <Button variant="outline" size="sm" onClick={() => handleOpenEditAchieverDialog(teacher)}>
+                                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent className="grid gap-2 text-sm">
+                                        <p><strong>Fee:</strong> {teacher.fee || <span className="text-muted-foreground">Not set</span>}</p>
+                                        <p><strong>Address:</strong> {teacher.address || <span className="text-muted-foreground">Not set</span>}</p>
+                                        <p><strong>Center Name:</strong> {teacher.coachingCenterName || <span className="text-muted-foreground">Not set</span>}</p>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <p className="text-muted-foreground">No teachers have been approved for the Achievers Community program yet.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+
+
     const renderCurrentView = () => {
         const views: Record<AdminView, React.ReactNode> = {
             dashboard: renderDashboardView(),
@@ -1346,6 +1430,7 @@ export default function AdminDashboardPage() {
             notifications: renderNotificationsView(),
             activity: renderActivityLogView(),
             schools: renderSchoolsView(),
+            achievers: renderAchieversView(),
         };
 
         return (
@@ -1391,6 +1476,52 @@ export default function AdminDashboardPage() {
                     </div>
                 </main>
             </div>
+            <Dialog open={!!editingAchiever} onOpenChange={(isOpen) => !isOpen && setEditingAchiever(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Profile for {editingAchiever?.name}</DialogTitle>
+                        <DialogDescription>
+                            As this teacher is part of the Achievers Community, you can set their public-facing details.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="achiever-fee">Fee Structure</Label>
+                            <Input 
+                                id="achiever-fee" 
+                                value={achieverFormState.fee} 
+                                onChange={(e) => setAchieverFormState(prev => ({ ...prev, fee: e.target.value }))}
+                                placeholder="e.g., 500/month"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="achiever-address">Address</Label>
+                            <Textarea 
+                                id="achiever-address" 
+                                value={achieverFormState.address}
+                                onChange={(e) => setAchieverFormState(prev => ({ ...prev, address: e.target.value }))}
+                                placeholder="Tuition address"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="achiever-center-name">Coaching Center Name</Label>
+                            <Input 
+                                id="achiever-center-name" 
+                                value={achieverFormState.coachingCenterName}
+                                onChange={(e) => setAchieverFormState(prev => ({ ...prev, coachingCenterName: e.target.value }))}
+                                placeholder="e.g., Success Tutorials"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleUpdateAchiever} disabled={isUpdatingAchiever}>
+                            {isUpdatingAchiever ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
