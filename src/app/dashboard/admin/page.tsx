@@ -235,14 +235,30 @@ export default function AdminDashboardPage() {
             rejected: communityAssociateApplications.filter(a => a.status === 'rejected'),
         };
     }, [communityAssociateApplications]);
+    
+    const communityTeacherIds = useMemo(() => {
+        if (!allUsersData) return new Set<string>();
+        return new Set(
+            allUsersData
+                .filter(user => user.role === 'teacher' && (user.isHomeTutor || user.isVerifiedCoachingTutor))
+                .map(teacher => teacher.id)
+        );
+    }, [allUsersData]);
 
     const filteredEnrollments = useMemo(() => {
         if (!enrollments) return { pending: [], approved: [] };
+    
+        // Filter enrollments for community teachers only
+        const relevantEnrollments = communityTeacherIds.size > 0 
+            ? enrollments.filter(e => communityTeacherIds.has(e.teacherId))
+            : [];
+    
         return {
-            pending: enrollments.filter(e => e.status === 'pending'),
-            approved: enrollments.filter(e => e.status === 'approved'),
+            pending: relevantEnrollments.filter(e => e.status === 'pending'),
+            approved: relevantEnrollments.filter(e => e.status === 'approved'),
         };
-    }, [enrollments]);
+    }, [enrollments, communityTeacherIds]);
+
 
     const totalPendingApps = useMemo(() => 
         (filteredHomeTutorApps.pending.length || 0) + 
