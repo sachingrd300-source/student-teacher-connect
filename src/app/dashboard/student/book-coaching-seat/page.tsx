@@ -19,7 +19,7 @@ interface UserProfile {
     mobileNumber?: string;
     fatherName?: string;
     class?: string;
-    address?: string;
+    homeAddress?: string;
     role?: 'student' | 'teacher' | 'admin' | 'parent';
     coins?: number;
     streak?: number;
@@ -38,7 +38,7 @@ export default function BookCoachingSeatPage() {
     const [fatherName, setFatherName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [studentClass, setStudentClass] = useState('');
-    const [address, setAddress] = useState('');
+    const [studentAddress, setStudentAddress] = useState('');
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -55,7 +55,7 @@ export default function BookCoachingSeatPage() {
             setFatherName(userProfile.fatherName || '');
             setMobileNumber(userProfile.mobileNumber || '');
             setStudentClass(userProfile.class || '');
-            setAddress(userProfile.address || '');
+            setStudentAddress(userProfile.homeAddress || '');
         }
     }, [userProfile]);
 
@@ -73,7 +73,7 @@ export default function BookCoachingSeatPage() {
                 fatherName: fatherName.trim(),
                 mobileNumber: mobileNumber.trim(),
                 studentClass: studentClass.trim(),
-                address: address.trim(),
+                studentAddress: studentAddress.trim(),
                 status: 'Pending',
                 createdAt: new Date().toISOString(),
                 bookingType: 'coachingCenter',
@@ -136,8 +136,8 @@ export default function BookCoachingSeatPage() {
                                     </div>
                                </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="address">Full Address</Label>
-                                    <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your complete address to help us find the nearest center" required />
+                                    <Label htmlFor="student-address">Full Address</Label>
+                                    <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address to help us find the nearest center" required />
                                 </div>
                             </CardContent>
                             <CardFooter className="flex-col items-start gap-4">

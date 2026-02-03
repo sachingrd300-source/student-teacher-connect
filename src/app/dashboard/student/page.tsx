@@ -393,14 +393,13 @@ export default function StudentDashboardPage() {
                                         </div>
                                          <span className={`text-xs font-bold py-1 px-2 rounded-full ${
                                             lastHomeTutorBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            lastHomeTutorBooking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
                                             lastHomeTutorBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
                                             lastHomeTutorBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>
                                             {lastHomeTutorBooking.status}
                                         </span>
                                     </div>
-                                    {(lastHomeTutorBooking.status === 'Awaiting Payment' || lastHomeTutorBooking.status === 'Confirmed' || lastHomeTutorBooking.status === 'Completed') && lastHomeTutorBooking.assignedTeacherName ? (
+                                    {lastHomeTutorBooking.status === 'Confirmed' && lastHomeTutorBooking.assignedTeacherName ? (
                                         <div className="mt-3 pt-3 border-t">
                                             <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
                                             <p className="font-semibold text-primary">{lastHomeTutorBooking.assignedTeacherName}</p>
@@ -424,7 +423,6 @@ export default function StudentDashboardPage() {
                                         </div>
                                          <span className={`text-xs font-bold py-1 px-2 rounded-full ${
                                             lastCoachingBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            lastCoachingBooking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
                                             lastCoachingBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
                                             lastCoachingBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>

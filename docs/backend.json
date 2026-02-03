@@ -65,6 +65,10 @@
             "type": "string",
             "description": "The name of the teacher's coaching center."
         },
+        "coachingAddress": {
+            "type": "string",
+            "description": "The public address of the teacher's coaching center."
+        },
         "whatsappNumber": {
             "type": "string",
             "description": "The teacher's WhatsApp number for contact."
@@ -85,9 +89,9 @@
             "type": "string",
             "description": "The student's mobile phone number."
         },
-        "address": {
+        "homeAddress": {
             "type": "string",
-            "description": "The user's physical address."
+            "description": "The user's private home address, primarily used for verification."
         },
         "referralCode": {
           "type": "string",
@@ -235,9 +239,9 @@
           "type": "string",
           "description": "The contact mobile number for the booking."
         },
-        "address": {
+        "studentAddress": {
           "type": "string",
-          "description": "The address where tuition is required."
+          "description": "The student's address where tuition is required."
         },
         "studentClass": {
           "type": "string",
@@ -285,7 +289,7 @@
         "studentId",
         "studentName",
         "mobileNumber",
-        "address",
+        "studentAddress",
         "studentClass",
         "status",
         "createdAt",

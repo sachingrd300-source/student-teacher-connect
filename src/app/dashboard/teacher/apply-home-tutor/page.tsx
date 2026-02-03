@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ interface UserProfile {
     role?: 'student' | 'teacher' | 'admin' | 'parent';
     whatsappNumber?: string;
     subject?: string;
-    address?: string;
+    homeAddress?: string;
     bio?: string;
 }
 
@@ -47,7 +48,7 @@ export default function ApplyHomeTutorPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [subject, setSubject] = useState('');
-    const [address, setAddress] = useState('');
+    const [houseAddress, setHouseAddress] = useState('');
     const [bio, setBio] = useState('');
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -71,7 +72,7 @@ export default function ApplyHomeTutorPage() {
         if (userProfile) {
             setWhatsappNumber(userProfile.whatsappNumber || '');
             setSubject(userProfile.subject || '');
-            setAddress(userProfile.address || '');
+            setHouseAddress(userProfile.homeAddress || '');
             setBio(userProfile.bio || '');
         }
     }, [userProfile]);
@@ -85,7 +86,7 @@ export default function ApplyHomeTutorPage() {
         const profileUpdateData = {
             whatsappNumber: whatsappNumber.trim(),
             subject: subject.trim(),
-            address: address.trim(),
+            homeAddress: houseAddress.trim(),
             bio: bio.trim(),
         };
 
@@ -146,7 +147,7 @@ export default function ApplyHomeTutorPage() {
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="address">House Address</Label>
-                                <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Your full house address for verification" required />
+                                <Textarea id="address" value={houseAddress} onChange={(e) => setHouseAddress(e.target.value)} placeholder="Your full house address for verification" required />
                                 <CardDescription className="text-xs">This address is used for verification and will not be shared publicly.</CardDescription>
                             </div>
                             <div className="grid gap-2">

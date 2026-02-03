@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -16,7 +17,7 @@ interface StudentProfile {
     role: 'student';
     bio?: string;
     mobileNumber?: string;
-    address?: string;
+    homeAddress?: string;
     fatherName?: string;
     class?: string;
 }
@@ -99,7 +100,7 @@ export default function StudentProfilePage() {
                             <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="Mobile Number" value={studentProfile.mobileNumber} />
                             <InfoItem icon={<UserIcon className="w-5 h-5 text-primary" />} label="Father's Name" value={studentProfile.fatherName} />
                             <InfoItem icon={<GraduationCap className="w-5 h-5 text-primary" />} label="Class" value={studentProfile.class} />
-                            <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Home Address" value={studentProfile.address} />
+                            <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Home Address" value={studentProfile.homeAddress} />
                             
                             {studentProfile.bio && (
                                 <div className="border-t pt-4">

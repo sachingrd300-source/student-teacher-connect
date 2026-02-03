@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -29,7 +30,8 @@ interface UserProfile {
     subject?: string;
     bio?: string;
     coachingCenterName?: string;
-    address?: string;
+    coachingAddress?: string;
+    homeAddress?: string;
     whatsappNumber?: string;
     fee?: string;
     mobileNumber?: string;
@@ -74,12 +76,12 @@ export default function ProfilePage() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [errors, setErrors] = useState<{ address?: string }>({});
+    const [errors, setErrors] = useState<{ homeAddress?: string }>({});
     
     // Form state
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
-    const [address, setAddress] = useState('');
+    const [homeAddress, setHomeAddress] = useState('');
     
     // Teacher state
     const [subject, setSubject] = useState('');
@@ -120,7 +122,7 @@ export default function ProfilePage() {
         if (userProfile) {
             setName(userProfile.name || '');
             setBio(userProfile.bio || '');
-            setAddress(userProfile.address || '');
+            setHomeAddress(userProfile.homeAddress || '');
 
             if (userProfile.role === 'teacher') {
                 setSubject(userProfile.subject || '');
@@ -144,9 +146,9 @@ export default function ProfilePage() {
     const handleSave = async () => {
         if (!userProfileRef || !userProfile) return;
 
-        const newErrors: { address?: string } = {};
-        if (userProfile.role === 'teacher' && !address.trim() && !isCommunityAssociate) {
-            newErrors.address = 'Address is mandatory for teachers to be listed.';
+        const newErrors: { homeAddress?: string } = {};
+        if (userProfile.role === 'teacher' && !homeAddress.trim() && !isCommunityAssociate) {
+            newErrors.homeAddress = 'Address is mandatory for teachers to be listed.';
         }
         setErrors(newErrors);
 
@@ -177,7 +179,7 @@ export default function ProfilePage() {
             
             // Fields only non-associates can edit
             if (!isCommunityAssociate) {
-                dataToUpdate.address = address.trim();
+                dataToUpdate.homeAddress = homeAddress.trim();
                 dataToUpdate.coachingCenterName = coachingCenterName.trim();
                 dataToUpdate.fee = fee.trim();
             }
@@ -185,7 +187,7 @@ export default function ProfilePage() {
             dataToUpdate.mobileNumber = mobileNumber.trim();
             dataToUpdate.fatherName = fatherName.trim();
             dataToUpdate.class = studentClass.trim();
-            dataToUpdate.address = address.trim();
+            dataToUpdate.homeAddress = homeAddress.trim();
         }
 
         try {
@@ -225,7 +227,7 @@ export default function ProfilePage() {
         if (userProfile) {
             setName(userProfile.name || '');
             setBio(userProfile.bio || '');
-            setAddress(userProfile.address || '');
+            setHomeAddress(userProfile.homeAddress || '');
             setErrors({}); // Clear errors
 
             if (userProfile.role === 'teacher') {
@@ -321,35 +323,35 @@ export default function ProfilePage() {
                             </div>
                             
                              <div className="grid gap-2">
-                                <Label htmlFor="address">
-                                    {userProfile.role === 'teacher' ? 'Tuition Address' : 'Home Address'}
+                                <Label htmlFor="homeAddress">
+                                    Home Address
                                     {userProfile.role === 'teacher' && <span className="text-destructive"> *</span>}
                                 </Label>
                                 {isEditing ? (
                                     <>
                                         <Textarea
-                                            id="address"
-                                            value={address}
-                                            onChange={(e) => setAddress(e.target.value)}
+                                            id="homeAddress"
+                                            value={homeAddress}
+                                            onChange={(e) => setHomeAddress(e.target.value)}
                                             placeholder={
                                                 userProfile.role === 'teacher' 
-                                                ? "Your tuition center or primary teaching location. This is required." 
+                                                ? "Your home address for verification. This is private." 
                                                 : "Your home address for finding local tutors."
                                             }
                                             required={userProfile.role === 'teacher' && !isCommunityAssociate}
-                                            className={errors.address ? 'border-destructive' : ''}
+                                            className={errors.homeAddress ? 'border-destructive' : ''}
                                             disabled={isEditing && isCommunityAssociate}
                                         />
-                                        {errors.address && <p className="text-sm font-medium text-destructive">{errors.address}</p>}
+                                        {errors.homeAddress && <p className="text-sm font-medium text-destructive">{errors.homeAddress}</p>}
                                         <p className="text-xs text-muted-foreground">
                                             {userProfile.role === 'teacher' 
-                                                ? "This address will be visible to students to help them find you."
+                                                ? "This address is private and used for verification purposes only."
                                                 : "Your address is kept private and only used to find nearby tutors."
                                             }
                                         </p>
                                     </>
                                 ) : (
-                                    <p className="text-sm font-medium whitespace-pre-wrap">{address || <span className="text-muted-foreground">Not set</span>}</p>
+                                    <p className="text-sm font-medium whitespace-pre-wrap">{homeAddress || <span className="text-muted-foreground">Not set</span>}</p>
                                 )}
                             </div>
 
@@ -387,9 +389,14 @@ export default function ProfilePage() {
                                     {isCommunityAssociate && (
                                         <div className="p-3 bg-accent/50 text-accent-foreground rounded-lg text-sm flex items-start gap-3">
                                             <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                                            <div>As an Achievers Community Associate, some details like your fee, address, and coaching name are managed by the admin. You can still edit other details like your bio and subject.</div>
+                                            <div>As an Achievers Community Associate, some details like your fee, coaching name, and coaching address are managed by the admin. You can still edit other details like your bio and subject.</div>
                                         </div>
                                     )}
+                                    <div className="grid gap-2">
+                                        <Label>Coaching Address</Label>
+                                        <p className="text-sm font-medium whitespace-pre-wrap">{userProfile.coachingAddress || <span className="text-muted-foreground">Not set by admin</span>}</p>
+                                        <p className="text-xs text-muted-foreground">This is your public coaching address, managed by the admin.</p>
+                                    </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="coachingCenterName">Coaching Center Name</Label>
                                         {isEditing ? (

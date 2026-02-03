@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ interface UserProfile {
     role?: 'student' | 'teacher' | 'admin' | 'parent';
     whatsappNumber?: string;
     subject?: string;
-    address?: string;
+    coachingAddress?: string;
     bio?: string;
 }
 
@@ -47,7 +48,7 @@ export default function ApplyCommunityAssociatePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [subject, setSubject] = useState('');
-    const [address, setAddress] = useState('');
+    const [coachingAddress, setCoachingAddress] = useState('');
     const [bio, setBio] = useState('');
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -71,7 +72,7 @@ export default function ApplyCommunityAssociatePage() {
         if (userProfile) {
             setWhatsappNumber(userProfile.whatsappNumber || '');
             setSubject(userProfile.subject || '');
-            setAddress(userProfile.address || '');
+            setCoachingAddress(userProfile.coachingAddress || '');
             setBio(userProfile.bio || '');
         }
     }, [userProfile]);
@@ -84,7 +85,7 @@ export default function ApplyCommunityAssociatePage() {
         const profileUpdateData = {
             whatsappNumber: whatsappNumber.trim(),
             subject: subject.trim(),
-            address: address.trim(),
+            coachingAddress: coachingAddress.trim(),
             bio: bio.trim(),
         };
 
@@ -144,8 +145,8 @@ export default function ApplyCommunityAssociatePage() {
                                 <CardDescription className="text-xs">Your contact number for students.</CardDescription>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="address">Tuition Address</Label>
-                                <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Your primary teaching location" required />
+                                <Label htmlFor="coaching-address">Coaching Address</Label>
+                                <Textarea id="coaching-address" value={coachingAddress} onChange={(e) => setCoachingAddress(e.target.value)} placeholder="Your primary teaching location" required />
                                 <CardDescription className="text-xs">This address will be visible to students.</CardDescription>
                             </div>
                             <div className="grid gap-2">

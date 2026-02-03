@@ -40,11 +40,11 @@ import {
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; address?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; }
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
+interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
 
     // Achievers Edit State
     const [editingAchiever, setEditingAchiever] = useState<UserProfile | null>(null);
-    const [achieverFormState, setAchieverFormState] = useState({ fee: '', address: '', coachingCenterName: '' });
+    const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
 
 
@@ -423,7 +423,7 @@ export default function AdminDashboardPage() {
             assignedTeacherName: teacher.name,
             status: 'Confirmed' as const,
             assignedCoachingCenterName: teacher.coachingCenterName || 'N/A',
-            assignedCoachingAddress: teacher.address || 'N/A'
+            assignedCoachingAddress: teacher.coachingAddress || 'N/A'
         };
 
         updateDoc(bookingDocRef, updateData)
@@ -676,7 +676,7 @@ export default function AdminDashboardPage() {
         setEditingAchiever(teacher);
         setAchieverFormState({
             fee: teacher.fee || '',
-            address: teacher.address || '',
+            coachingAddress: teacher.coachingAddress || '',
             coachingCenterName: teacher.coachingCenterName || ''
         });
     };
@@ -1074,7 +1074,7 @@ export default function AdminDashboardPage() {
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
                                     <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
-                                    <p className="text-sm text-muted-foreground">Address: {booking.address}</p>
+                                    <p className="text-sm text-muted-foreground">Address: {booking.studentAddress}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-xs font-bold py-1 px-2 rounded-full ${
@@ -1113,7 +1113,7 @@ export default function AdminDashboardPage() {
                                     </Select>
                                 </div>
                             )}
-                            {(booking.status === 'Awaiting Payment' || booking.status === 'Confirmed' || booking.status === 'Completed') && type === 'homeTutor' && (
+                            {booking.status === 'Confirmed' && type === 'homeTutor' && (
                                 <div className="mt-4 pt-4 border-t">
                                     <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
                                 </div>
@@ -1460,7 +1460,7 @@ export default function AdminDashboardPage() {
                                     </CardHeader>
                                     <CardContent className="grid gap-2 text-sm">
                                         <p><strong>Fee:</strong> {teacher.fee || <span className="text-muted-foreground">Not set</span>}</p>
-                                        <p><strong>Address:</strong> {teacher.address || <span className="text-muted-foreground">Not set</span>}</p>
+                                        <p><strong>Coaching Address:</strong> {teacher.coachingAddress || <span className="text-muted-foreground">Not set</span>}</p>
                                         <p><strong>Center Name:</strong> {teacher.coachingCenterName || <span className="text-muted-foreground">Not set</span>}</p>
                                     </CardContent>
                                 </Card>
@@ -1553,12 +1553,12 @@ export default function AdminDashboardPage() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="achiever-address">Address</Label>
+                            <Label htmlFor="achiever-coaching-address">Coaching Address</Label>
                             <Textarea 
-                                id="achiever-address" 
-                                value={achieverFormState.address}
-                                onChange={(e) => setAchieverFormState(prev => ({ ...prev, address: e.target.value }))}
-                                placeholder="Tuition address"
+                                id="achiever-coaching-address" 
+                                value={achieverFormState.coachingAddress}
+                                onChange={(e) => setAchieverFormState(prev => ({ ...prev, coachingAddress: e.target.value }))}
+                                placeholder="Public coaching address"
                             />
                         </div>
                         <div className="grid gap-2">
