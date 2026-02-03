@@ -46,6 +46,7 @@ export default function StudentDashboardLayout({
 
   const navItems = [
     { href: '/dashboard/student', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/student/find-teachers', label: 'Find Teachers', icon: Search },
     { href: '/dashboard/student/book-coaching-seat', label: 'Book Coaching Seat', icon: BookCheck },
     { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
     { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },

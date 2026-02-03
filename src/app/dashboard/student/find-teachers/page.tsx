@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -100,7 +99,7 @@ export default function FindTeachersPage() {
 
             {teachers && teachers.length > 0 ? (
                  filteredTeachers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredTeachers.map((teacher, i) => (
                             <motion.div
                                 key={teacher.id}
