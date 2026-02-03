@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, updateDoc, collection, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -11,9 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info, Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+
 
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 
@@ -42,7 +45,9 @@ interface UserInventoryItem {
     id: string;
     itemId: string;
     itemName: string;
-    itemImageUrl: string;
+    itemType: 'item' | 'badge';
+    badgeIcon?: BadgeIconType;
+    itemImageUrl?: string;
     purchasedAt: string;
 }
 
@@ -194,6 +199,18 @@ export default function ProfilePage() {
             setIsSaving(false);
         }
     };
+    
+    const handleEquipBadge = async (badge: UserInventoryItem) => {
+        if (!userProfileRef || !userProfile || userProfile.role !== 'student' || badge.itemType !== 'badge') return;
+    
+        const newIcon = userProfile.equippedBadgeIcon === badge.badgeIcon ? null : badge.badgeIcon;
+        
+        try {
+            await updateDoc(userProfileRef, { equippedBadgeIcon: newIcon });
+        } catch (error) {
+            console.error("Error equipping badge:", error);
+        }
+    };
 
     const handleCancel = () => {
         // Reset state to original profile data
@@ -232,6 +249,14 @@ export default function ProfilePage() {
         );
     }
     
+    const largeBadgeIcons: Record<BadgeIconType, React.ReactNode> = {
+        award: <Award className="h-12 w-12 text-primary" />,
+        shield: <Shield className="h-12 w-12 text-primary" />,
+        gem: <Gem className="h-12 w-12 text-primary" />,
+        rocket: <Rocket className="h-12 w-12 text-primary" />,
+        star: <Star className="h-12 w-12 text-primary" />,
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
@@ -447,19 +472,41 @@ export default function ProfilePage() {
                                 <CardTitle className="flex items-center">
                                     <Package className="mr-3 h-6 w-6 text-primary"/> My Inventory
                                 </CardTitle>
-                                <CardDescription>Digital items you've purchased with your coins.</CardDescription>
+                                <CardDescription>Items and badges you've collected. Click a badge to equip it!</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {inventory && inventory.length > 0 ? (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                        {inventory.map(item => (
-                                            <div key={item.id} className="flex flex-col items-center text-center gap-2">
-                                                <div className="relative w-24 h-24 rounded-lg overflow-hidden border">
-                                                    <Image src={item.itemImageUrl} alt={item.itemName} layout="fill" objectFit="cover" />
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                                        {inventory.map(item => {
+                                            const isEquipped = item.itemType === 'badge' && userProfile.equippedBadgeIcon === item.badgeIcon;
+                                            return (
+                                                <div key={item.id} className="flex flex-col items-center text-center gap-2">
+                                                    <button
+                                                        onClick={() => item.itemType === 'badge' && handleEquipBadge(item)}
+                                                        disabled={item.itemType !== 'badge'}
+                                                        className={cn(
+                                                            "relative w-24 h-24 rounded-lg overflow-hidden border-2 flex items-center justify-center bg-muted transition-all",
+                                                            item.itemType === 'badge' && "cursor-pointer hover:border-primary hover:scale-105",
+                                                            isEquipped ? "border-primary shadow-lg" : "border-transparent"
+                                                        )}
+                                                    >
+                                                        {item.itemType === 'badge' && item.badgeIcon ? (
+                                                            largeBadgeIcons[item.badgeIcon]
+                                                        ) : item.itemImageUrl ? (
+                                                            <Image src={item.itemImageUrl} alt={item.itemName} layout="fill" objectFit="cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-muted"></div>
+                                                        )}
+                                                        {isEquipped && (
+                                                            <div className="absolute bottom-0 right-0 p-1 bg-primary rounded-tl-lg">
+                                                                <Check className="h-4 w-4 text-primary-foreground" />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                    <p className="text-xs font-semibold leading-tight">{item.itemName}</p>
                                                 </div>
-                                                <p className="text-xs font-semibold leading-tight">{item.itemName}</p>
-                                            </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
                                 ) : (
                                     <div className="text-center py-8 text-muted-foreground">
@@ -496,3 +543,5 @@ export default function ProfilePage() {
         </div>
     )
 }
+
+    

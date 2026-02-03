@@ -207,14 +207,16 @@
     "UserInventoryItem": {
       "title": "User Inventory Item",
       "type": "object",
-      "description": "Represents a digital item a user has purchased with coins.",
+      "description": "Represents a digital item (regular item or badge) a user has purchased with coins.",
       "properties": {
         "itemId": { "type": "string", "description": "The ID of the original shop item." },
         "itemName": { "type": "string", "description": "The name of the item." },
-        "itemImageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image." },
+        "itemType": { "type": "string", "enum": ["item", "badge"], "description": "The type of inventory item." },
+        "badgeIcon": { "type": "string", "description": "If the item is a badge, this specifies the Lucide icon name." },
+        "itemImageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image (for 'item' type)." },
         "purchasedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["itemId", "itemName", "purchasedAt"]
+      "required": ["itemId", "itemName", "itemType", "purchasedAt"]
     },
     "HomeBooking": {
       "title": "Home Booking",
@@ -543,3 +545,5 @@
     }
   }
 }
+
+    

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, orderBy, doc, writeBatch, increment, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, School, DollarSign, Coins, BadgeCheck, CheckCircle, Award, Shield, Gem, Rocket, Star } from 'lucide-react';
@@ -84,18 +84,19 @@ export default function ShopPage() {
         batch.update(userRef, { coins: increment(-item.price) });
         
         // Add item to user's inventory
-        batch.set(inventoryRef, {
+        const inventoryData: any = {
             itemId: item.id,
             itemName: item.name,
-            itemImageUrl: item.imageUrl || '',
+            itemType: item.itemType,
             purchasedAt: new Date().toISOString()
-        });
-
-        // If it's a badge, equip it
-        if (item.itemType === 'badge') {
-            batch.update(userRef, { equippedBadgeIcon: item.badgeIcon });
+        };
+        if (item.itemType === 'badge' && item.badgeIcon) {
+            inventoryData.badgeIcon = item.badgeIcon;
         }
-
+        if (item.itemType === 'item' && item.imageUrl) {
+            inventoryData.itemImageUrl = item.imageUrl;
+        }
+        batch.set(inventoryRef, inventoryData);
 
         try {
             await batch.commit();
@@ -107,6 +108,23 @@ export default function ShopPage() {
             setIsPurchasing(null);
         }
     };
+    
+    const handleEquipBadge = async (item: ShopItem) => {
+        if (!user || !firestore || item.itemType !== 'badge') return;
+    
+        setIsPurchasing(item.id); // reuse loading state
+        const userRef = doc(firestore, 'users', user.uid);
+        try {
+            // If the badge is already equipped, unequip it. Otherwise, equip it.
+            const newIcon = userProfile?.equippedBadgeIcon === item.badgeIcon ? null : item.badgeIcon;
+            await updateDoc(userRef, { equippedBadgeIcon: newIcon });
+        } catch (error) {
+            console.error("Error equipping badge:", error);
+        } finally {
+            setIsPurchasing(null);
+        }
+    };
+
 
     if (itemsLoading) {
         return (
@@ -210,12 +228,10 @@ export default function ShopPage() {
                                     
                                     {isCoinShop ? (
                                         isOwned ? (
-                                            isEquipped ? (
-                                                <Button disabled variant="outline"><CheckCircle className="mr-2 h-4 w-4"/> Equipped</Button>
-                                            ) : item.itemType === 'badge' ? (
-                                                 <Button onClick={() => handlePurchaseWithCoins(item)} disabled={isPurchasing === item.id}>
+                                            item.itemType === 'badge' ? (
+                                                <Button onClick={() => handleEquipBadge(item)} disabled={isPurchasing === item.id}>
                                                     {isPurchasing === item.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                                    Equip
+                                                    {isEquipped ? 'Unequip' : 'Equip'}
                                                 </Button>
                                             ) : (
                                                 <Button disabled variant="outline"><CheckCircle className="mr-2 h-4 w-4"/> Owned</Button>
@@ -273,3 +289,5 @@ export default function ShopPage() {
         </motion.div>
     );
 }
+
+    
