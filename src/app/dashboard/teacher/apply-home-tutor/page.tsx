@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, addDoc, collection, query, where, limit } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -60,16 +60,21 @@ export default function ApplyHomeTutorPage() {
         if (!firestore || !user || !userProfile || existingApplication) return;
         
         setIsSubmitting(true);
+        const applicationData = {
+            teacherId: user.uid,
+            teacherName: userProfile.name,
+            status: 'pending' as const,
+            createdAt: new Date().toISOString(),
+        };
         try {
-            await addDoc(collection(firestore, 'homeTutorApplications'), {
-                teacherId: user.uid,
-                teacherName: userProfile.name,
-                status: 'pending',
-                createdAt: new Date().toISOString(),
-            });
+            await addDoc(collection(firestore, 'homeTutorApplications'), applicationData);
         } catch (error) {
             console.error("Error submitting application:", error);
-            // Optionally show an error toast
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'create',
+                path: 'homeTutorApplications',
+                requestResourceData: applicationData,
+            }));
         } finally {
             setIsSubmitting(false);
         }

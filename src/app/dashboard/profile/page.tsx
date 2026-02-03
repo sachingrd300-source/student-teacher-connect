@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, updateDoc, collection, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -155,45 +155,49 @@ export default function ProfilePage() {
         }
 
         setIsSaving(true);
-        try {
-            const dataToUpdate: Partial<UserProfile> = {
-                name: name.trim(),
-            };
+        const dataToUpdate: Partial<UserProfile> = {
+            name: name.trim(),
+        };
 
-            if (userProfile.role === 'teacher') {
-                let workStatusValue: 'own_coaching' | 'achievers_associate' | 'both' | null = null;
-                if (workStatus.ownCoaching && workStatus.achieversAssociate) {
-                    workStatusValue = 'both';
-                } else if (workStatus.ownCoaching) {
-                    workStatusValue = 'own_coaching';
-                } else if (workStatus.achieversAssociate) {
-                    workStatusValue = 'achievers_associate';
-                }
-                dataToUpdate.teacherWorkStatus = workStatusValue ?? undefined;
-
-                // Fields all teachers can edit
-                dataToUpdate.bio = bio.trim();
-                dataToUpdate.subject = subject.trim();
-                dataToUpdate.whatsappNumber = whatsappNumber.trim();
-                
-                // Fields only non-associates can edit
-                if (!isCommunityAssociate) {
-                    dataToUpdate.address = address.trim();
-                    dataToUpdate.coachingCenterName = coachingCenterName.trim();
-                    dataToUpdate.fee = fee.trim();
-                }
-            } else if (userProfile.role === 'student') {
-                dataToUpdate.mobileNumber = mobileNumber.trim();
-                dataToUpdate.fatherName = fatherName.trim();
-                dataToUpdate.class = studentClass.trim();
-                dataToUpdate.address = address.trim();
+        if (userProfile.role === 'teacher') {
+            let workStatusValue: 'own_coaching' | 'achievers_associate' | 'both' | null = null;
+            if (workStatus.ownCoaching && workStatus.achieversAssociate) {
+                workStatusValue = 'both';
+            } else if (workStatus.ownCoaching) {
+                workStatusValue = 'own_coaching';
+            } else if (workStatus.achieversAssociate) {
+                workStatusValue = 'achievers_associate';
             }
+            dataToUpdate.teacherWorkStatus = workStatusValue ?? undefined;
 
+            // Fields all teachers can edit
+            dataToUpdate.bio = bio.trim();
+            dataToUpdate.subject = subject.trim();
+            dataToUpdate.whatsappNumber = whatsappNumber.trim();
+            
+            // Fields only non-associates can edit
+            if (!isCommunityAssociate) {
+                dataToUpdate.address = address.trim();
+                dataToUpdate.coachingCenterName = coachingCenterName.trim();
+                dataToUpdate.fee = fee.trim();
+            }
+        } else if (userProfile.role === 'student') {
+            dataToUpdate.mobileNumber = mobileNumber.trim();
+            dataToUpdate.fatherName = fatherName.trim();
+            dataToUpdate.class = studentClass.trim();
+            dataToUpdate.address = address.trim();
+        }
+
+        try {
             await updateDoc(userProfileRef, dataToUpdate);
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating profile: ", error);
-            // Optionally: show an error toast to the user
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: userProfileRef.path,
+                requestResourceData: dataToUpdate,
+            }));
         } finally {
             setIsSaving(false);
         }
@@ -208,6 +212,11 @@ export default function ProfilePage() {
             await updateDoc(userProfileRef, { equippedBadgeIcon: newIcon });
         } catch (error) {
             console.error("Error equipping badge:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: userProfileRef.path,
+                requestResourceData: { equippedBadgeIcon: newIcon },
+            }));
         }
     };
 
