@@ -278,12 +278,10 @@ export default function AdminDashboardPage() {
     }, [allUsersData]);
 
     const filteredEnrollments = useMemo(() => {
-        if (!enrollments) return { pending: [], approved: [] };
+        if (!enrollments || communityTeacherIds.size === 0) return { pending: [], approved: [] };
     
         // Filter enrollments for community teachers only
-        const relevantEnrollments = communityTeacherIds.size > 0 
-            ? enrollments.filter(e => communityTeacherIds.has(e.teacherId))
-            : [];
+        const relevantEnrollments = enrollments.filter(e => communityTeacherIds.has(e.teacherId));
     
         return {
             pending: relevantEnrollments.filter(e => e.status === 'pending'),
