@@ -50,6 +50,12 @@ service cloud.firestore {
       return userData.role == 'teacher' && (userData.teacherWorkStatus == 'achievers_associate' || userData.teacherWorkStatus == 'both');
     }
 
+    function isUpdatingAllowedFieldsForAssociate() {
+        let allowedKeys = ['name', 'bio', 'subject', 'whatsappNumber', 'teacherWorkStatus'].toSet();
+        let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
+        return changedKeys.difference(allowedKeys).size() == 0;
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId)
                   || isAdmin()
@@ -57,15 +63,9 @@ service cloud.firestore {
                   || (isTeacher() && resource.data.role == 'student');
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
-      allow update: if isAdmin() || (isOwner(userId) && (
-            !isCommunityAssociate(userId) ||
-            (
-                isCommunityAssociate(userId) &&
-                request.resource.data.diff(resource.data).affectedKeys()
-                  .intersection(['fee', 'address', 'coachingCenterName'].toSet())
-                  .size() == 0
-            )
-        ));
+      allow update: if isAdmin() ||
+                   (isOwner(userId) && !isCommunityAssociate(userId)) ||
+                   (isOwner(userId) && isCommunityAssociate(userId) && isUpdatingAllowedFieldsForAssociate());
       allow delete: if isAdmin();
       
       match /inventory/{inventoryId} {
@@ -180,7 +180,7 @@ service cloud.firestore {
     }
 
     match /announcements/{announcementId} {
-      allow read: if isStudent() || isAdmin() || isTeacher();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
     
