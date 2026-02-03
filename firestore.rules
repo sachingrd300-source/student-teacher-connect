@@ -60,12 +60,12 @@ service cloud.firestore {
       allow update: if isAdmin() || (isOwner(userId) && (
             !isCommunityAssociate(userId) ||
             (
-              isCommunityAssociate(userId) &&
-              request.resource.data.diff(resource.data).affectedKeys()
-                .intersection(['bio', 'subject', 'coachingCenterName', 'whatsappNumber', 'fee'].toSet())
-                .size() == 0
+                isCommunityAssociate(userId) &&
+                request.resource.data.diff(resource.data).affectedKeys()
+                  .intersection(['fee', 'address', 'coachingCenterName'].toSet())
+                  .size() == 0
             )
-          ));
+        ));
       allow delete: if isAdmin();
       
       match /inventory/{inventoryId} {

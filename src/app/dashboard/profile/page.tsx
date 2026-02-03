@@ -143,30 +143,23 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         if (!userProfileRef || !userProfile) return;
-    
+
         const newErrors: { address?: string } = {};
-        if (userProfile.role === 'teacher' && !address.trim()) {
+        if (userProfile.role === 'teacher' && !address.trim() && !isCommunityAssociate) {
             newErrors.address = 'Address is mandatory for teachers to be listed.';
         }
         setErrors(newErrors);
-    
+
         if (Object.keys(newErrors).length > 0) {
             return;
         }
-    
+
         setIsSaving(true);
         try {
             const dataToUpdate: Partial<UserProfile> = {
                 name: name.trim(),
-                address: address.trim(),
             };
-    
-            // A user can update their bio if they are not a teacher, OR if they are a teacher who is NOT a community associate.
-            const canUpdateBio = userProfile.role !== 'teacher' || !isCommunityAssociate;
-            if (canUpdateBio) {
-                dataToUpdate.bio = bio.trim();
-            }
-    
+
             if (userProfile.role === 'teacher') {
                 let workStatusValue: 'own_coaching' | 'achievers_associate' | 'both' | null = null;
                 if (workStatus.ownCoaching && workStatus.achieversAssociate) {
@@ -177,20 +170,25 @@ export default function ProfilePage() {
                     workStatusValue = 'achievers_associate';
                 }
                 dataToUpdate.teacherWorkStatus = workStatusValue ?? undefined;
-    
-                // Only non-associates can update their professional fields
+
+                // Fields all teachers can edit
+                dataToUpdate.bio = bio.trim();
+                dataToUpdate.subject = subject.trim();
+                dataToUpdate.whatsappNumber = whatsappNumber.trim();
+                
+                // Fields only non-associates can edit
                 if (!isCommunityAssociate) {
-                    dataToUpdate.subject = subject.trim();
+                    dataToUpdate.address = address.trim();
                     dataToUpdate.coachingCenterName = coachingCenterName.trim();
-                    dataToUpdate.whatsappNumber = whatsappNumber.trim();
                     dataToUpdate.fee = fee.trim();
                 }
             } else if (userProfile.role === 'student') {
                 dataToUpdate.mobileNumber = mobileNumber.trim();
                 dataToUpdate.fatherName = fatherName.trim();
                 dataToUpdate.class = studentClass.trim();
+                dataToUpdate.address = address.trim();
             }
-    
+
             await updateDoc(userProfileRef, dataToUpdate);
             setIsEditing(false);
         } catch (error) {
@@ -307,13 +305,13 @@ export default function ProfilePage() {
                             <div className="grid gap-2">
                                 <Label htmlFor="bio">Bio</Label>
                                 {isEditing ? (
-                                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us a little about yourself" disabled={isEditing && isCommunityAssociate} />
+                                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us a little about yourself" />
                                 ) : (
                                     <p className="text-sm font-medium whitespace-pre-wrap">{bio || <span className="text-muted-foreground">Not set</span>}</p>
                                 )}
                             </div>
                             
-                            <div className="grid gap-2">
+                             <div className="grid gap-2">
                                 <Label htmlFor="address">
                                     {userProfile.role === 'teacher' ? 'Tuition Address' : 'Home Address'}
                                     {userProfile.role === 'teacher' && <span className="text-destructive"> *</span>}
@@ -329,8 +327,9 @@ export default function ProfilePage() {
                                                 ? "Your tuition center or primary teaching location. This is required." 
                                                 : "Your home address for finding local tutors."
                                             }
-                                            required={userProfile.role === 'teacher'}
+                                            required={userProfile.role === 'teacher' && !isCommunityAssociate}
                                             className={errors.address ? 'border-destructive' : ''}
+                                            disabled={isEditing && isCommunityAssociate}
                                         />
                                         {errors.address && <p className="text-sm font-medium text-destructive">{errors.address}</p>}
                                         <p className="text-xs text-muted-foreground">
@@ -379,7 +378,7 @@ export default function ProfilePage() {
                                     {isCommunityAssociate && (
                                         <div className="p-3 bg-accent/50 text-accent-foreground rounded-lg text-sm flex items-start gap-3">
                                             <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                                            <div>As an Achievers Community Associate, your professional details (bio, subject, etc.) are managed by the admin to ensure quality. You can still edit personal details like name and address.</div>
+                                            <div>As an Achievers Community Associate, some details like your fee, address, and coaching name are managed by the admin. You can still edit other details like your bio and subject.</div>
                                         </div>
                                     )}
                                     <div className="grid gap-2">
@@ -393,7 +392,7 @@ export default function ProfilePage() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="subject">Subject</Label>
                                         {isEditing ? (
-                                            <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Physics, Mathematics" disabled={isEditing && isCommunityAssociate} />
+                                            <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Physics, Mathematics" />
                                         ) : (
                                             <p className="text-sm font-medium">{subject || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
@@ -401,7 +400,7 @@ export default function ProfilePage() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
                                         {isEditing ? (
-                                            <Input id="whatsappNumber" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g., +91..." disabled={isEditing && isCommunityAssociate} />
+                                            <Input id="whatsappNumber" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g., +91..." />
                                         ) : (
                                             <p className="text-sm font-medium">{whatsappNumber || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
