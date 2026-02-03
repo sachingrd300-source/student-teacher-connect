@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -149,14 +148,14 @@ export default function CoachingManagementPage() {
     const { data: assignedBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
 
     const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user || !userProfile || userProfile.role !== 'teacher') return null;
         return query(
             collection(firestore, "announcements"),
             where("target", "in", ["all", "teachers"]),
             orderBy("createdAt", "desc"),
             limit(10)
         );
-    }, [firestore, user]);
+    }, [firestore, user, userProfile]);
     const { data: rawAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
 
     const announcements = useMemo(() => {
@@ -624,5 +623,3 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
-
-    
