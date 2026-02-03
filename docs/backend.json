@@ -28,6 +28,11 @@
           "description": "Specifies the management focus for a teacher.",
           "enum": ["coaching", "school"]
         },
+        "teacherWorkStatus": {
+          "type": "string",
+          "description": "Specifies the work status for a coaching teacher, indicating if they run their own center, are an associate of the community, or both.",
+          "enum": ["own_coaching", "achievers_associate", "both"]
+        },
         "isHomeTutor": {
           "type": "boolean",
           "description": "Indicates if the teacher is approved to be a home tutor."

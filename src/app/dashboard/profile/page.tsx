@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
@@ -20,6 +21,8 @@ interface UserProfile {
     name: string;
     email: string;
     role: 'student' | 'teacher' | 'admin' | 'parent';
+    teacherType?: 'coaching' | 'school';
+    teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
     subject?: string;
     bio?: string;
     coachingCenterName?: string;
@@ -78,6 +81,10 @@ export default function ProfilePage() {
     const [coachingCenterName, setCoachingCenterName] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [fee, setFee] = useState('');
+    const [workStatus, setWorkStatus] = useState({
+        ownCoaching: false,
+        achieversAssociate: false,
+    });
 
     // Student state
     const [mobileNumber, setMobileNumber] = useState('');
@@ -115,6 +122,10 @@ export default function ProfilePage() {
                 setCoachingCenterName(userProfile.coachingCenterName || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
                 setFee(userProfile.fee || '');
+                setWorkStatus({
+                    ownCoaching: userProfile.teacherWorkStatus === 'own_coaching' || userProfile.teacherWorkStatus === 'both',
+                    achieversAssociate: userProfile.teacherWorkStatus === 'achievers_associate' || userProfile.teacherWorkStatus === 'both',
+                });
             } else if (userProfile.role === 'student') {
                 setMobileNumber(userProfile.mobileNumber || '');
                 setFatherName(userProfile.fatherName || '');
@@ -149,6 +160,17 @@ export default function ProfilePage() {
                 dataToUpdate.coachingCenterName = coachingCenterName.trim();
                 dataToUpdate.whatsappNumber = whatsappNumber.trim();
                 dataToUpdate.fee = fee.trim();
+                
+                let workStatusValue: 'own_coaching' | 'achievers_associate' | 'both' | null = null;
+                if (workStatus.ownCoaching && workStatus.achieversAssociate) {
+                    workStatusValue = 'both';
+                } else if (workStatus.ownCoaching) {
+                    workStatusValue = 'own_coaching';
+                } else if (workStatus.achieversAssociate) {
+                    workStatusValue = 'achievers_associate';
+                }
+                dataToUpdate.teacherWorkStatus = workStatusValue;
+
             } else if (userProfile.role === 'student') {
                 dataToUpdate.mobileNumber = mobileNumber.trim();
                 dataToUpdate.fatherName = fatherName.trim();
@@ -178,6 +200,10 @@ export default function ProfilePage() {
                 setCoachingCenterName(userProfile.coachingCenterName || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
                 setFee(userProfile.fee || '');
+                setWorkStatus({
+                    ownCoaching: userProfile.teacherWorkStatus === 'own_coaching' || userProfile.teacherWorkStatus === 'both',
+                    achieversAssociate: userProfile.teacherWorkStatus === 'achievers_associate' || userProfile.teacherWorkStatus === 'both',
+                });
             } else if (userProfile.role === 'student') {
                 setMobileNumber(userProfile.mobileNumber || '');
                 setFatherName(userProfile.fatherName || '');
@@ -348,6 +374,45 @@ export default function ProfilePage() {
                                             <p className="text-sm font-medium">{fee || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
                                     </div>
+                                    {userProfile.teacherType === 'coaching' && (
+                                        isEditing ? (
+                                            <div className="grid gap-2">
+                                                <Label>Business/Work Status</Label>
+                                                <div className="flex flex-col gap-2 pt-1">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id="ownCoaching"
+                                                            checked={workStatus.ownCoaching}
+                                                            onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, ownCoaching: !!checked}))}
+                                                        />
+                                                        <Label htmlFor="ownCoaching" className="font-normal cursor-pointer">
+                                                            Own Coaching Center (कोचिंग संचालक)
+                                                        </Label>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id="achieversAssociate"
+                                                            checked={workStatus.achieversAssociate}
+                                                            onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, achieversAssociate: !!checked}))}
+                                                        />
+                                                        <Label htmlFor="achieversAssociate" className="font-normal cursor-pointer">
+                                                            Join Achievers Community (अचीवर्स कम्युनिटी सहयोगी)
+                                                        </Label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-2">
+                                                <Label>Business/Work Status</Label>
+                                                <p className="text-sm font-medium capitalize">
+                                                    {(userProfile.teacherWorkStatus === 'both' && 'Own Coaching & Achievers Associate') ||
+                                                    (userProfile.teacherWorkStatus === 'own_coaching' && 'Own Coaching Center') ||
+                                                    (userProfile.teacherWorkStatus === 'achievers_associate' && 'Achievers Community Associate') ||
+                                                    'Not set'}
+                                                </p>
+                                            </div>
+                                        )
+                                    )}
                                 </>
                              )}
                         </CardContent>
