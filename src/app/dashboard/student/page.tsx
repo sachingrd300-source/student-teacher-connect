@@ -48,6 +48,7 @@ interface HomeBooking {
     status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     assignedTeacherName?: string;
     createdAt: string;
+    bookingType: 'homeTutor' | 'coachingCenter';
 }
 
 interface Announcement {
@@ -170,7 +171,10 @@ export default function StudentDashboardPage() {
         );
     }, [firestore, user]);
     const { data: homeBookings, isLoading: homeBookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
-    const lastBooking = useMemo(() => homeBookings?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
+
+    const lastHomeTutorBooking = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
+    const lastCoachingBooking = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
+
 
     const unpaidFeesQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -259,10 +263,9 @@ export default function StudentDashboardPage() {
     };
 
     const actionItems = [
-        { title: 'Find Teachers', icon: <Search />, href: '/dashboard/student/find-teachers' },
-        { title: 'Book a Seat', icon: <BookCheck />, href: '/dashboard/student/book-coaching-seat' },
-        { title: 'Free Materials', icon: <BookOpen />, href: '/dashboard/student/free-materials' },
+        { title: 'Book Coaching Seat', icon: <BookCheck />, href: '/dashboard/student/book-coaching-seat' },
         { title: 'Book Home Tutor', icon: <Home />, href: '/dashboard/student/book-home-teacher' },
+        { title: 'Free Materials', icon: <BookOpen />, href: '/dashboard/student/free-materials' },
         { title: 'My Rewards', icon: <Gift />, href: '/dashboard/student/rewards' },
         { title: 'Leaderboard', icon: <Trophy />, href: '/dashboard/student/leaderboard' },
         { title: 'Shop', icon: <ShoppingBag />, href: '/dashboard/student/shop' },
@@ -276,7 +279,7 @@ export default function StudentDashboardPage() {
                 <p className="text-muted-foreground mt-2">Manage your batches, explore resources, and track your progress.</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {actionItems.map(item => <ActionCard key={item.href} {...item} />)}
             </div>
 
@@ -432,44 +435,74 @@ export default function StudentDashboardPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> Home Tutor Request Status</CardTitle>
+                            <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> Booking Status</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                           {lastBooking ? (
+                        <CardContent className="grid gap-4">
+                           {lastHomeTutorBooking ? (
                                 <div className="p-4 rounded-lg border bg-background">
-                                    <div className="flex justify-between items-start">
+                                    <p className="font-semibold text-sm">Home Tutor Request</p>
+                                    <div className="flex justify-between items-start mt-1">
                                         <div>
-                                            <p className="font-semibold">Your Latest Request</p>
-                                            <p className="text-xs text-muted-foreground">Requested on {formatDate(lastBooking.createdAt)}</p>
+                                            <p className="text-xs text-muted-foreground">Requested on {formatDate(lastHomeTutorBooking.createdAt)}</p>
                                         </div>
                                          <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                            lastBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            lastBooking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
-                                            lastBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
-                                            lastBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            lastHomeTutorBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                            lastHomeTutorBooking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
+                                            lastHomeTutorBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
+                                            lastHomeTutorBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>
-                                            {lastBooking.status}
+                                            {lastHomeTutorBooking.status}
                                         </span>
                                     </div>
-                                    {lastBooking.status === 'Awaiting Payment' ? (
+                                    {lastHomeTutorBooking.status === 'Awaiting Payment' ? (
                                         <div className="mt-3 pt-3 border-t">
                                             <p className="text-sm font-medium mb-2">Your booking is ready! Please pay the platform fee to confirm.</p>
-                                            <Button size="sm" className="w-full" onClick={() => setBookingToPay(lastBooking)}>
+                                            <Button size="sm" className="w-full" onClick={() => setBookingToPay(lastHomeTutorBooking)}>
                                                 <CreditCard className="mr-2 h-4 w-4"/> Pay Now
                                             </Button>
                                         </div>
-                                    ) : (lastBooking.status === 'Confirmed' || lastBooking.status === 'Completed') && lastBooking.assignedTeacherName ? (
+                                    ) : (lastHomeTutorBooking.status === 'Confirmed' || lastHomeTutorBooking.status === 'Completed') && lastHomeTutorBooking.assignedTeacherName ? (
                                         <div className="mt-3 pt-3 border-t">
                                             <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
-                                            <p className="font-semibold text-primary">{lastBooking.assignedTeacherName}</p>
+                                            <p className="font-semibold text-primary">{lastHomeTutorBooking.assignedTeacherName}</p>
                                         </div>
                                     ) : null}
                                 </div>
                            ) : (
-                                <div className="text-center py-8">
+                                <div className="text-center py-4 border-b">
                                     <p className="text-sm text-muted-foreground mb-3">You haven't requested a home tutor yet.</p>
-                                    <Button asChild>
-                                        <Link href="/dashboard/student/book-home-teacher">Book a Tutor</Link>
+                                    <Button asChild size="sm">
+                                        <Link href="/dashboard/student/book-home-teacher">Book Home Tutor</Link>
+                                    </Button>
+                                </div>
+                           )}
+                           {lastCoachingBooking ? (
+                                <div className="p-4 rounded-lg border bg-background">
+                                    <p className="font-semibold text-sm">Coaching Center Request</p>
+                                     <div className="flex justify-between items-start mt-1">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Requested on {formatDate(lastCoachingBooking.createdAt)}</p>
+                                        </div>
+                                         <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                            lastCoachingBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                            lastCoachingBooking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
+                                            lastCoachingBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
+                                            lastCoachingBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}>
+                                            {lastCoachingBooking.status}
+                                        </span>
+                                    </div>
+                                    {(lastCoachingBooking.status === 'Confirmed' || lastCoachingBooking.status === 'Completed') && (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <p className="text-sm text-muted-foreground">Admin has confirmed your seat. You will be contacted shortly.</p>
+                                        </div>
+                                    )}
+                                </div>
+                           ) : (
+                                <div className="text-center py-4">
+                                    <p className="text-sm text-muted-foreground mb-3">You haven't requested a coaching seat.</p>
+                                    <Button asChild size="sm">
+                                        <Link href="/dashboard/student/book-coaching-seat">Book Coaching Seat</Link>
                                     </Button>
                                 </div>
                            )}
@@ -488,5 +521,3 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
-
-    

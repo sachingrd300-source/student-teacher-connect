@@ -10,8 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, Send } from 'lucide-react';
-import { School } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Home } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -76,6 +75,7 @@ export default function BookHomeTeacherPage() {
                 address: address.trim(),
                 status: 'Pending',
                 createdAt: new Date().toISOString(),
+                bookingType: 'homeTutor',
             });
             setSubmitStatus({ type: 'success', message: 'Your request has been sent successfully! The admin will contact you soon.' });
             setTimeout(() => router.push('/dashboard/student'), 3000);
@@ -92,7 +92,7 @@ export default function BookHomeTeacherPage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <School className="h-16 w-16 animate-pulse text-primary" />
+                <Home className="h-16 w-16 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Loading Booking Form...</p>
             </div>
         );
@@ -109,7 +109,7 @@ export default function BookHomeTeacherPage() {
                     </Button>
                      <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
-                            <CardTitle>Book a Home Teacher</CardTitle>
+                            <CardTitle>Book a Home Tutor</CardTitle>
                             <CardDescription>Fill out the details below to request a personalized home tutor. A one-time platform fee of ₹99 will be required upon teacher assignment to confirm the booking.</CardDescription>
                         </CardHeader>
                         <form onSubmit={handleSubmit}>

@@ -46,10 +46,9 @@ export default function StudentDashboardLayout({
 
   const navItems = [
     { href: '/dashboard/student', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/student/find-teachers', label: 'Find Teachers', icon: Search },
-    { href: '/dashboard/student/book-coaching-seat', label: 'Book a Seat', icon: BookCheck },
-    { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },
+    { href: '/dashboard/student/book-coaching-seat', label: 'Book Coaching Seat', icon: BookCheck },
     { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
+    { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },
     { href: '/dashboard/student/rewards', label: 'My Rewards', icon: Gift },
     { href: '/dashboard/student/leaderboard', label: 'Leaderboard', icon: Trophy },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },

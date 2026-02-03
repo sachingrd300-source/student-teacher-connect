@@ -43,7 +43,7 @@ interface UserProfile { id: string; name: string; email: string; role: 'admin' |
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; }
+interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; bookingType: 'homeTutor' | 'coachingCenter'; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -676,7 +676,7 @@ export default function AdminDashboardPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Home Bookings</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
                         <Home className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent><div className="text-2xl font-bold">{stats.bookingCount}</div></CardContent>
@@ -897,70 +897,95 @@ export default function AdminDashboardPage() {
         </div>
     );
 
-    const renderBookingsView = () => (
-        <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">Home Teacher Bookings</h1>
-            <Card>
-                <CardContent className="p-4">
-                    {homeBookings && homeBookings.length > 0 ? (
-                        <div className="grid gap-4">
-                            {homeBookings.map(booking => (
-                                <div key={booking.id} className="p-4 rounded-lg border">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="grid gap-1">
-                                            <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
-                                            <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
-                                            <p className="text-sm text-muted-foreground">Address: {booking.address}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                                booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                booking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
-                                                booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
-                                                booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {booking.status}
-                                            </span>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDeleteBooking(booking)} className="text-destructive">Delete</DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </div>
-                                    {booking.status === 'Pending' && (
-                                        <div className="mt-4 pt-4 border-t flex items-center gap-2">
-                                            <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
-                                                <SelectTrigger className="w-full sm:w-[250px]">
-                                                    <SelectValue placeholder="Assign a Teacher" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
-                                                        <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
-                                                    )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-                                    {(booking.status === 'Awaiting Payment' || booking.status === 'Confirmed' || booking.status === 'Completed') && (
-                                        <div className="mt-4 pt-4 border-t">
-                                            <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
-                                        </div>
-                                    )}
+    const renderBookingsView = () => {
+        const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
+        const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
+
+        const renderBookingList = (bookings: HomeBooking[], type: 'homeTutor' | 'coachingCenter') => {
+            if (bookings.length === 0) {
+                return <div className="text-center py-12">No {type === 'homeTutor' ? 'home tutor' : 'coaching center'} bookings.</div>;
+            }
+
+            return (
+                <div className="grid gap-4">
+                    {bookings.map(booking => (
+                        <div key={booking.id} className="p-4 rounded-lg border">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="grid gap-1">
+                                    <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
+                                    <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
+                                    <p className="text-sm text-muted-foreground">Address: {booking.address}</p>
                                 </div>
-                            ))}
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                        booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        booking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
+                                        booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
+                                        booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
+                                        {booking.status}
+                                    </span>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>
+                                             {type === 'coachingCenter' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')}>Set to Confirmed</DropdownMenuItem>}
+                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteBooking(booking)} className="text-destructive">Delete</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                            {booking.status === 'Pending' && type === 'homeTutor' && (
+                                <div className="mt-4 pt-4 border-t flex items-center gap-2">
+                                    <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
+                                        <SelectTrigger className="w-full sm:w-[250px]">
+                                            <SelectValue placeholder="Assign a Teacher" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
+                                                <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
+                                            )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                            {(booking.status === 'Awaiting Payment' || booking.status === 'Confirmed' || booking.status === 'Completed') && type === 'homeTutor' && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                </div>
+                            )}
                         </div>
-                    ) : (<div className="text-center py-12">No home teacher bookings.</div>)}
-                </CardContent>
-            </Card>
-        </div>
-    );
+                    ))}
+                </div>
+            );
+        };
+        
+        return (
+            <div className="grid gap-8">
+                <h1 className="text-3xl font-bold font-serif">Manage Bookings</h1>
+                 <Card>
+                    <CardContent className="p-4">
+                         <Tabs defaultValue="homeTutor" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="homeTutor">Home Tutor Bookings</TabsTrigger>
+                                <TabsTrigger value="coachingCenter">Coaching Center Bookings</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="homeTutor" className="mt-4">
+                                {renderBookingList(homeTutorBookings, 'homeTutor')}
+                            </TabsContent>
+                            <TabsContent value="coachingCenter" className="mt-4">
+                                {renderBookingList(coachingCenterBookings, 'coachingCenter')}
+                            </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    };
     
     const renderMaterialsView = () => {
          const renderMaterialList = (materialList: FreeMaterial[]) => {
@@ -1289,5 +1314,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    

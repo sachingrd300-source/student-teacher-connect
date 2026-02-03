@@ -219,8 +219,13 @@
     "HomeBooking": {
       "title": "Home Booking",
       "type": "object",
-      "description": "Represents a booking for a home teacher, managed by admins.",
+      "description": "Represents a booking for a home teacher or a coaching center seat, managed by admins.",
       "properties": {
+        "bookingType": {
+            "type": "string",
+            "description": "The type of booking requested by the student.",
+            "enum": ["homeTutor", "coachingCenter"]
+        },
         "studentId": {
           "type": "string",
           "description": "The UID of the student who made the booking."
@@ -235,7 +240,7 @@
         },
         "address": {
           "type": "string",
-          "description": "The address where home tuition is required."
+          "description": "The address where tuition is required."
         },
         "studentClass": {
           "type": "string",
@@ -278,7 +283,8 @@
         "address",
         "studentClass",
         "status",
-        "createdAt"
+        "createdAt",
+        "bookingType"
       ]
     },
     "HomeTutorApplication": {
@@ -537,5 +543,3 @@
     }
   }
 }
-
-    
