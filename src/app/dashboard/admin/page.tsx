@@ -38,8 +38,10 @@ import {
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; createdAt: string; lastLoginDate?: string; }
-interface HomeTutorApplication { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; isVerifiedCoachingTutor?: boolean; createdAt: string; lastLoginDate?: string; }
+interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
+interface HomeTutorApplication extends ApplicationBase {}
+interface VerifiedCoachingApplication extends ApplicationBase {}
 interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
@@ -50,6 +52,7 @@ interface AdminActivity { id: string; adminId: string; adminName: string; action
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 
 type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools';
+type ApplicationType = 'homeTutor' | 'verifiedCoaching';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
     award: <Award className="h-5 w-5" />,
@@ -118,6 +121,7 @@ export default function AdminDashboardPage() {
     // Queries
     const allUsersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const homeTutorApplicationsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const verifiedCoachingApplicationsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'verifiedCoachingApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const homeBookingsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
@@ -128,7 +132,8 @@ export default function AdminDashboardPage() {
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
-    const { data: homeTutorApplications, isLoading: applicationsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
+    const { data: homeTutorApplications, isLoading: htAppsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
+    const { data: verifiedCoachingApplications, isLoading: vcAppsLoading } = useCollection<VerifiedCoachingApplication>(verifiedCoachingApplicationsQuery);
     const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
@@ -208,7 +213,7 @@ export default function AdminDashboardPage() {
     }), [searchedUsers]);
 
 
-    const filteredApplications = useMemo(() => {
+    const filteredHomeTutorApps = useMemo(() => {
         if (!homeTutorApplications) return { pending: [], approved: [], rejected: [] };
         return {
             pending: homeTutorApplications.filter(a => a.status === 'pending'),
@@ -216,7 +221,20 @@ export default function AdminDashboardPage() {
             rejected: homeTutorApplications.filter(a => a.status === 'rejected'),
         };
     }, [homeTutorApplications]);
-    
+
+    const filteredCoachingApps = useMemo(() => {
+        if (!verifiedCoachingApplications) return { pending: [], approved: [], rejected: [] };
+        return {
+            pending: verifiedCoachingApplications.filter(a => a.status === 'pending'),
+            approved: verifiedCoachingApplications.filter(a => a.status === 'approved'),
+            rejected: verifiedCoachingApplications.filter(a => a.status === 'rejected'),
+        };
+    }, [verifiedCoachingApplications]);
+
+    const totalPendingApps = useMemo(() => 
+        (filteredHomeTutorApps.pending.length || 0) + (filteredCoachingApps.pending.length || 0),
+    [filteredHomeTutorApps, filteredCoachingApps]);
+
     const filteredMaterials = useMemo(() => {
         if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
         return {
@@ -229,27 +247,30 @@ export default function AdminDashboardPage() {
 
 
     // --- Event Handlers ---
-    const handleApplication = (application: HomeTutorApplication, newStatus: 'approved' | 'rejected') => {
+    const handleApplication = (application: ApplicationBase, newStatus: 'approved' | 'rejected', type: ApplicationType) => {
         if (!firestore) return;
         const batch = writeBatch(firestore);
-        
-        const applicationRef = doc(firestore, 'homeTutorApplications', application.id);
+
+        const collectionName = type === 'homeTutor' ? 'homeTutorApplications' : 'verifiedCoachingApplications';
+        const userFieldToUpdate = type === 'homeTutor' ? 'isHomeTutor' : 'isVerifiedCoachingTutor';
+
+        const applicationRef = doc(firestore, collectionName, application.id);
         const applicationUpdate = { status: newStatus, processedAt: new Date().toISOString() };
         batch.update(applicationRef, applicationUpdate);
         
         const teacherRef = doc(firestore, 'users', application.teacherId);
-        const teacherUpdate = { isHomeTutor: newStatus === 'approved' };
+        const teacherUpdate = { [userFieldToUpdate]: newStatus === 'approved' };
         batch.update(teacherRef, teacherUpdate);
         
         batch.commit()
             .then(() => {
-                logAdminAction(`Application for '${application.teacherName}' ${newStatus}`, application.id);
+                logAdminAction(`${type} application for '${application.teacherName}' ${newStatus}`, application.id);
             })
             .catch(error => {
-                console.error(`Error handling application:`, error);
+                console.error(`Error handling ${type} application:`, error);
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     operation: 'write',
-                    path: `batch update for application ${application.id}`,
+                    path: `batch update for ${type} application ${application.id}`,
                     requestResourceData: { applicationUpdate, teacherUpdate }
                 }));
             });
@@ -323,14 +344,11 @@ export default function AdminDashboardPage() {
         const fileName = `${Date.now()}_${materialFile.name}`;
         const fileRef = ref(storage, `freeMaterials/${fileName}`);
     
-        // Store current values from state to use in the background task
         const currentTitle = materialTitle.trim();
         const currentDescription = materialDescription.trim();
         const currentCategory = materialCategory;
         const currentFile = materialFile;
     
-        // --- Optimistic UI Update ---
-        // Clear form fields immediately so the user can do something else
         setMaterialTitle('');
         setMaterialDescription('');
         setMaterialFile(null);
@@ -338,18 +356,11 @@ export default function AdminDashboardPage() {
         if (document.getElementById('material-file')) {
             (document.getElementById('material-file') as HTMLInputElement).value = '';
         }
-        // Stop the main loading spinner on the button
         setIsUploadingMaterial(false);
     
-        // --- Background Task ---
-        // Start the upload, but don't `await` it. Chain `.then()` to handle completion.
         uploadBytes(fileRef, currentFile)
-            .then(uploadTask => {
-                // Once upload is complete, get the download URL
-                return getDownloadURL(uploadTask.ref);
-            })
+            .then(uploadTask => getDownloadURL(uploadTask.ref))
             .then(downloadURL => {
-                // Now that we have the URL, write the document to Firestore
                 const materialData = {
                     title: currentTitle,
                     description: currentDescription,
@@ -366,9 +377,7 @@ export default function AdminDashboardPage() {
                     });
             })
             .catch(error => {
-                // This will catch errors from both storage upload and Firestore write
                 console.error("Error uploading free material:", error);
-                // The permission error will be emitted globally by the addDoc promise if it fails
                 const materialData = { title: currentTitle, category: currentCategory };
                 errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'freeMaterials', requestResourceData: materialData }));
             });
@@ -419,14 +428,12 @@ export default function AdminDashboardPage() {
         const currentItemImage = itemImage;
         const currentItemType = itemType;
     
-        // Optimistic UI Update
         setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
         if (document.getElementById('item-image')) {
             (document.getElementById('item-image') as HTMLInputElement).value = '';
         }
         setIsUploadingItem(false);
     
-        // Background Task
         const addItemToFirestore = (data: Omit<ShopItem, 'id'>) => {
             addDoc(collection(firestore, 'shopItems'), data)
                 .then(docRef => {
@@ -510,7 +517,7 @@ export default function AdminDashboardPage() {
             });
     };
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || applicationsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || vcAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -549,7 +556,7 @@ export default function AdminDashboardPage() {
                  <Button variant={view === 'schools' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('schools')}><Building2 className="mr-2 h-4 w-4" />Schools</Button>
                  <Button variant={view === 'applications' ? 'secondary' : 'ghost'} className="justify-start relative" onClick={() => handleViewChange('applications')}>
                     <Briefcase className="mr-2 h-4 w-4" />Applications
-                    {filteredApplications.pending.length > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{filteredApplications.pending.length}</span>}
+                    {totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
                  </Button>
                  <Button variant={view === 'bookings' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('bookings')}><Home className="mr-2 h-4 w-4" />Bookings</Button>
                  <Button variant={view === 'materials' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('materials')}><FileText className="mr-2 h-4 w-4" />Materials</Button>
@@ -696,27 +703,45 @@ export default function AdminDashboardPage() {
         );
     };
 
+    const renderApplicationList = (
+        applications: { pending: ApplicationBase[], approved: ApplicationBase[], rejected: ApplicationBase[] },
+        type: ApplicationType
+    ) => (
+        <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="pending">Pending ({applications.pending.length})</TabsTrigger>
+                <TabsTrigger value="approved">Approved ({applications.approved.length})</TabsTrigger>
+                <TabsTrigger value="rejected">Rejected ({applications.rejected.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending" className="mt-4">
+                {applications.pending.length > 0 ? (
+                    <div className="grid gap-4">{applications.pending.map(app => (<div key={app.id} className="flex items-center justify-between p-4 rounded-lg border"><div><p className="font-semibold">{app.teacherName}</p><p className="text-xs text-muted-foreground mt-1">Applied: {formatDate(app.createdAt)}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button><Button size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button></div></div>))}</div>
+                ) : (<div className="text-center py-12">No pending applications.</div>)}
+            </TabsContent>
+            <TabsContent value="approved" className="mt-4">
+                {applications.approved.length > 0 ? (<div className="grid gap-4">{applications.approved.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600">Approved</span></div>))}</div>) : (<div className="text-center py-12">No approved applications.</div>)}
+            </TabsContent>
+            <TabsContent value="rejected" className="mt-4">
+                {applications.rejected.length > 0 ? (<div className="grid gap-4">{applications.rejected.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive">Rejected</span></div>))}</div>) : (<div className="text-center py-12">No rejected applications.</div>)}
+            </TabsContent>
+        </Tabs>
+    );
+
     const renderApplicationsView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Teacher Applications</h1>
             <Card>
                 <CardContent className="p-4">
-                    <Tabs defaultValue="pending" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="pending">Pending ({filteredApplications.pending.length})</TabsTrigger>
-                            <TabsTrigger value="approved">Approved ({filteredApplications.approved.length})</TabsTrigger>
-                            <TabsTrigger value="rejected">Rejected ({filteredApplications.rejected.length})</TabsTrigger>
+                    <Tabs defaultValue="homeTutor" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="homeTutor">Home Tutor ({filteredHomeTutorApps.pending.length})</TabsTrigger>
+                            <TabsTrigger value="verifiedCoaching">Verified Coaching ({filteredCoachingApps.pending.length})</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="pending" className="mt-4">
-                            {filteredApplications.pending.length > 0 ? (
-                                <div className="grid gap-4">{filteredApplications.pending.map(app => (<div key={app.id} className="flex items-center justify-between p-4 rounded-lg border"><div><p className="font-semibold">{app.teacherName}</p><p className="text-xs text-muted-foreground mt-1">Applied: {formatDate(app.createdAt)}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => handleApplication(app, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button><Button size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected')}><X className="mr-2 h-4 w-4" />Reject</Button></div></div>))}</div>
-                            ) : (<div className="text-center py-12">No pending applications.</div>)}
+                        <TabsContent value="homeTutor" className="mt-4">
+                            {renderApplicationList(filteredHomeTutorApps, 'homeTutor')}
                         </TabsContent>
-                        <TabsContent value="approved" className="mt-4">
-                            {filteredApplications.approved.length > 0 ? (<div className="grid gap-4">{filteredApplications.approved.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600">Approved</span></div>))}</div>) : (<div className="text-center py-12">No approved applications.</div>)}
-                        </TabsContent>
-                        <TabsContent value="rejected" className="mt-4">
-                            {filteredApplications.rejected.length > 0 ? (<div className="grid gap-4">{filteredApplications.rejected.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive">Rejected</span></div>))}</div>) : (<div className="text-center py-12">No rejected applications.</div>)}
+                        <TabsContent value="verifiedCoaching" className="mt-4">
+                            {renderApplicationList(filteredCoachingApps, 'verifiedCoaching')}
                         </TabsContent>
                     </Tabs>
                 </CardContent>
@@ -1103,5 +1128,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    
