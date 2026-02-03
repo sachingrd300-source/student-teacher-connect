@@ -260,6 +260,14 @@
           "type": "string",
           "description": "Name of the assigned teacher."
         },
+        "assignedCoachingCenterName": {
+            "type": "string",
+            "description": "Name of the assigned coaching center."
+        },
+        "assignedCoachingAddress": {
+            "type": "string",
+            "description": "Address of the assigned coaching center."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

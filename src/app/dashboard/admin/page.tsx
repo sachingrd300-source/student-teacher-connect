@@ -44,7 +44,7 @@ interface UserProfile { id: string; name: string; email: string; role: 'admin' |
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; bookingType: 'homeTutor' | 'coachingCenter'; }
+interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; address: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -413,14 +413,43 @@ export default function AdminDashboardPage() {
         });
     };
 
+    const handleAssignCoachingTeacher = (booking: HomeBooking, teacherId: string) => {
+        const teacher = achieverTeachers?.find(t => t.id === teacherId);
+        if (!firestore || !teacher) return;
+        const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
+        
+        const updateData = {
+            assignedTeacherId: teacher.id,
+            assignedTeacherName: teacher.name,
+            status: 'Confirmed' as const,
+            assignedCoachingCenterName: teacher.coachingCenterName || 'N/A',
+            assignedCoachingAddress: teacher.address || 'N/A'
+        };
+
+        updateDoc(bookingDocRef, updateData)
+        .then(() => {
+            logAdminAction(`Assigned coaching center via ${teacher.name} to booking for ${booking.studentName}`, booking.id);
+        })
+        .catch(error => {
+            console.error('Error assigning coaching teacher:', error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: bookingDocRef.path,
+                requestResourceData: updateData
+            }));
+        });
+    };
+
     const handleUpdateBookingStatus = (booking: HomeBooking, status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled') => {
         if (!firestore) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
-        const updateData: { status: string; assignedTeacherId?: null; assignedTeacherName?: null } = { status };
+        const updateData: { [key: string]: any } = { status };
         
         if (status === 'Pending') {
             updateData.assignedTeacherId = null;
             updateData.assignedTeacherName = null;
+            updateData.assignedCoachingCenterName = null;
+            updateData.assignedCoachingAddress = null;
         }
 
         updateDoc(bookingDocRef, updateData)
@@ -1087,6 +1116,27 @@ export default function AdminDashboardPage() {
                             {(booking.status === 'Awaiting Payment' || booking.status === 'Confirmed' || booking.status === 'Completed') && type === 'homeTutor' && (
                                 <div className="mt-4 pt-4 border-t">
                                     <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                </div>
+                            )}
+                            {booking.status === 'Pending' && type === 'coachingCenter' && (
+                                <div className="mt-4 pt-4 border-t flex items-center gap-2">
+                                    <Select onValueChange={(teacherId) => handleAssignCoachingTeacher(booking, teacherId)}>
+                                        <SelectTrigger className="w-full sm:w-[250px]">
+                                            <SelectValue placeholder="Assign a Coaching Center" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {achieverTeachers && achieverTeachers.length > 0 ? achieverTeachers.map(tutor => (
+                                                <SelectItem key={tutor.id} value={tutor.id}>{tutor.coachingCenterName || tutor.name}</SelectItem>
+                                            )) : <p className="p-2 text-sm text-muted-foreground">No community teachers available</p>}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                            {(booking.status === 'Confirmed' || booking.status === 'Completed') && type === 'coachingCenter' && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <p className="text-sm text-muted-foreground">Assigned Center: <span className="font-semibold text-foreground">{booking.assignedCoachingCenterName}</span></p>
+                                    <p className="text-sm text-muted-foreground">via: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                    <p className="text-sm text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedCoachingAddress}</span></p>
                                 </div>
                             )}
                         </div>

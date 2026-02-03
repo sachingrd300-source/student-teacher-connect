@@ -49,6 +49,8 @@ interface HomeBooking {
     assignedTeacherName?: string;
     createdAt: string;
     bookingType: 'homeTutor' | 'coachingCenter';
+    assignedCoachingCenterName?: string;
+    assignedCoachingAddress?: string;
 }
 
 interface Fee {
@@ -438,11 +440,18 @@ export default function StudentDashboardPage() {
                                             {lastCoachingBooking.status}
                                         </span>
                                     </div>
-                                    {(lastCoachingBooking.status === 'Confirmed' || lastCoachingBooking.status === 'Completed') && (
+                                    {(lastCoachingBooking.status === 'Confirmed' || lastCoachingBooking.status === 'Completed') && lastCoachingBooking.assignedCoachingCenterName ? (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <p className="text-sm text-muted-foreground">Assigned Center:</p>
+                                            <p className="font-semibold text-primary">{lastCoachingBooking.assignedCoachingCenterName}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Teacher: {lastCoachingBooking.assignedTeacherName}</p>
+                                            <p className="text-xs text-muted-foreground">Address: {lastCoachingBooking.assignedCoachingAddress}</p>
+                                        </div>
+                                    ) : (lastCoachingBooking.status === 'Confirmed' || lastCoachingBooking.status === 'Completed') ? (
                                         <div className="mt-3 pt-3 border-t">
                                             <p className="text-sm text-muted-foreground">Admin has confirmed your seat. You will be contacted shortly.</p>
                                         </div>
-                                    )}
+                                    ) : null}
                                 </div>
                            ) : (
                                 <div className="text-center py-4">
