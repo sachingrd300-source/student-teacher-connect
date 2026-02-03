@@ -45,6 +45,11 @@ service cloud.firestore {
       return isTeacher() && schoolData.principalId == request.auth.uid;
     }
 
+    function isCommunityAssociate(userId) {
+      let userData = get(/databases/$(database)/documents/users/$(userId)).data;
+      return userData.role == 'teacher' && (userData.teacherWorkStatus == 'achievers_associate' || userData.teacherWorkStatus == 'both');
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId)
                   || isAdmin()
@@ -52,7 +57,15 @@ service cloud.firestore {
                   || (isTeacher() && resource.data.role == 'student');
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
-      allow update: if isAdmin() || isOwner(userId);
+      allow update: if isAdmin() || (isOwner(userId) && (
+            !isCommunityAssociate(userId) ||
+            (
+              isCommunityAssociate(userId) &&
+              request.resource.data.diff(resource.data).affectedKeys()
+                .intersection(['bio', 'subject', 'coachingCenterName', 'whatsappNumber', 'fee'].toSet())
+                .size() == 0
+            )
+          ));
       allow delete: if isAdmin();
       
       match /inventory/{inventoryId} {
