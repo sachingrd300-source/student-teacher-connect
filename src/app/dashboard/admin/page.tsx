@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useStorage, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateDoc, getCountFromServer, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, addDoc, deleteDoc, writeBatch, updateDoc, getCountFromServer, where, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,6 +50,7 @@ interface ShopItem { id: string; name: string; description?: string; price: numb
 interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
+interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
 
 type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools';
 type ApplicationType = 'homeTutor' | 'verifiedCoaching';
@@ -129,6 +130,7 @@ export default function AdminDashboardPage() {
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
+    const enrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -141,6 +143,7 @@ export default function AdminDashboardPage() {
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
     const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
+    const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
     // --- Auth & Role Check ---
     useEffect(() => {
@@ -231,9 +234,19 @@ export default function AdminDashboardPage() {
         };
     }, [verifiedCoachingApplications]);
 
+    const filteredEnrollments = useMemo(() => {
+        if (!enrollments) return { pending: [], approved: [] };
+        return {
+            pending: enrollments.filter(e => e.status === 'pending'),
+            approved: enrollments.filter(e => e.status === 'approved'),
+        };
+    }, [enrollments]);
+
     const totalPendingApps = useMemo(() => 
-        (filteredHomeTutorApps.pending.length || 0) + (filteredCoachingApps.pending.length || 0),
-    [filteredHomeTutorApps, filteredCoachingApps]);
+        (filteredHomeTutorApps.pending.length || 0) + 
+        (filteredCoachingApps.pending.length || 0) +
+        (filteredEnrollments.pending.length || 0),
+    [filteredHomeTutorApps, filteredCoachingApps, filteredEnrollments]);
 
     const filteredMaterials = useMemo(() => {
         if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
@@ -272,6 +285,40 @@ export default function AdminDashboardPage() {
                     operation: 'write',
                     path: `batch update for ${type} application ${application.id}`,
                     requestResourceData: { applicationUpdate, teacherUpdate }
+                }));
+            });
+    };
+
+    const handleEnrollmentAction = (enrollment: Enrollment, newStatus: 'approved' | 'rejected') => {
+        if (!firestore) return;
+        const batch = writeBatch(firestore);
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        
+        if (newStatus === 'approved') {
+            batch.update(enrollmentRef, { 
+                status: 'approved',
+                approvedAt: new Date().toISOString()
+            });
+
+            const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
+            batch.update(currentBatchRef, {
+                approvedStudents: arrayUnion(enrollment.studentId)
+            });
+
+            logAdminAction(`Approved ${enrollment.studentName} for batch "${enrollment.batchName}"`, enrollment.id);
+        } else { // 'rejected'
+            batch.delete(enrollmentRef);
+            logAdminAction(`Declined enrollment for ${enrollment.studentName} from batch "${enrollment.batchName}"`, enrollment.id);
+        }
+        
+        batch.commit()
+            .catch(error => {
+                console.error(`Error handling enrollment application:`, error);
+                const updateData = newStatus === 'approved' ? { status: 'approved' } : {};
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'write',
+                    path: `batch update for enrollment ${enrollment.id}`,
+                    requestResourceData: { enrollmentUpdate: updateData }
                 }));
             });
     };
@@ -517,7 +564,7 @@ export default function AdminDashboardPage() {
             });
     };
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || vcAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || vcAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -727,21 +774,70 @@ export default function AdminDashboardPage() {
         </Tabs>
     );
 
+    const renderEnrollmentList = () => {
+        const { pending, approved } = filteredEnrollments;
+
+        return (
+            <Tabs defaultValue="pending" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger>
+                    <TabsTrigger value="approved">Approved ({approved.length})</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pending" className="mt-4">
+                    {pending.length > 0 ? (
+                        <div className="grid gap-4">{pending.map(enrollment => (
+                            <div key={enrollment.id} className="flex items-center justify-between p-4 rounded-lg border">
+                                <div>
+                                    <p className="font-semibold">{enrollment.studentName}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Wants to join <span className="font-medium">"{enrollment.batchName}"</span> by {enrollment.teacherName}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(enrollment.createdAt)}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                    <Button size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
+                                </div>
+                            </div>
+                        ))}</div>
+                    ) : (<div className="text-center py-12">No pending enrollments.</div>)}
+                </TabsContent>
+                <TabsContent value="approved" className="mt-4">
+                    {approved.length > 0 ? (
+                        <div className="grid gap-4">{approved.map(enrollment => (
+                            <div key={enrollment.id} className="p-4 rounded-lg border flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold">{enrollment.studentName}</p>
+                                    <p className="text-sm text-muted-foreground">in <span className="font-medium">"{enrollment.batchName}"</span> by {enrollment.teacherName}</p>
+                                </div>
+                                <span className="text-sm font-medium text-green-600">Approved</span>
+                            </div>
+                        ))}</div>
+                    ) : (<div className="text-center py-12">No approved enrollments.</div>)}
+                </TabsContent>
+            </Tabs>
+        )
+    };
+
     const renderApplicationsView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">Teacher Applications</h1>
+            <h1 className="text-3xl font-bold font-serif">Applications</h1>
             <Card>
                 <CardContent className="p-4">
                     <Tabs defaultValue="homeTutor" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="homeTutor">Home Tutor ({filteredHomeTutorApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="verifiedCoaching">Verified Coaching ({filteredCoachingApps.pending.length})</TabsTrigger>
+                            <TabsTrigger value="studentEnrollments">Student Enrollments ({filteredEnrollments.pending.length})</TabsTrigger>
                         </TabsList>
                         <TabsContent value="homeTutor" className="mt-4">
                             {renderApplicationList(filteredHomeTutorApps, 'homeTutor')}
                         </TabsContent>
                         <TabsContent value="verifiedCoaching" className="mt-4">
                             {renderApplicationList(filteredCoachingApps, 'verifiedCoaching')}
+                        </TabsContent>
+                        <TabsContent value="studentEnrollments" className="mt-4">
+                            {renderEnrollmentList()}
                         </TabsContent>
                     </Tabs>
                 </CardContent>
