@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -61,6 +62,7 @@ interface Announcement {
     message: string;
     target: 'all' | 'teachers' | 'students';
     createdAt: string;
+    expiresAt?: string;
 }
 
 
@@ -152,10 +154,21 @@ export default function CoachingManagementPage() {
             collection(firestore, "announcements"),
             where("target", "in", ["all", "teachers"]),
             orderBy("createdAt", "desc"),
-            limit(3)
+            limit(10)
         );
     }, [firestore, user]);
-    const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+    const { data: rawAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
+    const announcements = useMemo(() => {
+        if (!rawAnnouncements) return null;
+        const now = new Date();
+        return rawAnnouncements.filter(ann => {
+            if (!ann.expiresAt) {
+                return true;
+            }
+            return new Date(ann.expiresAt) > now;
+        }).slice(0, 3);
+    }, [rawAnnouncements]);
 
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
@@ -611,3 +624,5 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
+
+    

@@ -48,7 +48,7 @@ type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; createdAt: string; }
-interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; }
+interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; expiresAt?: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
@@ -94,6 +94,7 @@ export default function AdminDashboardPage() {
     
     const [announcementMessage, setAnnouncementMessage] = useState('');
     const [announcementTarget, setAnnouncementTarget] = useState<'all' | 'teachers' | 'students'>('all');
+    const [announcementExpiry, setAnnouncementExpiry] = useState('');
     const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
 
     // Badge/Shop Item state
@@ -553,16 +554,21 @@ export default function AdminDashboardPage() {
         
         setIsSendingAnnouncement(true);
 
-        const announcementData = {
+        const announcementData: { [key: string]: any } = {
             message: announcementMessage.trim(),
             target: announcementTarget,
             createdAt: new Date().toISOString(),
         };
 
+        if (announcementExpiry) {
+            announcementData.expiresAt = new Date(announcementExpiry).toISOString();
+        }
+
         addDoc(collection(firestore, 'announcements'), announcementData)
             .then((docRef) => {
                 logAdminAction(`Sent announcement to ${announcementTarget}`, docRef.id);
                 setAnnouncementMessage('');
+                setAnnouncementExpiry('');
             })
             .catch((error) => {
                 console.error("Error sending announcement:", error);
@@ -1109,6 +1115,16 @@ export default function AdminDashboardPage() {
                         <form onSubmit={handleSendAnnouncement} className="grid gap-4">
                             <div className="grid gap-2"><Label htmlFor="announcement-message">Message</Label><Textarea id="announcement-message" value={announcementMessage} onChange={(e) => setAnnouncementMessage(e.target.value)} required placeholder="Your message here..." /></div>
                             <div className="grid gap-2"><Label htmlFor="announcement-target">Target Audience</Label><Select value={announcementTarget} onValueChange={(v) => setAnnouncementTarget(v as any)} required><SelectTrigger id="announcement-target"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="teachers">All Teachers</SelectItem><SelectItem value="students">All Students</SelectItem></SelectContent></Select></div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="announcement-expiry">Expiration Date (Optional)</Label>
+                                <Input 
+                                    id="announcement-expiry" 
+                                    type="datetime-local"
+                                    value={announcementExpiry}
+                                    onChange={(e) => setAnnouncementExpiry(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">Announcement will be hidden after this date.</p>
+                            </div>
                              <Button type="submit" disabled={isSendingAnnouncement}>
                                 {isSendingAnnouncement ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />} Send
                             </Button>
@@ -1124,6 +1140,9 @@ export default function AdminDashboardPage() {
                                     <div key={ann.id} className="p-4 rounded-lg border">
                                         <p className="text-sm">{ann.message}</p>
                                         <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground"><span>Target: <span className="font-semibold capitalize">{ann.target}</span></span><span>{formatDate(ann.createdAt, true)}</span></div>
+                                        {ann.expiresAt && (
+                                            <p className="text-xs text-destructive mt-1">Expires: {formatDate(ann.expiresAt, true)}</p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -1254,3 +1273,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    

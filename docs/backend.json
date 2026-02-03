@@ -339,7 +339,12 @@
       "properties": {
         "message": { "type": "string" },
         "target": { "type": "string", "enum": ["all", "teachers", "students"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time when the announcement should automatically be hidden."
+        }
       },
       "required": ["message", "target", "createdAt"]
     },
