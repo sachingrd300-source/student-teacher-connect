@@ -143,34 +143,31 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         if (!userProfileRef || !userProfile) return;
-
+    
         const newErrors: { address?: string } = {};
         if (userProfile.role === 'teacher' && !address.trim()) {
             newErrors.address = 'Address is mandatory for teachers to be listed.';
         }
         setErrors(newErrors);
-
+    
         if (Object.keys(newErrors).length > 0) {
             return;
         }
-
+    
         setIsSaving(true);
         try {
-            const dataToUpdate: { [key: string]: any } = {
+            const dataToUpdate: Partial<UserProfile> = {
                 name: name.trim(),
                 address: address.trim(),
             };
-
+    
+            // A user can update their bio if they are not a teacher, OR if they are a teacher who is NOT a community associate.
+            const canUpdateBio = userProfile.role !== 'teacher' || !isCommunityAssociate;
+            if (canUpdateBio) {
+                dataToUpdate.bio = bio.trim();
+            }
+    
             if (userProfile.role === 'teacher') {
-                // If not a community associate, they can update their professional fields
-                if (!isCommunityAssociate) {
-                    dataToUpdate.subject = subject.trim();
-                    dataToUpdate.coachingCenterName = coachingCenterName.trim();
-                    dataToUpdate.whatsappNumber = whatsappNumber.trim();
-                    dataToUpdate.fee = fee.trim();
-                    dataToUpdate.bio = bio.trim();
-                }
-                
                 let workStatusValue: 'own_coaching' | 'achievers_associate' | 'both' | null = null;
                 if (workStatus.ownCoaching && workStatus.achieversAssociate) {
                     workStatusValue = 'both';
@@ -179,22 +176,26 @@ export default function ProfilePage() {
                 } else if (workStatus.achieversAssociate) {
                     workStatusValue = 'achievers_associate';
                 }
-                dataToUpdate.teacherWorkStatus = workStatusValue;
-
+                dataToUpdate.teacherWorkStatus = workStatusValue ?? undefined;
+    
+                // Only non-associates can update their professional fields
+                if (!isCommunityAssociate) {
+                    dataToUpdate.subject = subject.trim();
+                    dataToUpdate.coachingCenterName = coachingCenterName.trim();
+                    dataToUpdate.whatsappNumber = whatsappNumber.trim();
+                    dataToUpdate.fee = fee.trim();
+                }
             } else if (userProfile.role === 'student') {
                 dataToUpdate.mobileNumber = mobileNumber.trim();
                 dataToUpdate.fatherName = fatherName.trim();
                 dataToUpdate.class = studentClass.trim();
-                dataToUpdate.bio = bio.trim(); // Students can edit their bio
-            } else {
-                 dataToUpdate.bio = bio.trim(); // Other roles can edit their bio
             }
-            
+    
             await updateDoc(userProfileRef, dataToUpdate);
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating profile: ", error);
-            // Optionally: show an error toast
+            // Optionally: show an error toast to the user
         } finally {
             setIsSaving(false);
         }
@@ -543,5 +544,3 @@ export default function ProfilePage() {
         </div>
     )
 }
-
-    
