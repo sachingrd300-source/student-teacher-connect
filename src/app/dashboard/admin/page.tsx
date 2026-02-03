@@ -168,8 +168,10 @@ export default function AdminDashboardPage() {
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
+    // Moved from renderBookingsView to fix hook order violation
     const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
+
 
     // --- Auth & Role Check ---
     useEffect(() => {
@@ -839,31 +841,60 @@ export default function AdminDashboardPage() {
             </TabsList>
             <TabsContent value="pending" className="mt-4">
                 {applications.pending.length > 0 ? (
-                    <div className="grid gap-4">{applications.pending.map(app => (<div key={app.id} className="flex items-center justify-between p-4 rounded-lg border"><div><p className="font-semibold">{app.teacherName}</p><p className="text-xs text-muted-foreground mt-1">Applied: {formatDate(app.createdAt)}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button><Button size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button></div></div>))}</div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {applications.pending.map(app => (
+                             <Card key={app.id} className="flex flex-col">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">{app.teacherName}</CardTitle>
+                                    <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
+                                </CardHeader>
+                                <CardFooter className="mt-auto flex gap-2">
+                                    <Button className="w-full" size="sm" variant="outline" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                    <Button className="w-full" size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
                 ) : (<div className="text-center py-12">No pending applications.</div>)}
             </TabsContent>
             <TabsContent value="approved" className="mt-4">
                 {applications.approved.length > 0 ? (
-                    <div className="grid gap-4">
+                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.approved.map(app => (
-                            <div key={app.id} className="p-4 rounded-lg border flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold">{app.teacherName}</p>
-                                    {app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-green-600">Approved</span>
-                                    <Button variant="destructive" size="sm" onClick={() => handleApplication(app, 'rejected', type)}>
+                             <Card key={app.id} className="flex flex-col bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">{app.teacherName}</CardTitle>
+                                    {app.processedAt && <CardDescription>Approved: {formatDate(app.processedAt)}</CardDescription>}
+                                </CardHeader>
+                                <CardContent className="flex-grow">
+                                     <span className="text-sm font-medium text-green-600">Approved</span>
+                                </CardContent>
+                                <CardFooter className="mt-auto flex gap-2">
+                                    <Button variant="destructive" className="w-full" size="sm" onClick={() => handleApplication(app, 'rejected', type)}>
                                         <UserX className="mr-2 h-4 w-4" /> Revoke
                                     </Button>
-                                </div>
-                            </div>
+                                </CardFooter>
+                            </Card>
                         ))}
                     </div>
                 ) : (<div className="text-center py-12">No approved applications.</div>)}
             </TabsContent>
             <TabsContent value="rejected" className="mt-4">
-                {applications.rejected.length > 0 ? (<div className="grid gap-4">{applications.rejected.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive">Rejected</span></div>))}</div>) : (<div className="text-center py-12">No rejected applications.</div>)}
+                {applications.rejected.length > 0 ? (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {applications.rejected.map(app => (
+                            <Card key={app.id} className="flex flex-col bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">{app.teacherName}</CardTitle>
+                                    {app.processedAt && <CardDescription>Rejected: {formatDate(app.processedAt)}</CardDescription>}
+                                </CardHeader>
+                                <CardContent>
+                                    <span className="text-sm font-medium text-destructive">Rejected</span>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (<div className="text-center py-12">No rejected applications.</div>)}
             </TabsContent>
         </Tabs>
     );
@@ -879,34 +910,44 @@ export default function AdminDashboardPage() {
                 </TabsList>
                 <TabsContent value="pending" className="mt-4">
                     {pending.length > 0 ? (
-                        <div className="grid gap-4">{pending.map(enrollment => (
-                            <div key={enrollment.id} className="flex items-center justify-between p-4 rounded-lg border">
-                                <div>
-                                    <p className="font-semibold">{enrollment.studentName}</p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Wants to join <span className="font-medium">"{enrollment.batchName}"</span> by {enrollment.teacherName}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(enrollment.createdAt)}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="outline" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
-                                    <Button size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
-                                </div>
-                            </div>
-                        ))}</div>
+                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {pending.map(enrollment => (
+                                <Card key={enrollment.id} className="flex flex-col">
+                                    <CardHeader>
+                                         <CardTitle className="text-lg">{enrollment.studentName}</CardTitle>
+                                         <CardDescription>Requested: {formatDate(enrollment.createdAt)}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        <p className="text-sm text-muted-foreground">
+                                            Wants to join <span className="font-medium text-foreground">"{enrollment.batchName}"</span> by {enrollment.teacherName}
+                                        </p>
+                                    </CardContent>
+                                    <CardFooter className="mt-auto flex gap-2">
+                                        <Button className="w-full" size="sm" variant="outline" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                        <Button className="w-full" size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
                     ) : (<div className="text-center py-12">No pending enrollments.</div>)}
                 </TabsContent>
                 <TabsContent value="approved" className="mt-4">
                     {approved.length > 0 ? (
-                        <div className="grid gap-4">{approved.map(enrollment => (
-                            <div key={enrollment.id} className="p-4 rounded-lg border flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold">{enrollment.studentName}</p>
-                                    <p className="text-sm text-muted-foreground">in <span className="font-medium">"{enrollment.batchName}"</span> by {enrollment.teacherName}</p>
-                                </div>
-                                <span className="text-sm font-medium text-green-600">Approved</span>
-                            </div>
-                        ))}</div>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {approved.map(enrollment => (
+                                 <Card key={enrollment.id} className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900">
+                                    <CardHeader>
+                                         <CardTitle className="text-lg">{enrollment.studentName}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">in <span className="font-medium text-foreground">"{enrollment.batchName}"</span> by {enrollment.teacherName}</p>
+                                    </CardContent>
+                                     <CardFooter>
+                                        <span className="text-sm font-medium text-green-600">Approved</span>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
                     ) : (<div className="text-center py-12">No approved enrollments.</div>)}
                 </TabsContent>
             </Tabs>
