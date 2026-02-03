@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard, Wallet } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard, Wallet, BookCheck } from 'lucide-react';
 import Link from 'next/link';
 import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 
@@ -215,6 +215,7 @@ export default function StudentDashboardPage() {
 
     const actionItems = [
         { title: 'Find Teachers', icon: <Search />, href: '/dashboard/student/find-teachers' },
+        { title: 'Book a Seat', icon: <BookCheck />, href: '/dashboard/student/book-coaching-seat' },
         { title: 'Free Materials', icon: <BookOpen />, href: '/dashboard/student/free-materials' },
         { title: 'Book Home Tutor', icon: <Home />, href: '/dashboard/student/book-home-teacher' },
         { title: 'My Rewards', icon: <Gift />, href: '/dashboard/student/rewards' },
@@ -230,7 +231,7 @@ export default function StudentDashboardPage() {
                 <p className="text-muted-foreground mt-2">Manage your batches, explore resources, and track your progress.</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                 {actionItems.map(item => <ActionCard key={item.href} {...item} />)}
             </div>
 
@@ -238,7 +239,7 @@ export default function StudentDashboardPage() {
                 <div className="lg:col-span-2 grid gap-8">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Join a New Batch</CardTitle>
+                            <CardTitle className="text-lg">Join a New Batch by Code</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleJoinBatch} className="flex items-end gap-2">
@@ -427,5 +428,3 @@ export default function StudentDashboardPage() {
         </div>
     );
 }
-
-    

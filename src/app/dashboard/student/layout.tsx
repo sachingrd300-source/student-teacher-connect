@@ -9,7 +9,7 @@ import { doc } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School } from 'lucide-react';
+import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
@@ -47,6 +47,7 @@ export default function StudentDashboardLayout({
   const navItems = [
     { href: '/dashboard/student', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/student/find-teachers', label: 'Find Teachers', icon: Search },
+    { href: '/dashboard/student/book-coaching-seat', label: 'Book a Seat', icon: BookCheck },
     { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },
     { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
     { href: '/dashboard/student/rewards', label: 'My Rewards', icon: Gift },
