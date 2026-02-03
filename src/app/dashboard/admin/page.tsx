@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; isVerifiedCoachingTutor?: boolean; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; address?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; address?: string; }
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
@@ -175,7 +175,6 @@ export default function AdminDashboardPage() {
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
-    // Moved from renderBookingsView to fix hook order violation
     const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
 
@@ -273,7 +272,7 @@ export default function AdminDashboardPage() {
         if (!allUsersData) return new Set<string>();
         return new Set(
             allUsersData
-                .filter(user => user.role === 'teacher' && user.isVerifiedCoachingTutor)
+                .filter(user => user.role === 'teacher' && (user.teacherWorkStatus === 'achievers_associate' || user.teacherWorkStatus === 'both'))
                 .map(teacher => teacher.id)
         );
     }, [allUsersData]);
@@ -310,7 +309,7 @@ export default function AdminDashboardPage() {
     }, [materials]);
 
     const achieverTeachers = useMemo(() => 
-        allUsers?.filter(u => u.role === 'teacher' && u.isVerifiedCoachingTutor) || [],
+        allUsers?.filter(u => u.role === 'teacher' && (u.teacherWorkStatus === 'achievers_associate' || u.teacherWorkStatus === 'both')) || [],
     [allUsers]);
 
     // --- Event Handlers ---
@@ -319,7 +318,6 @@ export default function AdminDashboardPage() {
         const batch = writeBatch(firestore);
 
         const collectionName = type === 'homeTutor' ? 'homeTutorApplications' : 'verifiedCoachingApplications';
-        const userFieldToUpdate = type === 'homeTutor' ? 'isHomeTutor' : 'isVerifiedCoachingTutor';
         const actionText = type === 'homeTutor' ? 'Home Tutor application' : 'Community Associate application';
 
         const applicationRef = doc(firestore, collectionName, application.id);
@@ -327,7 +325,18 @@ export default function AdminDashboardPage() {
         batch.update(applicationRef, applicationUpdate);
         
         const teacherRef = doc(firestore, 'users', application.teacherId);
-        const teacherUpdate = { [userFieldToUpdate]: newStatus === 'approved' };
+        let teacherUpdate: {[key: string]: any} = {};
+
+        if (type === 'homeTutor') {
+            teacherUpdate.isHomeTutor = newStatus === 'approved';
+        } else { // communityAssociate
+             if (newStatus === 'approved') {
+                teacherUpdate.teacherWorkStatus = 'achievers_associate';
+            } else { // 'rejected' means revoking membership
+                teacherUpdate.teacherWorkStatus = 'own_coaching';
+            }
+        }
+        
         batch.update(teacherRef, teacherUpdate);
         
         const logMessage = newStatus === 'approved' 

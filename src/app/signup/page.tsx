@@ -75,6 +75,7 @@ export default function SignupPage() {
 
       if (role === 'teacher') {
         dataToSet.teacherType = teacherType;
+        dataToSet.teacherWorkStatus = 'own_coaching'; // Default status for new teachers
       }
       
       // Handle referral

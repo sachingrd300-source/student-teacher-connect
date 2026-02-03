@@ -23,7 +23,7 @@ interface UserProfile {
     email: string;
     role: 'teacher' | 'student' | 'admin' | 'parent';
     isHomeTutor?: boolean;
-    isVerifiedCoachingTutor?: boolean;
+    teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
 }
 
 interface Batch {
@@ -270,6 +270,8 @@ export default function CoachingManagementPage() {
             </div>
         );
     }
+    
+    const isCommunityAssociate = userProfile?.teacherWorkStatus === 'achievers_associate' || userProfile?.teacherWorkStatus === 'both';
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -432,7 +434,7 @@ export default function CoachingManagementPage() {
                                     <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achievers Community Program</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    {userProfile.isVerifiedCoachingTutor ? (
+                                    {isCommunityAssociate ? (
                                         <>
                                             <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
                                                 <CheckCircle className="h-5 w-5" />

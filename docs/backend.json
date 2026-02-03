@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -37,10 +36,6 @@
         "isHomeTutor": {
           "type": "boolean",
           "description": "Indicates if the teacher is approved to be a home tutor."
-        },
-        "isVerifiedCoachingTutor": {
-          "type": "boolean",
-          "description": "Indicates if the teacher is a verified community associate."
         },
         "bio": {
           "type": "string",
@@ -545,5 +540,3 @@
     }
   }
 }
-
-    
