@@ -180,7 +180,7 @@ service cloud.firestore {
     }
 
     match /announcements/{announcementId} {
-      allow read: if isStudent() || isAdmin();
+      allow read: if isStudent() || isAdmin() || isTeacher();
       allow write: if isAdmin();
     }
     
