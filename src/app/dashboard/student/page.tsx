@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 
@@ -48,6 +48,15 @@ interface HomeBooking {
     assignedTeacherName?: string;
     createdAt: string;
 }
+
+interface Fee {
+    id: string;
+    batchId: string;
+    batchName: string;
+    feeMonth: number;
+    feeYear: number;
+}
+
 
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -118,6 +127,16 @@ export default function StudentDashboardPage() {
     const { data: homeBookings, isLoading: homeBookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
     const lastBooking = useMemo(() => homeBookings?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
 
+    const unpaidFeesQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(
+            collection(firestore, 'fees'),
+            where('studentId', '==', user.uid),
+            where('status', '==', 'unpaid')
+        );
+    }, [firestore, user?.uid]);
+    const { data: unpaidFees, isLoading: feesLoading } = useCollection<Fee>(unpaidFeesQuery);
+
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
     }, [enrollments]);
@@ -176,7 +195,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading || homeBookingsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading || homeBookingsLoading || feesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -302,6 +321,35 @@ export default function StudentDashboardPage() {
                 </div>
                 
                 <div className="lg:col-span-1 grid gap-8 content-start">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><Wallet className="mr-3 h-5 w-5 text-primary"/> Pending Fees</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            {feesLoading ? (
+                                 <div className="flex justify-center items-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            ) : unpaidFees && unpaidFees.length > 0 ? (
+                                unpaidFees.map(fee => (
+                                    <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                        <div>
+                                            <p className="font-semibold">{fee.batchName}</p>
+                                            <p className="text-sm text-muted-foreground">{new Date(fee.feeYear, fee.feeMonth - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                                        </div>
+                                        <Button asChild size="sm" variant="outline">
+                                            <Link href={`/dashboard/student/batch/${fee.batchId}?tab=fees`}>
+                                                View
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-center text-muted-foreground py-8">No pending fees. Great job! 🎉</p>
+                            )}
+                        </CardContent>
+                    </Card>
+
                      <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
