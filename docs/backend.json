@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -39,7 +40,7 @@
         },
         "isVerifiedCoachingTutor": {
           "type": "boolean",
-          "description": "Indicates if the teacher is a verified coaching tutor."
+          "description": "Indicates if the teacher is a verified community associate."
         },
         "bio": {
           "type": "string",
@@ -295,9 +296,9 @@
       "required": ["teacherId", "teacherName", "status", "createdAt"]
     },
     "VerifiedCoachingApplication": {
-      "title": "Verified Coaching Application",
+      "title": "Community Associate Application",
       "type": "object",
-      "description": "Represents a teacher's application to be listed as a verified coaching tutor.",
+      "description": "Represents a teacher's application to join the Achievers Community as a verified associate.",
       "properties": {
         "teacherId": { "type": "string" },
         "teacherName": { "type": "string" },
@@ -499,7 +500,7 @@
     },
      "/verifiedCoachingApplications/{applicationId}": {
       "schema": { "$ref": "#/entities/VerifiedCoachingApplication" },
-      "description": "Stores applications from teachers to become verified coaching tutors."
+      "description": "Stores applications from teachers to join the Achievers Community."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },
@@ -531,3 +532,5 @@
     }
   }
 }
+
+    

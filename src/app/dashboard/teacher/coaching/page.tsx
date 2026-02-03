@@ -450,20 +450,20 @@ export default function CoachingManagementPage() {
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Verified Coaching Program</CardTitle>
+                                    <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achievers Community Program</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     {userProfile.isVerifiedCoachingTutor ? (
                                         <>
                                             <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
                                                 <CheckCircle className="h-5 w-5" />
-                                                <span>Verified Coaching Tutor</span>
+                                                <span>Verified Community Associate</span>
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-2">You have a verified badge on your profile.</p>
                                         </>
                                     ) : (
                                         <>
-                                            <p className="text-sm text-muted-foreground">Get a verified badge to attract more students.</p>
+                                            <p className="text-sm text-muted-foreground">Join the community to get a verified badge and attract more students.</p>
                                             <Button asChild className="mt-3 w-full" size="sm">
                                                 <Link href="/dashboard/teacher/apply-verified-coaching">Apply Now</Link>
                                             </Button>
@@ -535,3 +535,5 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
+
+    

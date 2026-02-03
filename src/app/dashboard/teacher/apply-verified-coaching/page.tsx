@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +16,7 @@ interface UserProfile {
     role?: 'student' | 'teacher' | 'admin' | 'parent';
 }
 
-interface VerifiedCoachingApplication {
+interface CommunityAssociateApplication {
     id: string;
     teacherId: string;
     status: 'pending' | 'approved' | 'rejected';
@@ -32,7 +33,7 @@ const formatDate = (dateString: string) => {
     });
 };
 
-export default function ApplyVerifiedCoachingPage() {
+export default function ApplyCommunityAssociatePage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
@@ -45,7 +46,7 @@ export default function ApplyVerifiedCoachingPage() {
     const applicationQuery = useMemoFirebase(() => 
         (firestore && user) ? query(collection(firestore, 'verifiedCoachingApplications'), where('teacherId', '==', user.uid), limit(1)) : null,
     [firestore, user]);
-    const { data: applications, isLoading: applicationLoading } = useCollection<VerifiedCoachingApplication>(applicationQuery);
+    const { data: applications, isLoading: applicationLoading } = useCollection<CommunityAssociateApplication>(applicationQuery);
     const existingApplication = applications?.[0];
     
     useEffect(() => {
@@ -91,8 +92,8 @@ export default function ApplyVerifiedCoachingPage() {
             return (
                 <Card className="rounded-2xl shadow-lg">
                     <CardHeader>
-                        <CardTitle>Apply to be a Verified Coaching Tutor</CardTitle>
-                        <CardDescription>Get a verified badge on your profile to build trust and attract more students. Submit your application for review by our admin team.</CardDescription>
+                        <CardTitle>Apply to be an Achievers Community Associate</CardTitle>
+                        <CardDescription>Get a verified badge on your profile and join our community of educators. Submit your application for review by our admin team.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={handleSubmitApplication} disabled={isSubmitting}>
@@ -109,7 +110,7 @@ export default function ApplyVerifiedCoachingPage() {
             case 'approved':
                 statusIcon = <CheckCircle className="h-16 w-16 text-green-500" />;
                 statusText = "Application Approved!";
-                statusDescription = "Congratulations! You are now listed as a verified coaching tutor.";
+                statusDescription = "Congratulations! You are now a verified community associate.";
                 break;
             case 'rejected':
                 statusIcon = <XCircle className="h-16 w-16 text-destructive" />;
@@ -154,3 +155,5 @@ export default function ApplyVerifiedCoachingPage() {
         </div>
     )
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -53,7 +54,7 @@ interface SchoolData { id: string; name: string; principalName: string; teacherI
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
 
 type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools';
-type ApplicationType = 'homeTutor' | 'verifiedCoaching';
+type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
     award: <Award className="h-5 w-5" />,
@@ -122,7 +123,7 @@ export default function AdminDashboardPage() {
     // Queries
     const allUsersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const homeTutorApplicationsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'homeTutorApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
-    const verifiedCoachingApplicationsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'verifiedCoachingApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const communityAssociateApplicationsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'verifiedCoachingApplications'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const homeBookingsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
@@ -135,7 +136,7 @@ export default function AdminDashboardPage() {
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
     const { data: homeTutorApplications, isLoading: htAppsLoading } = useCollection<HomeTutorApplication>(homeTutorApplicationsQuery);
-    const { data: verifiedCoachingApplications, isLoading: vcAppsLoading } = useCollection<VerifiedCoachingApplication>(verifiedCoachingApplicationsQuery);
+    const { data: communityAssociateApplications, isLoading: caAppsLoading } = useCollection<VerifiedCoachingApplication>(communityAssociateApplicationsQuery);
     const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
@@ -225,14 +226,14 @@ export default function AdminDashboardPage() {
         };
     }, [homeTutorApplications]);
 
-    const filteredCoachingApps = useMemo(() => {
-        if (!verifiedCoachingApplications) return { pending: [], approved: [], rejected: [] };
+    const filteredCommunityApps = useMemo(() => {
+        if (!communityAssociateApplications) return { pending: [], approved: [], rejected: [] };
         return {
-            pending: verifiedCoachingApplications.filter(a => a.status === 'pending'),
-            approved: verifiedCoachingApplications.filter(a => a.status === 'approved'),
-            rejected: verifiedCoachingApplications.filter(a => a.status === 'rejected'),
+            pending: communityAssociateApplications.filter(a => a.status === 'pending'),
+            approved: communityAssociateApplications.filter(a => a.status === 'approved'),
+            rejected: communityAssociateApplications.filter(a => a.status === 'rejected'),
         };
-    }, [verifiedCoachingApplications]);
+    }, [communityAssociateApplications]);
 
     const filteredEnrollments = useMemo(() => {
         if (!enrollments) return { pending: [], approved: [] };
@@ -244,9 +245,9 @@ export default function AdminDashboardPage() {
 
     const totalPendingApps = useMemo(() => 
         (filteredHomeTutorApps.pending.length || 0) + 
-        (filteredCoachingApps.pending.length || 0) +
+        (filteredCommunityApps.pending.length || 0) +
         (filteredEnrollments.pending.length || 0),
-    [filteredHomeTutorApps, filteredCoachingApps, filteredEnrollments]);
+    [filteredHomeTutorApps, filteredCommunityApps, filteredEnrollments]);
 
     const filteredMaterials = useMemo(() => {
         if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
@@ -266,6 +267,7 @@ export default function AdminDashboardPage() {
 
         const collectionName = type === 'homeTutor' ? 'homeTutorApplications' : 'verifiedCoachingApplications';
         const userFieldToUpdate = type === 'homeTutor' ? 'isHomeTutor' : 'isVerifiedCoachingTutor';
+        const actionText = type === 'homeTutor' ? 'Home Tutor application' : 'Community Associate application';
 
         const applicationRef = doc(firestore, collectionName, application.id);
         const applicationUpdate = { status: newStatus, processedAt: new Date().toISOString() };
@@ -277,7 +279,7 @@ export default function AdminDashboardPage() {
         
         batch.commit()
             .then(() => {
-                logAdminAction(`${type} application for '${application.teacherName}' ${newStatus}`, application.id);
+                logAdminAction(`${actionText} for '${application.teacherName}' ${newStatus}`, application.id);
             })
             .catch(error => {
                 console.error(`Error handling ${type} application:`, error);
@@ -403,7 +405,6 @@ export default function AdminDashboardPage() {
         if (document.getElementById('material-file')) {
             (document.getElementById('material-file') as HTMLInputElement).value = '';
         }
-        setIsUploadingMaterial(false);
     
         uploadBytes(fileRef, currentFile)
             .then(uploadTask => getDownloadURL(uploadTask.ref))
@@ -427,6 +428,9 @@ export default function AdminDashboardPage() {
                 console.error("Error uploading free material:", error);
                 const materialData = { title: currentTitle, category: currentCategory };
                 errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'freeMaterials', requestResourceData: materialData }));
+            })
+            .finally(() => {
+                setIsUploadingMaterial(false);
             });
     };
     
@@ -479,7 +483,6 @@ export default function AdminDashboardPage() {
         if (document.getElementById('item-image')) {
             (document.getElementById('item-image') as HTMLInputElement).value = '';
         }
-        setIsUploadingItem(false);
     
         const addItemToFirestore = (data: Omit<ShopItem, 'id'>) => {
             addDoc(collection(firestore, 'shopItems'), data)
@@ -489,6 +492,9 @@ export default function AdminDashboardPage() {
                 .catch((error) => {
                     console.error("Error adding shop item to Firestore:", error);
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: data }));
+                })
+                .finally(() => {
+                    setIsUploadingItem(false);
                 });
         };
     
@@ -507,11 +513,16 @@ export default function AdminDashboardPage() {
                     }
                     addItemToFirestore(finalItemData);
                 })
-                .catch(error => console.error("Error uploading shop item image:", error));
+                .catch(error => {
+                    console.error("Error uploading shop item image:", error)
+                    setIsUploadingItem(false);
+                });
         } else if (currentItemType === 'badge') {
             const finalItemData: any = { ...baseItemData };
             finalItemData.badgeIcon = currentBadgeIcon;
             addItemToFirestore(finalItemData);
+        } else {
+             setIsUploadingItem(false);
         }
     };
     
@@ -564,7 +575,7 @@ export default function AdminDashboardPage() {
             });
     };
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || vcAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -827,14 +838,14 @@ export default function AdminDashboardPage() {
                     <Tabs defaultValue="homeTutor" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="homeTutor">Home Tutor ({filteredHomeTutorApps.pending.length})</TabsTrigger>
-                            <TabsTrigger value="verifiedCoaching">Verified Coaching ({filteredCoachingApps.pending.length})</TabsTrigger>
+                            <TabsTrigger value="communityAssociate">Community Associate ({filteredCommunityApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="studentEnrollments">Student Enrollments ({filteredEnrollments.pending.length})</TabsTrigger>
                         </TabsList>
                         <TabsContent value="homeTutor" className="mt-4">
                             {renderApplicationList(filteredHomeTutorApps, 'homeTutor')}
                         </TabsContent>
-                        <TabsContent value="verifiedCoaching" className="mt-4">
-                            {renderApplicationList(filteredCoachingApps, 'verifiedCoaching')}
+                        <TabsContent value="communityAssociate" className="mt-4">
+                            {renderApplicationList(filteredCommunityApps, 'communityAssociate')}
                         </TabsContent>
                         <TabsContent value="studentEnrollments" className="mt-4">
                             {renderEnrollmentList()}
@@ -1224,3 +1235,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
