@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -302,10 +303,22 @@ export default function CoachingManagementPage() {
                                 <Home className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <p className="text-xs text-muted-foreground">Join to get students for home tuition.</p>
-                                <Button asChild className="mt-3 w-full" size="sm">
-                                    <Link href="/dashboard/teacher/apply-home-tutor">Apply Now</Link>
-                                </Button>
+                                {userProfile.isHomeTutor ? (
+                                    <>
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
+                                            <CheckCircle className="h-5 w-5" />
+                                            <span>Verified Home Tutor</span>
+                                        </div>
+                                         <p className="text-xs text-muted-foreground mt-2">You can now be assigned to home tuitions.</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-xs text-muted-foreground">Join to get students for home tuition.</p>
+                                        <Button asChild className="mt-3 w-full" size="sm">
+                                            <Link href="/dashboard/teacher/apply-home-tutor">Apply Now</Link>
+                                        </Button>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
