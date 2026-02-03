@@ -50,15 +50,6 @@ interface HomeBooking {
     bookingType: 'homeTutor' | 'coachingCenter';
 }
 
-interface Announcement {
-    id: string;
-    message: string;
-    target: 'all' | 'teachers' | 'students';
-    createdAt: string;
-    expiresAt?: string;
-}
-
-
 interface Fee {
     id: string;
     batchId: string;
@@ -140,28 +131,6 @@ export default function StudentDashboardPage() {
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
-    const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore || !user || !userProfile || userProfile.role !== 'student') return null;
-        return query(
-            collection(firestore, "announcements"),
-            where("target", "in", ["all", "students"]),
-            orderBy("createdAt", "desc"),
-            limit(10)
-        );
-    }, [firestore, user, userProfile]);
-    const { data: rawAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
-
-    const announcements = useMemo(() => {
-        if (!rawAnnouncements) return null;
-        const now = new Date();
-        return rawAnnouncements.filter(ann => {
-            if (!ann.expiresAt) {
-                return true;
-            }
-            return new Date(ann.expiresAt) > now;
-        }).slice(0, 3);
-    }, [rawAnnouncements]);
-
     const homeBookingsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -243,7 +212,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || announcementsLoading || homeBookingsLoading || feesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || homeBookingsLoading || feesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -394,40 +363,6 @@ export default function StudentDashboardPage() {
                                 ))
                             ) : (
                                 <p className="text-sm text-center text-muted-foreground py-8">No pending fees. Great job! 🎉</p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {announcements && announcements.length > 0 ? (
-                                <motion.div 
-                                    className="grid gap-4"
-                                    variants={staggerContainer(0.2, 0)}
-                                    initial="hidden"
-                                    animate="visible"
-                                >
-                                    {announcements.map((ann, index) => (
-                                        <motion.div
-                                            key={ann.id}
-                                            variants={fadeInUp}
-                                            className={`p-4 rounded-lg border flex gap-4 items-start ${index === 0 ? 'bg-primary/5 border-primary/20' : 'bg-background'}`}
-                                        >
-                                            <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                                <Megaphone className="h-4 w-4" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-medium">{ann.message}</p>
-                                                <p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
-                            ) : (
-                                <p className="text-sm text-center text-muted-foreground py-8">No new announcements from admin.</p>
                             )}
                         </CardContent>
                     </Card>
