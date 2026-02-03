@@ -319,7 +319,7 @@ export default function StudentBatchPage() {
                                     {activities && activities.length > 0 ? (
                                         <div className="grid gap-4">
                                             {activities.map(activity => (
-                                                <div key={activity.id} className="p-4 rounded-lg border bg-background">
+                                                <div key={activity.id} className="p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                     <p className="text-sm text-muted-foreground">{activity.message}</p>
                                                     <p className="text-xs text-muted-foreground mt-2">Posted: {formatDate(activity.createdAt)}</p>
                                                 </div>
@@ -345,7 +345,7 @@ export default function StudentBatchPage() {
                                     {studyMaterials && studyMaterials.length > 0 ? (
                                         <div className="grid gap-4">
                                             {studyMaterials.map(material => (
-                                                <div key={material.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background">
+                                                <div key={material.id} className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                     <div className="flex items-center gap-4">
                                                         <FileText className="h-5 w-5 text-muted-foreground" />
                                                         <div>
@@ -386,7 +386,7 @@ export default function StudentBatchPage() {
                                                 const paidOn = feeInfo?.paidOn;
 
                                                 return (
-                                                    <div key={key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background">
+                                                    <div key={key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                         <div>
                                                             <p className="font-semibold">{monthFormatter.format(new Date(year, month - 1))} {year}</p>
                                                             <p className="text-sm text-muted-foreground">Status: <span className={status === 'paid' ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>{status}</span></p>
@@ -423,7 +423,7 @@ export default function StudentBatchPage() {
                                     {tests && tests.length > 0 ? (
                                         <div className="grid gap-4">
                                             {tests.map(test => (
-                                                <div key={test.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background">
+                                                <div key={test.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                     <div className="flex-1">
                                                         <p className="font-semibold">{test.title} ({test.subject})</p>
                                                         <p className="text-sm text-muted-foreground">Date: {new Date(test.testDate).toLocaleDateString()}</p>

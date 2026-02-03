@@ -331,7 +331,7 @@ export default function HomePage() {
                     className="grid grid-cols-1 md:grid-cols-2 gap-8"
                 >
                     <motion.div variants={fadeInUp}>
-                        <Card className="p-8 h-full shadow-lg rounded-2xl">
+                        <Card className="p-8 h-full shadow-lg rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                             <User className="w-10 h-10 text-primary mb-4" />
                             <CardHeader className="p-0">
                                 <CardTitle>{t.individualTuitionTitle}</CardTitle>
@@ -342,7 +342,7 @@ export default function HomePage() {
                         </Card>
                     </motion.div>
                     <motion.div variants={fadeInUp}>
-                         <Card className="p-8 h-full shadow-lg rounded-2xl">
+                         <Card className="p-8 h-full shadow-lg rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                             <Building2 className="w-10 h-10 text-primary mb-4" />
                             <CardHeader className="p-0">
                                 <CardTitle>{t.coachingCenterTitle}</CardTitle>

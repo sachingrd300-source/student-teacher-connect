@@ -104,7 +104,7 @@ export default function LeaderboardPage() {
                                     key={student.id} 
                                     variants={cardVariants} 
                                     custom={index}
-                                    className="flex items-center p-3 rounded-lg border bg-background transition-colors hover:bg-muted/50"
+                                    className="flex items-center p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10"
                                 >
                                     <div className="flex items-center gap-4 w-1/6">
                                         <RankIcon rank={index + 1} />

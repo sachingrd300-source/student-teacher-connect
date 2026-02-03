@@ -450,7 +450,7 @@ export default function SchoolDetailsPage() {
                         teachers && teachers.length > 0 ? (
                         <div className="grid gap-4">
                             {teachers.map(teacher => (
-                                <div key={teacher.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                <div key={teacher.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
                                     <div className="flex items-center gap-3 w-full">
                                         <Avatar><AvatarFallback>{getInitials(teacher.name)}</AvatarFallback></Avatar>
                                         <div>
@@ -486,7 +486,7 @@ export default function SchoolDetailsPage() {
                     {school.classes && school.classes.length > 0 ? (
                          <div className="grid gap-4">
                             {school.classes.map(c => (
-                                <div key={c.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                                <div key={c.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
                                     <div className='w-full'>
                                         <p className="font-semibold">{c.name} - Section {c.section}</p>
                                         <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
@@ -529,7 +529,7 @@ export default function SchoolDetailsPage() {
                                     <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {c.students.map(s => (
-                                            <div key={s.id} className="p-3 rounded-lg border bg-background">
+                                            <div key={s.id} className="p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                 <p className="font-semibold">{s.name}</p>
                                                 <div className="mt-2 text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
                                                     <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
@@ -581,7 +581,7 @@ export default function SchoolDetailsPage() {
                                                 const status = currentMonthFee?.status || 'unpaid';
                                                 
                                                 return (
-                                                    <div key={s.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background">
+                                                    <div key={s.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                         <div>
                                                             <p className="font-semibold">{s.name}</p>
                                                             <p className="text-sm text-muted-foreground">Roll No: {s.rollNumber || 'N/A'}</p>
@@ -822,7 +822,7 @@ export default function SchoolDetailsPage() {
                              {classToManage?.students && classToManage.students.length > 0 ? (
                                 <div className="grid gap-3">
                                     {classToManage.students.map(s => (
-                                         <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50">
+                                         <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50 transition-colors hover:bg-accent">
                                             <div className="flex items-center justify-between">
                                                 <p className="font-semibold">{s.name}</p>
                                                 <Button size="icon" variant="ghost" className="text-destructive h-7 w-7" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>

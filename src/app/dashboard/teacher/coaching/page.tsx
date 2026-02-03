@@ -383,7 +383,7 @@ export default function CoachingManagementPage() {
                                     {batches && batches.length > 0 ? (
                                         <div className="grid gap-4 md:grid-cols-2">
                                             {batches.map(batch => (
-                                                <Card key={batch.id} className="flex flex-col rounded-2xl shadow-lg">
+                                                <Card key={batch.id} className="flex flex-col rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                                     <CardHeader>
                                                         <CardTitle className="font-serif">{batch.name}</CardTitle>
                                                     </CardHeader>
@@ -430,7 +430,7 @@ export default function CoachingManagementPage() {
                                     {pendingRequests && pendingRequests.length > 0 ? (
                                         <div className="grid gap-4">
                                             {pendingRequests.map(req => (
-                                                <div key={req.id} className="p-4 rounded-lg border">
+                                                <div key={req.id} className="p-4 rounded-lg border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                                     <div className="flex items-center gap-4">
                                                         <Avatar>
                                                             <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>

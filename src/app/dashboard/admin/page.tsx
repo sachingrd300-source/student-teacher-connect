@@ -826,7 +826,7 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {userList.map(u => (
-                        <Card key={u.id} className="flex flex-col rounded-2xl shadow-lg">
+                        <Card key={u.id} className="flex flex-col rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                             <CardHeader className="flex flex-row items-center gap-4">
                                 <Avatar className="w-12 h-12 text-lg"><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
                                 <div>
@@ -894,7 +894,7 @@ export default function AdminDashboardPage() {
                 {applications.pending.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.pending.map(app => (
-                             <Card key={app.id} className="flex flex-col rounded-2xl shadow-lg">
+                             <Card key={app.id} className="flex flex-col rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                 <CardHeader>
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
@@ -912,7 +912,7 @@ export default function AdminDashboardPage() {
                 {applications.approved.length > 0 ? (
                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.approved.map(app => (
-                             <Card key={app.id} className="flex flex-col bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg">
+                             <Card key={app.id} className="flex flex-col bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                 <CardHeader>
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     {app.processedAt && <CardDescription>Approved: {formatDate(app.processedAt)}</CardDescription>}
@@ -934,7 +934,7 @@ export default function AdminDashboardPage() {
                 {applications.rejected.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.rejected.map(app => (
-                            <Card key={app.id} className="flex flex-col bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900 rounded-2xl shadow-lg">
+                            <Card key={app.id} className="flex flex-col bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                 <CardHeader>
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     {app.processedAt && <CardDescription>Rejected: {formatDate(app.processedAt)}</CardDescription>}
@@ -963,7 +963,7 @@ export default function AdminDashboardPage() {
                     {pending.length > 0 ? (
                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {pending.map(enrollment => (
-                                <Card key={enrollment.id} className="flex flex-col rounded-2xl shadow-lg">
+                                <Card key={enrollment.id} className="flex flex-col rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <CardHeader>
                                          <CardTitle className="text-lg">{enrollment.studentName}</CardTitle>
                                          <CardDescription>Requested: {formatDate(enrollment.createdAt)}</CardDescription>
@@ -986,7 +986,7 @@ export default function AdminDashboardPage() {
                     {approved.length > 0 ? (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {approved.map(enrollment => (
-                                 <Card key={enrollment.id} className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg">
+                                 <Card key={enrollment.id} className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <CardHeader>
                                          <CardTitle className="text-lg">{enrollment.studentName}</CardTitle>
                                     </CardHeader>
@@ -1040,7 +1040,7 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid gap-4">
                     {bookings.map(booking => (
-                        <div key={booking.id} className="p-4 rounded-2xl border shadow-lg">
+                        <div key={booking.id} className="p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
@@ -1126,7 +1126,7 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid gap-4">
                     {materialList.map(material => (
-                        <div key={material.id} className="flex items-center justify-between gap-3 p-4 rounded-2xl border shadow-lg">
+                        <div key={material.id} className="flex items-center justify-between gap-3 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                             <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-primary flex-shrink-0" /><div><p className="font-semibold">{material.title}</p><p className="text-sm text-muted-foreground">{material.description}</p></div></div>
                             <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                         </div>
@@ -1247,7 +1247,7 @@ export default function AdminDashboardPage() {
                         {shopItems && shopItems.length > 0 ? (
                             <div className="grid gap-4">
                                 {shopItems.map(item => (
-                                    <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl border shadow-lg">
+                                    <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <div className="flex items-start gap-4">
                                             {item.itemType === 'badge' ? (
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
@@ -1309,7 +1309,7 @@ export default function AdminDashboardPage() {
                         {announcements && announcements.length > 0 ? (
                             <div className="grid gap-4">
                                 {announcements.map(ann => (
-                                    <div key={ann.id} className="p-4 rounded-2xl border shadow-lg">
+                                    <div key={ann.id} className="p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <p className="text-sm">{ann.message}</p>
                                         <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground"><span>Target: <span className="font-semibold capitalize">{ann.target}</span></span><span>{formatDate(ann.createdAt, true)}</span></div>
                                         {ann.expiresAt && (
@@ -1333,7 +1333,7 @@ export default function AdminDashboardPage() {
                     {adminActivities && adminActivities.length > 0 ? (
                         <div className="grid gap-4">
                             {adminActivities.map(activity => (
-                                <div key={activity.id} className="flex justify-between items-center p-4 rounded-2xl border shadow-lg">
+                                <div key={activity.id} className="flex justify-between items-center p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <div><p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p></div>
                                     <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
                                 </div>
@@ -1360,7 +1360,7 @@ export default function AdminDashboardPage() {
                                 const teacherCount = school.teacherIds?.length || 0;
                                 const studentCount = school.classes?.reduce((acc, c) => acc + (c.students?.length || 0), 0) || 0;
                                 return (
-                                    <Card key={school.id} className="rounded-2xl shadow-lg">
+                                    <Card key={school.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <CardHeader>
                                             <CardTitle className="text-lg">{school.name}</CardTitle>
                                             <CardDescription>Principal: {school.principalName}</CardDescription>
@@ -1398,7 +1398,7 @@ export default function AdminDashboardPage() {
                      {achieverTeachers.length > 0 ? (
                         <div className="grid md:grid-cols-2 gap-6">
                             {achieverTeachers.map(teacher => (
-                                <Card key={teacher.id} className="rounded-2xl shadow-lg">
+                                <Card key={teacher.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg">{teacher.name}</CardTitle>
