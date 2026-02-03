@@ -35,7 +35,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star
+    Award, Shield, Gem, Rocket, Star, UserX
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -277,9 +277,13 @@ export default function AdminDashboardPage() {
         const teacherUpdate = { [userFieldToUpdate]: newStatus === 'approved' };
         batch.update(teacherRef, teacherUpdate);
         
+        const logMessage = newStatus === 'approved' 
+            ? `${actionText} for '${application.teacherName}' approved`
+            : `Membership for '${application.teacherName}' in ${actionText} revoked`;
+
         batch.commit()
             .then(() => {
-                logAdminAction(`${actionText} for '${application.teacherName}' ${newStatus}`, application.id);
+                logAdminAction(logMessage, application.id);
             })
             .catch(error => {
                 console.error(`Error handling ${type} application:`, error);
@@ -398,14 +402,6 @@ export default function AdminDashboardPage() {
         const currentCategory = materialCategory;
         const currentFile = materialFile;
     
-        setMaterialTitle('');
-        setMaterialDescription('');
-        setMaterialFile(null);
-        setMaterialCategory('');
-        if (document.getElementById('material-file')) {
-            (document.getElementById('material-file') as HTMLInputElement).value = '';
-        }
-    
         uploadBytes(fileRef, currentFile)
             .then(uploadTask => getDownloadURL(uploadTask.ref))
             .then(downloadURL => {
@@ -431,6 +427,13 @@ export default function AdminDashboardPage() {
             })
             .finally(() => {
                 setIsUploadingMaterial(false);
+                setMaterialTitle('');
+                setMaterialDescription('');
+                setMaterialFile(null);
+                setMaterialCategory('');
+                if (document.getElementById('material-file')) {
+                    (document.getElementById('material-file') as HTMLInputElement).value = '';
+                }
             });
     };
     
@@ -479,11 +482,6 @@ export default function AdminDashboardPage() {
         const currentItemImage = itemImage;
         const currentItemType = itemType;
     
-        setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
-        if (document.getElementById('item-image')) {
-            (document.getElementById('item-image') as HTMLInputElement).value = '';
-        }
-    
         const addItemToFirestore = (data: Omit<ShopItem, 'id'>) => {
             addDoc(collection(firestore, 'shopItems'), data)
                 .then(docRef => {
@@ -495,6 +493,10 @@ export default function AdminDashboardPage() {
                 })
                 .finally(() => {
                     setIsUploadingItem(false);
+                    setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
+                    if (document.getElementById('item-image')) {
+                        (document.getElementById('item-image') as HTMLInputElement).value = '';
+                    }
                 });
         };
     
@@ -777,7 +779,24 @@ export default function AdminDashboardPage() {
                 ) : (<div className="text-center py-12">No pending applications.</div>)}
             </TabsContent>
             <TabsContent value="approved" className="mt-4">
-                {applications.approved.length > 0 ? (<div className="grid gap-4">{applications.approved.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-green-600">Approved</span></div>))}</div>) : (<div className="text-center py-12">No approved applications.</div>)}
+                {applications.approved.length > 0 ? (
+                    <div className="grid gap-4">
+                        {applications.approved.map(app => (
+                            <div key={app.id} className="p-4 rounded-lg border flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold">{app.teacherName}</p>
+                                    {app.processedAt && <p className="text-xs text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-green-600">Approved</span>
+                                    <Button variant="destructive" size="sm" onClick={() => handleApplication(app, 'rejected', type)}>
+                                        <UserX className="mr-2 h-4 w-4" /> Revoke
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (<div className="text-center py-12">No approved applications.</div>)}
             </TabsContent>
             <TabsContent value="rejected" className="mt-4">
                 {applications.rejected.length > 0 ? (<div className="grid gap-4">{applications.rejected.map(app => (<div key={app.id} className="p-4 rounded-lg border flex justify-between items-center"><div><p className="font-semibold">{app.teacherName}</p>{app.processedAt && <p className="text-xs text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}</div><span className="text-sm font-medium text-destructive">Rejected</span></div>))}</div>) : (<div className="text-center py-12">No rejected applications.</div>)}
@@ -1235,5 +1254,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    
