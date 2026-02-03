@@ -150,6 +150,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
+    match /verifiedCoachingApplications/{applicationId} {
+      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid && request.resource.data.status == 'pending';
+      allow read: if (isTeacher() && resource.data.teacherId == request.auth.uid) || isAdmin();
+      allow list: if isAdmin();
+      allow update: if isAdmin(); // Only admin can approve/reject
+      allow delete: if isAdmin();
+    }
+    
     match /schools/{schoolId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();

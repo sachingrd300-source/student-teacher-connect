@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase, CheckCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase, CheckCircle, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ interface UserProfile {
     email: string;
     role: 'teacher' | 'student' | 'admin' | 'parent';
     isHomeTutor?: boolean;
+    isVerifiedCoachingTutor?: boolean;
 }
 
 interface Batch {
@@ -446,6 +447,30 @@ export default function CoachingManagementPage() {
                                     )}
                                 </CardContent>
                             </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Verified Coaching Program</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {userProfile.isVerifiedCoachingTutor ? (
+                                        <>
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
+                                                <CheckCircle className="h-5 w-5" />
+                                                <span>Verified Coaching Tutor</span>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-2">You have a verified badge on your profile.</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-muted-foreground">Get a verified badge to attract more students.</p>
+                                            <Button asChild className="mt-3 w-full" size="sm">
+                                                <Link href="/dashboard/teacher/apply-verified-coaching">Apply Now</Link>
+                                            </Button>
+                                        </>
+                                    )}
+                                </CardContent>
+                            </Card>
                             
                             <Card>
                                 <CardHeader>
@@ -510,5 +535,3 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
-
-    
