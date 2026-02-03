@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -275,6 +274,9 @@ export default function AdminDashboardPage() {
             dpps: materials.filter(m => m.category === 'dpps'),
         };
     }, [materials]);
+
+    const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
+    const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
 
 
     // --- Event Handlers ---
@@ -898,9 +900,6 @@ export default function AdminDashboardPage() {
     );
 
     const renderBookingsView = () => {
-        const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
-        const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
-
         const renderBookingList = (bookings: HomeBooking[], type: 'homeTutor' | 'coachingCenter') => {
             if (bookings.length === 0) {
                 return <div className="text-center py-12">No {type === 'homeTutor' ? 'home tutor' : 'coaching center'} bookings.</div>;
