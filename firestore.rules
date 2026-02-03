@@ -46,13 +46,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Replaced unsafe calls with safer role-checking functions
       allow get: if isOwner(userId)
-                 || isAdmin()
-                 || (isStudent() && resource.data.role == 'teacher')
-                 || (isStudent() && resource.data.role == 'student')
-                 || (isTeacher() && resource.data.role == 'student')
-                 || (isTeacher() && resource.data.role == 'admin');
+                  || isAdmin()
+                  || (isSignedIn() && resource.data.role == 'teacher')
+                  || (isTeacher() && resource.data.role == 'student');
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() || isOwner(userId);
