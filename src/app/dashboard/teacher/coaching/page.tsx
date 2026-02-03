@@ -304,7 +304,7 @@ export default function CoachingManagementPage() {
                          variants={staggerContainer(0.1, 0.2)}
                     >
                         <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg'>
+                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -315,7 +315,7 @@ export default function CoachingManagementPage() {
                         </Card>
                         </motion.div>
                         <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg'>
+                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
                                 <BookCopy className="h-4 w-4 text-muted-foreground" />
@@ -326,7 +326,7 @@ export default function CoachingManagementPage() {
                         </Card>
                         </motion.div>
                         <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg'>
+                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
                                 <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -338,7 +338,7 @@ export default function CoachingManagementPage() {
                         </Card>
                         </motion.div>
                         <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg'>
+                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Home Tutor Program</CardTitle>
                                 <Home className="h-4 w-4 text-muted-foreground" />
@@ -430,7 +430,7 @@ export default function CoachingManagementPage() {
                                     {pendingRequests && pendingRequests.length > 0 ? (
                                         <div className="grid gap-4">
                                             {pendingRequests.map(req => (
-                                                <div key={req.id} className="p-4 rounded-lg border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                                <div key={req.id} className="p-4 rounded-lg border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/50">
                                                     <div className="flex items-center gap-4">
                                                         <Avatar>
                                                             <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>

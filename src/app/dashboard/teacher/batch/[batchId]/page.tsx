@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, ChangeEvent, useMemo } from 'react';
@@ -678,7 +679,7 @@ export default function BatchManagementPage() {
                     <CardContent>
                         <div className="grid gap-3">
                             {rankedStudents.length > 0 ? rankedStudents.map((student, index) => (
-                                 <div key={student.name} className="flex items-center justify-between p-2 border-b">
+                                 <div key={student.name} className="flex items-center justify-between p-2 border-b rounded-md transition-colors hover:bg-accent/50">
                                     <div className="flex items-center gap-3">
                                         <span className="font-bold w-6 text-center">{index + 1}</span>
                                         <p>{student.name}</p>
@@ -748,7 +749,7 @@ export default function BatchManagementPage() {
                                     {pendingStudents.length > 0 ? (
                                         <div className="grid gap-4">
                                             {pendingStudents.map(student => (
-                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background">
+                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <div className="flex items-center gap-4 flex-1 min-w-0">
                                                         <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
                                                         <p className="font-semibold break-words">{student.studentName}</p>
@@ -777,7 +778,7 @@ export default function BatchManagementPage() {
                                     {enrolledStudents.length > 0 ? (
                                         <div className="grid gap-4">
                                             {enrolledStudents.map(student => (
-                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background">
+                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <div className="flex items-center gap-4 flex-1 min-w-0">
                                                         <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
                                                         <p className="font-semibold break-words">{student.studentName}</p>
@@ -843,7 +844,7 @@ export default function BatchManagementPage() {
                                     {tests && tests.length > 0 ? (
                                         <div className="grid gap-4">
                                             {tests.map(test => (
-                                                <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
+                                                <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4 transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-semibold break-words">{test.title} <span className="font-normal text-muted-foreground">- {test.subject}</span></p>
                                                         <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
@@ -902,7 +903,7 @@ export default function BatchManagementPage() {
                                      {materials && materials.length > 0 ? (
                                         <div className="grid gap-4">
                                             {materials.map(material => (
-                                                <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4">
+                                                <div key={material.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4 transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <div className="flex items-start gap-3 flex-1 min-w-0">
                                                         <FileText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
                                                         <div className="flex-1 min-w-0">
@@ -961,7 +962,7 @@ export default function BatchManagementPage() {
                                     {activities && activities.length > 0 ? (
                                         <div className="grid gap-4">
                                             {activities.map(activity => (
-                                                <div key={activity.id} className="p-3 rounded-lg border bg-background">
+                                                <div key={activity.id} className="p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <p className="font-medium">{activity.message}</p>
                                                     <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
                                                 </div>

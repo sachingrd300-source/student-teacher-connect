@@ -303,7 +303,7 @@ export default function StudentDashboardPage() {
                         {enrollments && enrollments.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {enrollments.map((enrollment) => (
-                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl">
+                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <div>
                                             <div className="flex items-start gap-4 mb-4">
                                                 {renderStatusIcon(enrollment.status)}
@@ -361,7 +361,7 @@ export default function StudentDashboardPage() {
                                 </div>
                             ) : unpaidFees && unpaidFees.length > 0 ? (
                                 unpaidFees.map(fee => (
-                                    <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                    <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
                                         <div>
                                             <p className="font-semibold">{fee.batchName}</p>
                                             <p className="text-sm text-muted-foreground">{new Date(fee.feeYear, fee.feeMonth - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
@@ -385,7 +385,7 @@ export default function StudentDashboardPage() {
                         </CardHeader>
                         <CardContent className="grid gap-4">
                            {lastHomeTutorBooking ? (
-                                <div className="p-4 rounded-lg border bg-background">
+                                <div className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
                                     <p className="font-semibold text-sm">Home Tutor Request</p>
                                     <div className="flex justify-between items-start mt-1">
                                         <div>
@@ -415,7 +415,7 @@ export default function StudentDashboardPage() {
                                 </div>
                            )}
                            {lastCoachingBooking ? (
-                                <div className="p-4 rounded-lg border bg-background">
+                                <div className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
                                     <p className="font-semibold text-sm">Coaching Center Request</p>
                                      <div className="flex justify-between items-start mt-1">
                                         <div>
