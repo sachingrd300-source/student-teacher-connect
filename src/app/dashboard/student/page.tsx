@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, getDocs, orderBy, limit } from 'firebase/firestore';
 import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle, Clock, Megaphone, School, BookOpen, Search, Home, Trophy, ShoppingBag, Gift, ArrowRight, UserCheck, CreditCard, Wallet, BookCheck } from 'lucide-react';
 import Link from 'next/link';
 import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
+import { motion } from 'framer-motion';
 
 interface UserProfile {
     name: string;
@@ -49,6 +49,14 @@ interface HomeBooking {
     createdAt: string;
 }
 
+interface Announcement {
+    id: string;
+    message: string;
+    target: 'all' | 'teachers' | 'students';
+    createdAt: string;
+}
+
+
 interface Fee {
     id: string;
     batchId: string;
@@ -84,6 +92,28 @@ const ActionCard = ({ title, icon, href }: { title: string, icon: React.ReactNod
     </Link>
 );
 
+const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: staggerChildren,
+      delayChildren: delayChildren,
+    },
+  },
+});
+
+const fadeInUp = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
 
 export default function StudentDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -112,7 +142,9 @@ export default function StudentDashboardPage() {
         if (!firestore || !user) return null;
         return query(
             collection(firestore, "announcements"),
-            where("target", "in", ["all", "students"])
+            where("target", "in", ["all", "students"]),
+            orderBy("createdAt", "desc"),
+            limit(3)
         );
     }, [firestore, user]);
     const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
@@ -355,16 +387,31 @@ export default function StudentDashboardPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
                         </CardHeader>
-                        <CardContent className="grid gap-4">
-                            {announcements && announcements.length > 0 ? announcements.slice(0, 3).map((ann) => (
-                                <div key={ann.id} className="p-4 rounded-lg border bg-background">
-                                    <p className="text-sm">{ann.message}</p>
-                                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                                        <span>Target: <span className="font-semibold capitalize">{ann.target}</span></span>
-                                        <span>{formatDate(ann.createdAt)}</span>
-                                    </div>
-                                </div>
-                            )) : (
+                        <CardContent>
+                            {announcements && announcements.length > 0 ? (
+                                <motion.div 
+                                    className="grid gap-4"
+                                    variants={staggerContainer(0.2, 0)}
+                                    initial="hidden"
+                                    animate="visible"
+                                >
+                                    {announcements.map((ann, index) => (
+                                        <motion.div
+                                            key={ann.id}
+                                            variants={fadeInUp}
+                                            className={`p-4 rounded-lg border flex gap-4 items-start ${index === 0 ? 'bg-primary/5 border-primary/20' : 'bg-background'}`}
+                                        >
+                                            <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                <Megaphone className="h-4 w-4" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium">{ann.message}</p>
+                                                <p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            ) : (
                                 <p className="text-sm text-center text-muted-foreground py-8">No new announcements from admin.</p>
                             )}
                         </CardContent>

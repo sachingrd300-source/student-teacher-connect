@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion, orderBy, limit } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -11,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase, CheckCircle, Award } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase, CheckCircle, Award, Megaphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
+import { motion } from 'framer-motion';
 
 // Interfaces can be copied
 interface UserProfile {
@@ -56,6 +56,14 @@ interface HomeBooking {
     createdAt: string;
 }
 
+interface Announcement {
+    id: string;
+    message: string;
+    target: 'all' | 'teachers' | 'students';
+    createdAt: string;
+}
+
+
 const getInitials = (name: string) => {
     if (!name) return '';
     return name.split(' ').map((n) => n[0]).join('');
@@ -73,6 +81,29 @@ const formatDate = (dateString?: string) => {
         hour12: true,
     });
 };
+
+const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: staggerChildren,
+      delayChildren: delayChildren,
+    },
+  },
+});
+
+const fadeInUp = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
 
 export default function CoachingManagementPage() {
     const { user, isUserLoading } = useUser();
@@ -114,6 +145,17 @@ export default function CoachingManagementPage() {
         );
     }, [firestore, user?.uid, userProfile?.isHomeTutor]);
     const { data: assignedBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
+
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, "announcements"),
+            where("target", "in", ["all", "teachers"]),
+            orderBy("createdAt", "desc"),
+            limit(3)
+        );
+    }, [firestore, user]);
+    const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
 
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
@@ -248,7 +290,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || bookingsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || bookingsLoading || announcementsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -471,6 +513,40 @@ export default function CoachingManagementPage() {
                                     )}
                                 </CardContent>
                             </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {announcements && announcements.length > 0 ? (
+                                        <motion.div 
+                                            className="grid gap-4"
+                                            variants={staggerContainer(0.2, 0)}
+                                            initial="hidden"
+                                            animate="visible"
+                                        >
+                                            {announcements.map((ann, index) => (
+                                                <motion.div
+                                                    key={ann.id}
+                                                    variants={fadeInUp}
+                                                    className={`p-4 rounded-lg border flex gap-4 items-start ${index === 0 ? 'bg-primary/5 border-primary/20' : 'bg-background'}`}
+                                                >
+                                                    <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                        <Megaphone className="h-4 w-4" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium">{ann.message}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </motion.div>
+                                    ) : (
+                                        <p className="text-sm text-center text-muted-foreground py-8">No new announcements from admin.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
                             
                             <Card>
                                 <CardHeader>
@@ -535,5 +611,3 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
-
-    
