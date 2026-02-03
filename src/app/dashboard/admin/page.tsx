@@ -34,7 +34,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX
+    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -788,7 +788,7 @@ export default function AdminDashboardPage() {
                                <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt)}</p>
                             </CardContent>
                             <CardFooter>
-                                <Button asChild variant="outline" size="sm" className="w-full">
+                                <Button asChild variant="secondary" size="sm" className="w-full">
                                     <Link href={u.role === 'teacher' ? `/teachers/${u.id}` : `/students/${u.id}`}>
                                         <Eye className="mr-2 h-4 w-4" />View Profile
                                     </Link>
@@ -849,7 +849,7 @@ export default function AdminDashboardPage() {
                                     <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
                                 </CardHeader>
                                 <CardFooter className="mt-auto flex gap-2">
-                                    <Button className="w-full" size="sm" variant="outline" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                    <Button className="w-full bg-success text-success-foreground hover:bg-success/90" size="sm" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                     <Button className="w-full" size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button>
                                 </CardFooter>
                             </Card>
@@ -923,7 +923,7 @@ export default function AdminDashboardPage() {
                                         </p>
                                     </CardContent>
                                     <CardFooter className="mt-auto flex gap-2">
-                                        <Button className="w-full" size="sm" variant="outline" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                        <Button className="w-full bg-success text-success-foreground hover:bg-success/90" size="sm" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                         <Button className="w-full" size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
                                     </CardFooter>
                                 </Card>
