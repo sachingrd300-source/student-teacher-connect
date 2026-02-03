@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -735,16 +736,16 @@ export default function AdminDashboardPage() {
             
             <motion.div variants={staggerContainer(0.1, 0.2)} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <motion.div variants={fadeInUp}>
-                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-900/50 border-indigo-200 dark:border-indigo-800">
+                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/20 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium text-indigo-900 dark:text-indigo-200">Total Teachers</CardTitle>
-                            <Briefcase className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-200">Total Teachers</CardTitle>
+                            <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </CardHeader>
-                        <CardContent><div className="text-2xl font-bold text-indigo-950 dark:text-indigo-50">{stats.teacherCount}</div></CardContent>
+                        <CardContent><div className="text-2xl font-bold text-blue-950 dark:text-blue-50">{stats.teacherCount}</div></CardContent>
                     </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
-                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-green-500/10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-900/50 border-green-200 dark:border-green-800">
+                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-green-500/20 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-900/50 border-green-200 dark:border-green-800">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                             <CardTitle className="text-sm font-medium text-green-900 dark:text-green-200">Total Students</CardTitle>
                             <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -753,28 +754,28 @@ export default function AdminDashboardPage() {
                     </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
-                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/10 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-900/50 border-amber-200 dark:border-amber-800">
+                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-yellow-500/20 bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-900/30 dark:to-yellow-900/50 border-yellow-200 dark:border-yellow-800">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-200">Registered Schools</CardTitle>
-                            <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            <CardTitle className="text-sm font-medium text-yellow-900 dark:text-yellow-200">Registered Schools</CardTitle>
+                            <Building2 className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                         </CardHeader>
-                        <CardContent><div className="text-2xl font-bold text-amber-950 dark:text-amber-50">{stats.schoolCount}</div></CardContent>
+                        <CardContent><div className="text-2xl font-bold text-yellow-950 dark:text-yellow-50">{stats.schoolCount}</div></CardContent>
                     </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
-                    <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-rose-500/10 bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/30 dark:to-rose-900/50 border-rose-200 dark:border-rose-800">
+                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-red-500/20 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-900/50 border-red-200 dark:border-red-800">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium text-rose-900 dark:text-rose-200">Total Bookings</CardTitle>
-                            <Home className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                            <CardTitle className="text-sm font-medium text-red-900 dark:text-red-200">Total Bookings</CardTitle>
+                            <Home className="h-4 w-4 text-red-600 dark:text-red-400" />
                         </CardHeader>
-                        <CardContent><div className="text-2xl font-bold text-rose-950 dark:text-rose-50">{stats.bookingCount}</div></CardContent>
+                        <CardContent><div className="text-2xl font-bold text-red-950 dark:text-red-50">{stats.bookingCount}</div></CardContent>
                     </Card>
                 </motion.div>
             </motion.div>
     
             <motion.div variants={staggerContainer(0.2, 0.4)} initial="hidden" animate="visible" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <motion.div variants={fadeInUp}>
-                    <Card className="transition-all duration-300 hover:shadow-xl">
+                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl">
                         <CardHeader>
                             <CardTitle>Recent Users</CardTitle>
                         </CardHeader>
@@ -792,7 +793,7 @@ export default function AdminDashboardPage() {
                     </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
-                    <Card className="transition-all duration-300 hover:shadow-xl">
+                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl">
                         <CardHeader>
                             <CardTitle>Recent Admin Activity</CardTitle>
                         </CardHeader>
@@ -825,7 +826,7 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {userList.map(u => (
-                        <Card key={u.id} className="flex flex-col">
+                        <Card key={u.id} className="flex flex-col rounded-2xl shadow-lg">
                             <CardHeader className="flex flex-row items-center gap-4">
                                 <Avatar className="w-12 h-12 text-lg"><AvatarFallback>{getInitials(u.name)}</AvatarFallback></Avatar>
                                 <div>
@@ -853,7 +854,7 @@ export default function AdminDashboardPage() {
         return (
             <div className="grid gap-8">
                 <h1 className="text-3xl font-bold font-serif">Manage Users</h1>
-                <Card>
+                <Card className="rounded-2xl shadow-lg">
                     <CardHeader>
                          <Input 
                             placeholder="Search by name or email..."
@@ -893,7 +894,7 @@ export default function AdminDashboardPage() {
                 {applications.pending.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.pending.map(app => (
-                             <Card key={app.id} className="flex flex-col">
+                             <Card key={app.id} className="flex flex-col rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
@@ -911,7 +912,7 @@ export default function AdminDashboardPage() {
                 {applications.approved.length > 0 ? (
                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.approved.map(app => (
-                             <Card key={app.id} className="flex flex-col bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900">
+                             <Card key={app.id} className="flex flex-col bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     {app.processedAt && <CardDescription>Approved: {formatDate(app.processedAt)}</CardDescription>}
@@ -933,7 +934,7 @@ export default function AdminDashboardPage() {
                 {applications.rejected.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {applications.rejected.map(app => (
-                            <Card key={app.id} className="flex flex-col bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900">
+                            <Card key={app.id} className="flex flex-col bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900 rounded-2xl shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     {app.processedAt && <CardDescription>Rejected: {formatDate(app.processedAt)}</CardDescription>}
@@ -962,7 +963,7 @@ export default function AdminDashboardPage() {
                     {pending.length > 0 ? (
                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {pending.map(enrollment => (
-                                <Card key={enrollment.id} className="flex flex-col">
+                                <Card key={enrollment.id} className="flex flex-col rounded-2xl shadow-lg">
                                     <CardHeader>
                                          <CardTitle className="text-lg">{enrollment.studentName}</CardTitle>
                                          <CardDescription>Requested: {formatDate(enrollment.createdAt)}</CardDescription>
@@ -985,7 +986,7 @@ export default function AdminDashboardPage() {
                     {approved.length > 0 ? (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {approved.map(enrollment => (
-                                 <Card key={enrollment.id} className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900">
+                                 <Card key={enrollment.id} className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg">
                                     <CardHeader>
                                          <CardTitle className="text-lg">{enrollment.studentName}</CardTitle>
                                     </CardHeader>
@@ -1007,7 +1008,7 @@ export default function AdminDashboardPage() {
     const renderApplicationsView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Applications</h1>
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
                 <CardContent className="p-4">
                     <Tabs defaultValue="homeTutor" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
@@ -1039,7 +1040,7 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid gap-4">
                     {bookings.map(booking => (
-                        <div key={booking.id} className="p-4 rounded-lg border">
+                        <div key={booking.id} className="p-4 rounded-2xl border shadow-lg">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
@@ -1097,7 +1098,7 @@ export default function AdminDashboardPage() {
         return (
             <div className="grid gap-8">
                 <h1 className="text-3xl font-bold font-serif">Manage Bookings</h1>
-                 <Card>
+                 <Card className="rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                          <Tabs defaultValue="homeTutor" className="w-full">
                             <TabsList className="grid w-full grid-cols-2">
@@ -1125,7 +1126,7 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid gap-4">
                     {materialList.map(material => (
-                        <div key={material.id} className="flex items-center justify-between gap-3 p-4 rounded-lg border">
+                        <div key={material.id} className="flex items-center justify-between gap-3 p-4 rounded-2xl border shadow-lg">
                             <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-primary flex-shrink-0" /><div><p className="font-semibold">{material.title}</p><p className="text-sm text-muted-foreground">{material.description}</p></div></div>
                             <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
                         </div>
@@ -1138,7 +1139,7 @@ export default function AdminDashboardPage() {
             <div className="grid gap-8">
                 <h1 className="text-3xl font-bold font-serif">Free Materials</h1>
                 <div className="grid lg:grid-cols-3 gap-8">
-                    <Card className="lg:col-span-1">
+                    <Card className="lg:col-span-1 rounded-2xl shadow-lg">
                         <CardHeader><CardTitle>Upload New Material</CardTitle></CardHeader>
                         <CardContent>
                             <form onSubmit={handleMaterialUpload} className="grid gap-4">
@@ -1150,7 +1151,7 @@ export default function AdminDashboardPage() {
                             </form>
                         </CardContent>
                     </Card>
-                     <Card className="lg:col-span-2">
+                     <Card className="lg:col-span-2 rounded-2xl shadow-lg">
                         <CardHeader><CardTitle>Uploaded Materials</CardTitle></CardHeader>
                         <CardContent>
                             <Tabs defaultValue="all" className="w-full">
@@ -1172,7 +1173,7 @@ export default function AdminDashboardPage() {
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Shop Management</h1>
             <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-1">
+                <Card className="lg:col-span-1 rounded-2xl shadow-lg">
                     <CardHeader><CardTitle>Add New Item</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleShopItemUpload} className="grid gap-4">
@@ -1240,13 +1241,13 @@ export default function AdminDashboardPage() {
                         </form>
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 rounded-2xl shadow-lg">
                     <CardHeader><CardTitle>Existing Shop Items</CardTitle></CardHeader>
                     <CardContent>
                         {shopItems && shopItems.length > 0 ? (
                             <div className="grid gap-4">
                                 {shopItems.map(item => (
-                                    <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-lg border">
+                                    <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl border shadow-lg">
                                         <div className="flex items-start gap-4">
                                             {item.itemType === 'badge' ? (
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
@@ -1280,7 +1281,7 @@ export default function AdminDashboardPage() {
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Notifications & Announcements</h1>
              <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-1">
+                <Card className="lg:col-span-1 rounded-2xl shadow-lg">
                     <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleSendAnnouncement} className="grid gap-4">
@@ -1302,13 +1303,13 @@ export default function AdminDashboardPage() {
                         </form>
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 rounded-2xl shadow-lg">
                     <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
                     <CardContent>
                         {announcements && announcements.length > 0 ? (
                             <div className="grid gap-4">
                                 {announcements.map(ann => (
-                                    <div key={ann.id} className="p-4 rounded-lg border">
+                                    <div key={ann.id} className="p-4 rounded-2xl border shadow-lg">
                                         <p className="text-sm">{ann.message}</p>
                                         <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground"><span>Target: <span className="font-semibold capitalize">{ann.target}</span></span><span>{formatDate(ann.createdAt, true)}</span></div>
                                         {ann.expiresAt && (
@@ -1327,12 +1328,12 @@ export default function AdminDashboardPage() {
     const renderActivityLogView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Admin Activity Log</h1>
-             <Card>
+             <Card className="rounded-2xl shadow-lg">
                 <CardContent className="p-4">
                     {adminActivities && adminActivities.length > 0 ? (
                         <div className="grid gap-4">
                             {adminActivities.map(activity => (
-                                <div key={activity.id} className="flex justify-between items-center p-4 rounded-lg border">
+                                <div key={activity.id} className="flex justify-between items-center p-4 rounded-2xl border shadow-lg">
                                     <div><p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p></div>
                                     <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
                                 </div>
@@ -1347,7 +1348,7 @@ export default function AdminDashboardPage() {
     const renderSchoolsView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">School Management</h1>
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
                     <CardTitle>Registered Schools</CardTitle>
                     <CardDescription>An overview of all schools registered on the platform.</CardDescription>
@@ -1359,7 +1360,7 @@ export default function AdminDashboardPage() {
                                 const teacherCount = school.teacherIds?.length || 0;
                                 const studentCount = school.classes?.reduce((acc, c) => acc + (c.students?.length || 0), 0) || 0;
                                 return (
-                                    <Card key={school.id}>
+                                    <Card key={school.id} className="rounded-2xl shadow-lg">
                                         <CardHeader>
                                             <CardTitle className="text-lg">{school.name}</CardTitle>
                                             <CardDescription>Principal: {school.principalName}</CardDescription>
@@ -1388,7 +1389,7 @@ export default function AdminDashboardPage() {
     const renderAchieversView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Achievers Community Teachers</h1>
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
                     <CardTitle>Manage Teacher Profiles</CardTitle>
                     <CardDescription>Edit the fee, address, and coaching center name for verified community teachers.</CardDescription>
@@ -1397,7 +1398,7 @@ export default function AdminDashboardPage() {
                      {achieverTeachers.length > 0 ? (
                         <div className="grid md:grid-cols-2 gap-6">
                             {achieverTeachers.map(teacher => (
-                                <Card key={teacher.id}>
+                                <Card key={teacher.id} className="rounded-2xl shadow-lg">
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg">{teacher.name}</CardTitle>

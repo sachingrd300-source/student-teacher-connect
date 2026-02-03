@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -72,19 +73,6 @@ const formatDate = (dateString?: string) => {
     });
 };
 
-const ActionCard = ({ title, icon, href }: { title: string, icon: React.ReactNode, href: string }) => (
-    <Link href={href} className="block hover:scale-105 transition-transform duration-200">
-        <Card className="h-full shadow-md hover:shadow-lg">
-            <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
-                <div className="p-3 bg-primary/10 rounded-full">
-                    {icon && React.cloneElement(icon as React.ReactElement, { className: "h-6 w-6 text-primary" })}
-                </div>
-                <p className="text-sm font-semibold">{title}</p>
-            </CardContent>
-        </Card>
-    </Link>
-);
-
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
   hidden: {},
   visible: {
@@ -106,6 +94,21 @@ const fadeInUp = {
     },
   },
 };
+
+const ActionCard = ({ title, icon, href }: { title: string, icon: React.ReactNode, href: string }) => (
+    <motion.div variants={fadeInUp}>
+      <Link href={href} className="block group">
+        <Card className="h-full rounded-2xl shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-primary/20 group-hover:shadow-2xl">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-3">
+            <div className="p-4 bg-primary/10 rounded-full transition-colors duration-300 group-hover:bg-primary/20">
+              {icon && React.cloneElement(icon as React.ReactElement, { className: "h-8 w-8 text-primary" })}
+            </div>
+            <p className="text-sm font-semibold">{title}</p>
+          </CardContent>
+        </Card>
+      </Link>
+    </motion.div>
+  );
 
 
 export default function StudentDashboardPage() {
@@ -242,19 +245,27 @@ export default function StudentDashboardPage() {
 
 
     return (
-        <div className="grid gap-8">
-            <div>
+        <motion.div 
+            className="grid gap-8"
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer(0.1, 0)}
+        >
+            <motion.div variants={fadeInUp}>
                 <h1 className="text-3xl md:text-4xl font-bold font-serif">Welcome, {userProfile?.name}!</h1>
                 <p className="text-muted-foreground mt-2">Manage your batches, explore resources, and track your progress.</p>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+             <motion.div 
+                className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4"
+                variants={staggerContainer(0.05, 0.2)}
+            >
                 {actionItems.map(item => <ActionCard key={item.href} {...item} />)}
-            </div>
+            </motion.div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <motion.div variants={fadeInUp} className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 grid gap-8">
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="text-lg">Join a New Batch by Code</CardTitle>
                         </CardHeader>
@@ -284,7 +295,7 @@ export default function StudentDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <h2 className="text-xl font-semibold">My Enrollments</h2>
                         </CardHeader>
@@ -292,7 +303,7 @@ export default function StudentDashboardPage() {
                         {enrollments && enrollments.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {enrollments.map((enrollment) => (
-                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md">
+                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl">
                                         <div>
                                             <div className="flex items-start gap-4 mb-4">
                                                 {renderStatusIcon(enrollment.status)}
@@ -339,7 +350,7 @@ export default function StudentDashboardPage() {
                 </div>
                 
                 <div className="lg:col-span-1 grid gap-8 content-start">
-                     <Card>
+                     <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center"><Wallet className="mr-3 h-5 w-5 text-primary"/> Pending Fees</CardTitle>
                         </CardHeader>
@@ -368,7 +379,7 @@ export default function StudentDashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> Booking Status</CardTitle>
                         </CardHeader>
@@ -444,7 +455,7 @@ export default function StudentDashboardPage() {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
+            </motion.div>
             {bookingToPay && (
                 <BookingPaymentDialog
                     isOpen={!!bookingToPay}
@@ -453,6 +464,6 @@ export default function StudentDashboardPage() {
                     onPaymentSuccess={() => { /* Real-time listener will update UI */ }}
                 />
             )}
-        </div>
+        </motion.div>
     );
 }

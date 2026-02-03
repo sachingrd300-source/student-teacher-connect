@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -99,16 +100,16 @@ export default function FindTeachersPage() {
 
             {teachers && teachers.length > 0 ? (
                  filteredTeachers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <motion.div 
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                    >
                         {filteredTeachers.map((teacher, i) => (
                             <motion.div
                                 key={teacher.id}
                                 custom={i}
-                                initial="hidden"
-                                animate="visible"
                                 variants={cardVariants}
-                                whileHover={{ scale: 1.02, y: -5, boxShadow: "0px 8px 25px -5px rgba(0,0,0,0.1), 0px 10px 10px -5px rgba(0,0,0,0.04)" }}
-                                whileTap={{ scale: 0.98 }}
+                                whileHover={{ y: -5, boxShadow: "0px 8px 25px -5px hsl(var(--primary) / 0.1), 0px 10px 10px -5px hsl(var(--primary) / 0.04)" }}
                                 className="h-full"
                             >
                                 <Card className="flex flex-col h-full transition-shadow duration-300 rounded-2xl shadow-lg">
@@ -139,7 +140,7 @@ export default function FindTeachersPage() {
                                 </Card>
                             </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 ) : (
                      <div className="text-center py-16">
                          <Search className="mx-auto h-12 w-12 text-muted-foreground" />

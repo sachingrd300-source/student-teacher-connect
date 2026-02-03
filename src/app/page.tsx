@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from "react";
@@ -246,7 +247,7 @@ export default function HomePage() {
                 >
                     {features.map((feature, index) => (
                         <motion.div key={index} variants={fadeInUp}>
-                            <Card className="p-8 h-full text-center hover:shadow-xl transition-shadow duration-300">
+                            <Card className="p-8 h-full text-center hover:shadow-xl transition-shadow duration-300 rounded-2xl shadow-lg">
                                 <div className="inline-block p-4 bg-primary/10 rounded-full mb-4">
                                     {feature.icon}
                                 </div>
@@ -330,7 +331,7 @@ export default function HomePage() {
                     className="grid grid-cols-1 md:grid-cols-2 gap-8"
                 >
                     <motion.div variants={fadeInUp}>
-                        <Card className="p-8 h-full shadow-lg">
+                        <Card className="p-8 h-full shadow-lg rounded-2xl">
                             <User className="w-10 h-10 text-primary mb-4" />
                             <CardHeader className="p-0">
                                 <CardTitle>{t.individualTuitionTitle}</CardTitle>
@@ -341,7 +342,7 @@ export default function HomePage() {
                         </Card>
                     </motion.div>
                     <motion.div variants={fadeInUp}>
-                         <Card className="p-8 h-full shadow-lg">
+                         <Card className="p-8 h-full shadow-lg rounded-2xl">
                             <Building2 className="w-10 h-10 text-primary mb-4" />
                             <CardHeader className="p-0">
                                 <CardTitle>{t.coachingCenterTitle}</CardTitle>
@@ -442,17 +443,17 @@ export default function HomePage() {
               variants={staggerContainer(0.2, 0)}
               className="grid grid-cols-1 sm:grid-cols-3 gap-8"
             >
-              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-lg shadow-lg text-center">
+              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-5xl font-bold">{teacherCount !== undefined ? teacherCount : '50+'}</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
-              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-lg shadow-lg text-center">
+              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-5xl font-bold">{studentCount !== undefined ? studentCount : '500+'}</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
-              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-lg shadow-lg text-center">
+              <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Book className="h-10 w-10 text-primary mx-auto mb-4"/>
                 <p className="text-5xl font-bold">10+</p>
                 <p className="text-muted-foreground mt-2">{t.subjectsLabel}</p>
@@ -483,7 +484,7 @@ export default function HomePage() {
             >
               {testimonialsData.map((testimonial, index) => (
                  <motion.div key={index} variants={fadeInUp}>
-                    <Card key={index} className="h-full flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <Card key={index} className="h-full flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
                         <CardContent className="p-6 flex-grow">
                             <div className="flex text-yellow-400 mb-4">
                                 {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}

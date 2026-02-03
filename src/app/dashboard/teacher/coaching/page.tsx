@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -278,13 +279,24 @@ export default function CoachingManagementPage() {
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
-                    <div className="mb-8">
+                    <motion.div 
+                        className="mb-8"
+                        initial="hidden"
+                        animate="visible"
+                        variants={fadeInUp}
+                    >
                         <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
                         <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
-                    </div>
+                    </motion.div>
 
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                        <Card>
+                    <motion.div
+                         className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8"
+                         initial="hidden"
+                         animate="visible"
+                         variants={staggerContainer(0.1, 0.2)}
+                    >
+                        <motion.div variants={fadeInUp}>
+                        <Card className='rounded-2xl shadow-lg'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -293,7 +305,9 @@ export default function CoachingManagementPage() {
                                 <div className="text-2xl font-bold">{approvedStudents.length}</div>
                             </CardContent>
                         </Card>
-                        <Card>
+                        </motion.div>
+                        <motion.div variants={fadeInUp}>
+                        <Card className='rounded-2xl shadow-lg'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
                                 <BookCopy className="h-4 w-4 text-muted-foreground" />
@@ -302,7 +316,9 @@ export default function CoachingManagementPage() {
                                 <div className="text-2xl font-bold">{batches?.length || 0}</div>
                             </CardContent>
                         </Card>
-                        <Card>
+                        </motion.div>
+                        <motion.div variants={fadeInUp}>
+                        <Card className='rounded-2xl shadow-lg'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
                                 <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -312,7 +328,9 @@ export default function CoachingManagementPage() {
                                 {pendingRequests.length > 0 && <p className="text-xs text-muted-foreground">Review requests below.</p>}
                             </CardContent>
                         </Card>
-                        <Card>
+                        </motion.div>
+                        <motion.div variants={fadeInUp}>
+                        <Card className='rounded-2xl shadow-lg'>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Home Tutor Program</CardTitle>
                                 <Home className="h-4 w-4 text-muted-foreground" />
@@ -336,11 +354,17 @@ export default function CoachingManagementPage() {
                                 )}
                             </CardContent>
                         </Card>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                     
-                    <div className="grid gap-8 lg:grid-cols-3">
-                        <div className="lg:col-span-2 grid gap-8 content-start">
-                            <Card>
+                    <motion.div 
+                        className="grid gap-8 lg:grid-cols-3"
+                        initial="hidden"
+                        animate="visible"
+                        variants={staggerContainer(0.1, 0.4)}
+                    >
+                        <motion.div variants={fadeInUp} className="lg:col-span-2 grid gap-8 content-start">
+                            <Card className='rounded-2xl shadow-lg'>
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
                                     <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
@@ -351,7 +375,7 @@ export default function CoachingManagementPage() {
                                     {batches && batches.length > 0 ? (
                                         <div className="grid gap-4 md:grid-cols-2">
                                             {batches.map(batch => (
-                                                <Card key={batch.id} className="flex flex-col">
+                                                <Card key={batch.id} className="flex flex-col rounded-2xl shadow-lg">
                                                     <CardHeader>
                                                         <CardTitle className="font-serif">{batch.name}</CardTitle>
                                                     </CardHeader>
@@ -387,10 +411,10 @@ export default function CoachingManagementPage() {
                                 </CardContent>
                             </Card>
 
-                        </div>
+                        </motion.div>
 
-                        <div className="lg:col-span-1 grid gap-8 content-start">
-                            <Card>
+                        <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
+                            <Card className='rounded-2xl shadow-lg'>
                                 <CardHeader>
                                     <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
                                 </CardHeader>
@@ -429,7 +453,7 @@ export default function CoachingManagementPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className='rounded-2xl shadow-lg'>
                                 <CardHeader>
                                     <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achievers Community Program</CardTitle>
                                 </CardHeader>
@@ -453,7 +477,7 @@ export default function CoachingManagementPage() {
                                 </CardContent>
                             </Card>
                             
-                            <Card>
+                            <Card className='rounded-2xl shadow-lg'>
                                 <CardHeader>
                                     <CardTitle>Send Centralized Announcement</CardTitle>
                                     <CardDescription>Send a message to all your batches at once.</CardDescription>
@@ -477,8 +501,8 @@ export default function CoachingManagementPage() {
                                     </form>
                                 </CardContent>
                             </Card>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 </div>
             </main>
 
