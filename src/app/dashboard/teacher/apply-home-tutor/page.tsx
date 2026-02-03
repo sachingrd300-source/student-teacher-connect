@@ -130,7 +130,7 @@ export default function ApplyHomeTutorPage() {
                 <Card className="rounded-2xl shadow-lg">
                     <CardHeader>
                         <CardTitle>Apply to be a Home Tutor</CardTitle>
-                        <CardDescription>Please fill out your details below. This information will be displayed on your public profile once your application is approved.</CardDescription>
+                        <CardDescription>Please fill out your details below. Your address is used for verification and will not be public. Other details will be on your profile.</CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSubmitApplication}>
                         <CardContent className="grid gap-4">
@@ -145,9 +145,9 @@ export default function ApplyHomeTutorPage() {
                                 <CardDescription className="text-xs">Your contact number for students.</CardDescription>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="address">Tuition Address</Label>
-                                <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Your primary teaching location" required />
-                                <CardDescription className="text-xs">This address will be visible to students.</CardDescription>
+                                <Label htmlFor="address">House Address</Label>
+                                <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Your full house address for verification" required />
+                                <CardDescription className="text-xs">This address is used for verification and will not be shared publicly.</CardDescription>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="bio">Bio</Label>
