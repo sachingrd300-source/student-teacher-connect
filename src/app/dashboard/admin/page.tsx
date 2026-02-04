@@ -39,11 +39,11 @@ import {
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; whatsappNumber?: string; }
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
+interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -395,11 +395,14 @@ export default function AdminDashboardPage() {
         if (!firestore || !teacher) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         
-        updateDoc(bookingDocRef, {
+        const updateData = {
             assignedTeacherId: teacher.id,
             assignedTeacherName: teacher.name,
-            status: 'Confirmed'
-        })
+            assignedTeacherMobile: teacher.whatsappNumber || '',
+            assignedTeacherAddress: teacher.homeAddress || '',
+        };
+
+        updateDoc(bookingDocRef, updateData)
         .then(() => {
             logAdminAction(`Assigned teacher ${teacher.name} to booking for ${booking.studentName}`, booking.id);
         })
@@ -408,7 +411,7 @@ export default function AdminDashboardPage() {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'update',
                 path: bookingDocRef.path,
-                requestResourceData: { assignedTeacherId: teacher.id, status: 'Confirmed' }
+                requestResourceData: updateData
             }));
         });
     };
@@ -450,6 +453,8 @@ export default function AdminDashboardPage() {
             updateData.assignedTeacherName = null;
             updateData.assignedCoachingCenterName = null;
             updateData.assignedCoachingAddress = null;
+            updateData.assignedTeacherMobile = null;
+            updateData.assignedTeacherAddress = null;
         }
 
         updateDoc(bookingDocRef, updateData)
@@ -1116,34 +1121,41 @@ export default function AdminDashboardPage() {
                                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>
-                                             {type === 'coachingCenter' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')}>Set to Confirmed</DropdownMenuItem>}
-                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>
+                                            {booking.status === 'Pending' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')}>Confirm Booking</DropdownMenuItem>}
+                                            {(booking.status === 'Confirmed' || booking.status === 'Completed' || booking.status === 'Cancelled') && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>}
+                                            {booking.status !== 'Completed' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>}
+                                            {booking.status !== 'Cancelled' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>}
                                             <DropdownMenuItem onClick={() => handleDeleteBooking(booking)} className="text-destructive">Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
                             </div>
-                            {booking.status === 'Pending' && type === 'homeTutor' && (
-                                <div className="mt-4 pt-4 border-t flex items-center gap-2">
-                                    <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
-                                        <SelectTrigger className="w-full sm:w-[250px]">
-                                            <SelectValue placeholder="Assign a Teacher" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
-                                                <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
-                                            )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
+                            
                             {booking.status === 'Confirmed' && type === 'homeTutor' && (
                                 <div className="mt-4 pt-4 border-t">
-                                    <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                {booking.assignedTeacherId ? (
+                                    <div className="grid gap-1 text-sm">
+                                        <p className="text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                        <p className="text-muted-foreground">Mobile: <span className="font-semibold text-foreground">{booking.assignedTeacherMobile || 'N/A'}</span></p>
+                                        <p className="text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedTeacherAddress || 'N/A'}</span></p>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
+                                            <SelectTrigger className="w-full sm:w-[250px]">
+                                                <SelectValue placeholder="Assign a Teacher" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
+                                                    <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
+                                                )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                                 </div>
                             )}
+
                             {booking.status === 'Pending' && type === 'coachingCenter' && (
                                 <div className="mt-4 pt-4 border-t flex items-center gap-2">
                                     <Select onValueChange={(teacherId) => handleAssignCoachingTeacher(booking, teacherId)}>

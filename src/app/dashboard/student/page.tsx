@@ -46,6 +46,8 @@ interface HomeBooking {
     studentId: string;
     status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     assignedTeacherName?: string;
+    assignedTeacherMobile?: string;
+    assignedTeacherAddress?: string;
     createdAt: string;
     bookingType: 'homeTutor' | 'coachingCenter';
     assignedCoachingCenterName?: string;
@@ -400,9 +402,15 @@ export default function StudentDashboardPage() {
                                         </span>
                                     </div>
                                     {lastHomeTutorBooking.status === 'Confirmed' && lastHomeTutorBooking.assignedTeacherName ? (
-                                        <div className="mt-3 pt-3 border-t">
+                                        <div className="mt-3 pt-3 border-t grid gap-1">
                                             <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
                                             <p className="font-semibold text-primary">{lastHomeTutorBooking.assignedTeacherName}</p>
+                                            {lastHomeTutorBooking.assignedTeacherMobile && <p className="text-xs text-muted-foreground">Mobile: {lastHomeTutorBooking.assignedTeacherMobile}</p>}
+                                            {lastHomeTutorBooking.assignedTeacherAddress && <p className="text-xs text-muted-foreground">Address: {lastHomeTutorBooking.assignedTeacherAddress}</p>}
+                                        </div>
+                                    ) : lastHomeTutorBooking.status === 'Confirmed' ? (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <p className="text-sm text-muted-foreground">Your booking is confirmed! Admin is assigning a teacher.</p>
                                         </div>
                                     ) : null}
                                 </div>

@@ -264,6 +264,14 @@
           "type": "string",
           "description": "Name of the assigned teacher."
         },
+        "assignedTeacherMobile": {
+          "type": "string",
+          "description": "Contact mobile number of the assigned teacher."
+        },
+        "assignedTeacherAddress": {
+            "type": "string",
+            "description": "House address of the assigned home tutor."
+        },
         "assignedCoachingCenterName": {
             "type": "string",
             "description": "Name of the assigned coaching center."
