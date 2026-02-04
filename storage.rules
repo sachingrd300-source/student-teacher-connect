@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // --- Helper Functions ---
+    // These helpers check a user's role by reading their profile from Firestore.
+    // This is a common pattern for cross-service security rules.
+
+    // Checks if the requesting user has a specific role.
+    function isRole(role) {
+      // Allow access if the user is authenticated and their role in the 'users' collection matches.
+      return request.auth != null && get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // Checks if the user is the owner of a specific batch.
+    function isTeacherOwnerOfBatch(batchId) {
+      let batchData = get(/databases/(default)/documents/batches/$(batchId)).data;
+      return request.auth.uid == batchData.teacherId;
+    }
+    
+    // Checks if a student is enrolled and approved for a specific batch.
+    function isEnrolledInBatch(batchId) {
+      let batchData = get(/databases/(default)/documents/batches/$(batchId)).data;
+      // The `in` operator checks if the user's UID is a key or element in a list.
+      // Here, we check against the `approvedStudents` array in the batch document.
+      return request.auth.uid in batchData.approvedStudents;
+    }
+
+    // --- Path-based Rules ---
+
+    // Free materials uploaded by admins.
+    match /freeMaterials/{fileName} {
+      // Students and Admins can read free materials.
+      allow read: if isRole('student') || isRole('admin');
+      // Only Admins can write (upload/delete) free materials.
+      allow write: if isRole('admin');
+    }
+
+    // Shop item images uploaded by admins.
+    match /shopItems/{imageName} {
+      // Any signed-in user can view shop item images.
+      allow read: if request.auth != null;
+      // Only Admins can write shop items.
+      allow write: if isRole('admin');
+    }
+
+    // Study materials specific to a teacher's batch.
+    match /materials/{batchId}/{fileName} {
+      // The teacher of the batch, enrolled students, or an admin can read materials.
+      allow read: if request.auth != null && (isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId) || isRole('admin'));
+      // Only the teacher of the batch or an admin can write materials.
+      allow write: if request.auth != null && (isTeacherOwnerOfBatch(batchId) || isRole('admin'));
+    }
+  }
+}
