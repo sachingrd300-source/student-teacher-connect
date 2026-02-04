@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award, ShoppingCart } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -453,6 +453,18 @@ export default function CoachingManagementPage() {
                                             </Button>
                                         </>
                                     )}
+                                </CardContent>
+                            </Card>
+                            
+                            <Card className='rounded-2xl shadow-lg'>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><ShoppingCart className="mr-2 h-5 w-5 text-primary"/> Order Materials</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">Need test papers, modules, or other materials? Place an order here.</p>
+                                    <Button asChild className="mt-3 w-full" size="sm">
+                                        <Link href="/dashboard/teacher/place-order">Place an Order</Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                             

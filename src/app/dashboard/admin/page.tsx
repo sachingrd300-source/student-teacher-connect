@@ -35,7 +35,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, History, Building2, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save
+    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, ShoppingCart
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -51,8 +51,10 @@ interface ShopItem { id: string; name: string; description?: string; price: numb
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
+interface TeacherOrder { id: string; teacherId: string; teacherName: string; items: string; status: 'pending' | 'confirmed' | 'declined'; notes?: string; createdAt: string; processedAt?: string; }
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'schools' | 'achievers';
+
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'schools' | 'achievers' | 'orders';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -123,6 +125,11 @@ export default function AdminDashboardPage() {
     const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
 
+    // Order Management State
+    const [editingOrder, setEditingOrder] = useState<TeacherOrder | null>(null);
+    const [orderNotes, setOrderNotes] = useState('');
+    const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
+
     // Booking Payment Dialog State
     const [bookingForPayment, setBookingForPayment] = useState<HomeBooking | null>(null);
 
@@ -158,6 +165,7 @@ export default function AdminDashboardPage() {
     const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
     const enrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const teacherOrdersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'teacherOrders'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -170,6 +178,7 @@ export default function AdminDashboardPage() {
     const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    const { data: teacherOrders, isLoading: ordersLoading } = useCollection<TeacherOrder>(teacherOrdersQuery);
     
     const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
@@ -291,6 +300,8 @@ export default function AdminDashboardPage() {
         (filteredCommunityApps.pending.length || 0) +
         (filteredEnrollments.pending.length || 0),
     [filteredHomeTutorApps, filteredCommunityApps, filteredEnrollments]);
+    
+    const pendingOrderCount = useMemo(() => teacherOrders?.filter(o => o.status === 'pending').length || 0, [teacherOrders]);
 
     const filteredMaterials = useMemo(() => {
         if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
@@ -668,9 +679,41 @@ export default function AdminDashboardPage() {
             setIsUpdatingAchiever(false);
         }
     };
+    
+    const handleOrderAction = async (orderId: string, newStatus: 'confirmed' | 'declined') => {
+        if (!firestore) return;
+        setIsUpdatingOrder(true);
+        const orderRef = doc(firestore, 'teacherOrders', orderId);
+        
+        try {
+            await updateDoc(orderRef, {
+                status: newStatus,
+                notes: orderNotes,
+                processedAt: new Date().toISOString()
+            });
+            logAdminAction(`Order ${orderId} has been ${newStatus}.`);
+            setEditingOrder(null);
+            setOrderNotes('');
+        } catch (error) {
+            console.error(`Error updating order ${orderId}:`, error);
+        } finally {
+            setIsUpdatingOrder(false);
+        }
+    };
+
+    const handleDeleteOrder = async (orderId: string) => {
+        if (!firestore) return;
+        const orderRef = doc(firestore, 'teacherOrders', orderId);
+        try {
+            await deleteDoc(orderRef);
+            logAdminAction(`Order ${orderId} has been deleted.`);
+        } catch (error) {
+            console.error(`Error deleting order ${orderId}:`, error);
+        }
+    };
 
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading || ordersLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -709,13 +752,16 @@ export default function AdminDashboardPage() {
         { view: 'achievers' as AdminView, label: 'Achievers', icon: Award },
         { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
+        { view: 'orders' as AdminView, label: 'Orders', icon: ShoppingCart },
         { view: 'materials' as AdminView, label: 'Materials', icon: FileText },
         { view: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag },
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
     ];
     
     const renderSidebar = () => {
-        const Wrapper = isSidebarOpen ? SheetClose : Fragment;
+        const Wrapper = (props: { children: React.ReactNode; }) => 
+            isSidebarOpen ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
+            
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
@@ -728,6 +774,11 @@ export default function AdminDashboardPage() {
                                 {item.view === 'applications' && totalPendingApps > 0 && (
                                     <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
                                         {totalPendingApps}
+                                    </span>
+                                )}
+                                {item.view === 'orders' && pendingOrderCount > 0 && (
+                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        {pendingOrderCount}
                                     </span>
                                 )}
                             </Button>
@@ -1080,7 +1131,7 @@ export default function AdminDashboardPage() {
                                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            {booking.status === 'Pending' && booking.bookingType === 'homeTutor' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')}>Confirm Booking</DropdownMenuItem>}
+                                            {booking.status === 'Pending' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')}>Confirm Booking</DropdownMenuItem>}
                                             {(booking.status === 'Confirmed' || booking.status === 'Completed' || booking.status === 'Cancelled' || booking.status === 'Awaiting Payment') && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>}
                                             {booking.status !== 'Completed' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>}
                                             {booking.status !== 'Cancelled' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>}
@@ -1115,7 +1166,7 @@ export default function AdminDashboardPage() {
                                 </div>
                             )}
 
-                            {booking.status === 'Pending' && type === 'coachingCenter' && (
+                            {booking.status === 'Confirmed' && type === 'coachingCenter' && (
                                 <div className="mt-4 pt-4 border-t flex items-center gap-2">
                                     <Select onValueChange={(teacherId) => handleAssignCoachingTeacher(booking, teacherId)}>
                                         <SelectTrigger className="w-full sm:w-[250px]">
@@ -1129,7 +1180,7 @@ export default function AdminDashboardPage() {
                                     </Select>
                                 </div>
                             )}
-                            {(booking.status === 'Confirmed' || booking.status === 'Completed') && type === 'coachingCenter' && (
+                            {(booking.status === 'Completed') && type === 'coachingCenter' && (
                                 <div className="mt-4 pt-4 border-t">
                                     <p className="text-sm text-muted-foreground">Assigned Center: <span className="font-semibold text-foreground">{booking.assignedCoachingCenterName}</span></p>
                                     <p className="text-sm text-muted-foreground">via: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
@@ -1424,6 +1475,59 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
     );
+    
+    const renderOrdersView = () => (
+        <div className="grid gap-8">
+            <h1 className="text-3xl font-bold font-serif">Teacher Orders</h1>
+            <Card className="rounded-2xl shadow-lg">
+                <CardHeader>
+                    <CardTitle>Manage Teacher Material Orders</CardTitle>
+                    <CardDescription>Review, confirm, or decline orders for materials from teachers.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {teacherOrders && teacherOrders.length > 0 ? (
+                        <div className="grid gap-4">
+                            {teacherOrders.map(order => (
+                                <div key={order.id} className="p-4 rounded-2xl border shadow-lg">
+                                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-primary">{order.teacherName}</p>
+                                            <p className="text-sm mt-2"><strong className="font-medium">Items:</strong> {order.items}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Ordered on: {formatDate(order.createdAt, true)}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 self-end sm:self-center">
+                                            <span className={`text-xs font-bold py-1 px-2 rounded-full capitalize ${
+                                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                order.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {order.status}
+                                            </span>
+                                            {order.status === 'pending' && (
+                                                <Button size="sm" variant="outline" onClick={() => { setEditingOrder(order); setOrderNotes(order.notes || ''); }}>
+                                                    Process
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {order.status !== 'pending' && order.notes && (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <p className="text-sm"><strong className="font-medium">Admin Notes:</strong> {order.notes}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 flex flex-col items-center">
+                            <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Orders Yet</h3>
+                            <p className="text-muted-foreground mt-1">When teachers place orders, they will appear here.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
 
 
     const renderCurrentView = () => {
@@ -1437,6 +1541,7 @@ export default function AdminDashboardPage() {
             activity: renderActivityLogView(),
             schools: renderSchoolsView(),
             achievers: renderAchieversView(),
+            orders: renderOrdersView(),
         };
 
         return (
@@ -1465,13 +1570,13 @@ export default function AdminDashboardPage() {
                             animate={{ x: 0, width: '16rem' }}
                             exit={{ x: '-100%', width: 0 }}
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
-                            className="hidden md:flex flex-col border-r"
+                            className="hidden md:block fixed top-16 left-0 h-[calc(100vh-4rem)] border-r w-64 bg-muted/40"
                         >
                             {renderSidebar()}
                         </motion.div>
                     )}
                 </AnimatePresence>
-                <main className="flex-1 p-4 md:p-8">
+                <main className={`flex-1 p-4 md:p-8 transition-all duration-300 ${isSidebarVisible ? 'md:ml-64' : 'ml-0'}`}>
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">
                             <h1 className="text-xl font-bold font-serif capitalize">{view}</h1>
@@ -1530,6 +1635,31 @@ export default function AdminDashboardPage() {
                         <Button onClick={handleUpdateAchiever} disabled={isUpdatingAchiever}>
                             {isUpdatingAchiever ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!editingOrder} onOpenChange={(isOpen) => !isOpen && setEditingOrder(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Process Order for {editingOrder?.teacherName}</DialogTitle>
+                        <DialogDescription>Review the order and confirm or decline it.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 grid gap-4">
+                         <p><strong>Items:</strong> {editingOrder?.items}</p>
+                         <div className="grid gap-2">
+                            <Label htmlFor="order-notes">Notes (Optional)</Label>
+                            <Textarea id="order-notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Add any notes for the teacher..." />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingOrder(null)}>Cancel</Button>
+                        <Button variant="destructive" onClick={() => handleOrderAction(editingOrder!.id, 'declined')} disabled={isUpdatingOrder}>
+                           {isUpdatingOrder ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-2 h-4 w-4" />} Decline
+                        </Button>
+                        <Button onClick={() => handleOrderAction(editingOrder!.id, 'confirmed')} disabled={isUpdatingOrder}>
+                           {isUpdatingOrder ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />} Confirm
                         </Button>
                     </DialogFooter>
                 </DialogContent>
