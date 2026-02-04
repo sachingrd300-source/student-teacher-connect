@@ -72,36 +72,6 @@ interface TeacherProfile {
 export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  const [teacherCount, setTeacherCount] = useState<number>();
-  const [studentCount, setStudentCount] = useState<number>();
-
-  const featuredTeachersQuery = useMemoFirebase(() => {
-      if (!firestore || !user) return null;
-      return query(
-          collection(firestore, 'users'),
-          where('role', '==', 'teacher'),
-          limit(3)
-      );
-  }, [firestore, user]);
-  const { data: featuredTeachers } = useCollection<TeacherProfile>(featuredTeachersQuery);
-
-  useEffect(() => {
-    if (firestore && user) {
-      const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
-      const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
-
-      getCountFromServer(teachersQuery)
-        .then(snapshot => setTeacherCount(snapshot.data().count))
-        .catch(err => console.error("Error getting teacher count:", err));
-      
-      getCountFromServer(studentsQuery)
-        .then(snapshot => setStudentCount(snapshot.data().count))
-        .catch(err => console.error("Error getting student count:", err));
-    }
-  }, [firestore, user]);
 
   const features = [
       {
@@ -445,12 +415,12 @@ export default function HomePage() {
             >
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-5xl font-bold">{teacherCount !== undefined ? teacherCount : '50+'}</p>
+                <p className="text-5xl font-bold">50+</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-5xl font-bold">{studentCount !== undefined ? studentCount : '500+'}</p>
+                <p className="text-5xl font-bold">500+</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
