@@ -980,7 +980,7 @@ export default function AdminDashboardPage() {
                          <Input 
                             placeholder="Search by name or email..."
                             className="max-w-sm"
-                            value={userSearchQuery}
+                            value={userSearchQuery || ''}
                             onChange={(e) => setUserSearchQuery(e.target.value)}
                         />
                     </CardHeader>
@@ -1356,7 +1356,7 @@ export default function AdminDashboardPage() {
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="method-url" /><Label htmlFor="method-url">From URL</Label></div>
                                 </RadioGroup>
                             </div>
-                            <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle || ''} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
                             <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
                             
                             <AnimatePresence mode="wait">
@@ -1368,12 +1368,12 @@ export default function AdminDashboardPage() {
                                 ) : (
                                     <motion.div key="url-upload" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
                                         <Label htmlFor="material-url-dialog">URL</Label>
-                                        <Input id="material-url-dialog" type="url" value={materialUrl} onChange={(e) => setMaterialUrl(e.target.value)} placeholder="https://example.com/document.pdf" required={uploadMethod === 'url'} />
+                                        <Input id="material-url-dialog" type="url" value={materialUrl || ''} onChange={(e) => setMaterialUrl(e.target.value)} placeholder="https://example.com/document.pdf" required={uploadMethod === 'url'} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <div className="grid gap-2"><Label htmlFor="material-description-dialog">Description (Optional)</Label><Textarea id="material-description-dialog" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
+                            <div className="grid gap-2"><Label htmlFor="material-description-dialog">Description (Optional)</Label><Textarea id="material-description-dialog" value={materialDescription || ''} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                                 <Button type="submit" disabled={isUploadingMaterial}>{isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material</Button>
@@ -1422,14 +1422,14 @@ export default function AdminDashboardPage() {
                                 </RadioGroup>
                             </div>
 
-                            <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="item-price">{itemPriceType === 'money' ? 'Price (INR)' : 'Price (Coins)'}</Label><Input id="item-price" type="number" step="1" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName || ''} onChange={(e) => setItemName(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-price">{itemPriceType === 'money' ? 'Price (INR)' : 'Price (Coins)'}</Label><Input id="item-price" type="number" step="1" value={itemPrice || ''} onChange={(e) => setItemPrice(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription || ''} onChange={(e) => setItemDescription(e.target.value)} /></div>
                             
                             <AnimatePresence>
                                 {itemType === 'item' && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-4 overflow-hidden">
-                                        {itemPriceType === 'money' && (<div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} /></div>)}
+                                        {itemPriceType === 'money' && (<div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl || ''} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} /></div>)}
                                         <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required={itemType === 'item'} /></div>
                                     </motion.div>
                                 )}
@@ -1445,7 +1445,7 @@ export default function AdminDashboardPage() {
                                         {digitalUploadMethod === 'file' ? (
                                             <div className="grid gap-2"><Label htmlFor="digital-file">File</Label><Input id="digital-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setDigitalFile(e.target.files ? e.target.files[0] : null)} required={itemType === 'digital' && digitalUploadMethod === 'file'} /></div>
                                         ) : (
-                                            <div className="grid gap-2"><Label htmlFor="digital-url">URL</Label><Input id="digital-url" type="url" value={digitalUrl} onChange={(e) => setDigitalUrl(e.target.value)} placeholder="https://example.com/resource" required={itemType === 'digital' && digitalUploadMethod === 'url'} /></div>
+                                            <div className="grid gap-2"><Label htmlFor="digital-url">URL</Label><Input id="digital-url" type="url" value={digitalUrl || ''} onChange={(e) => setDigitalUrl(e.target.value)} placeholder="https://example.com/resource" required={itemType === 'digital' && digitalUploadMethod === 'url'} /></div>
                                         )}
                                     </motion.div>
                                 )}
@@ -1467,13 +1467,13 @@ export default function AdminDashboardPage() {
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
                                                     <FileText className="h-10 w-10" />
                                                 </div>
-                                            ) : item.itemType === 'badge' ? (
+                                            ) : item.itemType === 'badge' && item.badgeIcon ? (
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
-                                                    {React.cloneElement(badgeIcons[item.badgeIcon as BadgeIconType] as React.ReactElement, { className: "h-10 w-10" })}
+                                                    {React.cloneElement(badgeIcons[item.badgeIcon] as React.ReactElement, { className: "h-10 w-10" })}
                                                 </div>
-                                            ) : (
-                                                <Image src={item.imageUrl!} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
-                                            )}
+                                            ) : item.imageUrl ? (
+                                                <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
+                                            ) : <div className='w-20 h-20 rounded-lg bg-muted' />}
                                             
                                             <div>
                                                 <p className="font-semibold">{item.name}</p>
@@ -1732,7 +1732,7 @@ export default function AdminDashboardPage() {
                             <Label htmlFor="achiever-fee">Fee Structure</Label>
                             <Input 
                                 id="achiever-fee" 
-                                value={achieverFormState.fee} 
+                                value={achieverFormState.fee || ''} 
                                 onChange={(e) => setAchieverFormState(prev => ({ ...prev, fee: e.target.value }))}
                                 placeholder="e.g., 500/month"
                             />
@@ -1741,7 +1741,7 @@ export default function AdminDashboardPage() {
                             <Label htmlFor="achiever-coaching-address">Coaching Address</Label>
                             <Textarea 
                                 id="achiever-coaching-address" 
-                                value={achieverFormState.coachingAddress}
+                                value={achieverFormState.coachingAddress || ''}
                                 onChange={(e) => setAchieverFormState(prev => ({ ...prev, coachingAddress: e.target.value }))}
                                 placeholder="Public coaching address"
                             />
@@ -1750,7 +1750,7 @@ export default function AdminDashboardPage() {
                             <Label htmlFor="achiever-center-name">Coaching Center Name</Label>
                             <Input 
                                 id="achiever-center-name" 
-                                value={achieverFormState.coachingCenterName}
+                                value={achieverFormState.coachingCenterName || ''}
                                 onChange={(e) => setAchieverFormState(prev => ({ ...prev, coachingCenterName: e.target.value }))}
                                 placeholder="e.g., Success Tutorials"
                             />
@@ -1776,7 +1776,7 @@ export default function AdminDashboardPage() {
                          <p><strong>Items:</strong> {editingOrder?.items}</p>
                          <div className="grid gap-2">
                             <Label htmlFor="order-notes">Notes (Optional)</Label>
-                            <Textarea id="order-notes" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Add any notes for the teacher..." />
+                            <Textarea id="order-notes" value={orderNotes || ''} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Add any notes for the teacher..." />
                         </div>
                     </div>
                     <DialogFooter>
@@ -1806,4 +1806,3 @@ export default function AdminDashboardPage() {
     );
 }
 
-    
