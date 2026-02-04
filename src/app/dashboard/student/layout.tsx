@@ -28,6 +28,7 @@ export default function StudentDashboardLayout({
   const firestore = useFirestore();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const pathname = usePathname();
 
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
@@ -88,11 +89,13 @@ export default function StudentDashboardLayout({
 
   return (
     <div className="flex flex-col min-h-screen">
-      <DashboardHeader userProfile={userProfile} />
+      <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
       <div className="flex flex-1">
-        <div className="hidden md:flex md:w-64 flex-col border-r bg-muted/20">
-          {renderSidebarContent()}
-        </div>
+        {isSidebarVisible && (
+            <div className="hidden md:flex md:w-64 flex-col border-r bg-muted/20">
+            {renderSidebarContent()}
+            </div>
+        )}
         <main className="flex-1 p-4 md:p-8 bg-background">
           <div className="max-w-6xl mx-auto">
             <div className="md:hidden mb-4 flex items-center justify-end">

@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SchoolFeeManagementDialog } from '@/components/school-fee-management-dialog';
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 
 
 // Interfaces
@@ -96,6 +96,7 @@ export default function SchoolDetailsPage() {
     // State
     const [view, setView] = useState<SchoolView>('dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     
     const [isAddTeacherOpen, setAddTeacherOpen] = useState(false);
     const [newTeacherEmail, setNewTeacherEmail] = useState('');
@@ -399,11 +400,21 @@ export default function SchoolDetailsPage() {
                 <p className="text-sm text-muted-foreground">{school.academicYear}</p>
             </div>
             <div className="flex flex-col gap-1">
-                <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
-                <Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button>
-                <Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button>
-                <Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button>
-                <Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button>
+                <SheetClose asChild>
+                    <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
+                </SheetClose>
+                <SheetClose asChild>
+                    <Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button>
+                </SheetClose>
+                <SheetClose asChild>
+                    <Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button>
+                </SheetClose>
+                <SheetClose asChild>
+                    <Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button>
+                </SheetClose>
+                <SheetClose asChild>
+                    <Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button>
+                </SheetClose>
             </div>
              <div className="mt-auto p-4 text-center">
                 <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
@@ -645,11 +656,13 @@ export default function SchoolDetailsPage() {
     
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={userProfile} />
+            <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
              <div className="flex flex-1">
-                <div className="hidden md:flex md:w-64 flex-col border-r">
-                    {renderSidebar()}
-                </div>
+                {isSidebarVisible && (
+                    <div className="hidden md:flex md:w-64 flex-col border-r">
+                        {renderSidebar()}
+                    </div>
+                )}
                  <main className="flex-1 p-4 md:p-8">
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">

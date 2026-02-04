@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
@@ -98,6 +98,7 @@ export default function AdminDashboardPage() {
     const initialView = searchParams.get('view') as AdminView | null;
     const [view, setView] = useState<AdminView>(initialView || 'dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
     // --- Form States ---
     const [materialTitle, setMaterialTitle] = useState('');
@@ -737,19 +738,39 @@ export default function AdminDashboardPage() {
          <aside className="flex flex-col gap-2 p-4">
             <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
             <div className="flex flex-col gap-1">
-                 <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
-                 <Button variant={view === 'users' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('users')}><Users className="mr-2 h-4 w-4" />Users</Button>
-                 <Button variant={view === 'schools' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('schools')}><Building2 className="mr-2 h-4 w-4" />Schools</Button>
-                 <Button variant={view === 'achievers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('achievers')}><Award className="mr-2 h-4 w-4" />Achievers</Button>
-                 <Button variant={view === 'applications' ? 'secondary' : 'ghost'} className="justify-start relative" onClick={() => handleViewChange('applications')}>
-                    <Briefcase className="mr-2 h-4 w-4" />Applications
-                    {totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
-                 </Button>
-                 <Button variant={view === 'bookings' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('bookings')}><Home className="mr-2 h-4 w-4" />Bookings</Button>
-                 <Button variant={view === 'materials' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('materials')}><FileText className="mr-2 h-4 w-4" />Materials</Button>
-                 <Button variant={view === 'shop' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('shop')}><ShoppingBag className="mr-2 h-4 w-4" />Shop</Button>
-                 <Button variant={view === 'notifications' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('notifications')}><Megaphone className="mr-2 h-4 w-4" />Notifications</Button>
-                 <Button variant={view === 'activity' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('activity')}><History className="mr-2 h-4 w-4" />Activity</Button>
+                 <SheetClose asChild>
+                    <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'users' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('users')}><Users className="mr-2 h-4 w-4" />Users</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'schools' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('schools')}><Building2 className="mr-2 h-4 w-4" />Schools</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'achievers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('achievers')}><Award className="mr-2 h-4 w-4" />Achievers</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'applications' ? 'secondary' : 'ghost'} className="justify-start relative" onClick={() => handleViewChange('applications')}>
+                        <Briefcase className="mr-2 h-4 w-4" />Applications
+                        {totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
+                    </Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'bookings' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('bookings')}><Home className="mr-2 h-4 w-4" />Bookings</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'materials' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('materials')}><FileText className="mr-2 h-4 w-4" />Materials</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'shop' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('shop')}><ShoppingBag className="mr-2 h-4 w-4" />Shop</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'notifications' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('notifications')}><Megaphone className="mr-2 h-4 w-4" />Notifications</Button>
+                 </SheetClose>
+                 <SheetClose asChild>
+                    <Button variant={view === 'activity' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('activity')}><History className="mr-2 h-4 w-4" />Activity</Button>
+                 </SheetClose>
             </div>
         </aside>
     );
@@ -1508,11 +1529,13 @@ export default function AdminDashboardPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={userProfile} />
+            <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
             <div className="flex flex-1">
-                <div className="hidden md:flex md:w-64 flex-col border-r">
-                    {renderSidebar()}
-                </div>
+                {isSidebarVisible && (
+                    <div className="hidden md:flex md:w-64 flex-col border-r">
+                        {renderSidebar()}
+                    </div>
+                )}
                 <main className="flex-1 p-4 md:p-8">
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">

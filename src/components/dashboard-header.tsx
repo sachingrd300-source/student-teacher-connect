@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, User as UserIcon, Trophy, Home } from 'lucide-react';
+import { School, UserCircle, LogOut, User as UserIcon, Trophy, Home, Menu } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 
 
@@ -26,9 +26,10 @@ interface UserProfile {
 
 interface DashboardHeaderProps {
   userProfile: UserProfile | null | undefined;
+  onMenuButtonClick?: () => void;
 }
 
-export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
+export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHeaderProps) {
   const auth = useAuth();
   const router = useRouter();
 
@@ -46,6 +47,12 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+        {onMenuButtonClick && (
+            <Button variant="ghost" size="icon" className="hidden md:flex" onClick={onMenuButtonClick}>
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle sidebar</span>
+            </Button>
+        )}
         <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
             <School className="h-6 w-6 mr-1 text-primary" />
             <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
