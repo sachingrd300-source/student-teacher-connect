@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -104,6 +103,7 @@ export default function CoachingManagementPage() {
     const [isCreateBatchOpen, setCreateBatchOpen] = useState(false);
     const [newBatchName, setNewBatchName] = useState('');
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
+    const [greeting, setGreeting] = useState('');
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -123,6 +123,17 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) {
+            setGreeting('Good Morning');
+        } else if (hour < 17) {
+            setGreeting('Good Afternoon');
+        } else {
+            setGreeting('Good Evening');
+        }
+    }, []);
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
         if (!enrollments) return [[], []];
@@ -252,7 +263,7 @@ export default function CoachingManagementPage() {
                 variants={fadeInUp}
             >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold font-serif">{greeting && `${greeting}, ${userProfile?.name}!`}</h1>
                         {isCommunityAssociate && (
                         <div className="flex items-center gap-2 text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 px-3 py-1.5 rounded-full">
                             <CheckCircle className="h-5 w-5" />
@@ -260,7 +271,7 @@ export default function CoachingManagementPage() {
                         </div>
                     )}
                 </div>
-                <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
+                <p className="text-muted-foreground mt-2">Here's your overview for today. Manage your batches and student requests.</p>
             </motion.div>
 
             <motion.div
