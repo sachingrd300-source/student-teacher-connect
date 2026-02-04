@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, ChangeEvent, useMemo } from 'react';
@@ -392,56 +391,51 @@ export default function BatchManagementPage() {
         await firestoreBatch.commit();
     };
 
-    const handleFileUpload = (e: React.FormEvent) => {
+    const handleFileUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!materialFile || !materialTitle.trim() || !storage || !batchId || !user) return;
+        if (!materialFile || !materialTitle.trim() || !storage || !batchId || !user || !firestore) return;
     
         setIsUploading(true);
         const fileName = `${Date.now()}_${materialFile.name}`;
         const fileRef = ref(storage, `materials/${batchId}/${fileName}`);
     
-        const currentTitle = materialTitle.trim();
-        const currentDescription = materialDescription.trim();
-        const currentFile = materialFile;
+        try {
+            const uploadTask = await uploadBytes(fileRef, materialFile);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
     
-        // Optimistic UI Update
-        setMaterialTitle('');
-        setMaterialDescription('');
-        setMaterialFile(null);
-        if (document.getElementById('material-file')) {
-            (document.getElementById('material-file') as HTMLInputElement).value = '';
-        }
-        setIsUploading(false); // Make the UI responsive immediately
+            const firestoreBatch = writeBatch(firestore);
+            const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
     
-        // Background upload
-        uploadBytes(fileRef, currentFile)
-            .then(uploadTask => getDownloadURL(uploadTask.ref))
-            .then(downloadURL => {
-                const firestoreBatch = writeBatch(firestore);
-                const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
-                const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-    
-                firestoreBatch.set(doc(materialsColRef), {
-                    title: currentTitle,
-                    description: currentDescription,
-                    fileURL: downloadURL,
-                    fileName: fileName,
-                    fileType: currentFile.type,
-                    batchId: batchId,
-                    teacherId: user.uid,
-                    createdAt: new Date().toISOString(),
-                });
-    
-                firestoreBatch.set(doc(activityColRef), {
-                    message: `New material uploaded: "${currentTitle}"`,
-                    createdAt: new Date().toISOString(),
-                });
-    
-                return firestoreBatch.commit();
-            })
-            .catch(error => {
-                console.error("Error during background material upload:", error);
+            firestoreBatch.set(doc(materialsColRef), {
+                title: materialTitle.trim(),
+                description: materialDescription.trim(),
+                fileURL: downloadURL,
+                fileName: fileName,
+                fileType: materialFile.type,
+                batchId: batchId,
+                teacherId: user.uid,
+                createdAt: new Date().toISOString(),
             });
+    
+            firestoreBatch.set(doc(activityColRef), {
+                message: `New material uploaded: "${materialTitle.trim()}"`,
+                createdAt: new Date().toISOString(),
+            });
+    
+            await firestoreBatch.commit();
+        } catch (error) {
+            console.error("Error during material upload:", error);
+            alert("Upload failed. Check console for details. This might be a permission issue.");
+        } finally {
+            setIsUploading(false);
+            setMaterialTitle('');
+            setMaterialDescription('');
+            setMaterialFile(null);
+            if (document.getElementById('material-file')) {
+                (document.getElementById('material-file') as HTMLInputElement).value = '';
+            }
+        }
     };
     
     const handleDeleteMaterial = async (material: StudyMaterial) => {

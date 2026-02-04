@@ -492,52 +492,44 @@ export default function AdminDashboardPage() {
             });
     };
 
-    const handleMaterialUpload = (e: React.FormEvent) => {
+    const handleMaterialUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !firestore) return;
-    
+
         setIsUploadingMaterial(true);
         const fileName = `${Date.now()}_${materialFile.name}`;
         const fileRef = ref(storage, `freeMaterials/${fileName}`);
-    
-        const currentTitle = materialTitle.trim();
-        const currentDescription = materialDescription.trim();
-        const currentCategory = materialCategory;
-        const currentFile = materialFile;
-    
-        uploadBytes(fileRef, currentFile)
-            .then(uploadTask => getDownloadURL(uploadTask.ref))
-            .then(downloadURL => {
-                const materialData = {
-                    title: currentTitle,
-                    description: currentDescription,
-                    fileURL: downloadURL,
-                    fileName: fileName,
-                    fileType: currentFile.type,
-                    category: currentCategory,
-                    createdAt: new Date().toISOString()
-                };
-    
-                return addDoc(collection(firestore, 'freeMaterials'), materialData)
-                    .then(docRef => {
-                        logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
-                    });
-            })
-            .catch(error => {
-                console.error("Error uploading free material:", error);
-                const materialData = { title: currentTitle, category: currentCategory };
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'freeMaterials', requestResourceData: materialData }));
-            })
-            .finally(() => {
-                setIsUploadingMaterial(false);
-                setMaterialTitle('');
-                setMaterialDescription('');
-                setMaterialFile(null);
-                setMaterialCategory('');
-                if (document.getElementById('material-file')) {
-                    (document.getElementById('material-file') as HTMLInputElement).value = '';
-                }
-            });
+
+        try {
+            const uploadTask = await uploadBytes(fileRef, materialFile);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
+            
+            const materialData = {
+                title: materialTitle.trim(),
+                description: materialDescription.trim(),
+                fileURL: downloadURL,
+                fileName: fileName,
+                fileType: materialFile.type,
+                category: materialCategory,
+                createdAt: new Date().toISOString()
+            };
+
+            const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
+            logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
+
+        } catch (error) {
+            console.error("Error uploading free material:", error);
+            alert("Upload failed. Check console for details. This could be a permissions issue with storage rules.");
+        } finally {
+            setIsUploadingMaterial(false);
+            setMaterialTitle('');
+            setMaterialDescription('');
+            setMaterialFile(null);
+            setMaterialCategory('');
+            if (document.getElementById('material-file')) {
+                (document.getElementById('material-file') as HTMLInputElement).value = '';
+            }
+        }
     };
     
     const handleDeleteMaterial = (material: FreeMaterial) => {
@@ -557,7 +549,7 @@ export default function AdminDashboardPage() {
         });
     };
 
-    const handleShopItemUpload = (e: React.FormEvent) => {
+    const handleShopItemUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!itemName.trim() || !itemPrice || !storage || !firestore) return;
         if (itemType === 'item' && !itemImage) {
@@ -570,64 +562,44 @@ export default function AdminDashboardPage() {
         }
     
         setIsUploadingItem(true);
-    
-        const baseItemData: Omit<ShopItem, 'id' | 'imageUrl' | 'imageName' | 'badgeIcon' | 'purchaseUrl' > = {
-            name: itemName.trim(),
-            description: itemDescription.trim(),
-            priceType: itemPriceType,
-            price: parseFloat(itemPrice),
-            itemType: itemType,
-            createdAt: new Date().toISOString()
-        };
         
-        const currentBadgeIcon = badgeIcon;
-        const currentPurchaseUrl = itemPurchaseUrl.trim();
-        const currentItemImage = itemImage;
-        const currentItemType = itemType;
-    
-        const addItemToFirestore = (data: Omit<ShopItem, 'id'>) => {
-            addDoc(collection(firestore, 'shopItems'), data)
-                .then(docRef => {
-                    logAdminAction(`Uploaded shop item: "${data.name}"`, docRef.id);
-                })
-                .catch((error) => {
-                    console.error("Error adding shop item to Firestore:", error);
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'create', path: 'shopItems', requestResourceData: data }));
-                })
-                .finally(() => {
-                    setIsUploadingItem(false);
-                    setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
-                    if (document.getElementById('item-image')) {
-                        (document.getElementById('item-image') as HTMLInputElement).value = '';
-                    }
-                });
-        };
-    
-        if (currentItemType === 'item' && currentItemImage) {
-            const imageName = `${Date.now()}_${currentItemImage.name}`;
-            const imageRef = ref(storage, `shopItems/${imageName}`);
-    
-            uploadBytes(imageRef, currentItemImage)
-                .then(uploadTask => getDownloadURL(uploadTask.ref))
-                .then(downloadURL => {
-                    const finalItemData: any = { ...baseItemData };
-                    finalItemData.imageUrl = downloadURL;
-                    finalItemData.imageName = imageName;
-                    if (baseItemData.priceType === 'money') {
-                        finalItemData.purchaseUrl = currentPurchaseUrl;
-                    }
-                    addItemToFirestore(finalItemData);
-                })
-                .catch(error => {
-                    console.error("Error uploading shop item image:", error)
-                    setIsUploadingItem(false);
-                });
-        } else if (currentItemType === 'badge') {
-            const finalItemData: any = { ...baseItemData };
-            finalItemData.badgeIcon = currentBadgeIcon;
-            addItemToFirestore(finalItemData);
-        } else {
-             setIsUploadingItem(false);
+        try {
+            let imageUrl: string | undefined;
+            let imageName: string | undefined;
+
+            if (itemType === 'item' && itemImage) {
+                const generatedImageName = `${Date.now()}_${itemImage.name}`;
+                const imageRef = ref(storage, `shopItems/${generatedImageName}`);
+                const uploadTask = await uploadBytes(imageRef, itemImage);
+                imageUrl = await getDownloadURL(uploadTask.ref);
+                imageName = generatedImageName;
+            }
+            
+            const itemData: Omit<ShopItem, 'id' | 'createdAt'> & { createdAt: string } = {
+                name: itemName.trim(),
+                description: itemDescription.trim(),
+                priceType: itemPriceType,
+                price: parseFloat(itemPrice),
+                itemType: itemType,
+                createdAt: new Date().toISOString(),
+                ...(imageUrl && { imageUrl }),
+                ...(imageName && { imageName }),
+                ...(itemType === 'badge' && { badgeIcon }),
+                ...(itemPriceType === 'money' && itemPurchaseUrl.trim() && { purchaseUrl: itemPurchaseUrl.trim() }),
+            };
+
+            const docRef = await addDoc(collection(firestore, 'shopItems'), itemData);
+            logAdminAction(`Uploaded shop item: "${itemData.name}"`, docRef.id);
+
+        } catch (error) {
+            console.error("Error creating shop item:", error);
+            alert("Failed to create shop item. This might be a permission issue. Check console for details.");
+        } finally {
+            setIsUploadingItem(false);
+            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
+            if (document.getElementById('item-image')) {
+                (document.getElementById('item-image') as HTMLInputElement).value = '';
+            }
         }
     };
     
