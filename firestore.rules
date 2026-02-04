@@ -150,10 +150,13 @@ service cloud.firestore {
 
     match /homeBookings/{bookingId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
-      allow read: if isAdmin() || 
-                    (resource.data.studentId == request.auth.uid) ||
-                    (resource.data.assignedTeacherId == request.auth.uid);
-      allow list: if isAdmin() || isTeacher();
+      
+      allow get: if isAdmin() || 
+                    (isSignedIn() && resource.data.studentId == request.auth.uid) ||
+                    (isSignedIn() && resource.data.assignedTeacherId == request.auth.uid);
+
+      allow list: if isAdmin() || isTeacher() || isStudent();
+
       allow update, delete: if isAdmin();
     }
     
@@ -191,5 +194,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
