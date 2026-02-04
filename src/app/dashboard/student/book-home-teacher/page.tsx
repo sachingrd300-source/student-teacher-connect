@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Send, Home } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface UserProfile {
     name: string;
@@ -38,7 +39,9 @@ export default function BookHomeTeacherPage() {
     const [fatherName, setFatherName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [studentClass, setStudentClass] = useState('');
+    const [subject, setSubject] = useState('');
     const [studentAddress, setStudentAddress] = useState('');
+    const [tuitionType, setTuitionType] = useState<'single_student' | 'siblings'>('single_student');
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -73,10 +76,12 @@ export default function BookHomeTeacherPage() {
                 fatherName: fatherName.trim(),
                 mobileNumber: mobileNumber.trim(),
                 studentClass: studentClass.trim(),
+                subject: subject.trim(),
                 studentAddress: studentAddress.trim(),
                 status: 'Pending',
                 createdAt: new Date().toISOString(),
                 bookingType: 'homeTutor',
+                tuitionType: tuitionType,
             });
             setSubmitStatus({ type: 'success', message: 'Your request has been sent successfully! The admin will contact you soon.' });
             setTimeout(() => router.push('/dashboard/student'), 3000);
@@ -127,24 +132,41 @@ export default function BookHomeTeacherPage() {
                                </div>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                      <div className="grid gap-2">
-                                        <Label htmlFor="mobileNumber">Mobile Number</Label>
-                                        <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
-                                    </div>
-                                    <div className="grid gap-2">
                                         <Label htmlFor="studentClass">Class</Label>
                                         <Input id="studentClass" value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="e.g., 10th Grade" required />
                                     </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="subject">Subject</Label>
+                                        <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Mathematics" required />
+                                    </div>
                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="mobileNumber">Mobile Number</Label>
+                                    <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
+                                </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="student-address">Full Address</Label>
                                     <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address for the tutor" required />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Tuition For</Label>
+                                    <RadioGroup value={tuitionType} onValueChange={(value) => setTuitionType(value as 'single_student' | 'siblings')} className="flex gap-4 pt-1">
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="single_student" id="single_student" />
+                                            <Label htmlFor="single_student" className="font-normal">Only one student</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="siblings" id="siblings" />
+                                            <Label htmlFor="siblings" className="font-normal">Brother/Sister</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
                             </CardContent>
                             <CardFooter className="flex-col items-start gap-4">
                                  <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                                     Send Request
-                                </Button>
+                                 </Button>
                                  {submitStatus.message && (
                                     <p className={`text-sm font-medium ${
                                         submitStatus.type === 'error' ? 'text-destructive' : 'text-green-600'
@@ -160,3 +182,5 @@ export default function BookHomeTeacherPage() {
         </div>
     )
 }
+
+    

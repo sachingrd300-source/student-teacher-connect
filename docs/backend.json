@@ -232,6 +232,11 @@
             "description": "The type of booking requested by the student.",
             "enum": ["homeTutor", "coachingCenter"]
         },
+        "tuitionType": {
+            "type": "string",
+            "description": "Specifies if the tuition is for a single student or for siblings.",
+            "enum": ["single_student", "siblings"]
+        },
         "studentId": {
           "type": "string",
           "description": "The UID of the student who made the booking."
@@ -611,3 +616,5 @@
     }
   }
 }
+
+    

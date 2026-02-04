@@ -43,7 +43,7 @@ interface UserProfile { id: string; name: string; email: string; role: 'admin' |
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
+interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; tuitionType?: 'single_student' | 'siblings'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -1147,6 +1147,7 @@ export default function AdminDashboardPage() {
                             <div className="flex items-start justify-between gap-4">
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
+                                    <p className="text-sm text-muted-foreground">Tuition for: <span className="font-medium text-foreground">{booking.tuitionType === 'siblings' ? 'Siblings' : 'Single Student'}</span></p>
                                     <p className="text-sm text-muted-foreground">Subject: <span className="font-medium text-foreground">{booking.subject || 'Not specified'}</span></p>
                                     <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
                                     <p className="text-sm text-muted-foreground">Address: {booking.studentAddress}</p>
@@ -1704,3 +1705,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
