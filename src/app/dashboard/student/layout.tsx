@@ -57,8 +57,10 @@ export default function StudentDashboardLayout({
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },
   ];
 
-  const renderSidebarContent = () => {
-    const Wrapper = isSidebarOpen ? SheetClose : Fragment;
+  const renderSidebarContent = ({ forMobile = false }: { forMobile?: boolean }) => {
+    const Wrapper = (props: { children: React.ReactNode; }) =>
+        forMobile ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
+
     return (
       <aside className="flex flex-col gap-2 p-4">
         <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
@@ -69,7 +71,6 @@ export default function StudentDashboardLayout({
                 asChild
                 variant={pathname === item.href ? 'secondary' : 'ghost'}
                 className="justify-start w-full"
-                onClick={() => isSidebarOpen && setSidebarOpen(false)}
               >
                 <Link href={item.href}>
                   <item.icon className="mr-2 h-4 w-4" />
@@ -105,7 +106,7 @@ export default function StudentDashboardLayout({
               transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="hidden md:flex flex-col border-r bg-muted/20"
             >
-              {renderSidebarContent()}
+              {renderSidebarContent({ forMobile: false })}
             </motion.div>
           )}
         </AnimatePresence>
@@ -119,7 +120,7 @@ export default function StudentDashboardLayout({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
-                  {renderSidebarContent()}
+                  {renderSidebarContent({ forMobile: true })}
                 </SheetContent>
               </Sheet>
             </div>

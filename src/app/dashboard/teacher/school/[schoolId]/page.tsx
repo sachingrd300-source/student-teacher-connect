@@ -395,7 +395,7 @@ export default function SchoolDetailsPage() {
     
     // --- Render Functions ---
     
-    const renderSidebar = () => {
+    const renderSidebar = ({ forMobile = false }: { forMobile?: boolean }) => {
         const navItems = [
             { view: 'dashboard' as SchoolView, label: 'Dashboard', icon: LayoutDashboard },
             { view: 'teachers' as SchoolView, label: 'Teachers', icon: Users },
@@ -403,7 +403,8 @@ export default function SchoolDetailsPage() {
             { view: 'students' as SchoolView, label: 'Students', icon: GraduationCap },
             { view: 'fees' as SchoolView, label: 'Fees', icon: Wallet },
         ];
-        const Wrapper = isSidebarOpen ? SheetClose : Fragment;
+        const Wrapper = (props: { children: React.ReactNode; }) =>
+            forMobile ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
 
         return (
         <aside className="flex flex-col h-full">
@@ -672,7 +673,7 @@ export default function SchoolDetailsPage() {
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                             className="hidden md:flex flex-col border-r"
                         >
-                            {renderSidebar()}
+                            {renderSidebar({ forMobile: false })}
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -686,7 +687,7 @@ export default function SchoolDetailsPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
-                                    {renderSidebar()}
+                                    {renderSidebar({ forMobile: true })}
                                 </SheetContent>
                             </Sheet>
                         </div>

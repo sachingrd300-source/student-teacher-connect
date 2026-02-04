@@ -758,10 +758,10 @@ export default function AdminDashboardPage() {
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
     ];
     
-    const renderSidebar = () => {
-        const Wrapper = (props: { children: React.ReactNode; }) => 
-            isSidebarOpen ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
-            
+    const renderSidebar = ({ forMobile = false }: { forMobile?: boolean }) => {
+        const Wrapper = (props: { children: React.ReactNode; }) =>
+            forMobile ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
+
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
@@ -1572,7 +1572,7 @@ export default function AdminDashboardPage() {
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                             className="hidden md:block fixed top-16 left-0 h-[calc(100vh-4rem)] border-r w-64 bg-muted/40"
                         >
-                            {renderSidebar()}
+                            {renderSidebar({ forMobile: false })}
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -1585,7 +1585,7 @@ export default function AdminDashboardPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
-                                    {renderSidebar()}
+                                    {renderSidebar({ forMobile: true })}
                                 </SheetContent>
                             </Sheet>
                         </div>
