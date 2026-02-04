@@ -62,7 +62,7 @@ service cloud.firestore {
                   || isAdmin()
                   || (isSignedIn() && resource.data.role == 'teacher')
                   || (isTeacher() && resource.data.role == 'student');
-      allow list: if false; // Deny listing all users for security reasons.
+      allow list: if isAdmin(); // Only admins can list all users.
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() ||
                    (isOwner(userId) && !isCommunityAssociate(userId)) ||
