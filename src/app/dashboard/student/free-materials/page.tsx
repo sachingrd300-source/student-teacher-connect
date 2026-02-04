@@ -85,7 +85,7 @@ export default function FreeMaterialsPage() {
 
     const renderMaterialList = (materialList: FreeMaterial[]) => {
         const isSearchActive = searchQuery.trim() !== '';
-
+    
         if (materialList.length === 0) {
             if (isSearchActive) {
                 return (
@@ -110,7 +110,7 @@ export default function FreeMaterialsPage() {
         }
         return (
             <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid gap-4"
                 initial="hidden"
                 animate="visible"
                 variants={{
@@ -122,27 +122,27 @@ export default function FreeMaterialsPage() {
                 }}
             >
                 {materialList.map((material, i) => (
-                    <motion.div key={material.id} variants={cardVariants} custom={i} whileHover={{ y: -5 }} className="h-full">
-                        <Card className="flex flex-col h-full overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-lg">
-                            <CardHeader>
-                                <div className="flex items-start gap-4">
-                                   <FileText className="h-7 w-7 text-primary flex-shrink-0" />
-                                   <div className="flex-1">
-                                        <CardTitle className="text-base leading-tight font-semibold">{material.title}</CardTitle>
-                                   </div>
+                    <motion.div key={material.id} variants={cardVariants} custom={i} whileHover={{ y: -2 }} className="h-full">
+                        <Card className="p-4 rounded-2xl shadow-md transition-shadow hover:shadow-lg">
+                             <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="flex items-start gap-4 flex-1">
+                                    <div className="p-3 bg-primary/10 rounded-lg mt-1">
+                                       <FileText className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-base">{material.title}</h3>
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{material.description || 'No description available.'}</p>
+                                        <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                                    </div>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                                <p className="text-sm text-muted-foreground line-clamp-2">{material.description || 'No description available.'}</p>
-                            </CardContent>
-                            <CardFooter className="flex flex-col items-start gap-3 bg-muted/50 p-4">
-                                <p className="text-xs text-muted-foreground">Uploaded: {formatDate(material.createdAt)}</p>
-                                <Button asChild size="sm" className="w-full">
-                                    <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
-                                        <Download className="mr-2 h-4 w-4" /> Download
-                                    </a>
-                                </Button>
-                            </CardFooter>
+                                 <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
+                                    <Button asChild size="sm">
+                                        <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
+                                            <Download className="mr-2 h-4 w-4" /> Download
+                                        </a>
+                                    </Button>
+                                 </div>
+                            </div>
                         </Card>
                     </motion.div>
                 ))}

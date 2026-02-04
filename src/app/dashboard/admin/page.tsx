@@ -43,7 +43,7 @@ interface UserProfile { id: string; name: string; email: string; role: 'admin' |
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
+interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -1129,6 +1129,7 @@ export default function AdminDashboardPage() {
                             <div className="flex items-start justify-between gap-4">
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
+                                    <p className="text-sm text-muted-foreground">Subject: <span className="font-medium text-foreground">{booking.subject || 'Not specified'}</span></p>
                                     <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
                                     <p className="text-sm text-muted-foreground">Address: {booking.studentAddress}</p>
                                 </div>
@@ -1237,24 +1238,21 @@ export default function AdminDashboardPage() {
                 return <div className="text-center py-16">No materials in this category.</div>;
             }
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid gap-4">
                     {materialList.map(material => (
-                        <Card key={material.id} className="flex flex-col overflow-hidden rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <CardHeader className="flex-row items-start gap-4 space-y-0 p-4">
-                                <div className="p-3 bg-primary/10 rounded-lg">
-                                   <FileText className="h-6 w-6 text-primary" />
+                        <Card key={material.id} className="p-4 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="flex items-start gap-4 flex-1">
+                                    <div className="p-3 bg-primary/10 rounded-lg mt-1">
+                                       <FileText className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-base">{material.title}</h3>
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{material.description || 'No description available.'}</p>
+                                        <p className="text-xs text-muted-foreground mt-2">{formatDate(material.createdAt)}</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <CardTitle className="text-base">{material.title}</CardTitle>
-                                    <CardDescription className="text-xs capitalize">{material.category}</CardDescription>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="flex-grow p-4 pt-0">
-                                <p className="text-sm text-muted-foreground line-clamp-2">{material.description || 'No description available.'}</p>
-                            </CardContent>
-                            <CardFooter className="flex justify-between items-center bg-muted/20 p-4">
-                                 <p className="text-xs text-muted-foreground">{formatDate(material.createdAt)}</p>
-                                 <div className="flex gap-2">
+                                 <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
                                     <Button asChild variant="outline" size="sm">
                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
                                             {material.fileType === 'link' ? <ArrowRight className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
@@ -1263,7 +1261,7 @@ export default function AdminDashboardPage() {
                                     </Button>
                                     <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="h-4 w-4" /></Button>
                                  </div>
-                            </CardFooter>
+                            </div>
                         </Card>
                     ))}
                 </div>
