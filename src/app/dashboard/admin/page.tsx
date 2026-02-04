@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-
+import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 
 // Icons
 import { 
@@ -43,7 +43,7 @@ interface UserProfile { id: string; name: string; email: string; role: 'admin' |
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
+interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
@@ -128,6 +128,9 @@ export default function AdminDashboardPage() {
     const [editingAchiever, setEditingAchiever] = useState<UserProfile | null>(null);
     const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
+
+    // Booking Payment Dialog State
+    const [bookingForPayment, setBookingForPayment] = useState<HomeBooking | null>(null);
 
 
     useEffect(() => {
@@ -400,6 +403,7 @@ export default function AdminDashboardPage() {
             assignedTeacherName: teacher.name,
             assignedTeacherMobile: teacher.whatsappNumber || '',
             assignedTeacherAddress: teacher.homeAddress || '',
+            status: 'Confirmed' as const,
         };
 
         updateDoc(bookingDocRef, updateData)
@@ -443,11 +447,12 @@ export default function AdminDashboardPage() {
         });
     };
 
-    const handleUpdateBookingStatus = (booking: HomeBooking, status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled') => {
+    const handleUpdateBookingStatus = (booking: HomeBooking, status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled') => {
         if (!firestore) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         const updateData: { [key: string]: any } = { status };
         
+        // If moving back to Pending, clear teacher info
         if (status === 'Pending') {
             updateData.assignedTeacherId = null;
             updateData.assignedTeacherName = null;
@@ -740,32 +745,6 @@ export default function AdminDashboardPage() {
     };
 
     // --- Render Functions ---
-    const renderSidebar = () => {
-        const Wrapper = (props: { children: React.ReactNode; }) => 
-            isSidebarOpen ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
-            
-        return (
-            <aside className="flex flex-col gap-2 p-4">
-                <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
-                <div className="flex flex-col gap-1">
-                     {navItems.map(item => (
-                        <Wrapper key={item.view}>
-                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
-                                <item.icon className="mr-2 h-4 w-4" />
-                                {item.label}
-                                {item.view === 'applications' && totalPendingApps > 0 && (
-                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        {totalPendingApps}
-                                    </span>
-                                )}
-                            </Button>
-                        </Wrapper>
-                    ))}
-                </div>
-            </aside>
-        );
-    };
-
     const navItems = [
         { view: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
         { view: 'users' as AdminView, label: 'Users', icon: Users },
@@ -778,6 +757,27 @@ export default function AdminDashboardPage() {
         { view: 'notifications' as AdminView, label: 'Notifications', icon: Megaphone },
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
     ];
+    
+    const renderSidebar = () => {
+        return (
+            <aside className="flex flex-col gap-2 p-4">
+                <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
+                <div className="flex flex-col gap-1">
+                     {navItems.map(item => (
+                        <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
+                            <item.icon className="mr-2 h-4 w-4" />
+                            {item.label}
+                            {item.view === 'applications' && totalPendingApps > 0 && (
+                                <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                    {totalPendingApps}
+                                </span>
+                            )}
+                        </Button>
+                    ))}
+                </div>
+            </aside>
+        );
+    };
     
     const renderDashboardView = () => (
         <motion.div 
@@ -1122,7 +1122,8 @@ export default function AdminDashboardPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             {booking.status === 'Pending' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')}>Confirm Booking</DropdownMenuItem>}
-                                            {(booking.status === 'Confirmed' || booking.status === 'Completed' || booking.status === 'Cancelled') && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>}
+                                            {booking.status === 'Confirmed' && booking.bookingType === 'homeTutor' && <DropdownMenuItem onClick={() => setBookingForPayment(booking)}>Request Payment</DropdownMenuItem>}
+                                            {(booking.status === 'Confirmed' || booking.status === 'Completed' || booking.status === 'Cancelled' || booking.status === 'Awaiting Payment') && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Pending')}>Set to Pending</DropdownMenuItem>}
                                             {booking.status !== 'Completed' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Completed')}>Set to Completed</DropdownMenuItem>}
                                             {booking.status !== 'Cancelled' && <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')}>Set to Cancelled</DropdownMenuItem>}
                                             <DropdownMenuItem onClick={() => handleDeleteBooking(booking)} className="text-destructive">Delete</DropdownMenuItem>
@@ -1620,6 +1621,18 @@ export default function AdminDashboardPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <BookingPaymentDialog 
+                isOpen={!!bookingForPayment}
+                onClose={() => setBookingForPayment(null)}
+                booking={bookingForPayment}
+                onPaymentSuccess={() => {
+                    if (bookingForPayment) {
+                        handleUpdateBookingStatus(bookingForPayment, 'Awaiting Payment');
+                    }
+                    setBookingForPayment(null);
+                }}
+            />
         </div>
     );
 }
