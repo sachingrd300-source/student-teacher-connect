@@ -87,14 +87,6 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
                         <p className="text-sm font-normal text-muted-foreground">{userProfile?.name}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                     {userProfile?.role === 'student' && (
-                        <DropdownMenuItem asChild>
-                           <Link href="/dashboard/student/leaderboard">
-                                <Trophy className="mr-2 h-4 w-4" />
-                                <span>Leaderboard</span>
-                            </Link>
-                        </DropdownMenuItem>
-                    )}
                      {userProfile?.role === 'teacher' && (
                         <DropdownMenuItem asChild>
                            <Link href="/dashboard/teacher/apply-home-tutor">

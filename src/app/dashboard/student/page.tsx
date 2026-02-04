@@ -240,7 +240,6 @@ export default function StudentDashboardPage() {
         { title: 'Book Home Tutor', icon: <Home />, href: '/dashboard/student/book-home-teacher' },
         { title: 'Free Materials', icon: <BookOpen />, href: '/dashboard/student/free-materials' },
         { title: 'My Rewards', icon: <Gift />, href: '/dashboard/student/rewards' },
-        { title: 'Leaderboard', icon: <Trophy />, href: '/dashboard/student/leaderboard' },
         { title: 'Shop', icon: <ShoppingBag />, href: '/dashboard/student/shop' },
     ];
 
@@ -258,7 +257,7 @@ export default function StudentDashboardPage() {
             </motion.div>
 
              <motion.div 
-                className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4"
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"
                 variants={staggerContainer(0.05, 0.2)}
             >
                 {actionItems.map(item => <ActionCard key={item.href} {...item} />)}
