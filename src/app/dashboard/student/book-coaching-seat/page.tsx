@@ -38,6 +38,7 @@ export default function BookCoachingSeatPage() {
     const [fatherName, setFatherName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [studentClass, setStudentClass] = useState('');
+    const [subject, setSubject] = useState('');
     const [studentAddress, setStudentAddress] = useState('');
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -73,6 +74,7 @@ export default function BookCoachingSeatPage() {
                 fatherName: fatherName.trim(),
                 mobileNumber: mobileNumber.trim(),
                 studentClass: studentClass.trim(),
+                subject: subject.trim(),
                 studentAddress: studentAddress.trim(),
                 status: 'Pending',
                 createdAt: new Date().toISOString(),
@@ -127,14 +129,18 @@ export default function BookCoachingSeatPage() {
                                </div>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                      <div className="grid gap-2">
-                                        <Label htmlFor="mobileNumber">Mobile Number</Label>
-                                        <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
-                                    </div>
-                                    <div className="grid gap-2">
                                         <Label htmlFor="studentClass">Class</Label>
                                         <Input id="studentClass" value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="e.g., 10th Grade" required />
                                     </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="subject">Subject</Label>
+                                        <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Mathematics" required />
+                                    </div>
                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="mobileNumber">Mobile Number</Label>
+                                    <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
+                                </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="student-address">Full Address</Label>
                                     <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address to help us find the nearest center" required />
@@ -144,7 +150,7 @@ export default function BookCoachingSeatPage() {
                                  <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                                     Send Request
-                                </Button>
+                                 </Button>
                                  {submitStatus.message && (
                                     <p className={`text-sm font-medium ${
                                         submitStatus.type === 'error' ? 'text-destructive' : 'text-green-600'

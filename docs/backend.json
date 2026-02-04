@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -247,9 +248,13 @@
           "type": "string",
           "description": "The class/grade of the student."
         },
-        "fatherName": {
+        "subject": {
           "type": "string",
-          "description": "The student's father's name."
+          "description": "The subject for which the booking is made."
+        },
+        "fatherName": {
+            "type": "string",
+            "description": "The student's father's name."
         },
         "status": {
           "type": "string",
