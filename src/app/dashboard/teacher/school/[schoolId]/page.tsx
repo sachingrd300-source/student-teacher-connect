@@ -408,11 +408,13 @@ export default function SchoolDetailsPage() {
 
         return (
         <aside className="flex flex-col h-full">
-            <div className="p-4">
-                <h2 className="text-lg font-semibold tracking-tight font-serif">{school.name}</h2>
-                <p className="text-sm text-muted-foreground">{school.academicYear}</p>
-            </div>
-            <div className="flex flex-col gap-1 px-4">
+             { !forMobile && (
+                <div className="p-4">
+                    <h2 className="text-lg font-semibold tracking-tight font-serif">{school.name}</h2>
+                    <p className="text-sm text-muted-foreground">{school.academicYear}</p>
+                </div>
+             )}
+            <div className="flex flex-col gap-1 p-4">
                 {navItems.map(item => (
                     <Wrapper key={item.view}>
                         <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
@@ -422,7 +424,9 @@ export default function SchoolDetailsPage() {
                 ))}
             </div>
              <div className="mt-auto p-4 text-center">
-                <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
+                 <Wrapper>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
+                 </Wrapper>
             </div>
         </aside>
         );
@@ -687,6 +691,12 @@ export default function SchoolDetailsPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
+                                    <SheetHeader className="p-4 text-left border-b">
+                                        <SheetTitle>{school.name}</SheetTitle>
+                                        <SheetDescription>
+                                            {school.academicYear}
+                                        </SheetDescription>
+                                    </SheetHeader>
                                     {renderSidebar({ forMobile: true })}
                                 </SheetContent>
                             </Sheet>

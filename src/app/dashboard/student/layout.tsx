@@ -63,7 +63,6 @@ export default function StudentDashboardLayout({
 
     return (
       <aside className="flex flex-col gap-2 p-4">
-        <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
         <div className="flex flex-col gap-1">
           {navItems.map((item) => (
             <Wrapper key={item.href}>
@@ -120,6 +119,12 @@ export default function StudentDashboardLayout({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
+                  <SheetHeader className="p-4 text-left border-b">
+                    <SheetTitle>Student Menu</SheetTitle>
+                    <SheetDescription>
+                      Navigate through your dashboard sections.
+                    </SheetDescription>
+                  </SheetHeader>
                   {renderSidebarContent({ forMobile: true })}
                 </SheetContent>
               </Sheet>

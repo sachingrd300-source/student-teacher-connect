@@ -764,7 +764,6 @@ export default function AdminDashboardPage() {
 
         return (
             <aside className="flex flex-col gap-2 p-4">
-                <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
                 <div className="flex flex-col gap-1">
                      {navItems.map(item => (
                         <Wrapper key={item.view}>
@@ -1585,6 +1584,12 @@ export default function AdminDashboardPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
+                                    <SheetHeader className="p-4 text-left border-b">
+                                        <SheetTitle>Admin Menu</SheetTitle>
+                                        <SheetDescription>
+                                            Navigate through admin sections.
+                                        </SheetDescription>
+                                    </SheetHeader>
                                     {renderSidebar({ forMobile: true })}
                                 </SheetContent>
                             </Sheet>
