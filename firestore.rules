@@ -62,7 +62,7 @@ service cloud.firestore {
                   || isAdmin()
                   || (isSignedIn() && resource.data.role == 'teacher')
                   || (isTeacher() && resource.data.role == 'student');
-      allow list: if isAdmin() || (isSignedIn() && request.query.role == 'teacher');
+      allow list: if isAdmin() || isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() ||
                    (isOwner(userId) && !isCommunityAssociate(userId)) ||
@@ -153,6 +153,7 @@ service cloud.firestore {
       allow read: if isAdmin() || 
                     (resource.data.studentId == request.auth.uid) ||
                     (resource.data.assignedTeacherId == request.auth.uid);
+      allow list: if isAdmin() || isTeacher();
       allow update, delete: if isAdmin();
     }
     
@@ -190,3 +191,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
