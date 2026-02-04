@@ -175,7 +175,7 @@ service cloud.firestore {
     match /teacherOrders/{orderId} {
       allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
       allow get: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
-      allow list: if isAdmin();
+      allow list: if isAdmin() || isTeacher();
       allow update, delete: if isAdmin();
     }
 
