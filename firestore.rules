@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -55,6 +54,10 @@ service cloud.firestore {
         let allowedKeys = ['name', 'bio', 'subject', 'whatsappNumber', 'teacherWorkStatus'].toSet();
         let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
         return changedKeys.difference(allowedKeys).size() == 0;
+    }
+
+    function isParticipant(chatRoomId) {
+      return request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.participants;
     }
 
     match /users/{userId} {
@@ -150,12 +153,8 @@ service cloud.firestore {
 
     match /homeBookings/{bookingId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
-      
-      allow get: if isAdmin() || 
-                    (isSignedIn() && resource.data.studentId == request.auth.uid);
-
-      allow list: if isAdmin() || isStudent();
-
+      allow get: if isAdmin() || (isTeacher() && request.auth.uid == resource.data.assignedTeacherId) || (isStudent() && request.auth.uid == resource.data.studentId);
+      allow list: if isAdmin() || isTeacher() || isStudent();
       allow update, delete: if isAdmin();
     }
     
@@ -190,6 +189,18 @@ service cloud.firestore {
     
     match /adminActivities/{activityId} {
       allow read, list, write: if isAdmin();
+    }
+
+    match /chatRooms/{chatRoomId} {
+      allow get: if isParticipant(chatRoomId) || isAdmin();
+      allow list: if isSignedIn(); // Filtered on client-side
+      allow create: if isAdmin();
+      allow update: if isParticipant(chatRoomId);
+
+      match /messages/{messageId} {
+        allow list, get: if isParticipant(chatRoomId);
+        allow create: if request.resource.data.senderId == request.auth.uid && isParticipant(chatRoomId);
+      }
     }
   }
 }

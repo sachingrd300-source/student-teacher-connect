@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -412,6 +411,19 @@ export default function AdminDashboardPage() {
         updateDoc(bookingDocRef, updateData)
         .then(() => {
             logAdminAction(`Assigned teacher ${teacher.name} to booking for ${booking.studentName}`, booking.id);
+            // Create chat room
+            addDoc(collection(firestore, 'chatRooms'), {
+                participants: [teacher.id, booking.studentId],
+                teacherId: teacher.id,
+                studentId: booking.studentId,
+                teacherName: teacher.name,
+                studentName: booking.studentName,
+                bookingId: booking.id,
+                createdAt: new Date().toISOString(),
+                lastMessage: `Hi! I'm ${teacher.name}, your assigned tutor for ${booking.subject || 'your tuition'}.`,
+                lastMessageAt: new Date().toISOString(),
+                lastMessageSenderId: teacher.id,
+            });
         })
         .catch(error => {
             console.error('Error assigning teacher:', error);
@@ -439,6 +451,19 @@ export default function AdminDashboardPage() {
         updateDoc(bookingDocRef, updateData)
         .then(() => {
             logAdminAction(`Assigned coaching center via ${teacher.name} to booking for ${booking.studentName}`, booking.id);
+            // Create chat room
+            addDoc(collection(firestore, 'chatRooms'), {
+                participants: [teacher.id, booking.studentId],
+                teacherId: teacher.id,
+                studentId: booking.studentId,
+                teacherName: teacher.name,
+                studentName: booking.studentName,
+                bookingId: booking.id,
+                createdAt: new Date().toISOString(),
+                lastMessage: `Hi! I'm ${teacher.name}. Your booking for ${teacher.coachingCenterName || 'our coaching center'} has been confirmed.`,
+                lastMessageAt: new Date().toISOString(),
+                lastMessageSenderId: teacher.id,
+            });
         })
         .catch(error => {
             console.error('Error assigning coaching teacher:', error);
@@ -1679,5 +1704,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-

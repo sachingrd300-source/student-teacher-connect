@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -494,6 +493,40 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "principalId", "principalName", "code", "createdAt"]
+    },
+    "ChatRoom": {
+      "title": "Chat Room",
+      "type": "object",
+      "description": "Represents a private chat room between two users, typically a teacher and a student.",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "An array containing the UIDs of the two participants."
+        },
+        "teacherId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "studentName": { "type": "string" },
+        "bookingId": { "type": "string", "description": "The ID of the booking that initiated this chat." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessage": { "type": "string", "description": "The content of the last message sent." },
+        "lastMessageAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last message." },
+        "lastMessageSenderId": { "type": "string", "description": "UID of the last message sender." }
+      },
+      "required": ["participants", "teacherId", "studentId", "teacherName", "studentName", "bookingId", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "type": "object",
+      "description": "Represents a single message within a chat room.",
+      "properties": {
+        "text": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "senderId", "senderName", "createdAt"]
     }
   },
   "auth": {
@@ -567,8 +600,14 @@
     "/adminActivities/{activityId}": {
       "schema": { "$ref": "#/entities/AdminActivity" },
       "description": "Stores a log of all actions performed by administrators."
+    },
+    "/chatRooms/{chatRoomId}": {
+      "schema": { "$ref": "#/entities/ChatRoom" },
+      "description": "Stores private chat rooms between users."
+    },
+    "/chatRooms/{chatRoomId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Stores messages for a specific chat room."
     }
   }
 }
-
-    
