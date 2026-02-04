@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -48,11 +48,15 @@ interface HomeBooking {
     studentId: string;
     studentName: string;
     mobileNumber: string;
-    address: string;
+    studentAddress: string;
     studentClass: string;
+    subject?: string;
+    fatherName?: string;
     status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     createdAt: string;
+    bookingType: 'homeTutor' | 'coachingCenter';
 }
+
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -123,6 +127,17 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const assignedBookingsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(
+            collection(firestore, 'homeBookings'), 
+            where('assignedTeacherId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore, user?.uid]);
+    const { data: assignedBookings, isLoading: assignedBookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
+
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -241,7 +256,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || assignedBookingsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -391,6 +406,48 @@ export default function CoachingManagementPage() {
                                     <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
                                     </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                     <Card className='rounded-2xl shadow-lg'>
+                        <CardHeader>
+                            <CardTitle>My Assigned Bookings</CardTitle>
+                            <CardDescription>Students assigned to you by the admin for home tuition or coaching.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {assignedBookings && assignedBookings.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {assignedBookings.map(booking => (
+                                        <div key={booking.id} className="p-4 rounded-lg border bg-background transition-colors hover:bg-accent/50">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex items-center gap-3 font-semibold">
+                                                    {booking.bookingType === 'homeTutor' ? <Home className="h-5 w-5 text-primary" /> : <Building2 className="h-5 w-5 text-primary" />}
+                                                    {booking.studentName}
+                                                </div>
+                                                <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                    booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
+                                                    booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 
+                                                    booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {booking.status}
+                                                </span>
+                                            </div>
+                                            <div className="mt-3 pl-8 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                                                <p><strong>Class:</strong> {booking.studentClass}</p>
+                                                <p><strong>Subject:</strong> {booking.subject || 'N/A'}</p>
+                                                <p><strong>Father:</strong> {booking.fatherName || 'N/A'}</p>
+                                                <p><strong>Mobile:</strong> {booking.mobileNumber}</p>
+                                                <p className="col-span-2"><strong>Address:</strong> {booking.studentAddress}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <h3 className="text-lg font-semibold">No Assigned Students</h3>
+                                    <p className="text-muted-foreground mt-1">When an admin assigns a student to you, they will appear here.</p>
                                 </div>
                             )}
                         </CardContent>
