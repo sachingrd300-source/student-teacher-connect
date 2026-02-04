@@ -739,9 +739,7 @@ export default function AdminDashboardPage() {
     
     const handleViewChange = (newView: AdminView) => {
         setView(newView);
-        if (isSidebarOpen) {
-            setSidebarOpen(false);
-        }
+        setSidebarOpen(false);
     };
 
     // --- Render Functions ---
@@ -759,26 +757,30 @@ export default function AdminDashboardPage() {
     ];
     
     const renderSidebar = () => {
-        const Wrapper = (props: { children: React.ReactNode; }) => 
-            isSidebarOpen ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
-            
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
                 <div className="flex flex-col gap-1">
-                     {navItems.map(item => (
-                        <Wrapper key={item.view}>
-                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
-                                <item.icon className="mr-2 h-4 w-4" />
-                                {item.label}
-                                {item.view === 'applications' && totalPendingApps > 0 && (
-                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        {totalPendingApps}
-                                    </span>
-                                )}
-                            </Button>
-                        </Wrapper>
-                    ))}
+                     {navItems.map(item => {
+                        const button = (
+                            <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
+                               <item.icon className="mr-2 h-4 w-4" />
+                               {item.label}
+                               {item.view === 'applications' && totalPendingApps > 0 && (
+                                   <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                       {totalPendingApps}
+                                   </span>
+                               )}
+                           </Button>
+                        );
+
+                        // If the sidebar is for the mobile sheet, wrap the button in SheetClose
+                        if (isSidebarOpen) {
+                            return <SheetClose asChild key={item.view}>{button}</SheetClose>;
+                        }
+
+                        return button;
+                    })}
                 </div>
             </aside>
         );
@@ -963,7 +965,7 @@ export default function AdminDashboardPage() {
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
                                 </CardHeader>
-                                <CardFooter className="mt-auto flex flex-col sm:flex-row gap-2">
+                                <CardFooter className="mt-auto flex flex-col gap-2">
                                     <Button className={`w-full ${approveButtonClass}`} size="sm" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                     <Button className="w-full" size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button>
                                 </CardFooter>
@@ -1038,7 +1040,7 @@ export default function AdminDashboardPage() {
                                             Wants to join <span className="font-medium text-foreground">"{enrollment.batchName}"</span> by {enrollment.teacherName}
                                         </p>
                                     </CardContent>
-                                    <CardFooter className="mt-auto flex flex-col sm:flex-row gap-2">
+                                    <CardFooter className="mt-auto flex flex-col gap-2">
                                         <Button className="w-full bg-info text-info-foreground hover:bg-info/90" size="sm" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                         <Button className="w-full" size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
                                     </CardFooter>
