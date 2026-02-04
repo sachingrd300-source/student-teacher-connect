@@ -106,6 +106,8 @@ export default function AdminDashboardPage() {
     const [materialFile, setMaterialFile] = useState<File | null>(null);
     const [materialCategory, setMaterialCategory] = useState<MaterialCategory | ''>('');
     const [isUploadingMaterial, setIsUploadingMaterial] = useState(false);
+    const [materialUrl, setMaterialUrl] = useState('');
+    const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
     
     const [itemName, setItemName] = useState('');
     const [itemDescription, setItemDescription] = useState('');
@@ -495,26 +497,51 @@ export default function AdminDashboardPage() {
 
     const handleMaterialUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!materialFile || !materialTitle.trim() || !materialCategory || !storage || !firestore) return;
-
+        if (!materialTitle.trim() || !materialCategory || !firestore) return;
+    
         setIsUploadingMaterial(true);
-        const fileName = `${Date.now()}_${materialFile.name}`;
-        const fileRef = ref(storage, `freeMaterials/${fileName}`);
-
+    
         try {
-            const uploadTask = await uploadBytes(fileRef, materialFile);
-            const downloadURL = await getDownloadURL(uploadTask.ref);
-            
-            const materialData = {
-                title: materialTitle.trim(),
-                description: materialDescription.trim(),
-                fileURL: downloadURL,
-                fileName: fileName,
-                fileType: materialFile.type,
-                category: materialCategory,
-                createdAt: new Date().toISOString()
-            };
-
+            let materialData: Omit<FreeMaterial, 'id'>;
+    
+            if (uploadMethod === 'file') {
+                if (!materialFile || !storage) {
+                    alert('Please select a file to upload.');
+                    setIsUploadingMaterial(false);
+                    return;
+                }
+                const fileName = `${Date.now()}_${materialFile.name}`;
+                const fileRef = ref(storage, `freeMaterials/${fileName}`);
+                const uploadTask = await uploadBytes(fileRef, materialFile);
+                const downloadURL = await getDownloadURL(uploadTask.ref);
+                
+                materialData = {
+                    title: materialTitle.trim(),
+                    description: materialDescription.trim(),
+                    fileURL: downloadURL,
+                    fileName: fileName,
+                    fileType: materialFile.type,
+                    category: materialCategory,
+                    createdAt: new Date().toISOString()
+                };
+            } else { // uploadMethod is 'url'
+                if (!materialUrl.trim()) {
+                    alert('Please enter a valid URL.');
+                    setIsUploadingMaterial(false);
+                    return;
+                }
+    
+                materialData = {
+                    title: materialTitle.trim(),
+                    description: materialDescription.trim(),
+                    fileURL: materialUrl.trim(),
+                    fileName: materialUrl.trim(), // Use URL as filename
+                    fileType: 'link', // Special type for URLs
+                    category: materialCategory,
+                    createdAt: new Date().toISOString()
+                };
+            }
+    
             const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
             logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
             
@@ -524,11 +551,12 @@ export default function AdminDashboardPage() {
             setMaterialDescription('');
             setMaterialFile(null);
             setMaterialCategory('');
-            // Use a unique ID for the dialog file input to avoid conflicts
+            setMaterialUrl('');
+            setUploadMethod('file');
             if (document.getElementById('material-file-dialog')) {
                 (document.getElementById('material-file-dialog') as HTMLInputElement).value = '';
             }
-
+    
         } catch (error) {
             console.error("Error uploading free material:", error);
             alert("Upload failed. Check console for details. This could be a permissions issue with storage rules.");
@@ -541,13 +569,15 @@ export default function AdminDashboardPage() {
         if (!firestore || !storage) return;
 
         const materialDocRef = doc(firestore, 'freeMaterials', material.id);
-        const fileRef = ref(storage, `freeMaterials/${material.fileName}`);
-
+        
         deleteDoc(materialDocRef).then(() => {
             logAdminAction(`Deleted free material: "${material.title}"`, material.id);
-            deleteObject(fileRef).catch(error => {
-                console.warn("Could not delete file from storage:", error);
-            });
+            if (material.fileType !== 'link') {
+                const fileRef = ref(storage, `freeMaterials/${material.fileName}`);
+                deleteObject(fileRef).catch(error => {
+                    console.warn("Could not delete file from storage:", error);
+                });
+            }
         }).catch(error => {
             console.error("Error deleting material from Firestore:", error);
             errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'delete', path: materialDocRef.path }));
@@ -1216,7 +1246,12 @@ export default function AdminDashboardPage() {
                             <CardFooter className="flex justify-between items-center bg-muted/20 p-4">
                                  <p className="text-xs text-muted-foreground">{formatDate(material.createdAt)}</p>
                                  <div className="flex gap-2">
-                                    <Button asChild variant="outline" size="sm"><a href={material.fileURL} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" />View</a></Button>
+                                    <Button asChild variant="outline" size="sm">
+                                        <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
+                                            {material.fileType === 'link' ? <ArrowRight className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+                                            {material.fileType === 'link' ? 'Open Link' : 'View'}
+                                        </a>
+                                    </Button>
                                     <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="h-4 w-4" /></Button>
                                  </div>
                             </CardFooter>
@@ -1262,12 +1297,33 @@ export default function AdminDashboardPage() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Upload New Material</DialogTitle>
-                            <DialogDescription>Fill in the details and upload the file. It will be available to all students.</DialogDescription>
+                            <DialogDescription>Fill in the details and upload the file or provide a URL. It will be available to all students.</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleMaterialUpload} className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label>Upload Method</Label>
+                                <RadioGroup value={uploadMethod} onValueChange={(v) => setUploadMethod(v as any)} className="flex gap-4 pt-1">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="file" id="method-file" /><Label htmlFor="method-file">File Upload</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="method-url" /><Label htmlFor="method-url">From URL</Label></div>
+                                </RadioGroup>
+                            </div>
                             <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
                             <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
-                            <div className="grid gap-2"><Label htmlFor="material-file-dialog">File</Label><Input id="material-file-dialog" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
+                            
+                            <AnimatePresence mode="wait">
+                                {uploadMethod === 'file' ? (
+                                    <motion.div key="file-upload" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
+                                        <Label htmlFor="material-file-dialog">File</Label>
+                                        <Input id="material-file-dialog" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required={uploadMethod === 'file'} />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div key="url-upload" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
+                                        <Label htmlFor="material-url-dialog">URL</Label>
+                                        <Input id="material-url-dialog" type="url" value={materialUrl} onChange={(e) => setMaterialUrl(e.target.value)} placeholder="https://example.com/document.pdf" required={uploadMethod === 'url'} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
                             <div className="grid gap-2"><Label htmlFor="material-description-dialog">Description (Optional)</Label><Textarea id="material-description-dialog" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
