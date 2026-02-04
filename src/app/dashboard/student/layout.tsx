@@ -8,7 +8,7 @@ import { doc } from 'firebase/firestore';
 
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -60,18 +60,18 @@ export default function StudentDashboardLayout({
       <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
       <div className="flex flex-col gap-1">
         {navItems.map((item) => (
-          <Button
-            key={item.href}
-            asChild
-            variant={pathname === item.href ? 'secondary' : 'ghost'}
-            className="justify-start"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <Link href={item.href}>
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.label}
-            </Link>
-          </Button>
+          <SheetClose asChild key={item.href}>
+            <Button
+              asChild
+              variant={pathname === item.href ? 'secondary' : 'ghost'}
+              className="justify-start"
+            >
+              <Link href={item.href}>
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.label}
+              </Link>
+            </Button>
+          </SheetClose>
         ))}
       </div>
     </aside>
