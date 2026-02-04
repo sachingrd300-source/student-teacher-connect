@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -730,30 +729,45 @@ export default function AdminDashboardPage() {
     
     const handleViewChange = (newView: AdminView) => {
         setView(newView);
-        setSidebarOpen(false);
+        if (isSidebarOpen) {
+            setSidebarOpen(false);
+        }
     };
 
     // --- Render Functions ---
-    const renderSidebar = () => (
-         <aside className="flex flex-col gap-2 p-4">
-            <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
-            <div className="flex flex-col gap-1">
-                <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
-                <Button variant={view === 'users' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('users')}><Users className="mr-2 h-4 w-4" />Users</Button>
-                <Button variant={view === 'schools' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('schools')}><Building2 className="mr-2 h-4 w-4" />Schools</Button>
-                <Button variant={view === 'achievers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('achievers')}><Award className="mr-2 h-4 w-4" />Achievers</Button>
-                <Button variant={view === 'applications' ? 'secondary' : 'ghost'} className="justify-start relative" onClick={() => handleViewChange('applications')}>
-                    <Briefcase className="mr-2 h-4 w-4" />Applications
-                    {totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
-                </Button>
-                <Button variant={view === 'bookings' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('bookings')}><Home className="mr-2 h-4 w-4" />Bookings</Button>
-                <Button variant={view === 'materials' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('materials')}><FileText className="mr-2 h-4 w-4" />Materials</Button>
-                <Button variant={view === 'shop' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('shop')}><ShoppingBag className="mr-2 h-4 w-4" />Shop</Button>
-                <Button variant={view === 'notifications' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('notifications')}><Megaphone className="mr-2 h-4 w-4" />Notifications</Button>
-                <Button variant={view === 'activity' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('activity')}><History className="mr-2 h-4 w-4" />Activity</Button>
-            </div>
-        </aside>
-    );
+    const renderSidebar = (isSheet: boolean) => {
+        const Wrapper = isSheet ? SheetClose : Fragment;
+
+        return (
+            <aside className="flex flex-col gap-2 p-4">
+                <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
+                <div className="flex flex-col gap-1">
+                     {navItems.map(item => (
+                        <Wrapper key={item.view}>
+                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.label}
+                                {item.view === 'applications' && totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
+                             </Button>
+                        </Wrapper>
+                    ))}
+                </div>
+            </aside>
+        );
+    };
+
+    const navItems = [
+        { view: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
+        { view: 'users' as AdminView, label: 'Users', icon: Users },
+        { view: 'schools' as AdminView, label: 'Schools', icon: Building2 },
+        { view: 'achievers' as AdminView, label: 'Achievers', icon: Award },
+        { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
+        { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
+        { view: 'materials' as AdminView, label: 'Materials', icon: FileText },
+        { view: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag },
+        { view: 'notifications' as AdminView, label: 'Notifications', icon: Megaphone },
+        { view: 'activity' as AdminView, label: 'Activity', icon: History },
+    ];
     
     const renderDashboardView = () => (
         <motion.div 
@@ -913,7 +927,12 @@ export default function AdminDashboardPage() {
     const renderApplicationList = (
         applications: { pending: ApplicationBase[], approved: ApplicationBase[], rejected: ApplicationBase[] },
         type: ApplicationType
-    ) => (
+    ) => {
+        const approveButtonClass = type === 'homeTutor'
+            ? 'bg-success text-success-foreground hover:bg-success/90'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90';
+
+        return (
         <Tabs defaultValue="pending" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="pending">Pending ({applications.pending.length})</TabsTrigger>
@@ -930,7 +949,7 @@ export default function AdminDashboardPage() {
                                     <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
                                 </CardHeader>
                                 <CardFooter className="mt-auto flex gap-2">
-                                    <Button className="w-full bg-success text-success-foreground hover:bg-success/90" size="sm" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                    <Button className={`w-full ${approveButtonClass}`} size="sm" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                     <Button className="w-full" size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button>
                                 </CardFooter>
                             </Card>
@@ -979,6 +998,7 @@ export default function AdminDashboardPage() {
             </TabsContent>
         </Tabs>
     );
+    };
 
     const renderEnrollmentList = () => {
         const { pending, approved } = filteredEnrollments;
@@ -1004,7 +1024,7 @@ export default function AdminDashboardPage() {
                                         </p>
                                     </CardContent>
                                     <CardFooter className="mt-auto flex gap-2">
-                                        <Button className="w-full bg-success text-success-foreground hover:bg-success/90" size="sm" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
+                                        <Button className="w-full bg-info text-info-foreground hover:bg-info/90" size="sm" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                         <Button className="w-full" size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
                                     </CardFooter>
                                 </Card>
@@ -1513,7 +1533,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-1">
                 {isSidebarVisible && (
                     <div className="hidden md:flex md:w-64 flex-col border-r">
-                        {renderSidebar()}
+                        {renderSidebar(false)}
                     </div>
                 )}
                 <main className="flex-1 p-4 md:p-8">
@@ -1529,7 +1549,7 @@ export default function AdminDashboardPage() {
                                         <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
                                         <SheetDescription className="sr-only">A list of links to navigate the admin dashboard.</SheetDescription>
                                     </SheetHeader>
-                                    {renderSidebar()}
+                                    {renderSidebar(true)}
                                 </SheetContent>
                             </Sheet>
                         </div>

@@ -29,8 +29,11 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --success: 140 70% 35%;
+    --success: 140 65% 45%;
     --success-foreground: 140 20% 98%;
+
+    --info: 210 90% 50%;
+    --info-foreground: 210 40% 98%;
  
     --border: 215 20% 85%;
     --input: 215 20% 85%;
@@ -66,6 +69,9 @@
 
     --success: 140 65% 40%;
     --success-foreground: 140 20% 98%;
+
+    --info: 210 90% 55%;
+    --info-foreground: 210 40% 98%;
  
     --border: 215 28% 25%;
     --input: 215 28% 25%;
