@@ -14,6 +14,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet"
 
@@ -142,6 +143,7 @@ export default function StudyModePage() {
                     <SheetContent side="bottom" className="bg-gray-800 text-white border-t-gray-700">
                         <SheetHeader>
                             <SheetTitle className="text-white">Study Materials for {batch.name}</SheetTitle>
+                            <SheetDescription className="text-gray-400">Access and download materials uploaded by your teacher.</SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-4 py-4 max-h-[50vh] overflow-y-auto">
                             {materials && materials.length > 0 ? (
@@ -177,6 +179,7 @@ export default function StudyModePage() {
                     <SheetContent side="bottom" className="bg-gray-800 text-white border-t-gray-700">
                         <SheetHeader>
                             <SheetTitle className="text-white">Focus Sounds</SheetTitle>
+                             <SheetDescription className="text-gray-400">Select a sound to help you focus during your study session.</SheetDescription>
                         </SheetHeader>
                         <div className="py-4 text-center">
                             <p className="text-gray-400">(Feature coming soon)</p>
@@ -187,5 +190,3 @@ export default function StudyModePage() {
         </div>
     )
 }
-
-    

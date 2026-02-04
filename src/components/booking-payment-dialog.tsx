@@ -45,7 +45,10 @@ export function BookingPaymentDialog({ isOpen, onClose, booking }: BookingPaymen
                             </DialogDescription>
                         </>
                     ) : (
-                        <DialogTitle>Scan & Pay Booking Fee</DialogTitle>
+                        <>
+                            <DialogTitle>Scan & Pay Booking Fee</DialogTitle>
+                            <DialogDescription>Scan the QR to pay the fee. The admin will confirm your booking after payment.</DialogDescription>
+                        </>
                     )}
                 </DialogHeader>
 

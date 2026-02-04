@@ -40,7 +40,10 @@ export function PaymentDialog({ isOpen, onClose, studentName, batchName, feeDeta
                             </DialogDescription>
                         </>
                     ) : (
-                         <DialogTitle>Scan & Pay Fee</DialogTitle>
+                         <>
+                            <DialogTitle>Scan & Pay Fee</DialogTitle>
+                            <DialogDescription>Use any UPI app to scan the QR. Your teacher will be notified to confirm the payment.</DialogDescription>
+                         </>
                     )}
                 </DialogHeader>
 
