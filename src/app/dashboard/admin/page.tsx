@@ -756,29 +756,26 @@ export default function AdminDashboardPage() {
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
     ];
     
-    const renderSidebar = () => {
+    const renderSidebar = (isMobile: boolean) => {
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
                 <div className="flex flex-col gap-1">
                      {navItems.map(item => {
-                        const button = (
-                            <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
-                               <item.icon className="mr-2 h-4 w-4" />
-                               {item.label}
-                               {item.view === 'applications' && totalPendingApps > 0 && (
-                                   <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                       {totalPendingApps}
-                                   </span>
-                               )}
-                           </Button>
-                        );
-
-                        // If the sidebar is for the mobile sheet, wrap the button in SheetClose
-                        if (isSidebarOpen) {
-                            return <SheetClose asChild key={item.view}>{button}</SheetClose>;
-                        }
-
+                        const button = ( 
+                             <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.label}
+                                {item.view === 'applications' && totalPendingApps > 0 && (
+                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        {totalPendingApps}
+                                    </span>
+                                )}
+                            </Button>
+                        ); 
+                        if (isMobile) { 
+                            return <SheetClose asChild key={item.view}>{button}</SheetClose>; 
+                        } 
                         return button;
                     })}
                 </div>
@@ -965,7 +962,7 @@ export default function AdminDashboardPage() {
                                     <CardTitle className="text-lg">{app.teacherName}</CardTitle>
                                     <CardDescription>Applied: {formatDate(app.createdAt)}</CardDescription>
                                 </CardHeader>
-                                <CardFooter className="mt-auto flex flex-col gap-2">
+                                <CardFooter className="mt-auto flex flex-col sm:flex-row gap-2">
                                     <Button className={`w-full ${approveButtonClass}`} size="sm" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                     <Button className="w-full" size="sm" variant="destructive" onClick={() => handleApplication(app, 'rejected', type)}><X className="mr-2 h-4 w-4" />Reject</Button>
                                 </CardFooter>
@@ -1040,7 +1037,7 @@ export default function AdminDashboardPage() {
                                             Wants to join <span className="font-medium text-foreground">"{enrollment.batchName}"</span> by {enrollment.teacherName}
                                         </p>
                                     </CardContent>
-                                    <CardFooter className="mt-auto flex flex-col gap-2">
+                                    <CardFooter className="mt-auto flex flex-col sm:flex-row gap-2">
                                         <Button className="w-full bg-info text-info-foreground hover:bg-info/90" size="sm" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
                                         <Button className="w-full" size="sm" variant="destructive" onClick={() => handleEnrollmentAction(enrollment, 'rejected')}><X className="mr-2 h-4 w-4" />Decline</Button>
                                     </CardFooter>
@@ -1078,7 +1075,7 @@ export default function AdminDashboardPage() {
             <Card className="rounded-2xl shadow-lg">
                 <CardContent className="p-4">
                     <Tabs defaultValue="homeTutor" className="w-full">
-                        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 flex-col sm:flex-row h-auto sm:h-10">
                             <TabsTrigger value="homeTutor">Home Tutor ({filteredHomeTutorApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="communityAssociate">Community Associate ({filteredCommunityApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="studentEnrollments">Student Enrollments ({filteredEnrollments.pending.length})</TabsTrigger>
@@ -1557,7 +1554,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-1">
                 {isSidebarVisible && (
                     <div className="hidden md:flex md:w-64 flex-col border-r">
-                        {renderSidebar()}
+                        {renderSidebar(false)}
                     </div>
                 )}
                 <main className="flex-1 p-4 md:p-8">
@@ -1573,7 +1570,7 @@ export default function AdminDashboardPage() {
                                         <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
                                         <SheetDescription className="sr-only">A list of links to navigate the admin dashboard.</SheetDescription>
                                     </SheetHeader>
-                                    {renderSidebar()}
+                                    {renderSidebar(true)}
                                 </SheetContent>
                             </Sheet>
                         </div>

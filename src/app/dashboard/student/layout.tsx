@@ -57,7 +57,7 @@ export default function StudentDashboardLayout({
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },
   ];
 
-  const renderSidebarContent = () => (
+  const renderSidebarContent = (isMobile: boolean) => (
     <aside className="flex flex-col gap-2 p-4">
       <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
       <div className="flex flex-col gap-1">
@@ -67,7 +67,7 @@ export default function StudentDashboardLayout({
                   asChild
                   key={item.href}
                   variant={pathname === item.href ? 'secondary' : 'ghost'}
-                  className="justify-start"
+                  className="justify-start w-full"
                 >
                   <Link href={item.href}>
                     <item.icon className="mr-2 h-4 w-4" />
@@ -76,7 +76,7 @@ export default function StudentDashboardLayout({
                 </Button>
             );
 
-            if (isSidebarOpen) {
+            if (isMobile) {
                 return <SheetClose asChild key={item.href}>{button}</SheetClose>;
             }
 
@@ -102,7 +102,7 @@ export default function StudentDashboardLayout({
       <div className="flex flex-1">
         {isSidebarVisible && (
             <div className="hidden md:flex md:w-64 flex-col border-r bg-muted/20">
-            {renderSidebarContent()}
+            {renderSidebarContent(false)}
             </div>
         )}
         <main className="flex-1 p-4 md:p-8 bg-background">
@@ -119,7 +119,7 @@ export default function StudentDashboardLayout({
                     <SheetTitle className="sr-only">Student Navigation Menu</SheetTitle>
                     <SheetDescription className="sr-only">A list of links to navigate the student dashboard.</SheetDescription>
                   </SheetHeader>
-                  {renderSidebarContent()}
+                  {renderSidebarContent(true)}
                 </SheetContent>
               </Sheet>
             </div>

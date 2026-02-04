@@ -394,36 +394,40 @@ export default function SchoolDetailsPage() {
     
     // --- Render Functions ---
     
-    const renderSidebar = () => (
-        <aside className="flex flex-col gap-2 p-4">
-            <div className="px-4 mb-4">
+    const renderSidebar = (isMobile: boolean) => {
+        const navItems = [
+            { view: 'dashboard' as SchoolView, label: 'Dashboard', icon: LayoutDashboard },
+            { view: 'teachers' as SchoolView, label: 'Teachers', icon: Users },
+            { view: 'classes' as SchoolView, label: 'Classes', icon: Book },
+            { view: 'students' as SchoolView, label: 'Students', icon: GraduationCap },
+            { view: 'fees' as SchoolView, label: 'Fees', icon: Wallet },
+        ];
+
+        return (
+        <aside className="flex flex-col h-full">
+            <div className="p-4">
                 <h2 className="text-lg font-semibold tracking-tight font-serif">{school.name}</h2>
                 <p className="text-sm text-muted-foreground">{school.academicYear}</p>
             </div>
-            <div className="flex flex-col gap-1">
-                 {isSidebarOpen ? (
-                    <>
-                        <SheetClose asChild><Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button></SheetClose>
-                        <SheetClose asChild><Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button></SheetClose>
-                        <SheetClose asChild><Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button></SheetClose>
-                        <SheetClose asChild><Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button></SheetClose>
-                        <SheetClose asChild><Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button></SheetClose>
-                    </>
-                ) : (
-                    <>
-                        <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
-                        <Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button>
-                        <Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button>
-                        <Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button>
-                        <Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button>
-                    </>
-                )}
+            <div className="flex flex-col gap-1 px-4">
+                {navItems.map(item => {
+                    const button = (
+                        <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
+                            <item.icon className="mr-2 h-4 w-4" />{item.label}
+                        </Button>
+                    );
+                    if (isMobile) {
+                        return <SheetClose asChild key={item.view}>{button}</SheetClose>;
+                    }
+                    return button;
+                })}
             </div>
              <div className="mt-auto p-4 text-center">
                 <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
             </div>
         </aside>
-    );
+        );
+    };
     
     const renderDashboardView = () => (
          <div className="grid gap-8">
@@ -664,7 +668,7 @@ export default function SchoolDetailsPage() {
              <div className="flex flex-1">
                 {isSidebarVisible && (
                     <div className="hidden md:flex md:w-64 flex-col border-r">
-                        {renderSidebar()}
+                        {renderSidebar(false)}
                     </div>
                 )}
                  <main className="flex-1 p-4 md:p-8">
@@ -681,7 +685,7 @@ export default function SchoolDetailsPage() {
                                         <SheetTitle className="sr-only">School Management Menu</SheetTitle>
                                         <SheetDescription className="sr-only">A list of links to navigate the school management dashboard.</SheetDescription>
                                     </SheetHeader>
-                                    {renderSidebar()}
+                                    {renderSidebar(true)}
                                 </SheetContent>
                             </Sheet>
                         </div>
