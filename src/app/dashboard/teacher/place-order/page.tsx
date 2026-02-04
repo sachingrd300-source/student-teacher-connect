@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Send, ShoppingCart, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface UserProfile {
     name: string;
@@ -120,74 +121,84 @@ export default function PlaceOrderPage() {
             <DashboardHeader userProfile={userProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-4xl mx-auto grid gap-8">
-                    <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/coaching')} className="mb-4 justify-self-start">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Dashboard
-                    </Button>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <Card className="rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>Place an Order</CardTitle>
-                                <CardDescription>Request materials like test papers, question banks, or modules from the admin.</CardDescription>
-                            </CardHeader>
-                            <form onSubmit={handleSubmitOrder}>
-                                <CardContent>
-                                    <Textarea 
-                                        value={orderItems} 
-                                        onChange={(e) => setOrderItems(e.target.value)}
-                                        placeholder="Please list the items you need. e.g., 'Class 10 Math Test Papers (Set of 5)', 'Physics Module for JEE'" 
-                                        rows={5}
-                                        required
-                                    />
-                                </CardContent>
-                                <CardFooter className="flex-col items-start gap-4">
-                                    <Button type="submit" disabled={isSubmitting || !orderItems.trim()}>
-                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                        Place Order
-                                    </Button>
-                                    {submitMessage && <p className="text-sm font-medium">{submitMessage}</p>}
-                                </CardFooter>
-                            </form>
-                        </Card>
-                    </motion.div>
+                     <div>
+                        <Button variant="ghost" onClick={() => router.push('/dashboard/teacher/coaching')} className="mb-4">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Dashboard
+                        </Button>
+                        <h1 className="text-3xl font-bold font-serif">Place an Order</h1>
+                        <p className="text-muted-foreground mt-1">Request materials or view your past order history.</p>
+                    </div>
 
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                        <Card className="rounded-2xl shadow-lg">
-                            <CardHeader>
-                                <CardTitle>My Order History</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {pastOrders && pastOrders.length > 0 ? (
-                                    <div className="grid gap-4">
-                                        {pastOrders.map(order => {
-                                            const statusInfo = getStatusInfo(order.status);
-                                            return (
-                                                <div key={order.id} className="p-4 rounded-lg border transition-colors hover:bg-accent">
-                                                    <div className="flex justify-between items-start">
-                                                        <p className="font-semibold flex-1 pr-4">{order.items}</p>
-                                                        <div className={`flex items-center gap-2 text-sm font-semibold ${statusInfo.color}`}>
-                                                            {statusInfo.icon}
-                                                            <span className="capitalize">{statusInfo.text}</span>
+                    <Tabs defaultValue="place_order" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="place_order">Place New Order</TabsTrigger>
+                            <TabsTrigger value="order_history">Order History ({pastOrders?.length || 0})</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="place_order" className="mt-6">
+                            <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>New Order Request</CardTitle>
+                                    <CardDescription>Please list the items you need, being as specific as possible.</CardDescription>
+                                </CardHeader>
+                                <form onSubmit={handleSubmitOrder}>
+                                    <CardContent>
+                                        <Textarea 
+                                            value={orderItems} 
+                                            onChange={(e) => setOrderItems(e.target.value)}
+                                            placeholder="e.g., 'Class 10 Math Test Papers (Set of 5)', 'Physics Module for JEE'" 
+                                            rows={5}
+                                            required
+                                        />
+                                    </CardContent>
+                                    <CardFooter className="flex-col items-start gap-4">
+                                        <Button type="submit" disabled={isSubmitting || !orderItems.trim()}>
+                                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                            Place Order
+                                        </Button>
+                                        {submitMessage && <p className="text-sm font-medium">{submitMessage}</p>}
+                                    </CardFooter>
+                                </form>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="order_history" className="mt-6">
+                             <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>My Order History</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {pastOrders && pastOrders.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {pastOrders.map(order => {
+                                                const statusInfo = getStatusInfo(order.status);
+                                                return (
+                                                    <div key={order.id} className="p-4 rounded-lg border transition-colors hover:bg-accent">
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="font-semibold flex-1 pr-4">{order.items}</p>
+                                                            <div className={`flex items-center gap-2 text-sm font-semibold ${statusInfo.color}`}>
+                                                                {statusInfo.icon}
+                                                                <span className="capitalize">{statusInfo.text}</span>
+                                                            </div>
                                                         </div>
+                                                        <p className="text-xs text-muted-foreground mt-2">Ordered on: {formatDate(order.createdAt)}</p>
+                                                        {order.notes && (
+                                                            <p className="text-sm text-muted-foreground mt-2 border-t pt-2">
+                                                                <strong>Admin Note:</strong> {order.notes}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground mt-2">Ordered on: {formatDate(order.createdAt)}</p>
-                                                    {order.notes && (
-                                                        <p className="text-sm text-muted-foreground mt-2 border-t pt-2">
-                                                            <strong>Admin Note:</strong> {order.notes}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <p className="text-muted-foreground">You have not placed any orders yet.</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <p className="text-muted-foreground">You have not placed any orders yet.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </main>
         </div>
