@@ -735,21 +735,26 @@ export default function AdminDashboardPage() {
     };
 
     // --- Render Functions ---
-    const renderSidebar = (isSheet: boolean) => {
-        const Wrapper = isSheet ? SheetClose : Fragment;
-
+    const renderSidebar = () => {
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
                 <div className="flex flex-col gap-1">
                      {navItems.map(item => (
-                        <Wrapper key={item.view}>
-                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
-                                <item.icon className="mr-2 h-4 w-4" />
-                                {item.label}
-                                {item.view === 'applications' && totalPendingApps > 0 && <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">{totalPendingApps}</span>}
-                             </Button>
-                        </Wrapper>
+                        <Button
+                            key={item.view}
+                            variant={view === item.view ? 'secondary' : 'ghost'}
+                            className="justify-start"
+                            onClick={() => handleViewChange(item.view)}
+                        >
+                            <item.icon className="mr-2 h-4 w-4" />
+                            {item.label}
+                            {item.view === 'applications' && totalPendingApps > 0 && (
+                                <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                    {totalPendingApps}
+                                </span>
+                            )}
+                        </Button>
                     ))}
                 </div>
             </aside>
@@ -1533,7 +1538,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-1">
                 {isSidebarVisible && (
                     <div className="hidden md:flex md:w-64 flex-col border-r">
-                        {renderSidebar(false)}
+                        {renderSidebar()}
                     </div>
                 )}
                 <main className="flex-1 p-4 md:p-8">
@@ -1549,7 +1554,7 @@ export default function AdminDashboardPage() {
                                         <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
                                         <SheetDescription className="sr-only">A list of links to navigate the admin dashboard.</SheetDescription>
                                     </SheetHeader>
-                                    {renderSidebar(true)}
+                                    {renderSidebar()}
                                 </SheetContent>
                             </Sheet>
                         </div>
