@@ -35,7 +35,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, History, Building2, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, ShoppingCart
+    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, ShoppingCart, Download
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -132,6 +132,7 @@ export default function AdminDashboardPage() {
 
     // Booking Payment Dialog State
     const [bookingForPayment, setBookingForPayment] = useState<HomeBooking | null>(null);
+    const [isUploadMaterialDialogOpen, setIsUploadMaterialDialogOpen] = useState(false);
 
 
     useEffect(() => {
@@ -516,19 +517,23 @@ export default function AdminDashboardPage() {
 
             const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
             logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
+            
+            // On success, reset form and close dialog
+            setIsUploadMaterialDialogOpen(false);
+            setMaterialTitle('');
+            setMaterialDescription('');
+            setMaterialFile(null);
+            setMaterialCategory('');
+            // Use a unique ID for the dialog file input to avoid conflicts
+            if (document.getElementById('material-file-dialog')) {
+                (document.getElementById('material-file-dialog') as HTMLInputElement).value = '';
+            }
 
         } catch (error) {
             console.error("Error uploading free material:", error);
             alert("Upload failed. Check console for details. This could be a permissions issue with storage rules.");
         } finally {
             setIsUploadingMaterial(false);
-            setMaterialTitle('');
-            setMaterialDescription('');
-            setMaterialFile(null);
-            setMaterialCategory('');
-            if (document.getElementById('material-file')) {
-                (document.getElementById('material-file') as HTMLInputElement).value = '';
-            }
         }
     };
     
@@ -1188,17 +1193,34 @@ export default function AdminDashboardPage() {
     };
     
     const renderMaterialsView = () => {
-         const renderMaterialList = (materialList: FreeMaterial[]) => {
+        const renderMaterialList = (materialList: FreeMaterial[]) => {
             if (!materialList || materialList.length === 0) {
-                return <div className="text-center py-12">No materials in this category.</div>;
+                return <div className="text-center py-16">No materials in this category.</div>;
             }
             return (
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {materialList.map(material => (
-                        <div key={material.id} className="flex items-center justify-between gap-3 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-primary flex-shrink-0" /><div><p className="font-semibold">{material.title}</p><p className="text-sm text-muted-foreground">{material.description}</p></div></div>
-                            <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
-                        </div>
+                        <Card key={material.id} className="flex flex-col overflow-hidden rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                            <CardHeader className="flex-row items-start gap-4 space-y-0 p-4">
+                                <div className="p-3 bg-primary/10 rounded-lg">
+                                   <FileText className="h-6 w-6 text-primary" />
+                                </div>
+                                <div className="flex-1">
+                                    <CardTitle className="text-base">{material.title}</CardTitle>
+                                    <CardDescription className="text-xs capitalize">{material.category}</CardDescription>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-grow p-4 pt-0">
+                                <p className="text-sm text-muted-foreground line-clamp-2">{material.description || 'No description available.'}</p>
+                            </CardContent>
+                            <CardFooter className="flex justify-between items-center bg-muted/20 p-4">
+                                 <p className="text-xs text-muted-foreground">{formatDate(material.createdAt)}</p>
+                                 <div className="flex gap-2">
+                                    <Button asChild variant="outline" size="sm"><a href={material.fileURL} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" />View</a></Button>
+                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="h-4 w-4" /></Button>
+                                 </div>
+                            </CardFooter>
+                        </Card>
                     ))}
                 </div>
             );
@@ -1206,34 +1228,54 @@ export default function AdminDashboardPage() {
         
         return (
             <div className="grid gap-8">
-                <h1 className="text-3xl font-bold font-serif">Free Materials</h1>
-                <div className="grid lg:grid-cols-3 gap-8">
-                    <Card className="lg:col-span-1 rounded-2xl shadow-lg">
-                        <CardHeader><CardTitle>Upload New Material</CardTitle></CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleMaterialUpload} className="grid gap-4">
-                                <div className="grid gap-2"><Label htmlFor="material-title">Material Title</Label><Input id="material-title" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                                <div className="grid gap-2"><Label htmlFor="material-category">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
-                                <div className="grid gap-2"><Label htmlFor="material-file">File</Label><Input id="material-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
-                                <div className="grid gap-2"><Label htmlFor="material-description">Description (Optional)</Label><Textarea id="material-description" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
-                                <Button type="submit" disabled={isUploadingMaterial}>{isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material</Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                     <Card className="lg:col-span-2 rounded-2xl shadow-lg">
-                        <CardHeader><CardTitle>Uploaded Materials</CardTitle></CardHeader>
-                        <CardContent>
-                            <Tabs defaultValue="all" className="w-full">
-                                <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5"><TabsTrigger value="all">All</TabsTrigger><TabsTrigger value="notes">Notes</TabsTrigger><TabsTrigger value="books">Books</TabsTrigger><TabsTrigger value="pyqs">PYQs</TabsTrigger><TabsTrigger value="dpps">DPPs</TabsTrigger></TabsList>
-                                <TabsContent value="all" className="mt-4">{renderMaterialList(materials || [])}</TabsContent>
-                                <TabsContent value="notes" className="mt-4">{renderMaterialList(filteredMaterials.notes)}</TabsContent>
-                                <TabsContent value="books" className="mt-4">{renderMaterialList(filteredMaterials.books)}</TabsContent>
-                                <TabsContent value="pyqs" className="mt-4">{renderMaterialList(filteredMaterials.pyqs)}</TabsContent>
-                                <TabsContent value="dpps" className="mt-4">{renderMaterialList(filteredMaterials.dpps)}</TabsContent>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold font-serif">Free Materials</h1>
+                        <p className="text-muted-foreground mt-1">Manage and distribute free study resources for all students.</p>
+                    </div>
+                    <Button onClick={() => setIsUploadMaterialDialogOpen(true)}><Upload className="mr-2 h-4 w-4" /> Upload New Material</Button>
                 </div>
+                
+                <Card className="rounded-2xl shadow-lg">
+                    <CardHeader>
+                        <CardTitle>Uploaded Materials</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Tabs defaultValue="all" className="w-full">
+                            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                                <TabsTrigger value="all">All ({materials?.length || 0})</TabsTrigger>
+                                <TabsTrigger value="notes">Notes ({filteredMaterials.notes.length})</TabsTrigger>
+                                <TabsTrigger value="books">Books ({filteredMaterials.books.length})</TabsTrigger>
+                                <TabsTrigger value="pyqs">PYQs ({filteredMaterials.pyqs.length})</TabsTrigger>
+                                <TabsTrigger value="dpps">DPPs ({filteredMaterials.dpps.length})</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="all" className="mt-6">{renderMaterialList(materials || [])}</TabsContent>
+                            <TabsContent value="notes" className="mt-6">{renderMaterialList(filteredMaterials.notes)}</TabsContent>
+                            <TabsContent value="books" className="mt-6">{renderMaterialList(filteredMaterials.books)}</TabsContent>
+                            <TabsContent value="pyqs" className="mt-6">{renderMaterialList(filteredMaterials.pyqs)}</TabsContent>
+                            <TabsContent value="dpps" className="mt-6">{renderMaterialList(filteredMaterials.dpps)}</TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+    
+                <Dialog open={isUploadMaterialDialogOpen} onOpenChange={setIsUploadMaterialDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Upload New Material</DialogTitle>
+                            <DialogDescription>Fill in the details and upload the file. It will be available to all students.</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleMaterialUpload} className="grid gap-4 py-4">
+                            <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
+                            <div className="grid gap-2"><Label htmlFor="material-file-dialog">File</Label><Input id="material-file-dialog" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setMaterialFile(e.target.files ? e.target.files[0] : null)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="material-description-dialog">Description (Optional)</Label><Textarea id="material-description-dialog" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
+                            <DialogFooter>
+                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                <Button type="submit" disabled={isUploadingMaterial}>{isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
         )
     };
