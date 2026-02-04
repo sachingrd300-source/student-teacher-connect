@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -47,7 +48,7 @@ interface HomeBooking { id: string; studentId: string; studentName: string; fath
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
-interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; createdAt: string; }
+interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge' | 'digital'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
@@ -119,8 +120,14 @@ export default function AdminDashboardPage() {
     const [userSearchQuery, setUserSearchQuery] = useState('');
     
     // Badge/Shop Item state
-    const [itemType, setItemType] = useState<'item' | 'badge'>('item');
+    const [itemType, setItemType] = useState<'item' | 'badge' | 'digital'>('item');
     const [badgeIcon, setBadgeIcon] = useState<BadgeIconType>('award');
+
+    // Digital item state
+    const [digitalFile, setDigitalFile] = useState<File | null>(null);
+    const [digitalUrl, setDigitalUrl] = useState('');
+    const [digitalUploadMethod, setDigitalUploadMethod] = useState<'file' | 'url'>('file');
+
 
     // Achievers Edit State
     const [editingAchiever, setEditingAchiever] = useState<UserProfile | null>(null);
@@ -138,7 +145,7 @@ export default function AdminDashboardPage() {
 
 
     useEffect(() => {
-        if (itemType === 'badge') {
+        if (itemType === 'badge' || itemType === 'digital') {
             setItemPriceType('coins');
         }
     }, [itemType]);
@@ -596,27 +603,54 @@ export default function AdminDashboardPage() {
     const handleShopItemUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!itemName.trim() || !itemPrice || !storage || !firestore) return;
-        if (itemType === 'item' && !itemImage) {
-            alert('Image is required for a regular item.');
-            return;
-        }
-        if (itemType === 'item' && itemPriceType === 'money' && !itemPurchaseUrl.trim()) {
-            alert('Purchase URL is required for money items.');
-            return;
-        }
     
         setIsUploadingItem(true);
         
         try {
             let imageUrl: string | undefined;
             let imageName: string | undefined;
-
-            if (itemType === 'item' && itemImage) {
+            let digitalFileUrl: string | undefined;
+            let digitalFileName: string | undefined;
+            let digitalFileType: 'pdf' | 'url' | undefined;
+    
+            if (itemType === 'item') {
+                if (!itemImage) {
+                    alert('Image is required for a regular item.');
+                    setIsUploadingItem(false);
+                    return;
+                }
+                if (itemPriceType === 'money' && !itemPurchaseUrl.trim()) {
+                    alert('Purchase URL is required for money items.');
+                    setIsUploadingItem(false);
+                    return;
+                }
                 const generatedImageName = `${Date.now()}_${itemImage.name}`;
                 const imageRef = ref(storage, `shopItems/${generatedImageName}`);
                 const uploadTask = await uploadBytes(imageRef, itemImage);
                 imageUrl = await getDownloadURL(uploadTask.ref);
                 imageName = generatedImageName;
+            } else if (itemType === 'digital') {
+                if (digitalUploadMethod === 'file') {
+                    if (!digitalFile) {
+                        alert('Please select a file to upload for the digital item.');
+                        setIsUploadingItem(false);
+                        return;
+                    }
+                    digitalFileName = `${Date.now()}_${digitalFile.name}`;
+                    const fileRef = ref(storage, `shopDigitalItems/${digitalFileName}`);
+                    const uploadTask = await uploadBytes(fileRef, digitalFile);
+                    digitalFileUrl = await getDownloadURL(uploadTask.ref);
+                    digitalFileType = 'pdf';
+                } else { // 'url'
+                    if (!digitalUrl.trim()) {
+                        alert('Please enter a valid URL for the digital item.');
+                        setIsUploadingItem(false);
+                        return;
+                    }
+                    digitalFileUrl = digitalUrl.trim();
+                    digitalFileName = digitalUrl.trim();
+                    digitalFileType = 'url';
+                }
             }
             
             const itemData: Omit<ShopItem, 'id' | 'createdAt'> & { createdAt: string } = {
@@ -630,20 +664,23 @@ export default function AdminDashboardPage() {
                 ...(imageName && { imageName }),
                 ...(itemType === 'badge' && { badgeIcon }),
                 ...(itemPriceType === 'money' && itemPurchaseUrl.trim() && { purchaseUrl: itemPurchaseUrl.trim() }),
+                ...(itemType === 'digital' && { digitalFileUrl, digitalFileName, digitalFileType }),
             };
-
+    
             const docRef = await addDoc(collection(firestore, 'shopItems'), itemData);
             logAdminAction(`Uploaded shop item: "${itemData.name}"`, docRef.id);
-
+    
         } catch (error) {
             console.error("Error creating shop item:", error);
             alert("Failed to create shop item. This might be a permission issue. Check console for details.");
         } finally {
             setIsUploadingItem(false);
-            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); setItemImage(null); setItemPriceType('money'); setItemType('item'); setBadgeIcon('award');
-            if (document.getElementById('item-image')) {
-                (document.getElementById('item-image') as HTMLInputElement).value = '';
-            }
+            // Reset all form fields
+            setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); 
+            setItemImage(null); setItemType('item'); setBadgeIcon('award');
+            setDigitalFile(null); setDigitalUrl(''); setDigitalUploadMethod('file');
+            if (document.getElementById('item-image')) (document.getElementById('item-image') as HTMLInputElement).value = '';
+            if (document.getElementById('digital-file')) (document.getElementById('digital-file') as HTMLInputElement).value = '';
         }
     };
     
@@ -658,6 +695,11 @@ export default function AdminDashboardPage() {
                 const imageRef = ref(storage, `shopItems/${item.imageName}`);
                 deleteObject(imageRef).catch(error => {
                     console.warn("Could not delete shop item image from storage:", error);
+                });
+            } else if (item.itemType === 'digital' && item.digitalFileName && item.digitalFileType === 'pdf') {
+                const fileRef = ref(storage, `shopDigitalItems/${item.digitalFileName}`);
+                deleteObject(fileRef).catch(error => {
+                    console.warn("Could not delete digital item from storage:", error);
                 });
             }
         }).catch(error => {
@@ -1354,8 +1396,9 @@ export default function AdminDashboardPage() {
                             <div className="grid gap-2">
                                 <Label>Item Type</Label>
                                 <RadioGroup value={itemType} onValueChange={(v) => setItemType(v as any)} className="flex gap-4 pt-1">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="item" id="type-item" /><Label htmlFor="type-item">Regular Item</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="item" id="type-item" /><Label htmlFor="type-item">Item</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="badge" id="type-badge" /><Label htmlFor="type-badge">Badge</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="digital" id="type-digital" /><Label htmlFor="type-digital">Digital</Label></div>
                                 </RadioGroup>
                             </div>
 
@@ -1364,19 +1407,8 @@ export default function AdminDashboardPage() {
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
                                         <Label htmlFor="badge-icon">Badge Icon</Label>
                                         <Select value={badgeIcon} onValueChange={(v) => setBadgeIcon(v as any)}>
-                                            <SelectTrigger id="badge-icon">
-                                                <SelectValue placeholder="Select an icon" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {Object.keys(badgeIcons).map(iconKey => (
-                                                    <SelectItem key={iconKey} value={iconKey}>
-                                                        <div className="flex items-center gap-2">
-                                                            {badgeIcons[iconKey as BadgeIconType]}
-                                                            <span className="capitalize">{iconKey}</span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
+                                            <SelectTrigger id="badge-icon"><SelectValue placeholder="Select an icon" /></SelectTrigger>
+                                            <SelectContent>{Object.keys(badgeIcons).map(iconKey => (<SelectItem key={iconKey} value={iconKey}><div className="flex items-center gap-2">{badgeIcons[iconKey as BadgeIconType]}<span className="capitalize">{iconKey}</span></div></SelectItem>))}</SelectContent>
                                         </Select>
                                     </motion.div>
                                 )}
@@ -1384,7 +1416,7 @@ export default function AdminDashboardPage() {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="item-price-type">Price Type</Label>
-                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4" disabled={itemType === 'badge'}>
+                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4" disabled={itemType === 'badge' || itemType === 'digital'}>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="money" id="money" /><Label htmlFor="money">Money</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="coins" id="coins" /><Label htmlFor="coins">Coins</Label></div>
                                 </RadioGroup>
@@ -1395,20 +1427,28 @@ export default function AdminDashboardPage() {
                             <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
                             
                             <AnimatePresence>
-                            {itemType === 'item' && (
-                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-4 overflow-hidden">
-                                    {itemPriceType === 'money' && (
+                                {itemType === 'item' && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-4 overflow-hidden">
+                                        {itemPriceType === 'money' && (<div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} /></div>)}
+                                        <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required={itemType === 'item'} /></div>
+                                    </motion.div>
+                                )}
+                                {itemType === 'digital' && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-4 overflow-hidden">
                                         <div className="grid gap-2">
-                                            <Label htmlFor="item-purchase-url">Purchase URL</Label>
-                                            <Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} />
+                                            <Label>Content Type</Label>
+                                            <RadioGroup value={digitalUploadMethod} onValueChange={(v) => setDigitalUploadMethod(v as any)} className="flex gap-4 pt-1">
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="file" id="digital-method-file" /><Label htmlFor="digital-method-file">File Upload</Label></div>
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="digital-method-url" /><Label htmlFor="digital-method-url">From URL</Label></div>
+                                            </RadioGroup>
                                         </div>
-                                    )}
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="item-image">Item Image</Label>
-                                        <Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required={itemType === 'item'} />
-                                    </div>
-                                </motion.div>
-                            )}
+                                        {digitalUploadMethod === 'file' ? (
+                                            <div className="grid gap-2"><Label htmlFor="digital-file">File</Label><Input id="digital-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setDigitalFile(e.target.files ? e.target.files[0] : null)} required={itemType === 'digital' && digitalUploadMethod === 'file'} /></div>
+                                        ) : (
+                                            <div className="grid gap-2"><Label htmlFor="digital-url">URL</Label><Input id="digital-url" type="url" value={digitalUrl} onChange={(e) => setDigitalUrl(e.target.value)} placeholder="https://example.com/resource" required={itemType === 'digital' && digitalUploadMethod === 'url'} /></div>
+                                        )}
+                                    </motion.div>
+                                )}
                             </AnimatePresence>
 
                             <Button type="submit" disabled={isUploadingItem}>{isUploadingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Add Item</Button>
@@ -1423,7 +1463,11 @@ export default function AdminDashboardPage() {
                                 {shopItems.map(item => (
                                     <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <div className="flex items-start gap-4">
-                                            {item.itemType === 'badge' ? (
+                                            {item.itemType === 'digital' ? (
+                                                <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
+                                                    <FileText className="h-10 w-10" />
+                                                </div>
+                                            ) : item.itemType === 'badge' ? (
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
                                                     {React.cloneElement(badgeIcons[item.badgeIcon as BadgeIconType] as React.ReactElement, { className: "h-10 w-10" })}
                                                 </div>
@@ -1761,3 +1805,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    
