@@ -9,7 +9,7 @@ import { doc } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck, MessageSquare } from 'lucide-react';
+import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -48,7 +48,6 @@ export default function StudentDashboardLayout({
 
   const navItems = [
     { href: '/dashboard/student', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/communications', label: 'Communications', icon: MessageSquare },
     { href: '/dashboard/student/find-teachers', label: 'Find Teachers', icon: Search },
     { href: '/dashboard/student/book-coaching-seat', label: 'Book Coaching Seat', icon: BookCheck },
     { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
@@ -136,3 +135,5 @@ export default function StudentDashboardLayout({
     </div>
   );
 }
+
+    

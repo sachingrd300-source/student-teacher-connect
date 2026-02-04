@@ -9,7 +9,7 @@ import { doc } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, LayoutDashboard, Home, Award, ShoppingCart, School, MessageSquare } from 'lucide-react';
+import { Menu, LayoutDashboard, Home, Award, ShoppingCart, School } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface UserProfile {
@@ -45,7 +45,6 @@ export default function CoachingDashboardLayout({
 
   const navItems = [
     { href: '/dashboard/teacher/coaching', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/communications', label: 'Communications', icon: MessageSquare },
     { href: '/dashboard/teacher/apply-home-tutor', label: 'Home Tutor Program', icon: Home },
     { href: '/dashboard/teacher/apply-verified-coaching', label: 'Achievers Community', icon: Award },
   ];
@@ -130,3 +129,5 @@ export default function CoachingDashboardLayout({
     </div>
   );
 }
+
+    

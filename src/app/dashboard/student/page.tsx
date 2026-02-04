@@ -425,13 +425,6 @@ export default function StudentDashboardPage() {
                                                 )
                                             )
                                         )}
-                                        {(booking.status === 'Confirmed' || booking.status === 'Awaiting Payment') && (
-                                             <div className="mt-3 pt-3 border-t">
-                                                <Button asChild size="sm" className="w-full">
-                                                    <Link href={`/dashboard/communications`}>Go to Chat</Link>
-                                                </Button>
-                                             </div>
-                                        )}
                                     </div>
                                 ))
                             ) : (
@@ -454,3 +447,5 @@ export default function StudentDashboardPage() {
         </motion.div>
     );
 }
+
+    

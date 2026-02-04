@@ -143,21 +143,9 @@
           "order": "DESCENDING"
         }
       ]
-    },
-    {
-      "collectionGroup": "chatRooms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "participants",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "lastMessageAt",
-          "order": "DESCENDING"
-        }
-      ]
     }
   ],
   "fieldOverrides": []
 }
+
+    
