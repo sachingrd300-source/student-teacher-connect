@@ -1150,50 +1150,53 @@ export default function AdminDashboardPage() {
                                 </div>
                             </div>
                             
-                            {booking.status === 'Confirmed' && type === 'homeTutor' && (
+                            {booking.status === 'Pending' && (
                                 <div className="mt-4 pt-4 border-t">
-                                {booking.assignedTeacherId ? (
-                                    <div className="grid gap-1 text-sm">
-                                        <p className="text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
-                                        <p className="text-muted-foreground">Mobile: <span className="font-semibold text-foreground">{booking.assignedTeacherMobile || 'N/A'}</span></p>
-                                        <p className="text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedTeacherAddress || 'N/A'}</span></p>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
-                                            <SelectTrigger className="w-full sm:w-[250px]">
-                                                <SelectValue placeholder="Assign a Teacher" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
-                                                    <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
-                                                )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
+                                    {type === 'homeTutor' ? (
+                                        <div className="flex items-center gap-2">
+                                            <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
+                                                <SelectTrigger className="w-full sm:w-[250px]">
+                                                    <SelectValue placeholder="Assign a Home Tutor" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
+                                                        <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
+                                                    )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    ) : ( // coachingCenter
+                                        <div className="flex items-center gap-2">
+                                            <Select onValueChange={(teacherId) => handleAssignCoachingTeacher(booking, teacherId)}>
+                                                <SelectTrigger className="w-full sm:w-[250px]">
+                                                    <SelectValue placeholder="Assign a Coaching Center" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {achieverTeachers && achieverTeachers.length > 0 ? achieverTeachers.map(tutor => (
+                                                        <SelectItem key={tutor.id} value={tutor.id}>{tutor.coachingCenterName || tutor.name}</SelectItem>
+                                                    )) : <p className="p-2 text-sm text-muted-foreground">No community teachers available</p>}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
                                 </div>
                             )}
-
-                            {booking.status === 'Confirmed' && type === 'coachingCenter' && (
-                                <div className="mt-4 pt-4 border-t flex items-center gap-2">
-                                    <Select onValueChange={(teacherId) => handleAssignCoachingTeacher(booking, teacherId)}>
-                                        <SelectTrigger className="w-full sm:w-[250px]">
-                                            <SelectValue placeholder="Assign a Coaching Center" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {achieverTeachers && achieverTeachers.length > 0 ? achieverTeachers.map(tutor => (
-                                                <SelectItem key={tutor.id} value={tutor.id}>{tutor.coachingCenterName || tutor.name}</SelectItem>
-                                            )) : <p className="p-2 text-sm text-muted-foreground">No community teachers available</p>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
-                            {(booking.status === 'Completed') && type === 'coachingCenter' && (
+                            
+                            {(booking.status === 'Confirmed' || booking.status === 'Completed') && booking.assignedTeacherId && (
                                 <div className="mt-4 pt-4 border-t">
-                                    <p className="text-sm text-muted-foreground">Assigned Center: <span className="font-semibold text-foreground">{booking.assignedCoachingCenterName}</span></p>
-                                    <p className="text-sm text-muted-foreground">via: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
-                                    <p className="text-sm text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedCoachingAddress}</span></p>
+                                    {type === 'homeTutor' ? (
+                                        <div className="grid gap-1 text-sm">
+                                            <p className="text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                            <p className="text-muted-foreground">Mobile: <span className="font-semibold text-foreground">{booking.assignedTeacherMobile || 'N/A'}</span></p>
+                                            <p className="text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedTeacherAddress || 'N/A'}</span></p>
+                                        </div>
+                                    ) : ( // coachingCenter
+                                        <div className="grid gap-1 text-sm">
+                                            <p className="text-muted-foreground">Assigned Center: <span className="font-semibold text-foreground">{booking.assignedCoachingCenterName}</span></p>
+                                            <p className="text-muted-foreground">via: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
+                                            <p className="text-sm text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedCoachingAddress}</span></p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1676,4 +1679,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
 
