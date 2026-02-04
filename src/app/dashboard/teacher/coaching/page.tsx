@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -128,6 +129,12 @@ export default function CoachingManagementPage() {
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
+    const assignedBookingsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid));
+    }, [firestore, user?.uid]);
+    const { data: assignedBookings, isLoading: assignedBookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
+
     useEffect(() => {
         const hour = new Date().getHours();
         if (hour < 12) {
@@ -245,7 +252,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || assignedBookingsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -279,7 +286,7 @@ export default function CoachingManagementPage() {
             </motion.div>
 
             <motion.div
-                    className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8"
+                    className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-8"
                     initial="hidden"
                     animate="visible"
                     variants={staggerContainer(0.1, 0.2)}
@@ -292,8 +299,21 @@ export default function CoachingManagementPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{approvedStudents.length}</div>
+                         <p className="text-xs text-muted-foreground">in your batches</p>
                     </CardContent>
                 </Card>
+                </motion.div>
+                 <motion.div variants={fadeInUp}>
+                    <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Assigned Students</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{assignedBookings?.length || 0}</div>
+                            <p className="text-xs text-muted-foreground">from admin</p>
+                        </CardContent>
+                    </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
                 <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>

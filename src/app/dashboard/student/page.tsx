@@ -144,9 +144,9 @@ export default function StudentDashboardPage() {
     }, [firestore, user]);
     const { data: homeBookings, isLoading: homeBookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
 
-    const lastHomeTutorBooking = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
-    const lastCoachingBooking = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0], [homeBookings]);
-
+    const activeBookings = useMemo(() => {
+        return homeBookings?.filter(b => b.status !== 'Completed' && b.status !== 'Cancelled').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
+    }, [homeBookings]);
 
     const unpaidFeesQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -381,81 +381,72 @@ export default function StudentDashboardPage() {
 
                     <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
-                            <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> Booking Status</CardTitle>
+                            <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> My Active Bookings</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4">
-                           {lastHomeTutorBooking ? (
-                                <div className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
-                                    <p className="font-semibold text-sm">Home Tutor Request</p>
-                                    <div className="flex justify-between items-start mt-1">
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Requested on {formatDate(lastHomeTutorBooking.createdAt)}</p>
+                            {homeBookingsLoading ? (
+                                <div className="flex justify-center items-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            ) : activeBookings.length > 0 ? (
+                                activeBookings.map(booking => (
+                                    <div key={booking.id} className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
+                                        <p className="font-semibold text-sm">{booking.bookingType === 'homeTutor' ? 'Home Tutor Request' : 'Coaching Center Request'}</p>
+                                        <div className="flex justify-between items-start mt-1">
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Requested on {formatDate(booking.createdAt)}</p>
+                                            </div>
+                                            <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                booking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
+                                                booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {booking.status}
+                                            </span>
                                         </div>
-                                         <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                            lastHomeTutorBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            lastHomeTutorBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
-                                            lastHomeTutorBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        }`}>
-                                            {lastHomeTutorBooking.status}
-                                        </span>
+                                        {(booking.status === 'Confirmed' || booking.status === 'Awaiting Payment') && (
+                                            booking.bookingType === 'homeTutor' ? (
+                                                booking.assignedTeacherName && (
+                                                    <div className="mt-3 pt-3 border-t grid gap-1">
+                                                        <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
+                                                        <p className="font-semibold text-primary">{booking.assignedTeacherName}</p>
+                                                        {booking.assignedTeacherMobile && <p className="text-xs text-muted-foreground">Mobile: {booking.assignedTeacherMobile}</p>}
+                                                        {booking.assignedTeacherAddress && <p className="text-xs text-muted-foreground">Address: {booking.assignedTeacherAddress}</p>}
+                                                    </div>
+                                                )
+                                            ) : ( // coachingCenter
+                                                booking.assignedCoachingCenterName && (
+                                                    <div className="mt-3 pt-3 border-t">
+                                                        <p className="text-sm text-muted-foreground">Assigned Center:</p>
+                                                        <p className="font-semibold text-primary">{booking.assignedCoachingCenterName}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Teacher: {booking.assignedTeacherName}</p>
+                                                        <p className="text-xs text-muted-foreground">Address: {booking.assignedCoachingAddress}</p>
+                                                    </div>
+                                                )
+                                            )
+                                        )}
+                                        {(booking.status === 'Confirmed' || booking.status === 'Awaiting Payment') && (
+                                             <div className="mt-3 pt-3 border-t">
+                                                <Button asChild size="sm" className="w-full">
+                                                    <Link href={`/dashboard/communications`}>Go to Chat</Link>
+                                                </Button>
+                                             </div>
+                                        )}
                                     </div>
-                                    {lastHomeTutorBooking.status === 'Confirmed' && lastHomeTutorBooking.assignedTeacherName ? (
-                                        <div className="mt-3 pt-3 border-t grid gap-1">
-                                            <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
-                                            <p className="font-semibold text-primary">{lastHomeTutorBooking.assignedTeacherName}</p>
-                                            {lastHomeTutorBooking.assignedTeacherMobile && <p className="text-xs text-muted-foreground">Mobile: {lastHomeTutorBooking.assignedTeacherMobile}</p>}
-                                            {lastHomeTutorBooking.assignedTeacherAddress && <p className="text-xs text-muted-foreground">Address: {lastHomeTutorBooking.assignedTeacherAddress}</p>}
-                                        </div>
-                                    ) : lastHomeTutorBooking.status === 'Confirmed' ? (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <p className="text-sm text-muted-foreground">Your booking is confirmed! Admin is assigning a teacher.</p>
-                                        </div>
-                                    ) : null}
-                                </div>
-                           ) : (
-                                <div className="text-center py-4 border-b">
-                                    <p className="text-sm text-muted-foreground mb-3">You haven't requested a home tutor yet.</p>
-                                    <Button asChild size="sm">
-                                        <Link href="/dashboard/student/book-home-teacher">Book Home Tutor</Link>
-                                    </Button>
-                                </div>
-                           )}
-                           {lastCoachingBooking ? (
-                                <div className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
-                                    <p className="font-semibold text-sm">Coaching Center Request</p>
-                                     <div className="flex justify-between items-start mt-1">
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Requested on {formatDate(lastCoachingBooking.createdAt)}</p>
-                                        </div>
-                                         <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                            lastCoachingBooking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            lastCoachingBooking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
-                                            lastCoachingBooking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        }`}>
-                                            {lastCoachingBooking.status}
-                                        </span>
+                                ))
+                            ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-sm text-muted-foreground mb-3">You have no active bookings.</p>
+                                    <div className="flex gap-2 justify-center">
+                                        <Button asChild size="sm">
+                                            <Link href="/dashboard/student/book-home-teacher">Book Home Tutor</Link>
+                                        </Button>
+                                         <Button asChild size="sm" variant="outline">
+                                            <Link href="/dashboard/student/book-coaching-seat">Book Coaching Seat</Link>
+                                        </Button>
                                     </div>
-                                    {(lastCoachingBooking.status === 'Confirmed' || lastCoachingBooking.status === 'Completed') && lastCoachingBooking.assignedCoachingCenterName ? (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <p className="text-sm text-muted-foreground">Assigned Center:</p>
-                                            <p className="font-semibold text-primary">{lastCoachingBooking.assignedCoachingCenterName}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Teacher: {lastCoachingBooking.assignedTeacherName}</p>
-                                            <p className="text-xs text-muted-foreground">Address: {lastCoachingBooking.assignedCoachingAddress}</p>
-                                        </div>
-                                    ) : (lastCoachingBooking.status === 'Confirmed' || lastCoachingBooking.status === 'Completed') ? (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <p className="text-sm text-muted-foreground">Admin has confirmed your seat. You will be contacted shortly.</p>
-                                        </div>
-                                    ) : null}
                                 </div>
-                           ) : (
-                                <div className="text-center py-4">
-                                    <p className="text-sm text-muted-foreground mb-3">You haven't requested a coaching seat.</p>
-                                    <Button asChild size="sm">
-                                        <Link href="/dashboard/student/book-coaching-seat">Book Coaching Seat</Link>
-                                    </Button>
-                                </div>
-                           )}
+                            )}
                         </CardContent>
                     </Card>
                 </div>
