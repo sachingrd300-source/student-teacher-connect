@@ -736,25 +736,25 @@ export default function AdminDashboardPage() {
 
     // --- Render Functions ---
     const renderSidebar = () => {
+        const Wrapper = (props: { children: React.ReactNode; }) => 
+            isSidebarOpen ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
+            
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
                 <div className="flex flex-col gap-1">
                      {navItems.map(item => (
-                        <Button
-                            key={item.view}
-                            variant={view === item.view ? 'secondary' : 'ghost'}
-                            className="justify-start"
-                            onClick={() => handleViewChange(item.view)}
-                        >
-                            <item.icon className="mr-2 h-4 w-4" />
-                            {item.label}
-                            {item.view === 'applications' && totalPendingApps > 0 && (
-                                <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                    {totalPendingApps}
-                                </span>
-                            )}
-                        </Button>
+                        <Wrapper key={item.view}>
+                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange(item.view)}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.label}
+                                {item.view === 'applications' && totalPendingApps > 0 && (
+                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        {totalPendingApps}
+                                    </span>
+                                )}
+                            </Button>
+                        </Wrapper>
                     ))}
                 </div>
             </aside>
@@ -1066,7 +1066,7 @@ export default function AdminDashboardPage() {
             <Card className="rounded-2xl shadow-lg">
                 <CardContent className="p-4">
                     <Tabs defaultValue="homeTutor" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
                             <TabsTrigger value="homeTutor">Home Tutor ({filteredHomeTutorApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="communityAssociate">Community Associate ({filteredCommunityApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="studentEnrollments">Student Enrollments ({filteredEnrollments.pending.length})</TabsTrigger>
