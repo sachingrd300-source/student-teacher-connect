@@ -535,18 +535,17 @@ export default function AdminDashboardPage() {
                     title: materialTitle.trim(),
                     description: materialDescription.trim(),
                     fileURL: materialUrl.trim(),
-                    fileName: materialUrl.trim(), // Use URL as filename
-                    fileType: 'link', // Special type for URLs
+                    fileName: materialUrl.trim(),
+                    fileType: 'link',
                     category: materialCategory,
                     createdAt: new Date().toISOString()
                 };
             }
     
-            const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
-            logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
-            
-            // On success, reset form and close dialog
+            // Close dialog and reset form immediately after getting data
+            setIsUploadingMaterial(false);
             setIsUploadMaterialDialogOpen(false);
+            const titleToLog = materialTitle.trim(); // Capture before reset
             setMaterialTitle('');
             setMaterialDescription('');
             setMaterialFile(null);
@@ -557,11 +556,21 @@ export default function AdminDashboardPage() {
                 (document.getElementById('material-file-dialog') as HTMLInputElement).value = '';
             }
     
+            // Perform Firestore write in the background
+            (async () => {
+                try {
+                    const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
+                    logAdminAction(`Uploaded free material: "${titleToLog}"`, docRef.id);
+                } catch (firestoreError) {
+                    console.error("Error writing material to Firestore:", firestoreError);
+                    // We can't easily show an alert here as the dialog is closed.
+                }
+            })();
+    
         } catch (error) {
             console.error("Error uploading free material:", error);
             alert("Upload failed. Check console for details. This could be a permissions issue with storage rules.");
-        } finally {
-            setIsUploadingMaterial(false);
+            setIsUploadingMaterial(false); // Ensure loader stops on error
         }
     };
     
@@ -1654,10 +1663,10 @@ export default function AdminDashboardPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
-                                    <SheetHeader className="p-4 text-left border-b">
+                                    <SheetHeader className="p-4 border-b text-left">
                                         <SheetTitle>Admin Menu</SheetTitle>
                                         <SheetDescription>
-                                            Navigate through admin sections.
+                                          Navigate through the admin sections.
                                         </SheetDescription>
                                     </SheetHeader>
                                     {renderSidebar({ forMobile: true })}

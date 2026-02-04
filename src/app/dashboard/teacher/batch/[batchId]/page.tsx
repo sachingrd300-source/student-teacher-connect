@@ -403,11 +403,8 @@ export default function BatchManagementPage() {
             const uploadTask = await uploadBytes(fileRef, materialFile);
             const downloadURL = await getDownloadURL(uploadTask.ref);
     
-            const firestoreBatch = writeBatch(firestore);
-            const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
-            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-    
-            firestoreBatch.set(doc(materialsColRef), {
+            // Prepare data and reset form immediately
+            const materialData = {
                 title: materialTitle.trim(),
                 description: materialDescription.trim(),
                 fileURL: downloadURL,
@@ -416,18 +413,9 @@ export default function BatchManagementPage() {
                 batchId: batchId,
                 teacherId: user.uid,
                 createdAt: new Date().toISOString(),
-            });
-    
-            firestoreBatch.set(doc(activityColRef), {
-                message: `New material uploaded: "${materialTitle.trim()}"`,
-                createdAt: new Date().toISOString(),
-            });
-    
-            await firestoreBatch.commit();
-        } catch (error) {
-            console.error("Error during material upload:", error);
-            alert("Upload failed. Check console for details. This might be a permission issue.");
-        } finally {
+            };
+            const activityMessage = `New material uploaded: "${materialData.title}"`;
+            
             setIsUploading(false);
             setMaterialTitle('');
             setMaterialDescription('');
@@ -435,6 +423,30 @@ export default function BatchManagementPage() {
             if (document.getElementById('material-file')) {
                 (document.getElementById('material-file') as HTMLInputElement).value = '';
             }
+    
+            // Perform Firestore write in the background
+            (async () => {
+                try {
+                    const firestoreBatch = writeBatch(firestore);
+                    const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
+                    const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+                    
+                    firestoreBatch.set(doc(materialsColRef), materialData);
+                    firestoreBatch.set(doc(activityColRef), {
+                        message: activityMessage,
+                        createdAt: new Date().toISOString(),
+                    });
+            
+                    await firestoreBatch.commit();
+                } catch (firestoreError) {
+                    console.error("Error writing material to Firestore:", firestoreError);
+                }
+            })();
+    
+        } catch (error) {
+            console.error("Error during material upload:", error);
+            alert("Upload failed. Check console for details. This might be a permission issue.");
+            setIsUploading(false);
         }
     };
     
