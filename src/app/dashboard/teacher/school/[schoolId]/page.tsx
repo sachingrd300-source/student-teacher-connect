@@ -400,21 +400,11 @@ export default function SchoolDetailsPage() {
                 <p className="text-sm text-muted-foreground">{school.academicYear}</p>
             </div>
             <div className="flex flex-col gap-1">
-                <SheetClose asChild>
-                    <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
-                </SheetClose>
-                <SheetClose asChild>
-                    <Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button>
-                </SheetClose>
-                <SheetClose asChild>
-                    <Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button>
-                </SheetClose>
-                <SheetClose asChild>
-                    <Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button>
-                </SheetClose>
-                <SheetClose asChild>
-                    <Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button>
-                </SheetClose>
+                <Button variant={view === 'dashboard' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('dashboard')}><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Button>
+                <Button variant={view === 'teachers' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('teachers')}><Users className="mr-2 h-4 w-4" />Teachers</Button>
+                <Button variant={view === 'classes' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('classes')}><Book className="mr-2 h-4 w-4" />Classes</Button>
+                <Button variant={view === 'students' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('students')}><GraduationCap className="mr-2 h-4 w-4" />Students</Button>
+                <Button variant={view === 'fees' ? 'secondary' : 'ghost'} className="justify-start" onClick={() => handleViewChange('fees')}><Wallet className="mr-2 h-4 w-4" />Fees</Button>
             </div>
              <div className="mt-auto p-4 text-center">
                 <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>

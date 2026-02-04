@@ -61,18 +61,18 @@ export default function StudentDashboardLayout({
       <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
       <div className="flex flex-col gap-1">
         {navItems.map((item) => (
-          <SheetClose asChild key={item.href}>
-            <Button
-              asChild
-              variant={pathname === item.href ? 'secondary' : 'ghost'}
-              className="justify-start"
-            >
-              <Link href={item.href}>
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.label}
-              </Link>
-            </Button>
-          </SheetClose>
+          <Button
+            asChild
+            key={item.href}
+            variant={pathname === item.href ? 'secondary' : 'ghost'}
+            className="justify-start"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <Link href={item.href}>
+              <item.icon className="mr-2 h-4 w-4" />
+              {item.label}
+            </Link>
+          </Button>
         ))}
       </div>
     </aside>
