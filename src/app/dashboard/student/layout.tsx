@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
-import { MarqueeAnnouncements } from '@/components/marquee-announcements';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface UserProfile {
   name: string;
@@ -57,34 +57,31 @@ export default function StudentDashboardLayout({
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },
   ];
 
-  const renderSidebarContent = (isMobile: boolean) => (
-    <aside className="flex flex-col gap-2 p-4">
-      <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
-      <div className="flex flex-col gap-1">
-        {navItems.map((item) => {
-            const button = (
-                <Button
-                  asChild
-                  key={item.href}
-                  variant={pathname === item.href ? 'secondary' : 'ghost'}
-                  className="justify-start w-full"
-                >
-                  <Link href={item.href}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.label}
-                  </Link>
-                </Button>
-            );
-
-            if (isMobile) {
-                return <SheetClose asChild key={item.href}>{button}</SheetClose>;
-            }
-
-            return button;
-        })}
-      </div>
-    </aside>
-  );
+  const renderSidebarContent = () => {
+    const Wrapper = isSidebarOpen ? SheetClose : Fragment;
+    return (
+      <aside className="flex flex-col gap-2 p-4">
+        <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
+        <div className="flex flex-col gap-1">
+          {navItems.map((item) => (
+            <Wrapper key={item.href}>
+              <Button
+                asChild
+                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                className="justify-start w-full"
+                onClick={() => isSidebarOpen && setSidebarOpen(false)}
+              >
+                <Link href={item.href}>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Link>
+              </Button>
+            </Wrapper>
+          ))}
+        </div>
+      </aside>
+    );
+  };
 
   if (isUserLoading || profileLoading || !userProfile) {
     return (
@@ -98,13 +95,20 @@ export default function StudentDashboardLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
-      <MarqueeAnnouncements userRole="student" />
       <div className="flex flex-1">
-        {isSidebarVisible && (
-            <div className="hidden md:flex md:w-64 flex-col border-r bg-muted/20">
-            {renderSidebarContent(false)}
-            </div>
-        )}
+        <AnimatePresence>
+          {isSidebarVisible && (
+            <motion.div
+              initial={{ x: '-100%', width: 0 }}
+              animate={{ x: 0, width: '16rem' }}
+              exit={{ x: '-100%', width: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="hidden md:flex flex-col border-r bg-muted/20"
+            >
+              {renderSidebarContent()}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <main className="flex-1 p-4 md:p-8 bg-background">
           <div className="max-w-6xl mx-auto">
             <div className="md:hidden mb-4 flex items-center justify-end">
@@ -115,11 +119,7 @@ export default function StudentDashboardLayout({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
-                  <SheetHeader>
-                    <SheetTitle className="sr-only">Student Navigation Menu</SheetTitle>
-                    <SheetDescription className="sr-only">A list of links to navigate the student dashboard.</SheetDescription>
-                  </SheetHeader>
-                  {renderSidebarContent(true)}
+                  {renderSidebarContent()}
                 </SheetContent>
               </Sheet>
             </div>

@@ -11,13 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Send, Briefcase, CheckCircle, Award, Megaphone } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
-import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
-import { MarqueeAnnouncements } from '@/components/marquee-announcements';
 
 // Interfaces can be copied
 interface UserProfile {
@@ -56,14 +54,6 @@ interface HomeBooking {
     studentClass: string;
     status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     createdAt: string;
-}
-
-interface Announcement {
-    id: string;
-    message: string;
-    target: 'all' | 'teachers' | 'students';
-    createdAt: string;
-    expiresAt?: string;
 }
 
 const getInitials = (name: string) => {
@@ -116,9 +106,6 @@ export default function CoachingManagementPage() {
     const [newBatchName, setNewBatchName] = useState('');
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
 
-    const [announcementMessage, setAnnouncementMessage] = useState('');
-    const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
-
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
@@ -137,26 +124,6 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
-
-    const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, 'announcements'),
-            where('target', 'in', ['all', 'teacher']),
-            orderBy('createdAt', 'desc')
-        );
-    }, [firestore]);
-
-    const { data: allAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
-
-    const activeAnnouncements = useMemo(() => {
-        if (!allAnnouncements) return [];
-        const now = new Date();
-        return allAnnouncements.filter(ann => {
-            if (!ann.expiresAt) return true;
-            return new Date(ann.expiresAt) > now;
-        });
-    }, [allAnnouncements]);
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
         if (!enrollments) return [[], []];
@@ -218,32 +185,6 @@ export default function CoachingManagementPage() {
         }
     };
     
-    const handleSendAnnouncement = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!firestore || !batches || batches.length === 0 || !announcementMessage.trim()) return;
-        
-        setIsSendingAnnouncement(true);
-        
-        const message = announcementMessage.trim();
-        const createdAt = new Date().toISOString();
-        
-        const batch = writeBatch(firestore);
-
-        batches.forEach(b => {
-            const activityRef = doc(collection(firestore, 'batches', b.id, 'activity'));
-            batch.set(activityRef, { message, createdAt });
-        });
-
-        try {
-            await batch.commit();
-            setAnnouncementMessage('');
-        } catch (error) {
-            console.error("Error sending centralized announcement:", error);
-        } finally {
-            setIsSendingAnnouncement(false);
-        }
-    };
-    
     const handleApproveRequest = async (enrollment: Enrollment) => {
         if (!firestore) return;
         
@@ -290,7 +231,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || announcementsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -306,7 +247,6 @@ export default function CoachingManagementPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
-            <MarqueeAnnouncements userRole="teacher" />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <motion.div 
@@ -452,29 +392,7 @@ export default function CoachingManagementPage() {
                         </motion.div>
 
                         <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
-                            <Card className='rounded-2xl shadow-lg'>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center"><Megaphone className="mr-2 h-5 w-5 text-primary"/> Recent Announcements</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {announcementsLoading ? (
-                                        <div className="flex justify-center items-center py-8">
-                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                        </div>
-                                    ) : activeAnnouncements && activeAnnouncements.length > 0 ? (
-                                        <div className="grid gap-4">
-                                            {activeAnnouncements.slice(0, 2).map(ann => (
-                                                <div key={ann.id} className="p-3 rounded-lg border bg-background/50">
-                                                    <p className="text-sm font-medium">{ann.message}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(ann.createdAt)}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-8">No recent announcements.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            
                             <Card className='rounded-2xl shadow-lg'>
                                 <CardHeader>
                                     <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
@@ -538,30 +456,6 @@ export default function CoachingManagementPage() {
                                 </CardContent>
                             </Card>
                             
-                            <Card className='rounded-2xl shadow-lg'>
-                                <CardHeader>
-                                    <CardTitle>Send Centralized Announcement</CardTitle>
-                                    <CardDescription>Send a message to all your batches at once.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <form onSubmit={handleSendAnnouncement} className="grid gap-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="announcement-message">Message</Label>
-                                            <Textarea
-                                                id="announcement-message"
-                                                value={announcementMessage}
-                                                onChange={(e) => setAnnouncementMessage(e.target.value)}
-                                                placeholder="e.g., All classes are cancelled tomorrow due to..."
-                                                required
-                                            />
-                                        </div>
-                                        <Button type="submit" disabled={isSendingAnnouncement || !announcementMessage.trim() || !batches || batches.length === 0}>
-                                            {isSendingAnnouncement ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                            Send to All
-                                        </Button>
-                                    </form>
-                                </CardContent>
-                            </Card>
                         </motion.div>
                     </motion.div>
                 </div>
@@ -601,5 +495,3 @@ export default function CoachingManagementPage() {
         </div>
     );
 }
-
-    

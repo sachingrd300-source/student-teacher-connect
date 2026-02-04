@@ -34,7 +34,7 @@ import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, TrendingUp, Users2, Send, History, Building2, Megaphone, Coins, MoreHorizontal,
+    LayoutDashboard, Bell, TrendingUp, Users2, History, Building2, Coins, MoreHorizontal,
     Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save
 } from 'lucide-react';
 
@@ -48,12 +48,11 @@ type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; createdAt: string; }
-interface Announcement { id: string; message: string; target: 'all' | 'teachers' | 'students'; createdAt: string; expiresAt?: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'notifications' | 'activity' | 'schools' | 'achievers';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'schools' | 'achievers';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -115,11 +114,6 @@ export default function AdminDashboardPage() {
     const [isUploadingItem, setIsUploadingItem] = useState(false);
     const [userSearchQuery, setUserSearchQuery] = useState('');
     
-    const [announcementMessage, setAnnouncementMessage] = useState('');
-    const [announcementTarget, setAnnouncementTarget] = useState<'all' | 'teachers' | 'students'>('all');
-    const [announcementExpiry, setAnnouncementExpiry] = useState('');
-    const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
-
     // Badge/Shop Item state
     const [itemType, setItemType] = useState<'item' | 'badge'>('item');
     const [badgeIcon, setBadgeIcon] = useState<BadgeIconType>('award');
@@ -160,7 +154,6 @@ export default function AdminDashboardPage() {
     const homeBookingsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'homeBookings'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
-    const announcementsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
@@ -173,7 +166,6 @@ export default function AdminDashboardPage() {
     const { data: homeBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
-    const { data: announcements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
     const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
@@ -647,41 +639,6 @@ export default function AdminDashboardPage() {
         });
     };
 
-    const handleSendAnnouncement = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!announcementMessage.trim() || !firestore) return;
-        
-        setIsSendingAnnouncement(true);
-
-        const announcementData: { [key: string]: any } = {
-            message: announcementMessage.trim(),
-            target: announcementTarget,
-            createdAt: new Date().toISOString(),
-        };
-
-        if (announcementExpiry) {
-            announcementData.expiresAt = new Date(announcementExpiry).toISOString();
-        }
-
-        addDoc(collection(firestore, 'announcements'), announcementData)
-            .then((docRef) => {
-                logAdminAction(`Sent announcement to ${announcementTarget}`, docRef.id);
-                setAnnouncementMessage('');
-                setAnnouncementExpiry('');
-            })
-            .catch((error) => {
-                console.error("Error sending announcement:", error);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    operation: 'create',
-                    path: 'announcements',
-                    requestResourceData: announcementData
-                }));
-            })
-            .finally(() => {
-                setIsSendingAnnouncement(false);
-            });
-    };
-
     const handleOpenEditAchieverDialog = (teacher: UserProfile) => {
         setEditingAchiever(teacher);
         setAchieverFormState({
@@ -713,7 +670,7 @@ export default function AdminDashboardPage() {
     };
 
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || announcementsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -739,7 +696,9 @@ export default function AdminDashboardPage() {
     
     const handleViewChange = (newView: AdminView) => {
         setView(newView);
-        setSidebarOpen(false);
+        if (isSidebarOpen) {
+            setSidebarOpen(false);
+        }
     };
 
     // --- Render Functions ---
@@ -752,18 +711,18 @@ export default function AdminDashboardPage() {
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
         { view: 'materials' as AdminView, label: 'Materials', icon: FileText },
         { view: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag },
-        { view: 'notifications' as AdminView, label: 'Notifications', icon: Megaphone },
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
     ];
     
-    const renderSidebar = (isMobile: boolean) => {
+    const renderSidebar = () => {
+        const Wrapper = isSidebarOpen ? SheetClose : Fragment;
         return (
             <aside className="flex flex-col gap-2 p-4">
                 <h2 className="px-4 text-lg font-semibold tracking-tight">Admin Menu</h2>
                 <div className="flex flex-col gap-1">
-                     {navItems.map(item => {
-                        const button = ( 
-                             <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
+                     {navItems.map(item => (
+                        <Wrapper key={item.view}>
+                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
                                 <item.icon className="mr-2 h-4 w-4" />
                                 {item.label}
                                 {item.view === 'applications' && totalPendingApps > 0 && (
@@ -772,12 +731,8 @@ export default function AdminDashboardPage() {
                                     </span>
                                 )}
                             </Button>
-                        ); 
-                        if (isMobile) { 
-                            return <SheetClose asChild key={item.view}>{button}</SheetClose>; 
-                        } 
-                        return button;
-                    })}
+                        </Wrapper>
+                    ))}
                 </div>
             </aside>
         );
@@ -1369,54 +1324,6 @@ export default function AdminDashboardPage() {
         </div>
     );
     
-    const renderNotificationsView = () => (
-        <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">Notifications & Announcements</h1>
-             <div className="grid lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-1 rounded-2xl shadow-lg">
-                    <CardHeader><CardTitle>Send Announcement</CardTitle></CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSendAnnouncement} className="grid gap-4">
-                            <div className="grid gap-2"><Label htmlFor="announcement-message">Message</Label><Textarea id="announcement-message" value={announcementMessage} onChange={(e) => setAnnouncementMessage(e.target.value)} required placeholder="Your message here..." /></div>
-                            <div className="grid gap-2"><Label htmlFor="announcement-target">Target Audience</Label><Select value={announcementTarget} onValueChange={(v) => setAnnouncementTarget(v as any)} required><SelectTrigger id="announcement-target"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="teachers">All Teachers</SelectItem><SelectItem value="students">All Students</SelectItem></SelectContent></Select></div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="announcement-expiry">Expiration Date (Optional)</Label>
-                                <Input 
-                                    id="announcement-expiry" 
-                                    type="datetime-local"
-                                    value={announcementExpiry}
-                                    onChange={(e) => setAnnouncementExpiry(e.target.value)}
-                                />
-                                <p className="text-xs text-muted-foreground">Announcement will be hidden after this date.</p>
-                            </div>
-                             <Button type="submit" disabled={isSendingAnnouncement}>
-                                {isSendingAnnouncement ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />} Send
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-                <Card className="lg:col-span-2 rounded-2xl shadow-lg">
-                    <CardHeader><CardTitle>Announcement History</CardTitle></CardHeader>
-                    <CardContent>
-                        {announcements && announcements.length > 0 ? (
-                            <div className="grid gap-4">
-                                {announcements.map(ann => (
-                                    <div key={ann.id} className="p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                                        <p className="text-sm">{ann.message}</p>
-                                        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground"><span>Target: <span className="font-semibold capitalize">{ann.target}</span></span><span>{formatDate(ann.createdAt, true)}</span></div>
-                                        {ann.expiresAt && (
-                                            <p className="text-xs text-destructive mt-1">Expires: {formatDate(ann.expiresAt, true)}</p>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (<div className="text-center py-12">No announcements sent yet.</div>)}
-                    </CardContent>
-                </Card>
-             </div>
-        </div>
-    );
-    
     const renderActivityLogView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Admin Activity Log</h1>
@@ -1527,7 +1434,6 @@ export default function AdminDashboardPage() {
             bookings: renderBookingsView(),
             materials: renderMaterialsView(),
             shop: renderShopView(),
-            notifications: renderNotificationsView(),
             activity: renderActivityLogView(),
             schools: renderSchoolsView(),
             achievers: renderAchieversView(),
@@ -1552,11 +1458,19 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
             <div className="flex flex-1">
-                {isSidebarVisible && (
-                    <div className="hidden md:flex md:w-64 flex-col border-r">
-                        {renderSidebar(false)}
-                    </div>
-                )}
+                <AnimatePresence>
+                    {isSidebarVisible && (
+                        <motion.div
+                            initial={{ x: '-100%', width: 0 }}
+                            animate={{ x: 0, width: '16rem' }}
+                            exit={{ x: '-100%', width: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="hidden md:flex flex-col border-r"
+                        >
+                            {renderSidebar()}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 <main className="flex-1 p-4 md:p-8">
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">
@@ -1566,11 +1480,7 @@ export default function AdminDashboardPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
-                                    <SheetHeader>
-                                        <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
-                                        <SheetDescription className="sr-only">A list of links to navigate the admin dashboard.</SheetDescription>
-                                    </SheetHeader>
-                                    {renderSidebar(true)}
+                                    {renderSidebar()}
                                 </SheetContent>
                             </Sheet>
                         </div>

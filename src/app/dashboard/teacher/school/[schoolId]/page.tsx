@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SchoolFeeManagementDialog } from '@/components/school-fee-management-dialog';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
-import { MarqueeAnnouncements } from '@/components/marquee-announcements';
 
 
 // Interfaces
@@ -193,7 +192,9 @@ export default function SchoolDetailsPage() {
     
     const handleViewChange = (newView: SchoolView) => {
         setView(newView);
-        setSidebarOpen(false);
+        if (isSidebarOpen) {
+            setSidebarOpen(false);
+        }
     };
 
     const copyToClipboard = (text: string) => {
@@ -394,7 +395,7 @@ export default function SchoolDetailsPage() {
     
     // --- Render Functions ---
     
-    const renderSidebar = (isMobile: boolean) => {
+    const renderSidebar = () => {
         const navItems = [
             { view: 'dashboard' as SchoolView, label: 'Dashboard', icon: LayoutDashboard },
             { view: 'teachers' as SchoolView, label: 'Teachers', icon: Users },
@@ -402,6 +403,7 @@ export default function SchoolDetailsPage() {
             { view: 'students' as SchoolView, label: 'Students', icon: GraduationCap },
             { view: 'fees' as SchoolView, label: 'Fees', icon: Wallet },
         ];
+        const Wrapper = isSidebarOpen ? SheetClose : Fragment;
 
         return (
         <aside className="flex flex-col h-full">
@@ -410,17 +412,13 @@ export default function SchoolDetailsPage() {
                 <p className="text-sm text-muted-foreground">{school.academicYear}</p>
             </div>
             <div className="flex flex-col gap-1 px-4">
-                {navItems.map(item => {
-                    const button = (
-                        <Button key={item.view} variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
+                {navItems.map(item => (
+                    <Wrapper key={item.view}>
+                        <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
                             <item.icon className="mr-2 h-4 w-4" />{item.label}
                         </Button>
-                    );
-                    if (isMobile) {
-                        return <SheetClose asChild key={item.view}>{button}</SheetClose>;
-                    }
-                    return button;
-                })}
+                    </Wrapper>
+                ))}
             </div>
              <div className="mt-auto p-4 text-center">
                 <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
@@ -664,13 +662,20 @@ export default function SchoolDetailsPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
-            <MarqueeAnnouncements userRole="teacher" />
              <div className="flex flex-1">
-                {isSidebarVisible && (
-                    <div className="hidden md:flex md:w-64 flex-col border-r">
-                        {renderSidebar(false)}
-                    </div>
-                )}
+                <AnimatePresence>
+                    {isSidebarVisible && (
+                        <motion.div
+                            initial={{ x: '-100%', width: 0 }}
+                            animate={{ x: 0, width: '16rem' }}
+                            exit={{ x: '-100%', width: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="hidden md:flex flex-col border-r"
+                        >
+                            {renderSidebar()}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                  <main className="flex-1 p-4 md:p-8">
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">
@@ -681,11 +686,7 @@ export default function SchoolDetailsPage() {
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
-                                    <SheetHeader>
-                                        <SheetTitle className="sr-only">School Management Menu</SheetTitle>
-                                        <SheetDescription className="sr-only">A list of links to navigate the school management dashboard.</SheetDescription>
-                                    </SheetHeader>
-                                    {renderSidebar(true)}
+                                    {renderSidebar()}
                                 </SheetContent>
                             </Sheet>
                         </div>
