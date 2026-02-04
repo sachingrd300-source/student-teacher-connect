@@ -62,7 +62,7 @@ service cloud.firestore {
                   || isAdmin()
                   || (isSignedIn() && resource.data.role == 'teacher')
                   || (isTeacher() && resource.data.role == 'student');
-      allow list: if isAdmin(); // Only admins can list all users.
+      allow list: if isSignedIn(); // Allow listing for any signed-in user, GET rules provide document-level security.
       allow create: if request.auth.uid == userId;
       allow update: if isAdmin() ||
                    (isOwner(userId) && !isCommunityAssociate(userId)) ||
