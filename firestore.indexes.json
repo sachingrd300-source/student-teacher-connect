@@ -125,6 +125,20 @@
       ]
     },
     {
+      "collectionGroup": "teacherOrders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "teacherId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "materials",
       "queryScope": "COLLECTION",
       "fields": [
