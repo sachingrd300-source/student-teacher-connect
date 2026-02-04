@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import { MarqueeAnnouncements } from '@/components/marquee-announcements';
 
 interface UserProfile {
   name: string;
@@ -60,20 +61,27 @@ export default function StudentDashboardLayout({
     <aside className="flex flex-col gap-2 p-4">
       <h2 className="px-4 text-lg font-semibold tracking-tight">Student Menu</h2>
       <div className="flex flex-col gap-1">
-        {navItems.map((item) => (
-          <Button
-            asChild
-            key={item.href}
-            variant={pathname === item.href ? 'secondary' : 'ghost'}
-            className="justify-start"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <Link href={item.href}>
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.label}
-            </Link>
-          </Button>
-        ))}
+        {navItems.map((item) => {
+            const button = (
+                <Button
+                  asChild
+                  key={item.href}
+                  variant={pathname === item.href ? 'secondary' : 'ghost'}
+                  className="justify-start"
+                >
+                  <Link href={item.href}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.label}
+                  </Link>
+                </Button>
+            );
+
+            if (isSidebarOpen) {
+                return <SheetClose asChild key={item.href}>{button}</SheetClose>;
+            }
+
+            return button;
+        })}
       </div>
     </aside>
   );
@@ -90,6 +98,7 @@ export default function StudentDashboardLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
+      <MarqueeAnnouncements userRole="student" />
       <div className="flex flex-1">
         {isSidebarVisible && (
             <div className="hidden md:flex md:w-64 flex-col border-r bg-muted/20">

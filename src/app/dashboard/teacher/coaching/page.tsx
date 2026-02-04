@@ -17,6 +17,7 @@ import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
+import { MarqueeAnnouncements } from '@/components/marquee-announcements';
 
 // Interfaces can be copied
 interface UserProfile {
@@ -277,6 +278,7 @@ export default function CoachingManagementPage() {
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
+            <MarqueeAnnouncements userRole="teacher" />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-6xl mx-auto">
                     <motion.div 
