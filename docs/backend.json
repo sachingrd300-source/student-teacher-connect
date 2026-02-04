@@ -342,30 +342,6 @@
       },
       "required": ["teacherId", "teacherName", "status", "createdAt"]
     },
-    "TeacherOrder": {
-      "title": "Teacher Order",
-      "type": "object",
-      "description": "Represents an order placed by a teacher for materials like test papers, modules, etc.",
-      "properties": {
-        "teacherId": { "type": "string" },
-        "teacherName": { "type": "string" },
-        "items": {
-          "type": "string",
-          "description": "A description of the items being ordered."
-        },
-        "status": {
-          "type": "string",
-          "enum": ["pending", "confirmed", "declined"]
-        },
-        "notes": {
-          "type": "string",
-          "description": "Admin notes on the order."
-        },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "processedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["teacherId", "teacherName", "items", "status", "createdAt"]
-    },
     "Activity": {
       "title": "Activity",
       "type": "object",
@@ -563,10 +539,6 @@
      "/verifiedCoachingApplications/{applicationId}": {
       "schema": { "$ref": "#/entities/VerifiedCoachingApplication" },
       "description": "Stores applications from teachers to join the Achievers Community."
-    },
-    "/teacherOrders/{orderId}": {
-      "schema": { "$ref": "#/entities/TeacherOrder" },
-      "description": "Stores orders placed by teachers."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },

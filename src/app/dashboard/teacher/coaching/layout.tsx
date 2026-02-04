@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -47,7 +48,6 @@ export default function CoachingDashboardLayout({
     { href: '/dashboard/teacher/coaching', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/teacher/apply-home-tutor', label: 'Home Tutor Program', icon: Home },
     { href: '/dashboard/teacher/apply-verified-coaching', label: 'Achievers Community', icon: Award },
-    { href: '/dashboard/teacher/place-order', label: 'Place Order', icon: ShoppingCart },
   ];
 
   const renderSidebarContent = ({ forMobile = false }: { forMobile?: boolean }) => {

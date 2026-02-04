@@ -171,13 +171,6 @@ service cloud.firestore {
       allow update: if isAdmin(); // Only admin can approve/reject
       allow delete: if isAdmin();
     }
-    
-    match /teacherOrders/{orderId} {
-      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
-      allow get: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
-      allow list: if isAdmin() || (isTeacher() && request.query.teacherId == request.auth.uid);
-      allow update, delete: if isAdmin();
-    }
 
     match /schools/{schoolId} {
       allow get: if isSignedIn();

@@ -36,7 +36,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, History, Building2, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, ShoppingCart, Download
+    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, Download
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -52,10 +52,9 @@ interface ShopItem { id: string; name: string; description?: string; price: numb
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
-interface TeacherOrder { id: string; teacherId: string; teacherName: string; items: string; status: 'pending' | 'confirmed' | 'declined'; notes?: string; createdAt: string; processedAt?: string; }
 
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'schools' | 'achievers' | 'orders';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'schools' | 'achievers';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -134,11 +133,6 @@ export default function AdminDashboardPage() {
     const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
 
-    // Order Management State
-    const [editingOrder, setEditingOrder] = useState<TeacherOrder | null>(null);
-    const [orderNotes, setOrderNotes] = useState('');
-    const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
-
     // Booking Payment Dialog State
     const [bookingForPayment, setBookingForPayment] = useState<HomeBooking | null>(null);
     const [isUploadMaterialDialogOpen, setIsUploadMaterialDialogOpen] = useState(false);
@@ -175,7 +169,6 @@ export default function AdminDashboardPage() {
     const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
     const enrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
-    const teacherOrdersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'teacherOrders'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -188,7 +181,6 @@ export default function AdminDashboardPage() {
     const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
-    const { data: teacherOrders, isLoading: ordersLoading } = useCollection<TeacherOrder>(teacherOrdersQuery);
     
     const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
@@ -311,8 +303,6 @@ export default function AdminDashboardPage() {
         (filteredEnrollments.pending.length || 0),
     [filteredHomeTutorApps, filteredCommunityApps, filteredEnrollments]);
     
-    const pendingOrderCount = useMemo(() => teacherOrders?.filter(o => o.status === 'pending').length || 0, [teacherOrders]);
-
     const filteredMaterials = useMemo(() => {
         if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
         return {
@@ -737,41 +727,8 @@ export default function AdminDashboardPage() {
             setIsUpdatingAchiever(false);
         }
     };
-    
-    const handleOrderAction = async (orderId: string, newStatus: 'confirmed' | 'declined') => {
-        if (!firestore) return;
-        setIsUpdatingOrder(true);
-        const orderRef = doc(firestore, 'teacherOrders', orderId);
-        
-        try {
-            await updateDoc(orderRef, {
-                status: newStatus,
-                notes: orderNotes,
-                processedAt: new Date().toISOString()
-            });
-            logAdminAction(`Order ${orderId} has been ${newStatus}.`);
-            setEditingOrder(null);
-            setOrderNotes('');
-        } catch (error) {
-            console.error(`Error updating order ${orderId}:`, error);
-        } finally {
-            setIsUpdatingOrder(false);
-        }
-    };
 
-    const handleDeleteOrder = async (orderId: string) => {
-        if (!firestore) return;
-        const orderRef = doc(firestore, 'teacherOrders', orderId);
-        try {
-            await deleteDoc(orderRef);
-            logAdminAction(`Order ${orderId} has been deleted.`);
-        } catch (error) {
-            console.error(`Error deleting order ${orderId}:`, error);
-        }
-    };
-
-
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading || ordersLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -810,7 +767,6 @@ export default function AdminDashboardPage() {
         { view: 'achievers' as AdminView, label: 'Achievers', icon: Award },
         { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
-        { view: 'orders' as AdminView, label: 'Orders', icon: ShoppingCart },
         { view: 'materials' as AdminView, label: 'Materials', icon: FileText },
         { view: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag },
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
@@ -831,11 +787,6 @@ export default function AdminDashboardPage() {
                                 {item.view === 'applications' && totalPendingApps > 0 && (
                                     <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
                                         {totalPendingApps}
-                                    </span>
-                                )}
-                                {item.view === 'orders' && pendingOrderCount > 0 && (
-                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        {pendingOrderCount}
                                     </span>
                                 )}
                             </Button>
@@ -1595,60 +1546,6 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
     );
-    
-    const renderOrdersView = () => (
-        <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">Teacher Orders</h1>
-            <Card className="rounded-2xl shadow-lg">
-                <CardHeader>
-                    <CardTitle>Manage Teacher Material Orders</CardTitle>
-                    <CardDescription>Review, confirm, or decline orders for materials from teachers.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {teacherOrders && teacherOrders.length > 0 ? (
-                        <div className="grid gap-4">
-                            {teacherOrders.map(order => (
-                                <div key={order.id} className="p-4 rounded-2xl border shadow-lg">
-                                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-primary">{order.teacherName}</p>
-                                            <p className="text-sm mt-2"><strong className="font-medium">Items:</strong> {order.items}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Ordered on: {formatDate(order.createdAt, true)}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2 self-end sm:self-center">
-                                            <span className={`text-xs font-bold py-1 px-2 rounded-full capitalize ${
-                                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                order.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {order.status}
-                                            </span>
-                                            {order.status === 'pending' && (
-                                                <Button size="sm" variant="outline" onClick={() => { setEditingOrder(order); setOrderNotes(order.notes || ''); }}>
-                                                    Process
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {order.status !== 'pending' && order.notes && (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <p className="text-sm"><strong className="font-medium">Admin Notes:</strong> {order.notes}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 flex flex-col items-center">
-                            <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold">No Orders Yet</h3>
-                            <p className="text-muted-foreground mt-1">When teachers place orders, they will appear here.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
-    );
-
 
     const renderCurrentView = () => {
         const views: Record<AdminView, React.ReactNode> = {
@@ -1661,7 +1558,6 @@ export default function AdminDashboardPage() {
             activity: renderActivityLogView(),
             schools: renderSchoolsView(),
             achievers: renderAchieversView(),
-            orders: renderOrdersView(),
         };
 
         return (
@@ -1761,31 +1657,6 @@ export default function AdminDashboardPage() {
                         <Button onClick={handleUpdateAchiever} disabled={isUpdatingAchiever}>
                             {isUpdatingAchiever ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!editingOrder} onOpenChange={(isOpen) => !isOpen && setEditingOrder(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Process Order for {editingOrder?.teacherName}</DialogTitle>
-                        <DialogDescription>Review the order and confirm or decline it.</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4 grid gap-4">
-                         <p><strong>Items:</strong> {editingOrder?.items}</p>
-                         <div className="grid gap-2">
-                            <Label htmlFor="order-notes">Notes (Optional)</Label>
-                            <Textarea id="order-notes" value={orderNotes || ''} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Add any notes for the teacher..." />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setEditingOrder(null)}>Cancel</Button>
-                        <Button variant="destructive" onClick={() => handleOrderAction(editingOrder!.id, 'declined')} disabled={isUpdatingOrder}>
-                           {isUpdatingOrder ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-2 h-4 w-4" />} Decline
-                        </Button>
-                        <Button onClick={() => handleOrderAction(editingOrder!.id, 'confirmed')} disabled={isUpdatingOrder}>
-                           {isUpdatingOrder ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />} Confirm
                         </Button>
                     </DialogFooter>
                 </DialogContent>
