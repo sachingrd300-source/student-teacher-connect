@@ -106,14 +106,6 @@
       ]
     },
     {
-      "collectionGroup": "homeBookings",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "assignedTeacherId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "enrollments",
       "queryScope": "COLLECTION",
       "fields": [
@@ -156,5 +148,4 @@
   ],
   "fieldOverrides": []
 }
-
     

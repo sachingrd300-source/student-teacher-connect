@@ -152,10 +152,9 @@ service cloud.firestore {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       
       allow get: if isAdmin() || 
-                    (isSignedIn() && resource.data.studentId == request.auth.uid) ||
-                    (isSignedIn() && resource.data.assignedTeacherId == request.auth.uid);
+                    (isSignedIn() && resource.data.studentId == request.auth.uid);
 
-      allow list: if isAdmin() || isTeacher() || isStudent();
+      allow list: if isAdmin() || isStudent();
 
       allow update, delete: if isAdmin();
     }
