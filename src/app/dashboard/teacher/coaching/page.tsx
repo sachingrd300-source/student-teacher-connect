@@ -58,6 +58,14 @@ interface HomeBooking {
     createdAt: string;
 }
 
+interface Announcement {
+    id: string;
+    message: string;
+    target: 'all' | 'teachers' | 'students';
+    createdAt: string;
+    expiresAt?: string;
+}
+
 const getInitials = (name: string) => {
     if (!name) return '';
     return name.split(' ').map((n) => n[0]).join('');
@@ -129,6 +137,26 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'announcements'),
+            where('target', 'in', ['all', 'teacher']),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore]);
+
+    const { data: allAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
+    const activeAnnouncements = useMemo(() => {
+        if (!allAnnouncements) return [];
+        const now = new Date();
+        return allAnnouncements.filter(ann => {
+            if (!ann.expiresAt) return true;
+            return new Date(ann.expiresAt) > now;
+        });
+    }, [allAnnouncements]);
 
     const [pendingRequests, approvedStudents] = useMemo(() => {
         if (!enrollments) return [[], []];
@@ -262,7 +290,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || announcementsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -424,6 +452,29 @@ export default function CoachingManagementPage() {
                         </motion.div>
 
                         <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
+                            <Card className='rounded-2xl shadow-lg'>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center"><Megaphone className="mr-2 h-5 w-5 text-primary"/> Recent Announcements</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {announcementsLoading ? (
+                                        <div className="flex justify-center items-center py-8">
+                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                        </div>
+                                    ) : activeAnnouncements && activeAnnouncements.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {activeAnnouncements.slice(0, 2).map(ann => (
+                                                <div key={ann.id} className="p-3 rounded-lg border bg-background/50">
+                                                    <p className="text-sm font-medium">{ann.message}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(ann.createdAt)}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-8">No recent announcements.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
                             <Card className='rounded-2xl shadow-lg'>
                                 <CardHeader>
                                     <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>

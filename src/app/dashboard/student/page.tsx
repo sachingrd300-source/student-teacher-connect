@@ -62,6 +62,14 @@ interface Fee {
     feeYear: number;
 }
 
+interface Announcement {
+    id: string;
+    message: string;
+    target: 'all' | 'teachers' | 'students';
+    createdAt: string;
+    expiresAt?: string;
+}
+
 
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -159,6 +167,26 @@ export default function StudentDashboardPage() {
     }, [firestore, user?.uid]);
     const { data: unpaidFees, isLoading: feesLoading } = useCollection<Fee>(unpaidFeesQuery);
 
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'announcements'),
+            where('target', 'in', ['all', 'student']),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore]);
+
+    const { data: allAnnouncements, isLoading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
+    const activeAnnouncements = useMemo(() => {
+        if (!allAnnouncements) return [];
+        const now = new Date();
+        return allAnnouncements.filter(ann => {
+            if (!ann.expiresAt) return true;
+            return new Date(ann.expiresAt) > now;
+        });
+    }, [allAnnouncements]);
+
     const enrolledBatchIds = useMemo(() => {
         return enrollments?.map(e => e.batchId) || [];
     }, [enrollments]);
@@ -217,7 +245,7 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || homeBookingsLoading || feesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || homeBookingsLoading || feesLoading || announcementsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -352,6 +380,27 @@ export default function StudentDashboardPage() {
                 </div>
                 
                 <div className="lg:col-span-1 grid gap-8 content-start">
+                     <Card className="rounded-2xl shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><Megaphone className="mr-3 h-5 w-5 text-primary"/> Announcements</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            {announcementsLoading ? (
+                                <div className="flex justify-center items-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            ) : activeAnnouncements && activeAnnouncements.length > 0 ? (
+                                activeAnnouncements.slice(0, 2).map(ann => ( 
+                                    <div key={ann.id} className="p-3 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
+                                        <p className="text-sm font-medium">{ann.message}</p>
+                                        <p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-center text-muted-foreground py-8">No new announcements right now.</p>
+                            )}
+                        </CardContent>
+                    </Card>
                      <Card className="rounded-2xl shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center"><Wallet className="mr-3 h-5 w-5 text-primary"/> Pending Fees</CardTitle>
