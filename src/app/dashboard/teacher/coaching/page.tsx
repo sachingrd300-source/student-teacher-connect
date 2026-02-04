@@ -1,11 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion, orderBy, limit } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -235,7 +233,7 @@ export default function CoachingManagementPage() {
 
     if (isLoading || !userProfile) {
         return (
-             <div className="flex h-screen items-center justify-center flex-col gap-4">
+             <div className="flex h-full items-center justify-center flex-col gap-4 py-16">
                 <School className="h-12 w-12 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Loading Coaching Management...</p>
             </div>
@@ -245,233 +243,228 @@ export default function CoachingManagementPage() {
     const isCommunityAssociate = userProfile?.teacherWorkStatus === 'achievers_associate' || userProfile?.teacherWorkStatus === 'both';
 
     return (
-        <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-6xl mx-auto">
-                    <motion.div 
-                        className="mb-8"
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeInUp}
-                    >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
-                             {isCommunityAssociate && (
-                                <div className="flex items-center gap-2 text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 px-3 py-1.5 rounded-full">
+        <>
+            <motion.div 
+                className="mb-8"
+                initial="hidden"
+                animate="visible"
+                variants={fadeInUp}
+            >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h1 className="text-3xl md:text-4xl font-bold font-serif">Coaching Management</h1>
+                        {isCommunityAssociate && (
+                        <div className="flex items-center gap-2 text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 px-3 py-1.5 rounded-full">
+                            <CheckCircle className="h-5 w-5" />
+                            <span>Verified Community Associate</span>
+                        </div>
+                    )}
+                </div>
+                <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
+            </motion.div>
+
+            <motion.div
+                    className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8"
+                    initial="hidden"
+                    animate="visible"
+                    variants={staggerContainer(0.1, 0.2)}
+            >
+                <motion.div variants={fadeInUp}>
+                <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{approvedStudents.length}</div>
+                    </CardContent>
+                </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
+                        <BookCopy className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{batches?.length || 0}</div>
+                    </CardContent>
+                </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{pendingRequests.length}</div>
+                        {pendingRequests.length > 0 && <p className="text-xs text-muted-foreground">Review requests below.</p>}
+                    </CardContent>
+                </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Home Tutor Program</CardTitle>
+                        <Home className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        {userProfile.isHomeTutor ? (
+                            <>
+                                <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
                                     <CheckCircle className="h-5 w-5" />
-                                    <span>Verified Community Associate</span>
+                                    <span>Verified Home Tutor</span>
+                                </div>
+                                    <p className="text-xs text-muted-foreground mt-2">You can now be assigned to home tuitions.</p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-xs text-muted-foreground">Join to get students for home tuition.</p>
+                                <Button asChild className="mt-3 w-full" size="sm">
+                                    <Link href="/dashboard/teacher/apply-home-tutor">Apply Now</Link>
+                                </Button>
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+                </motion.div>
+            </motion.div>
+            
+            <motion.div 
+                className="grid gap-8 lg:grid-cols-3"
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainer(0.1, 0.4)}
+            >
+                <motion.div variants={fadeInUp} className="lg:col-span-2 grid gap-8 content-start">
+                    <Card className='rounded-2xl shadow-lg'>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
+                            <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            {batches && batches.length > 0 ? (
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {batches.map(batch => (
+                                        <Card key={batch.id} className="flex flex-col rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                            <CardHeader>
+                                                <CardTitle className="font-serif">{batch.name}</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="flex-grow">
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <p className="text-sm text-muted-foreground">Code:</p>
+                                                    <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
+                                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
+                                                        <Clipboard className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground mt-2">{studentCountsByBatch[batch.id] || 0} Students</p>
+                                            </CardContent>
+                                            <div className="p-4 pt-0">
+                                                <Button asChild className="w-full">
+                                                    <Link href={`/dashboard/teacher/batch/${batch.id}`}>
+                                                        <Settings className="mr-2 h-4 w-4" /> Manage
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <h3 className="text-lg font-semibold">You haven't created any batches yet.</h3>
+                                    <p className="text-muted-foreground mt-1 mb-4">Let's create your first one to get started! 🎉</p>
+                                    <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
+                                    </Button>
                                 </div>
                             )}
-                        </div>
-                        <p className="text-muted-foreground mt-2">Manage your batches and student enrollment requests.</p>
-                    </motion.div>
+                        </CardContent>
+                    </Card>
 
-                    <motion.div
-                         className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8"
-                         initial="hidden"
-                         animate="visible"
-                         variants={staggerContainer(0.1, 0.2)}
-                    >
-                        <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{approvedStudents.length}</div>
-                            </CardContent>
-                        </Card>
-                        </motion.div>
-                        <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
-                                <BookCopy className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{batches?.length || 0}</div>
-                            </CardContent>
-                        </Card>
-                        </motion.div>
-                        <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-                                <UserCheck className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{pendingRequests.length}</div>
-                                {pendingRequests.length > 0 && <p className="text-xs text-muted-foreground">Review requests below.</p>}
-                            </CardContent>
-                        </Card>
-                        </motion.div>
-                        <motion.div variants={fadeInUp}>
-                        <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Home Tutor Program</CardTitle>
-                                <Home className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                {userProfile.isHomeTutor ? (
-                                    <>
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
-                                            <CheckCircle className="h-5 w-5" />
-                                            <span>Verified Home Tutor</span>
-                                        </div>
-                                         <p className="text-xs text-muted-foreground mt-2">You can now be assigned to home tuitions.</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-xs text-muted-foreground">Join to get students for home tuition.</p>
-                                        <Button asChild className="mt-3 w-full" size="sm">
-                                            <Link href="/dashboard/teacher/apply-home-tutor">Apply Now</Link>
-                                        </Button>
-                                    </>
-                                )}
-                            </CardContent>
-                        </Card>
-                        </motion.div>
-                    </motion.div>
+                </motion.div>
+
+                <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
                     
-                    <motion.div 
-                        className="grid gap-8 lg:grid-cols-3"
-                        initial="hidden"
-                        animate="visible"
-                        variants={staggerContainer(0.1, 0.4)}
-                    >
-                        <motion.div variants={fadeInUp} className="lg:col-span-2 grid gap-8 content-start">
-                            <Card className='rounded-2xl shadow-lg'>
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle>My Batches ({batches?.length || 0})</CardTitle>
-                                    <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Batch
-                                    </Button>
-                                </CardHeader>
-                                <CardContent>
-                                    {batches && batches.length > 0 ? (
-                                        <div className="grid gap-4 md:grid-cols-2">
-                                            {batches.map(batch => (
-                                                <Card key={batch.id} className="flex flex-col rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                                                    <CardHeader>
-                                                        <CardTitle className="font-serif">{batch.name}</CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="flex-grow">
-                                                        <div className="flex items-center gap-2 pt-1">
-                                                            <p className="text-sm text-muted-foreground">Code:</p>
-                                                            <span className="font-mono bg-muted px-2 py-1 rounded-md text-sm">{batch.code}</span>
-                                                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(batch.code)}>
-                                                                <Clipboard className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                        <p className="text-sm text-muted-foreground mt-2">{studentCountsByBatch[batch.id] || 0} Students</p>
-                                                    </CardContent>
-                                                    <div className="p-4 pt-0">
-                                                        <Button asChild className="w-full">
-                                                            <Link href={`/dashboard/teacher/batch/${batch.id}`}>
-                                                                <Settings className="mr-2 h-4 w-4" /> Manage
-                                                            </Link>
-                                                        </Button>
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <h3 className="text-lg font-semibold">You haven't created any batches yet.</h3>
-                                            <p className="text-muted-foreground mt-1 mb-4">Let's create your first one to get started! 🎉</p>
-                                            <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
-                                                <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
-                                            </Button>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                        </motion.div>
-
-                        <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
-                            
-                            <Card className='rounded-2xl shadow-lg'>
-                                <CardHeader>
-                                    <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {pendingRequests && pendingRequests.length > 0 ? (
-                                        <div className="grid gap-4">
-                                            {pendingRequests.map(req => (
-                                                <div key={req.id} className="p-4 rounded-lg border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/50">
-                                                    <div className="flex items-center gap-4">
-                                                        <Avatar>
-                                                            <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-semibold break-words">{req.studentName}</p>
-                                                            <p className="text-sm text-muted-foreground break-words">Wants to join: <span className="font-medium">{req.batchName}</span></p>
-                                                            <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2 justify-end mt-4">
-                                                        <Button size="sm" onClick={() => handleApproveRequest(req)}>
-                                                            <Check className="mr-2 h-4 w-4" /> Approve
-                                                        </Button>
-                                                        <Button size="sm" variant="destructive" onClick={() => handleDeclineRequest(req)}>
-                                                            <X className="mr-2 h-4 w-4" /> Decline
-                                                        </Button>
-                                                    </div>
+                    <Card className='rounded-2xl shadow-lg'>
+                        <CardHeader>
+                            <CardTitle>Pending Enrollment Requests ({pendingRequests?.length || 0})</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {pendingRequests && pendingRequests.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {pendingRequests.map(req => (
+                                        <div key={req.id} className="p-4 rounded-lg border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/50">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar>
+                                                    <AvatarFallback>{getInitials(req.studentName)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold break-words">{req.studentName}</p>
+                                                    <p className="text-sm text-muted-foreground break-words">Wants to join: <span className="font-medium">{req.batchName}</span></p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <h3 className="text-lg font-semibold">All Caught Up!</h3>
-                                            <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            <Card className='rounded-2xl shadow-lg'>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achievers Community Program</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {isCommunityAssociate ? (
-                                        <>
-                                            <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
-                                                <CheckCircle className="h-5 w-5" />
-                                                <span>Verified Community Associate</span>
                                             </div>
-                                            <p className="text-xs text-muted-foreground mt-2">You have a verified badge on your profile.</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-sm text-muted-foreground">Join the community to get a verified badge and attract more students.</p>
-                                            <Button asChild className="mt-3 w-full" size="sm">
-                                                <Link href="/dashboard/teacher/apply-verified-coaching">Apply Now</Link>
-                                            </Button>
-                                        </>
-                                    )}
-                                </CardContent>
-                            </Card>
-                            
-                            <Card className='rounded-2xl shadow-lg'>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center"><ShoppingCart className="mr-2 h-5 w-5 text-primary"/> Order Materials</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground">Need test papers, modules, or other materials? Place an order here.</p>
+                                            <div className="flex gap-2 justify-end mt-4">
+                                                <Button size="sm" onClick={() => handleApproveRequest(req)}>
+                                                    <Check className="mr-2 h-4 w-4" /> Approve
+                                                </Button>
+                                                <Button size="sm" variant="destructive" onClick={() => handleDeclineRequest(req)}>
+                                                    <X className="mr-2 h-4 w-4" /> Decline
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <h3 className="text-lg font-semibold">All Caught Up!</h3>
+                                    <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className='rounded-2xl shadow-lg'>
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achievers Community Program</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isCommunityAssociate ? (
+                                <>
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
+                                        <CheckCircle className="h-5 w-5" />
+                                        <span>Verified Community Associate</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">You have a verified badge on your profile.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-muted-foreground">Join the community to get a verified badge and attract more students.</p>
                                     <Button asChild className="mt-3 w-full" size="sm">
-                                        <Link href="/dashboard/teacher/place-order">Place an Order</Link>
+                                        <Link href="/dashboard/teacher/apply-verified-coaching">Apply Now</Link>
                                     </Button>
-                                </CardContent>
-                            </Card>
-                            
-                        </motion.div>
-                    </motion.div>
-                </div>
-            </main>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className='rounded-2xl shadow-lg'>
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><ShoppingCart className="mr-2 h-5 w-5 text-primary"/> Order Materials</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">Need test papers, modules, or other materials? Place an order here.</p>
+                            <Button asChild className="mt-3 w-full" size="sm">
+                                <Link href="/dashboard/teacher/place-order">Place an Order</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    
+                </motion.div>
+            </motion.div>
 
             <Dialog open={isCreateBatchOpen} onOpenChange={setCreateBatchOpen}>
                 <DialogContent>
@@ -495,7 +488,7 @@ export default function CoachingManagementPage() {
                     </div>
                     <DialogFooter>
                         <DialogClose asChild>
-                             <Button variant="outline">Cancel</Button>
+                                <Button variant="outline">Cancel</Button>
                         </DialogClose>
                         <Button onClick={handleCreateBatch} disabled={isCreatingBatch || !newBatchName.trim()}>
                             {isCreatingBatch && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -504,6 +497,6 @@ export default function CoachingManagementPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </>
     );
 }
