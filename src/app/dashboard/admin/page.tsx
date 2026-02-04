@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
+import React, { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useStorage, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -1240,8 +1240,8 @@ export default function AdminDashboardPage() {
             return (
                 <div className="grid gap-4">
                     {materialList.map(material => (
-                        <Card key={material.id} className="p-4 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                        <Card key={material.id} className="p-4 rounded-2xl shadow-md transition-shadow hover:shadow-lg">
+                             <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                                 <div className="flex items-start gap-4 flex-1">
                                     <div className="p-3 bg-primary/10 rounded-lg mt-1">
                                        <FileText className="h-6 w-6 text-primary" />
