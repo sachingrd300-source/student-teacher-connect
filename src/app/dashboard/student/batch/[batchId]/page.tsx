@@ -7,7 +7,7 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown, ArrowRight, CalendarDays, Check, X, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown, ArrowRight, XCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -73,12 +73,6 @@ interface TestResult {
     id: string;
     testId: string;
     marksObtained: number;
-}
-
-interface Attendance {
-    id: string;
-    date: string; // YYYY-MM-DD
-    status: 'present' | 'absent';
 }
 
 const formatDate = (dateString: string) => {
@@ -188,17 +182,6 @@ export default function StudentBatchPage() {
     }, [firestore, batchId, user?.uid, tests]);
     const { data: testResults, isLoading: isTestResultsLoading } = useCollection<TestResult>(testResultsQuery);
     
-    const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user?.uid) return null;
-        return query(
-            collection(firestore, 'attendance'),
-            where('studentId', '==', user.uid),
-            where('batchId', '==', batchId),
-            orderBy('date', 'desc')
-        );
-    }, [firestore, batchId, user?.uid]);
-    const { data: studentAttendance, isLoading: isAttendanceLoading } = useCollection<Attendance>(attendanceQuery);
-
 
     const performanceData = useMemo(() => {
         if (!tests || tests.length === 0 || !testResults || testResults.length === 0) {
@@ -261,7 +244,7 @@ export default function StudentBatchPage() {
     }, [feesData]);
 
 
-    const isLoading = isUserLoading || isProfileLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading || isAttendanceLoading;
+    const isLoading = isUserLoading || isProfileLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading;
 
     // The check for enrollment status
     const isEnrolledAndApproved = useMemo(() => enrollments?.length > 0, [enrollments]);
@@ -342,12 +325,11 @@ export default function StudentBatchPage() {
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
                             <TabsTrigger value="announcements">Announcements</TabsTrigger>
                             <TabsTrigger value="study-materials">Study Materials</TabsTrigger>
                             <TabsTrigger value="fees">Fees</TabsTrigger>
                             <TabsTrigger value="tests">Tests</TabsTrigger>
-                             <TabsTrigger value="attendance">Attendance</TabsTrigger>
                             <TabsTrigger value="performance">Performance</TabsTrigger>
                         </TabsList>
                         <TabsContent value="announcements" className="mt-4">
@@ -486,38 +468,6 @@ export default function StudentBatchPage() {
                                 </CardContent>
                             </Card>
                         </TabsContent>
-                        <TabsContent value="attendance" className="mt-4">
-                             <Card className="rounded-2xl shadow-md">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center"><CalendarDays className="mr-3 h-5 w-5 text-primary"/> Attendance History</CardTitle>
-                                    <CardDescription>Your attendance record for this batch.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {studentAttendance && studentAttendance.length > 0 ? (
-                                        <div className="grid gap-4">
-                                            {studentAttendance.map(att => (
-                                                <div key={att.id} className="flex items-center justify-between p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
-                                                    <p className="font-semibold">{new Date(att.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}</p>
-                                                    <div className={cn(
-                                                        "flex items-center gap-2 text-sm font-bold py-1 px-3 rounded-full",
-                                                        att.status === 'present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                    )}>
-                                                        {att.status === 'present' ? <Check className="h-4 w-4"/> : <X className="h-4 w-4" />}
-                                                        <span className="capitalize">{att.status}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-12 flex flex-col items-center">
-                                            <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold">No Attendance Records</h3>
-                                            <p className="text-muted-foreground mt-1">Your teacher will start taking attendance soon.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
                         <TabsContent value="performance" className="mt-4">
                             {performanceData ? (
                                 <div className="grid gap-6">
@@ -594,3 +544,5 @@ export default function StudentBatchPage() {
         </div>
     );
 }
+
+    
