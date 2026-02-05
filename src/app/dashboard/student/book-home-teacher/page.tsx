@@ -117,6 +117,9 @@ export default function BookHomeTeacherPage() {
                         <CardHeader>
                             <CardTitle>Book a Home Tutor</CardTitle>
                             <CardDescription>Fill out the details below to request a personalized home tutor. Our team will review your request and assign a suitable teacher.</CardDescription>
+                            <CardDescription className="!mt-4 text-info font-semibold border-l-4 border-info pl-4">
+                                एक विशेष ऑफर उपलब्ध है! यदि आपके पास 10 से अधिक छात्र हैं, तो प्रति छात्र शुल्क ₹300 लगेगा।
+                            </CardDescription>
                         </CardHeader>
                         <form onSubmit={handleSubmit}>
                             <CardContent className="grid gap-6">
