@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
+import WhatsAppSupportButton from '@/components/whatsapp-support-button';
 
 // Icons
 import { 
@@ -1617,6 +1618,7 @@ export default function AdminDashboardPage() {
                     setBookingForPayment(null);
                 }}
             />
+            <WhatsAppSupportButton />
         </div>
     );
 }
