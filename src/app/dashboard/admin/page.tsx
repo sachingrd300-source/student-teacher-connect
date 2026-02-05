@@ -1291,7 +1291,7 @@ export default function AdminDashboardPage() {
                                     <Button asChild variant="outline" size="sm">
                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
                                             {material.fileType === 'link' ? <ArrowRight className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
-                                            {material.fileType === 'link' ? 'Open Link' : 'View'}
+                                            View
                                         </a>
                                     </Button>
                                     <Button variant="destructive" size="sm" onClick={() => handleDeleteMaterial(material)}><Trash className="h-4 w-4" /></Button>
@@ -1883,4 +1883,3 @@ export default function AdminDashboardPage() {
     );
 }
 
-    

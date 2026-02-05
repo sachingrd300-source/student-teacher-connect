@@ -174,7 +174,7 @@ export default function FreeMaterialsPage() {
                                     <Button asChild size="sm">
                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
                                             {material.fileType === 'link' ? <ArrowRight className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
-                                            {material.fileType === 'link' ? 'Open Link' : 'View'}
+                                            View
                                         </a>
                                     </Button>
                                  </div>
