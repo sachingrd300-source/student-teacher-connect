@@ -27,6 +27,7 @@ export default function SignupPage() {
   const router = useRouter();
 
   const [name, setName] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
@@ -44,6 +45,12 @@ export default function SignupPage() {
   const handleSignUp = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
+
+    if (role === 'teacher' && teacherType === 'school' && !schoolName.trim()) {
+        setError('School Name is required for school accounts.');
+        return;
+    }
+    
     setIsSigningUp(true);
 
     if (!auth || !firestore) {
@@ -75,34 +82,56 @@ export default function SignupPage() {
 
       if (role === 'teacher') {
         dataToSet.teacherType = teacherType;
-        dataToSet.teacherWorkStatus = 'own_coaching'; // Default status for new teachers
+        if (teacherType === 'coaching') {
+          dataToSet.teacherWorkStatus = 'own_coaching'; // Default status for new coaching teachers
+        }
       }
       
-      // Handle referral
-      const trimmedReferralCode = referralCodeInput.trim().toUpperCase();
-      if (trimmedReferralCode) {
-          const usersRef = collection(firestore, 'users');
-          const q = query(usersRef, where('referralCode', '==', trimmedReferralCode), limit(1));
-          const querySnapshot = await getDocs(q);
+      // Handle referral only for students
+      if (role === 'student') {
+        const trimmedReferralCode = referralCodeInput.trim().toUpperCase();
+        if (trimmedReferralCode) {
+            const usersRef = collection(firestore, 'users');
+            const q = query(usersRef, where('referralCode', '==', trimmedReferralCode), limit(1));
+            const querySnapshot = await getDocs(q);
 
-          if (!querySnapshot.empty) {
-              const referrerDoc = querySnapshot.docs[0];
-              const referrerRef = doc(firestore, 'users', referrerDoc.id);
+            if (!querySnapshot.empty) {
+                const referrerDoc = querySnapshot.docs[0];
+                const referrerRef = doc(firestore, 'users', referrerDoc.id);
 
-              const REFERRER_REWARD = 100;
-              const NEW_USER_REWARD = 50;
+                const REFERRER_REWARD = 100;
+                const NEW_USER_REWARD = 50;
 
-              newUserInitialCoins = NEW_USER_REWARD;
-              dataToSet.referredBy = trimmedReferralCode;
+                newUserInitialCoins = NEW_USER_REWARD;
+                dataToSet.referredBy = trimmedReferralCode;
 
-              batch.update(referrerRef, { coins: increment(REFERRER_REWARD) });
-          } else {
-              console.warn("Invalid referral code used:", trimmedReferralCode);
-          }
+                batch.update(referrerRef, { coins: increment(REFERRER_REWARD) });
+            } else {
+                console.warn("Invalid referral code used:", trimmedReferralCode);
+            }
+        }
       }
       
       dataToSet.coins = newUserInitialCoins;
       batch.set(newUserRef, dataToSet);
+
+      // If a school teacher signs up, also create a new school document
+      if (role === 'teacher' && teacherType === 'school') {
+          const schoolCode = nanoid(8).toUpperCase();
+          const newSchoolRef = doc(collection(firestore, 'schools'));
+          const newSchoolData = {
+              name: schoolName.trim(),
+              address: "", // Can be filled later
+              principalId: newUser.uid,
+              principalName: name.trim(),
+              code: schoolCode,
+              academicYear: "", // Can be filled later
+              teacherIds: [newUser.uid], // Principal is the first teacher
+              classes: [],
+              createdAt: new Date().toISOString(),
+          };
+          batch.set(newSchoolRef, newSchoolData);
+      }
       
       await batch.commit();
       
@@ -183,9 +212,27 @@ export default function SignupPage() {
                 </AnimatePresence>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full Name</Label>
-                  <Input id="full-name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
+                  <Label htmlFor="full-name">{role === 'teacher' && teacherType === 'school' ? 'Principal Name' : 'Full Name'}</Label>
+                  <Input id="full-name" placeholder={role === 'teacher' && teacherType === 'school' ? 'e.g. John Doe' : 'Full Name'} required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
+
+                <AnimatePresence>
+                    {role === 'teacher' && teacherType === 'school' && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="grid gap-2 overflow-hidden"
+                        >
+                            <div className="grid gap-2">
+                                <Label htmlFor="school-name">School Name</Label>
+                                <Input id="school-name" placeholder="e.g. Knowledge High School" required={role === 'teacher' && teacherType === 'school'} value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -196,10 +243,22 @@ export default function SignupPage() {
                    <p className="text-xs text-muted-foreground">Password must be at least 6 characters long.</p>
                 </div>
                 
-                <div className="grid gap-2">
-                  <Label htmlFor="referral-code">Referral Code (Optional)</Label>
-                  <Input id="referral-code" placeholder="Enter a friend's code" value={referralCodeInput} onChange={(e) => setReferralCodeInput(e.target.value)} />
-                </div>
+                <AnimatePresence>
+                    {role === 'student' && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="grid gap-2 overflow-hidden"
+                        >
+                            <div className="grid gap-2">
+                                <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                                <Input id="referral-code" placeholder="Enter a friend's code" value={referralCodeInput} onChange={(e) => setReferralCodeInput(e.target.value)} />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <Button type="submit" className="w-full mt-2" disabled={isSigningUp}>
                   {isSigningUp ? 'Creating Account...' : 'Create Account'}
