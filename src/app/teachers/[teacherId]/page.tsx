@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -7,7 +6,7 @@ import { doc, collection, query, where, addDoc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCopy, Send, Check } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCopy, Send, Check, Home } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -22,6 +21,8 @@ interface TeacherProfile {
     googleMapsLink?: string;
     whatsappNumber?: string;
     fee?: string;
+    isHomeTutor?: boolean;
+    teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
 }
 
 interface UserProfile {
@@ -157,6 +158,20 @@ export default function TeacherProfilePage() {
                             </Avatar>
                             <CardTitle className="text-3xl font-serif">{teacherProfile.name}</CardTitle>
                             <CardDescription className="text-lg text-primary">{teacherProfile.subject || 'Teacher'}</CardDescription>
+                            <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                                {teacherProfile.isHomeTutor && (
+                                    <div className="flex items-center gap-1.5 text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 px-3 py-1 rounded-full">
+                                        <Home className="h-4 w-4" />
+                                        <span>Home Tutor</span>
+                                    </div>
+                                )}
+                                {(teacherProfile.teacherWorkStatus === 'own_coaching' || teacherProfile.teacherWorkStatus === 'achievers_associate' || teacherProfile.teacherWorkStatus === 'both') && (
+                                    <div className="flex items-center gap-1.5 text-sm font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200 px-3 py-1 rounded-full">
+                                        <Building className="h-4 w-4" />
+                                        <span>Coaching Teacher</span>
+                                    </div>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent className="mt-6 grid gap-6">
                             {teacherProfile.bio && (

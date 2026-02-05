@@ -75,6 +75,7 @@ export default function SignupPage() {
 
       if (role === 'teacher') {
         dataToSet.teacherWorkStatus = 'own_coaching'; // Default status for new coaching teachers
+        dataToSet.isHomeTutor = false;
       }
       
       // Handle referral only for students

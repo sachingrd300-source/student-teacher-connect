@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info, Check, FileText, Download } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info, Check, FileText, Download, Home, Building2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ interface UserProfile {
     email: string;
     role: 'student' | 'teacher' | 'admin' | 'parent';
     teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
+    isHomeTutor?: boolean;
     subject?: string;
     bio?: string;
     coachingCenterName?: string;
@@ -321,6 +322,25 @@ export default function ProfilePage() {
                                 <Label htmlFor="role">Role</Label>
                                 <p className="text-sm font-medium capitalize">{userProfile.role}</p>
                             </div>
+                             {userProfile.role === 'teacher' && (
+                                <div className="grid gap-2">
+                                    <Label>Teacher Type</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userProfile.isHomeTutor && (
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 px-2 py-1 rounded-full">
+                                                <Home className="h-4 w-4" />
+                                                <span>Home Tutor</span>
+                                            </div>
+                                        )}
+                                        {(userProfile.teacherWorkStatus === 'own_coaching' || userProfile.teacherWorkStatus === 'achievers_associate' || userProfile.teacherWorkStatus === 'both') && (
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200 px-2 py-1 rounded-full">
+                                                <Building2 className="h-4 w-4" />
+                                                <span>Coaching Teacher</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                             
                             <div className="grid gap-2">
                                 <Label htmlFor="bio">Bio</Label>
