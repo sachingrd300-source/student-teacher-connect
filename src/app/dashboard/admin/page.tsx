@@ -35,7 +35,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, History, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, Download, MessageSquare
+    UserX, CheckCircle, Pencil, Save, Download, MessageSquare
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -46,8 +46,7 @@ interface VerifiedCoachingApplication extends ApplicationBase {}
 interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; tuitionType?: 'single_student' | 'siblings'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps' | 'objective';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
-type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
-interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge' | 'digital'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
+interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'digital'; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
 interface Order { id: string; teacherId: string; teacherName: string; material: string; quantity: string; description: string; status: 'pending' | 'completed'; createdAt: string; }
@@ -56,14 +55,6 @@ interface SupportTicket { id: string; userId: string; userName: string; userRole
 
 type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'programs' | 'orders' | 'support';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
-
-const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
-    award: <Award className="h-5 w-5" />,
-    shield: <Shield className="h-5 w-5" />,
-    gem: <Gem className="h-5 w-5" />,
-    rocket: <Rocket className="h-5 w-5" />,
-    star: <Star className="h-5 w-5" />,
-};
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
   hidden: {},
@@ -118,9 +109,8 @@ export default function AdminDashboardPage() {
     const [isUploadingItem, setIsUploadingItem] = useState(false);
     const [userSearchQuery, setUserSearchQuery] = useState('');
     
-    // Badge/Shop Item state
-    const [itemType, setItemType] = useState<'item' | 'badge' | 'digital'>('item');
-    const [badgeIcon, setBadgeIcon] = useState<BadgeIconType>('award');
+    // Shop Item state
+    const [itemType, setItemType] = useState<'item' | 'digital'>('item');
 
     // Digital item state
     const [digitalFile, setDigitalFile] = useState<File | null>(null);
@@ -144,7 +134,7 @@ export default function AdminDashboardPage() {
     const [isUploadMaterialDialogOpen, setIsUploadMaterialDialogOpen] = useState(false);
 
     useEffect(() => {
-        if (itemType === 'badge' || itemType === 'digital') {
+        if (itemType === 'digital') {
             setItemPriceType('coins');
         }
     }, [itemType]);
@@ -658,7 +648,6 @@ export default function AdminDashboardPage() {
                 createdAt: new Date().toISOString(),
                 ...(imageUrl && { imageUrl }),
                 ...(imageName && { imageName }),
-                ...(itemType === 'badge' && { badgeIcon }),
                 ...(itemPriceType === 'money' && itemPurchaseUrl.trim() && { purchaseUrl: itemPurchaseUrl.trim() }),
                 ...(itemType === 'digital' && { digitalFileUrl, digitalFileName, digitalFileType }),
             };
@@ -673,7 +662,7 @@ export default function AdminDashboardPage() {
             setIsUploadingItem(false);
             // Reset all form fields
             setItemName(''); setItemDescription(''); setItemPrice(''); setItemPurchaseUrl(''); 
-            setItemImage(null); setItemType('item'); setBadgeIcon('award');
+            setItemImage(null); setItemType('item');
             setDigitalFile(null); setDigitalUrl(''); setDigitalUploadMethod('file');
             if (document.getElementById('item-image')) (document.getElementById('item-image') as HTMLInputElement).value = '';
             if (document.getElementById('digital-file')) (document.getElementById('digital-file') as HTMLInputElement).value = '';
@@ -817,7 +806,7 @@ export default function AdminDashboardPage() {
     const navItems = [
         { view: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
         { view: 'users' as AdminView, label: 'Users', icon: Users },
-        { view: 'programs' as AdminView, label: 'Programs', icon: Award },
+        { view: 'programs' as AdminView, label: 'Programs', icon: Briefcase },
         { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
         { view: 'orders' as AdminView, label: 'Orders', icon: ShoppingBag },
@@ -1403,26 +1392,13 @@ export default function AdminDashboardPage() {
                                 <Label>Item Type</Label>
                                 <RadioGroup value={itemType} onValueChange={(v) => setItemType(v as any)} className="flex gap-4 pt-1">
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="item" id="type-item" /><Label htmlFor="type-item">Item</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="badge" id="type-badge" /><Label htmlFor="type-badge">Badge</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="digital" id="type-digital" /><Label htmlFor="type-digital">Digital</Label></div>
                                 </RadioGroup>
                             </div>
 
-                            <AnimatePresence>
-                                {itemType === 'badge' && (
-                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
-                                        <Label htmlFor="badge-icon">Badge Icon</Label>
-                                        <Select value={badgeIcon} onValueChange={(v) => setBadgeIcon(v as any)}>
-                                            <SelectTrigger id="badge-icon"><SelectValue placeholder="Select an icon" /></SelectTrigger>
-                                            <SelectContent>{Object.keys(badgeIcons).map(iconKey => (<SelectItem key={iconKey} value={iconKey}><div className="flex items-center gap-2">{badgeIcons[iconKey as BadgeIconType]}<span className="capitalize">{iconKey}</span></div></SelectItem>))}</SelectContent>
-                                        </Select>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
                             <div className="grid gap-2">
                                 <Label htmlFor="item-price-type">Price Type</Label>
-                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4" disabled={itemType === 'badge' || itemType === 'digital'}>
+                                <RadioGroup id="item-price-type" value={itemPriceType} onValueChange={(v) => setItemPriceType(v as any)} className="flex gap-4" disabled={itemType === 'digital'}>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="money" id="money" /><Label htmlFor="money">Money</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="coins" id="coins" /><Label htmlFor="coins">Coins</Label></div>
                                 </RadioGroup>
@@ -1472,10 +1448,6 @@ export default function AdminDashboardPage() {
                                             {item.itemType === 'digital' ? (
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
                                                     <FileText className="h-10 w-10" />
-                                                </div>
-                                            ) : item.itemType === 'badge' && item.badgeIcon ? (
-                                                <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
-                                                    {React.cloneElement(badgeIcons[item.badgeIcon] as React.ReactElement, { className: "h-10 w-10" })}
                                                 </div>
                                             ) : item.imageUrl ? (
                                                 <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
@@ -1910,3 +1882,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    

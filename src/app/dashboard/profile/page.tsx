@@ -13,14 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info, Check, FileText, Download, Home, Building2 } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Info, Check, FileText, Download, Home, Building2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-
-
-type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 
 interface UserProfile {
     name: string;
@@ -43,7 +40,6 @@ interface UserProfile {
     coins?: number;
     streak?: number;
     referralCode?: string;
-    equippedBadgeIcon?: BadgeIconType;
     savedFreeMaterialIds?: string[];
 }
 
@@ -51,27 +47,12 @@ interface UserInventoryItem {
     id: string;
     itemId: string;
     itemName: string;
-    itemType: 'item' | 'badge' | 'digital';
-    badgeIcon?: BadgeIconType;
+    itemType: 'item' | 'digital';
     itemImageUrl?: string;
     digitalFileType?: 'pdf' | 'url';
     digitalFileUrl?: string;
     purchasedAt: string;
 }
-
-const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
-    award: <Award className="h-5 w-5 text-yellow-500" />,
-    shield: <Shield className="h-5 w-5 text-blue-500" />,
-    gem: <Gem className="h-5 w-5 text-emerald-500" />,
-    rocket: <Rocket className="h-5 w-5 text-rose-500" />,
-    star: <Star className="h-5 w-5 text-amber-500" />,
-};
-
-const BadgeIcon = ({ iconName }: { iconName?: BadgeIconType }) => {
-    if (!iconName || !badgeIcons[iconName]) return null;
-    return <div className="ml-2" title={iconName}>{badgeIcons[iconName]}</div>;
-};
-
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
@@ -219,23 +200,6 @@ export default function ProfilePage() {
             setIsSaving(false);
         }
     };
-    
-    const handleEquipBadge = async (badge: UserInventoryItem) => {
-        if (!userProfileRef || !userProfile || userProfile.role !== 'student' || badge.itemType !== 'badge') return;
-    
-        const newIcon = userProfile.equippedBadgeIcon === badge.badgeIcon ? null : badge.badgeIcon;
-        
-        try {
-            await updateDoc(userProfileRef, { equippedBadgeIcon: newIcon });
-        } catch (error) {
-            console.error("Error equipping badge:", error);
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                operation: 'update',
-                path: userProfileRef.path,
-                requestResourceData: { equippedBadgeIcon: newIcon },
-            }));
-        }
-    };
 
     const handleCancel = () => {
         // Reset state to original profile data
@@ -277,14 +241,6 @@ export default function ProfilePage() {
         );
     }
     
-    const largeBadgeIcons: Record<BadgeIconType, React.ReactNode> = {
-        award: <Award className="h-12 w-12 text-primary" />,
-        shield: <Shield className="h-12 w-12 text-primary" />,
-        gem: <Gem className="h-12 w-12 text-primary" />,
-        rocket: <Rocket className="h-12 w-12 text-primary" />,
-        star: <Star className="h-12 w-12 text-primary" />,
-    };
-
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
@@ -300,7 +256,6 @@ export default function ProfilePage() {
                                     <div>
                                         <div className="flex items-center">
                                             <CardTitle>{isEditing ? name : userProfile.name}</CardTitle>
-                                            {!isEditing && <BadgeIcon iconName={userProfile.equippedBadgeIcon} />}
                                         </div>
                                         <CardDescription>View and edit your personal information.</CardDescription>
                                     </div>
@@ -555,14 +510,12 @@ export default function ProfilePage() {
                                 <CardTitle className="flex items-center">
                                     <Package className="mr-3 h-6 w-6 text-primary"/> My Inventory
                                 </CardTitle>
-                                <CardDescription>Items and badges you've collected. Click a badge to equip it or a digital item to open it.</CardDescription>
+                                <CardDescription>Items you've collected. Click a digital item to open it.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {inventory && inventory.length > 0 ? (
                                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                                         {inventory.map(item => {
-                                            const isEquipped = item.itemType === 'badge' && userProfile.equippedBadgeIcon === item.badgeIcon;
-                                            
                                             if (item.itemType === 'digital') {
                                                 return (
                                                     <a key={item.id} href={item.digitalFileUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center gap-2 group">
@@ -579,28 +532,17 @@ export default function ProfilePage() {
 
                                             return (
                                                 <div key={item.id} className="flex flex-col items-center text-center gap-2">
-                                                    <button
-                                                        onClick={() => item.itemType === 'badge' && handleEquipBadge(item)}
-                                                        disabled={item.itemType !== 'badge'}
+                                                    <div
                                                         className={cn(
-                                                            "relative w-24 h-24 rounded-lg overflow-hidden border-2 flex items-center justify-center bg-muted transition-all",
-                                                            item.itemType === 'badge' && "cursor-pointer hover:border-primary hover:scale-105",
-                                                            isEquipped ? "border-primary shadow-lg" : "border-transparent"
+                                                            "relative w-24 h-24 rounded-lg overflow-hidden border-2 flex items-center justify-center bg-muted transition-all border-transparent"
                                                         )}
                                                     >
-                                                        {item.itemType === 'badge' && item.badgeIcon ? (
-                                                            largeBadgeIcons[item.badgeIcon]
-                                                        ) : item.itemImageUrl ? (
+                                                        {item.itemImageUrl ? (
                                                             <Image src={item.itemImageUrl} alt={item.itemName} layout="fill" objectFit="cover" />
                                                         ) : (
                                                             <div className="w-full h-full bg-muted"></div>
                                                         )}
-                                                        {isEquipped && (
-                                                            <div className="absolute bottom-0 right-0 p-1 bg-primary rounded-tl-lg">
-                                                                <Check className="h-4 w-4 text-primary-foreground" />
-                                                            </div>
-                                                        )}
-                                                    </button>
+                                                    </div>
                                                     <p className="text-xs font-semibold leading-tight">{item.itemName}</p>
                                                 </div>
                                             )

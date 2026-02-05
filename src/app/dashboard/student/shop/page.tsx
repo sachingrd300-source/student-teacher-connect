@@ -5,14 +5,12 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@
 import { collection, query, orderBy, doc, writeBatch, increment, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, School, DollarSign, Coins, BadgeCheck, CheckCircle, Award, Shield, Gem, Rocket, Star } from 'lucide-react';
+import { ShoppingBag, School, DollarSign, Coins, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
-
-type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 
 interface ShopItem {
     id: string;
@@ -20,8 +18,7 @@ interface ShopItem {
     description?: string;
     price: number;
     priceType: 'money' | 'coins';
-    itemType: 'item' | 'badge';
-    badgeIcon?: BadgeIconType;
+    itemType: 'item' | 'digital';
     imageUrl?: string;
     purchaseUrl?: string;
     createdAt: string;
@@ -30,21 +27,12 @@ interface ShopItem {
 interface UserProfile {
     name: string;
     coins?: number;
-    equippedBadgeIcon?: string;
 }
 
 interface UserInventoryItem {
     id: string;
     itemId: string;
 }
-
-const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
-    award: <Award className="h-10 w-10" />,
-    shield: <Shield className="h-10 w-10" />,
-    gem: <Gem className="h-10 w-10" />,
-    rocket: <Rocket className="h-10 w-10" />,
-    star: <Star className="h-10 w-10" />,
-};
 
 export default function ShopPage() {
     const { user } = useUser();
@@ -90,9 +78,6 @@ export default function ShopPage() {
             itemType: item.itemType,
             purchasedAt: new Date().toISOString()
         };
-        if (item.itemType === 'badge' && item.badgeIcon) {
-            inventoryData.badgeIcon = item.badgeIcon;
-        }
         if (item.itemType === 'item' && item.imageUrl) {
             inventoryData.itemImageUrl = item.imageUrl;
         }
@@ -108,23 +93,6 @@ export default function ShopPage() {
             setIsPurchasing(null);
         }
     };
-    
-    const handleEquipBadge = async (item: ShopItem) => {
-        if (!user || !firestore || item.itemType !== 'badge') return;
-    
-        setIsPurchasing(item.id); // reuse loading state
-        const userRef = doc(firestore, 'users', user.uid);
-        try {
-            // If the badge is already equipped, unequip it. Otherwise, equip it.
-            const newIcon = userProfile?.equippedBadgeIcon === item.badgeIcon ? null : item.badgeIcon;
-            await updateDoc(userRef, { equippedBadgeIcon: newIcon });
-        } catch (error) {
-            console.error("Error equipping badge:", error);
-        } finally {
-            setIsPurchasing(null);
-        }
-    };
-
 
     if (itemsLoading) {
         return (
@@ -181,7 +149,6 @@ export default function ShopPage() {
                     const hasEnoughCoins = isCoinShop && (userProfile?.coins ?? 0) >= item.price;
                     const isOwned = isCoinShop && ownedItemIds.has(item.id);
                     const canPurchase = hasEnoughCoins && !isOwned;
-                    const isEquipped = item.itemType === 'badge' && userProfile?.equippedBadgeIcon === item.badgeIcon;
                     
                     return (
                          <motion.div
@@ -194,16 +161,12 @@ export default function ShopPage() {
                         >
                             <Card className="flex flex-col h-full overflow-hidden rounded-2xl shadow-lg">
                                 <div className="relative w-full h-56 bg-muted">
-                                    {item.itemType === 'badge' ? (
-                                        <div className="w-full h-full flex items-center justify-center text-primary">
-                                            {badgeIcons[item.badgeIcon!]}
-                                        </div>
-                                    ) : (
-                                         <Image src={item.imageUrl!} alt={item.name} layout="fill" objectFit="cover" />
+                                    {item.imageUrl && (
+                                         <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" />
                                     )}
                                     {isOwned && (
                                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                            <BadgeCheck className="h-16 w-16 text-white"/>
+                                            <CheckCircle className="h-16 w-16 text-white"/>
                                         </div>
                                     )}
                                 </div>
@@ -228,14 +191,7 @@ export default function ShopPage() {
                                     
                                     {isCoinShop ? (
                                         isOwned ? (
-                                            item.itemType === 'badge' ? (
-                                                <Button onClick={() => handleEquipBadge(item)} disabled={isPurchasing === item.id}>
-                                                    {isPurchasing === item.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                                    {isEquipped ? 'Unequip' : 'Equip'}
-                                                </Button>
-                                            ) : (
-                                                <Button disabled variant="outline"><CheckCircle className="mr-2 h-4 w-4"/> Owned</Button>
-                                            )
+                                            <Button disabled variant="outline"><CheckCircle className="mr-2 h-4 w-4"/> Owned</Button>
                                         ) : (
                                             <Button onClick={() => handlePurchaseWithCoins(item)} disabled={!canPurchase || isPurchasing === item.id}>
                                                 {isPurchasing === item.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}

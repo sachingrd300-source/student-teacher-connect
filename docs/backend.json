@@ -106,10 +106,6 @@
             "type": "string",
             "description": "The referral code of the user who referred this user."
         },
-        "equippedBadgeIcon": {
-          "type": "string",
-          "description": "The Lucide icon name for the user's equipped badge."
-        },
         "savedFreeMaterialIds": {
           "type": "array",
           "description": "An array of IDs of free materials saved by the student.",
@@ -205,8 +201,7 @@
       "properties": {
         "name": { "type": "string", "description": "The name of the item." },
         "description": { "type": "string", "description": "A description of the item." },
-        "itemType": { "type": "string", "enum": ["item", "badge", "digital"], "description": "The type of shop item, e.g., a regular item, a displayable badge, or a digital product." },
-        "badgeIcon": { "type": "string", "enum": ["award", "shield", "gem", "rocket", "star"], "description": "If the item is a badge, this specifies the Lucide icon name to display." },
+        "itemType": { "type": "string", "enum": ["item", "digital"], "description": "The type of shop item, e.g., a regular item or a digital product." },
         "priceType": { "type": "string", "enum": ["money", "coins"], "description": "The type of currency for the price." },
         "price": { "type": "number", "description": "The price of the item, either in currency or coins." },
         "imageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image (for 'item' type)." },
@@ -222,12 +217,11 @@
     "UserInventoryItem": {
       "title": "User Inventory Item",
       "type": "object",
-      "description": "Represents a digital item (regular item or badge) a user has purchased with coins.",
+      "description": "Represents a digital item a user has purchased with coins.",
       "properties": {
         "itemId": { "type": "string", "description": "The ID of the original shop item." },
         "itemName": { "type": "string", "description": "The name of the item." },
-        "itemType": { "type": "string", "enum": ["item", "badge", "digital"], "description": "The type of inventory item." },
-        "badgeIcon": { "type": "string", "description": "If the item is a badge, this specifies the Lucide icon name." },
+        "itemType": { "type": "string", "enum": ["item", "digital"], "description": "The type of inventory item." },
         "itemImageUrl": { "type": "string", "format": "uri", "description": "URL of the item's image (for 'item' type)." },
         "digitalFileType": { "type": "string", "enum": ["pdf", "url"], "description": "For digital items, the type of content." },
         "digitalFileUrl": { "type": "string", "format": "uri", "description": "For digital items, the URL to access the content." },
@@ -554,7 +548,5 @@
     }
   }
 }
-
-    
 
     
