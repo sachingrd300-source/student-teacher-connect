@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -6,7 +7,7 @@ import { doc, collection, query, where, addDoc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCopy, Send, Check, Home } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCopy, Send, Check, Home, Award } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +16,7 @@ interface TeacherProfile {
     email: string;
     role: 'teacher';
     subject?: string;
+    experience?: string;
     bio?: string;
     coachingCenterName?: string;
     coachingAddress?: string;
@@ -182,6 +184,7 @@ export default function TeacherProfilePage() {
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
                                 <InfoItem icon={<Building className="w-5 h-5 text-primary" />} label="Coaching Center" value={teacherProfile.coachingCenterName} />
+                                <InfoItem icon={<Award className="w-5 h-5 text-primary" />} label="Experience" value={teacherProfile.experience} />
                                 <InfoItem icon={<Wallet className="w-5 h-5 text-primary" />} label="Fee Structure" value={teacherProfile.fee} />
                                 <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Coaching Address" value={teacherProfile.coachingAddress} />
                                 <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="WhatsApp" value={teacherProfile.whatsappNumber} />
@@ -258,3 +261,5 @@ const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string
         </div>
     );
 };
+
+    

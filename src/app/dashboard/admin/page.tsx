@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -39,12 +40,12 @@ import {
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; whatsappNumber?: string; subject?: string; bio?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; whatsappNumber?: string; subject?: string; bio?: string; experience?: string; }
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
 interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; tuitionType?: 'single_student' | 'siblings'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
-type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
+type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps' | 'objective';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge' | 'digital'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
@@ -135,7 +136,7 @@ export default function AdminDashboardPage() {
 
     // Home Tutor Edit State
     const [editingHomeTutor, setEditingHomeTutor] = useState<UserProfile | null>(null);
-    const [homeTutorFormState, setHomeTutorFormState] = useState({ subject: '', whatsappNumber: '', homeAddress: '', bio: '' });
+    const [homeTutorFormState, setHomeTutorFormState] = useState({ subject: '', whatsappNumber: '', homeAddress: '', bio: '', experience: '' });
     const [isUpdatingHomeTutor, setIsUpdatingHomeTutor] = useState(false);
 
 
@@ -308,12 +309,13 @@ export default function AdminDashboardPage() {
     [filteredHomeTutorApps, filteredCommunityApps, filteredEnrollments]);
     
     const filteredMaterials = useMemo(() => {
-        if (!materials) return { notes: [], books: [], pyqs: [], dpps: [] };
+        if (!materials) return { notes: [], books: [], pyqs: [], dpps: [], objective: [] };
         return {
             notes: materials.filter(m => m.category === 'notes'),
             books: materials.filter(m => m.category === 'books'),
             pyqs: materials.filter(m => m.category === 'pyqs'),
             dpps: materials.filter(m => m.category === 'dpps'),
+            objective: materials.filter(m => m.category === 'objective'),
         };
     }, [materials]);
 
@@ -739,6 +741,7 @@ export default function AdminDashboardPage() {
             whatsappNumber: teacher.whatsappNumber || '',
             homeAddress: teacher.homeAddress || '',
             bio: teacher.bio || '',
+            experience: teacher.experience || '',
         });
     };
 
@@ -1327,18 +1330,20 @@ export default function AdminDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="all" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
                                 <TabsTrigger value="all">All ({materials?.length || 0})</TabsTrigger>
                                 <TabsTrigger value="notes">Notes ({filteredMaterials.notes.length})</TabsTrigger>
                                 <TabsTrigger value="books">Books ({filteredMaterials.books.length})</TabsTrigger>
                                 <TabsTrigger value="pyqs">PYQs ({filteredMaterials.pyqs.length})</TabsTrigger>
                                 <TabsTrigger value="dpps">DPPs ({filteredMaterials.dpps.length})</TabsTrigger>
+                                <TabsTrigger value="objective">Objective ({filteredMaterials.objective.length})</TabsTrigger>
                             </TabsList>
                             <TabsContent value="all" className="mt-6">{renderMaterialList(materials || [])}</TabsContent>
                             <TabsContent value="notes" className="mt-6">{renderMaterialList(filteredMaterials.notes)}</TabsContent>
                             <TabsContent value="books" className="mt-6">{renderMaterialList(filteredMaterials.books)}</TabsContent>
                             <TabsContent value="pyqs" className="mt-6">{renderMaterialList(filteredMaterials.pyqs)}</TabsContent>
                             <TabsContent value="dpps" className="mt-6">{renderMaterialList(filteredMaterials.dpps)}</TabsContent>
+                            <TabsContent value="objective" className="mt-6">{renderMaterialList(filteredMaterials.objective)}</TabsContent>
                         </Tabs>
                     </CardContent>
                 </Card>
@@ -1358,7 +1363,7 @@ export default function AdminDashboardPage() {
                                 </RadioGroup>
                             </div>
                             <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle || ''} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem></SelectContent></Select></div>
+                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective</SelectItem></SelectContent></Select></div>
                             
                             <AnimatePresence mode="wait">
                                 {uploadMethod === 'file' ? (
@@ -1797,6 +1802,15 @@ export default function AdminDashboardPage() {
                             />
                         </div>
                         <div className="grid gap-2">
+                            <Label htmlFor="tutor-experience">Experience</Label>
+                            <Input 
+                                id="tutor-experience" 
+                                value={homeTutorFormState.experience || ''} 
+                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, experience: e.target.value }))}
+                                placeholder="e.g., 5+ years"
+                            />
+                        </div>
+                        <div className="grid gap-2">
                             <Label htmlFor="tutor-whatsapp">WhatsApp Number</Label>
                             <Input 
                                 id="tutor-whatsapp" 
@@ -1896,3 +1910,5 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+
+    

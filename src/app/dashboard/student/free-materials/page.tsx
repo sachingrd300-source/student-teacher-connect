@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -18,7 +19,7 @@ interface UserProfile {
     streak?: number;
 }
 
-type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps';
+type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps' | 'objective';
 
 interface FreeMaterial {
     id: string;
@@ -63,12 +64,13 @@ export default function FreeMaterialsPage() {
     }, [materials, searchQuery]);
 
     const filteredMaterials = useMemo(() => {
-        if (!searchedMaterials) return { notes: [], books: [], pyqs: [], dpps: [] };
+        if (!searchedMaterials) return { notes: [], books: [], pyqs: [], dpps: [], objective: [] };
         return {
             notes: searchedMaterials.filter(m => m.category === 'notes'),
             books: searchedMaterials.filter(m => m.category === 'books'),
             pyqs: searchedMaterials.filter(m => m.category === 'pyqs'),
             dpps: searchedMaterials.filter(m => m.category === 'dpps'),
+            objective: searchedMaterials.filter(m => m.category === 'objective'),
         }
     }, [searchedMaterials]);
 
@@ -182,12 +184,13 @@ export default function FreeMaterialsPage() {
                         />
                     </div>
                     <Tabs defaultValue="all" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
                             <TabsTrigger value="all">All</TabsTrigger>
                             <TabsTrigger value="notes">Notes</TabsTrigger>
                             <TabsTrigger value="books">Books</TabsTrigger>
                             <TabsTrigger value="pyqs">PYQs</TabsTrigger>
                             <TabsTrigger value="dpps">DPPs</TabsTrigger>
+                            <TabsTrigger value="objective">Objective</TabsTrigger>
                         </TabsList>
                         <TabsContent value="all" className="mt-6">
                             {isOverallEmpty ? (
@@ -212,9 +215,14 @@ export default function FreeMaterialsPage() {
                         <TabsContent value="dpps" className="mt-6">
                             {renderMaterialList(filteredMaterials.dpps)}
                         </TabsContent>
+                        <TabsContent value="objective" className="mt-6">
+                            {renderMaterialList(filteredMaterials.objective)}
+                        </TabsContent>
                     </Tabs>
                 </CardContent>
             </Card>
         </div>
     );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -27,6 +28,7 @@ interface UserProfile {
     teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
     isHomeTutor?: boolean;
     subject?: string;
+    experience?: string;
     bio?: string;
     coachingCenterName?: string;
     coachingAddress?: string;
@@ -87,6 +89,7 @@ export default function ProfilePage() {
     
     // Teacher state
     const [subject, setSubject] = useState('');
+    const [experience, setExperience] = useState('');
     const [coachingCenterName, setCoachingCenterName] = useState('');
     const [coachingAddress, setCoachingAddress] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
@@ -130,6 +133,7 @@ export default function ProfilePage() {
 
             if (userProfile.role === 'teacher') {
                 setSubject(userProfile.subject || '');
+                setExperience(userProfile.experience || '');
                 setCoachingCenterName(userProfile.coachingCenterName || '');
                 setCoachingAddress(userProfile.coachingAddress || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
@@ -181,6 +185,7 @@ export default function ProfilePage() {
             // Fields all teachers can edit
             dataToUpdate.bio = bio.trim();
             dataToUpdate.subject = subject.trim();
+            dataToUpdate.experience = experience.trim();
             dataToUpdate.whatsappNumber = whatsappNumber.trim();
             
             // Fields only non-associates can edit
@@ -240,6 +245,7 @@ export default function ProfilePage() {
 
             if (userProfile.role === 'teacher') {
                 setSubject(userProfile.subject || '');
+                setExperience(userProfile.experience || '');
                 setCoachingCenterName(userProfile.coachingCenterName || '');
                 setCoachingAddress(userProfile.coachingAddress || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
@@ -466,6 +472,14 @@ export default function ProfilePage() {
                                             <p className="text-sm font-medium">{subject || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
                                     </div>
+                                     <div className="grid gap-2">
+                                        <Label htmlFor="experience">Experience</Label>
+                                        {isEditing ? (
+                                            <Input id="experience" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g., 5+ years" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{experience || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
                                         {isEditing ? (
@@ -625,3 +639,5 @@ export default function ProfilePage() {
         </div>
     )
 }
+
+    
