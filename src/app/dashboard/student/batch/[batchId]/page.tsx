@@ -4,7 +4,6 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, orderBy, where } from 'firebase/firestore';
-import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown, ArrowRight, XCircle } from 'lucide-react';
@@ -302,7 +301,6 @@ export default function StudentBatchPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-5xl mx-auto grid gap-8">
                     <Button variant="ghost" size="sm" asChild>
@@ -544,5 +542,3 @@ export default function StudentBatchPage() {
         </div>
     );
 }
-
-    
