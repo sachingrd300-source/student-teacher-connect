@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Clipboard, Users, Book, User as UserIcon, Building2, PlusCircle, Trash2, UserPlus, FilePlus, X, Pen, Save, UserX, GraduationCap, Wallet, CheckCircle, XCircle, Menu, LayoutDashboard } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -86,6 +85,28 @@ const formatDate = (dateString?: string) => {
     });
 };
 
+const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: staggerChildren,
+      delayChildren: delayChildren,
+    },
+  },
+});
+
+const fadeInUp = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
 export default function SchoolDetailsPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -131,6 +152,7 @@ export default function SchoolDetailsPage() {
     const [editingClassSection, setEditingClassSection] = useState('');
     const [editingClassTeacherId, setEditingClassTeacherId] = useState('');
     const [isUpdatingClass, setIsUpdatingClass] = useState(false);
+    const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
     // Fetch current user's profile for header
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -149,10 +171,23 @@ export default function SchoolDetailsPage() {
     }, [firestore, school]);
     const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
 
-    const totalStudents = useMemo(() => {
-        if (!school || !school.classes) return 0;
-        return school.classes.reduce((acc, currentClass) => acc + (currentClass.students?.length || 0), 0);
+    const allStudents = useMemo(() => {
+        if (!school || !school.classes) return [];
+        return school.classes.flatMap(c => 
+            (c.students || []).map(s => ({ ...s, className: c.name, classSection: c.section }))
+        );
     }, [school]);
+
+    const filteredStudents = useMemo(() => {
+        if (!studentSearchQuery) return allStudents;
+        const lowercasedQuery = studentSearchQuery.toLowerCase();
+        return allStudents.filter(student => 
+            student.name.toLowerCase().includes(lowercasedQuery) ||
+            (student.rollNumber && student.rollNumber.toLowerCase().includes(lowercasedQuery))
+        );
+    }, [allStudents, studentSearchQuery]);
+
+    const totalStudents = useMemo(() => allStudents.length, [allStudents]);
 
     // Security check: ensure user is the principal or an admin
     useEffect(() => {
@@ -433,29 +468,84 @@ export default function SchoolDetailsPage() {
     };
     
     const renderDashboardView = () => (
-         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">School Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{school.teacherIds?.length || 0}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalStudents}</div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+         <motion.div 
+            className="grid gap-8"
+            variants={staggerContainer(0.1, 0)}
+            initial="hidden"
+            animate="visible"
+        >
+            <motion.h1 variants={fadeInUp} className="text-3xl font-bold font-serif">School Dashboard</motion.h1>
+            <motion.div 
+                className="grid gap-4 md:grid-cols-3"
+                variants={staggerContainer(0.1, 0.2)}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.div variants={fadeInUp}>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{school.teacherIds?.length || 0}</div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{totalStudents}</div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
+                            <Book className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{school.classes?.length || 0}</div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </motion.div>
+            <motion.div 
+                className="grid gap-8 md:grid-cols-2"
+                variants={staggerContainer(0.1, 0.4)}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.div variants={fadeInUp}>
+                    <Card className="rounded-2xl shadow-lg">
+                        <CardHeader>
+                            <CardTitle>Quick Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid sm:grid-cols-2 gap-4">
+                            <Button onClick={() => setAddTeacherOpen(true)}><UserPlus className="mr-2 h-4 w-4" /> Add Teacher</Button>
+                            <Button onClick={() => setAddClassOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Class</Button>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                    <Card className="rounded-2xl shadow-lg">
+                        <CardHeader>
+                            <CardTitle>School Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm grid gap-2">
+                            <p><strong>Join Code:</strong> <span className="font-mono bg-muted px-2 py-1 rounded-md">{school.code}</span> <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(school.code)}><Clipboard className="h-4 w-4" /></Button></p>
+                            <p><strong>Academic Year:</strong> {school.academicYear}</p>
+                            <p><strong>Principal:</strong> {userProfile?.name}</p>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </motion.div>
+        </motion.div>
     );
     
     const renderTeachersView = () => (
@@ -469,22 +559,24 @@ export default function SchoolDetailsPage() {
                 <CardContent>
                     {teachersLoading ? <Loader2 className="animate-spin" /> :
                         teachers && teachers.length > 0 ? (
-                        <div className="grid gap-4">
+                        <div className="grid gap-4 md:grid-cols-2">
                             {teachers.map(teacher => (
-                                <div key={teacher.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
-                                    <div className="flex items-center gap-3 w-full">
-                                        <Avatar><AvatarFallback>{getInitials(teacher.name)}</AvatarFallback></Avatar>
-                                        <div>
-                                            <p className="font-semibold">{teacher.name}</p>
-                                            <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                                <Card key={teacher.id} className="p-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 w-full">
+                                            <Avatar className="w-12 h-12"><AvatarFallback className="text-xl">{getInitials(teacher.name)}</AvatarFallback></Avatar>
+                                            <div>
+                                                <p className="font-semibold">{teacher.name}</p>
+                                                <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                                            </div>
                                         </div>
+                                        {teacher.id !== school.principalId ? (
+                                            <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center mt-2 sm:mt-0 flex-shrink-0"><UserX className="mr-2 h-4 w-4" />Remove</Button>
+                                        ) : (
+                                            <span className="text-xs font-semibold text-primary px-3 self-end sm:self-center">PRINCIPAL</span>
+                                        )}
                                     </div>
-                                    {teacher.id !== school.principalId ? (
-                                        <Button variant="destructive" size="sm" onClick={() => handleRemoveTeacher(teacher.id)} className="self-end sm:self-center mt-2 sm:mt-0"><UserX className="mr-2 h-4 w-4" />Remove</Button>
-                                    ) : (
-                                        <span className="text-xs font-semibold text-primary px-3 self-end sm:self-center">PRINCIPAL</span>
-                                    )}
-                                </div>
+                                </Card>
                             ))}
                         </div>
                     ) : (
@@ -505,24 +597,26 @@ export default function SchoolDetailsPage() {
                 </CardHeader>
                 <CardContent>
                     {school.classes && school.classes.length > 0 ? (
-                         <div className="grid gap-4">
+                         <div className="grid gap-4 md:grid-cols-2">
                             {school.classes.map(c => (
-                                <div key={c.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
-                                    <div className='w-full'>
-                                        <p className="font-semibold">{c.name} - Section {c.section}</p>
-                                        <p className="text-sm text-muted-foreground">{c.students?.length || 0} student(s)</p>
+                                <Card key={c.id} className="flex flex-col justify-between">
+                                    <CardHeader>
+                                        <CardTitle>{c.name} - Section {c.section}</CardTitle>
+                                        <CardDescription>{c.students?.length || 0} student(s)</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
                                          {c.teacherName ? (
                                             <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacherName}</p>
                                          ) : (
                                             <p className="text-sm text-yellow-600 mt-1 font-semibold">No teacher assigned</p>
                                          )}
-                                    </div>
-                                    <div className="flex items-center gap-2 self-end sm:self-center mt-2 sm:mt-0">
+                                    </CardContent>
+                                    <CardFooter className="flex gap-2">
                                         <Button variant="outline" size="sm" onClick={() => setClassToManage(c)}><Users className="mr-2 h-4 w-4" />Students</Button>
                                         <Button variant="outline" size="icon" onClick={() => setClassToEdit(c)}><Pen className="h-4 w-4" /></Button>
                                         <Button variant="destructive" size="icon" onClick={() => handleDeleteClass(c.id)}><Trash2 className="h-4 w-4" /></Button>
-                                    </div>
-                                </div>
+                                    </CardFooter>
+                                </Card>
                             ))}
                         </div>
                     ) : (
@@ -541,28 +635,26 @@ export default function SchoolDetailsPage() {
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">All Students</h1>
              <Card className="rounded-2xl shadow-lg">
-                <CardHeader><CardTitle>Student Roster</CardTitle></CardHeader>
+                <CardHeader>
+                    <CardTitle>Student Roster</CardTitle>
+                    <Input 
+                        placeholder="Search by name or roll number..." 
+                        value={studentSearchQuery}
+                        onChange={(e) => setStudentSearchQuery(e.target.value)}
+                        className="max-w-sm mt-2"
+                    />
+                </CardHeader>
                 <CardContent>
-                    {school.classes && school.classes.some(c => c.students && c.students.length > 0) ? (
-                        <div className="space-y-6">
-                            {(school.classes || []).map(c => (c.students && c.students.length > 0) && (
-                                <div key={c.id}>
-                                    <h4 className="font-semibold text-lg mb-2 border-b pb-2">Class {c.name} - Section {c.section}</h4>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {c.students.map(s => (
-                                            <div key={s.id} className="p-3 rounded-lg border bg-background transition-colors hover:bg-accent">
-                                                <p className="font-semibold">{s.name}</p>
-                                                <div className="mt-2 text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                                                    <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
-                                                    <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
-                                                    <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
-                                                    <p className="col-span-2"><strong>Address:</strong> {s.address || 'N/A'}</p>
-                                                    {s.admissionDate && (
-                                                        <p className="col-span-2"><strong>Admission:</strong> {formatDate(s.admissionDate)}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
+                    {filteredStudents.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredStudents.map(s => (
+                                <Card key={s.id} className="p-4">
+                                    <CardTitle className="text-base">{s.name}</CardTitle>
+                                    <CardDescription>Class {s.className} - {s.classSection}</CardDescription>
+                                    <div className="mt-2 text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                                        <p><strong>Roll:</strong> {s.rollNumber || 'N/A'}</p>
+                                        <p><strong>Father:</strong> {s.fatherName || 'N/A'}</p>
+                                        <p><strong>Mobile:</strong> {s.mobileNumber || 'N/A'}</p>
                                     </div>
                                 </div>
                             ))}
@@ -570,8 +662,8 @@ export default function SchoolDetailsPage() {
                     ) : (
                         <div className="text-center py-12 flex flex-col items-center">
                             <UserIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold">No Students Enrolled</h3>
-                            <p className="text-muted-foreground mt-1">Add students to classes in the 'Classes' tab.</p>
+                            <h3 className="text-lg font-semibold">No Students Found</h3>
+                            <p className="text-muted-foreground mt-1">Your search did not match any students, or no students have been added yet.</p>
                         </div>
                     )}
                 </CardContent>
@@ -675,7 +767,7 @@ export default function SchoolDetailsPage() {
                             animate={{ x: 0, width: '16rem' }}
                             exit={{ x: '-100%', width: 0 }}
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
-                            className="hidden md:flex flex-col border-r"
+                            className="hidden md:flex flex-col border-r bg-muted/40"
                         >
                             {renderSidebar({ forMobile: false })}
                         </motion.div>
@@ -855,7 +947,7 @@ export default function SchoolDetailsPage() {
                              {classToManage?.students && classToManage.students.length > 0 ? (
                                 <div className="grid gap-3">
                                     {classToManage.students.map(s => (
-                                         <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50 transition-colors hover:bg-accent">
+                                         <div key={s.id} className="p-3 rounded-lg border bg-gray-50/50 dark:bg-gray-800/20 transition-colors hover:bg-accent">
                                             <div className="flex items-center justify-between">
                                                 <p className="font-semibold">{s.name}</p>
                                                 <Button size="icon" variant="ghost" className="text-destructive h-7 w-7" onClick={() => handleRemoveStudent(s.id)}><Trash2 className="h-4 w-4"/></Button>
@@ -894,3 +986,5 @@ export default function SchoolDetailsPage() {
         </div>
     );
 }
+
+    
