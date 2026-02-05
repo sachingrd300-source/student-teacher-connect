@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { Menu, LayoutDashboard, Search, BookOpen, Home, Trophy, ShoppingBag, Gift, School, BookCheck } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import WhatsAppSupportButton from '@/components/whatsapp-support-button';
+import { SupportButton } from '@/components/SupportButton';
 
 interface UserProfile {
   name: string;
@@ -133,7 +133,7 @@ export default function StudentDashboardLayout({
           </div>
         </main>
       </div>
-      <WhatsAppSupportButton />
+      <SupportButton />
     </div>
   );
 }

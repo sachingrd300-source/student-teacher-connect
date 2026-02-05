@@ -433,6 +433,35 @@
         "uploadedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["testId", "studentId", "studentName", "batchId", "teacherId", "marksObtained", "uploadedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a material order placed by a teacher.",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "material": { "type": "string" },
+        "quantity": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "teacherName", "material", "quantity", "status", "createdAt"]
+    },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "type": "object",
+      "description": "Represents a support request from a user.",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userRole": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "closed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "userRole", "message", "status", "createdAt"]
     }
   },
   "auth": {
@@ -502,6 +531,14 @@
     "/adminActivities/{activityId}": {
       "schema": { "$ref": "#/entities/AdminActivity" },
       "description": "Stores a log of all actions performed by administrators."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores material orders from teachers."
+    },
+    "/supportTickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/SupportTicket" },
+      "description": "Stores support tickets from users."
     }
   }
 }

@@ -35,7 +35,7 @@ import {
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
     LayoutDashboard, Bell, TrendingUp, Users2, History, Coins, MoreHorizontal,
-    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, Download
+    Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, Download, MessageSquare
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -50,9 +50,11 @@ type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge' | 'digital'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
+interface Order { id: string; teacherId: string; teacherName: string; material: string; quantity: string; description: string; status: 'pending' | 'completed'; createdAt: string; }
+interface SupportTicket { id: string; userId: string; userName: string; userRole: string; message: string; status: 'open' | 'closed'; createdAt: string; }
 
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'achievers';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'achievers' | 'orders' | 'support';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -165,6 +167,8 @@ export default function AdminDashboardPage() {
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
     const enrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const ordersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
+    const supportTicketsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'supportTickets'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     
     // Data from hooks
     const { data: allUsersData, isLoading: usersLoading } = useCollection<UserProfile>(allUsersQuery);
@@ -176,6 +180,8 @@ export default function AdminDashboardPage() {
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
+    const { data: orders, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
+    const { data: supportTickets, isLoading: supportTicketsLoading } = useCollection<SupportTicket>(supportTicketsQuery);
     
     const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
@@ -720,7 +726,23 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || tutorsLoading || enrollmentsLoading;
+    const handleUpdateOrderStatus = (order: Order, status: 'pending' | 'completed') => {
+        if (!firestore) return;
+        const orderRef = doc(firestore, 'orders', order.id);
+        updateDoc(orderRef, { status })
+            .then(() => logAdminAction(`Updated order ${order.id} to ${status}`))
+            .catch(error => console.error("Error updating order status:", error));
+    };
+
+    const handleUpdateTicketStatus = (ticket: SupportTicket, status: 'open' | 'closed') => {
+        if (!firestore) return;
+        const ticketRef = doc(firestore, 'supportTickets', ticket.id);
+        updateDoc(ticketRef, { status })
+            .then(() => logAdminAction(`Updated support ticket ${ticket.id} to ${status}`))
+            .catch(error => console.error("Error updating ticket status:", error));
+    };
+
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || tutorsLoading || enrollmentsLoading || ordersLoading || supportTicketsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -758,8 +780,10 @@ export default function AdminDashboardPage() {
         { view: 'achievers' as AdminView, label: 'Achievers', icon: Award },
         { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
+        { view: 'orders' as AdminView, label: 'Orders', icon: ShoppingBag },
+        { view: 'support' as AdminView, label: 'Support', icon: MessageSquare },
         { view: 'materials' as AdminView, label: 'Materials', icon: FileText },
-        { view: 'shop' as AdminView, label: 'Shop', icon: ShoppingBag },
+        { view: 'shop' as AdminView, label: 'Shop', icon: Gift },
         { view: 'activity' as AdminView, label: 'Activity', icon: History },
     ];
     
@@ -778,6 +802,16 @@ export default function AdminDashboardPage() {
                                 {item.view === 'applications' && totalPendingApps > 0 && (
                                     <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
                                         {totalPendingApps}
+                                    </span>
+                                )}
+                                 {item.view === 'orders' && orders?.filter(o => o.status === 'pending').length > 0 && (
+                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        {orders.filter(o => o.status === 'pending').length}
+                                    </span>
+                                )}
+                                {item.view === 'support' && supportTickets?.filter(t => t.status === 'open').length > 0 && (
+                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        {supportTickets.filter(t => t.status === 'open').length}
                                     </span>
                                 )}
                             </Button>
@@ -1492,6 +1526,122 @@ export default function AdminDashboardPage() {
         </div>
     );
 
+    const renderOrdersView = () => {
+        const pendingOrders = orders?.filter(o => o.status === 'pending') || [];
+        const completedOrders = orders?.filter(o => o.status === 'completed') || [];
+
+        return (
+            <div className="grid gap-8">
+                <h1 className="text-3xl font-bold font-serif">Material Orders</h1>
+                <Card className="rounded-2xl shadow-lg">
+                    <CardContent className="p-4">
+                        <Tabs defaultValue="pending">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
+                                <TabsTrigger value="completed">Completed ({completedOrders.length})</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="pending" className="mt-4">
+                                {pendingOrders.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        {pendingOrders.map(order => (
+                                            <Card key={order.id} className="p-4 rounded-2xl shadow-md transition-shadow hover:shadow-lg">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground">{order.teacherName}</p>
+                                                        <p className="font-semibold">{order.material} - {order.quantity}</p>
+                                                        <p className="text-sm mt-2">{order.description}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">Ordered: {formatDate(order.createdAt, true)}</p>
+                                                    </div>
+                                                    <Button size="sm" onClick={() => handleUpdateOrderStatus(order, 'completed')}><CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed</Button>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">No pending orders.</div>
+                                )}
+                            </TabsContent>
+                            <TabsContent value="completed" className="mt-4">
+                                {completedOrders.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        {completedOrders.map(order => (
+                                            <Card key={order.id} className="p-4 rounded-2xl bg-muted/50">
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">{order.teacherName}</p>
+                                                    <p className="font-semibold">{order.material} - {order.quantity}</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">Ordered: {formatDate(order.createdAt, true)}</p>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">No completed orders yet.</div>
+                                )}
+                            </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    };
+
+    const renderSupportView = () => {
+        const openTickets = supportTickets?.filter(t => t.status === 'open') || [];
+        const closedTickets = supportTickets?.filter(t => t.status === 'closed') || [];
+
+        return (
+            <div className="grid gap-8">
+                <h1 className="text-3xl font-bold font-serif">Support Tickets</h1>
+                <Card className="rounded-2xl shadow-lg">
+                    <CardContent className="p-4">
+                        <Tabs defaultValue="open">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="open">Open ({openTickets.length})</TabsTrigger>
+                                <TabsTrigger value="closed">Closed ({closedTickets.length})</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="open" className="mt-4">
+                                {openTickets.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        {openTickets.map(ticket => (
+                                            <Card key={ticket.id} className="p-4 rounded-2xl shadow-md transition-shadow hover:shadow-lg">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground">{ticket.userName} ({ticket.userRole})</p>
+                                                        <p className="text-base mt-2 whitespace-pre-wrap">{ticket.message}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">Received: {formatDate(ticket.createdAt, true)}</p>
+                                                    </div>
+                                                    <Button size="sm" onClick={() => handleUpdateTicketStatus(ticket, 'closed')}><CheckCircle className="mr-2 h-4 w-4" /> Mark as Closed</Button>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">No open support tickets. Great work!</div>
+                                )}
+                            </TabsContent>
+                            <TabsContent value="closed" className="mt-4">
+                                {closedTickets.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        {closedTickets.map(ticket => (
+                                            <Card key={ticket.id} className="p-4 rounded-2xl bg-muted/50">
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">{ticket.userName} ({ticket.userRole})</p>
+                                                    <p className="text-base mt-2 whitespace-pre-wrap">{ticket.message}</p>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">No tickets have been closed yet.</div>
+                                )}
+                            </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    };
+
     const renderCurrentView = () => {
         const views: Record<AdminView, React.ReactNode> = {
             dashboard: renderDashboardView(),
@@ -1502,6 +1652,8 @@ export default function AdminDashboardPage() {
             shop: renderShopView(),
             activity: renderActivityLogView(),
             achievers: renderAchieversView(),
+            orders: renderOrdersView(),
+            support: renderSupportView(),
         };
 
         return (

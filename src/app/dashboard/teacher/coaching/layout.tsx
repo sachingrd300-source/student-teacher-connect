@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu, LayoutDashboard, Home, Award, ShoppingCart, School } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import WhatsAppSupportButton from '@/components/whatsapp-support-button';
+import { SupportButton } from '@/components/SupportButton';
 
 interface UserProfile {
   name: string;
@@ -128,7 +128,7 @@ export default function CoachingDashboardLayout({
           </div>
         </main>
       </div>
-      <WhatsAppSupportButton />
+      <SupportButton />
     </div>
   );
 }
