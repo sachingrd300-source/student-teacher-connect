@@ -21,14 +21,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: '/plugins/genkit-dev-ui/:path*',
-        destination: 'http://127.0.0.1:4001/plugins/genkit-dev-ui/:path*',
-      },
-    ];
-  },
 };
 
 export default nextConfig;
