@@ -340,7 +340,7 @@ export default function StudentDashboardPage() {
                                                     : `Unenrollment Requested`}
                                             </p>
                                         </div>
-                                        <CardFooter className="p-0 pt-4 flex gap-2 self-end">
+                                        <CardFooter className="p-0 pt-4 flex flex-col sm:flex-row gap-2 mt-auto sm:self-end">
                                             {enrollment.status === 'pending' ? (
                                                 <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
                                                     Cancel Request
