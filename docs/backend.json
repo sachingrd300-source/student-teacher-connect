@@ -468,6 +468,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["teacherId", "teacherName", "material", "quantity", "status", "createdAt"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents a student's daily attendance record for a batch.",
+      "properties": {
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "date": { "type": "string", "format": "date", "description": "The specific date of the attendance record (YYYY-MM-DD)." },
+        "status": { "type": "string", "enum": ["present", "absent"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "studentName", "teacherId", "batchId", "date", "status", "createdAt"]
     }
   },
   "auth": {
@@ -545,8 +560,10 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "Stores material orders placed by teachers."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/Attendance" },
+      "description": "Stores daily attendance records for students in batches."
     }
   }
 }
-
-    

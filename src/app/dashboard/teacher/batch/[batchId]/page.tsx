@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, query, where, arrayUnion, arrayRemove, addDoc, writeBatch, orderBy, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, where, arrayUnion, arrayRemove, addDoc, writeBatch, orderBy, getDocs, setDoc, documentId, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import Link from 'next/link';
 
@@ -14,17 +14,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX, CalendarCheck2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
 import { TestMarksDialog } from '@/components/test-marks-dialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
+    id: string;
     name: string;
     role?: 'student' | 'teacher' | 'admin' | 'parent';
+    mobileNumber?: string;
     coins?: number;
     streak?: number;
 }
@@ -85,6 +88,12 @@ interface TestResult {
     uploadedAt: string;
 }
 
+interface Attendance {
+    id: string;
+    studentId: string;
+    date: string;
+    status: 'present' | 'absent';
+}
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
@@ -140,6 +149,10 @@ export default function BatchManagementPage() {
     
     // Performance tab state
     const [selectedTestForAnalysis, setSelectedTestForAnalysis] = useState<string>('all');
+    
+    // Attendance state
+    const [markingAttendanceId, setMarkingAttendanceId] = useState<string | null>(null);
+    const todayDateString = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -172,6 +185,38 @@ export default function BatchManagementPage() {
         });
         return [pending, enrolled, unenroll];
     }, [enrollmentsData]);
+    
+    const enrolledStudentIds = useMemo(() => enrolledStudents.map(s => s.studentId), [enrolledStudents]);
+
+    const studentProfilesQuery = useMemoFirebase(() => {
+        if (!firestore || enrolledStudentIds.length === 0) return null;
+        return query(collection(firestore, 'users'), where(documentId(), 'in', enrolledStudentIds.slice(0, 30)));
+    }, [firestore, enrolledStudentIds]);
+    const { data: studentProfiles, isLoading: areProfilesLoading } = useCollection<UserProfile>(studentProfilesQuery);
+
+    const enrichedStudents = useMemo(() => {
+        if (!enrolledStudents || !studentProfiles) return [];
+        const profileMap = new Map(studentProfiles.map(p => [p.id, p]));
+        return enrolledStudents.map(e => ({
+            ...e,
+            ...profileMap.get(e.studentId),
+        }));
+    }, [enrolledStudents, studentProfiles]);
+
+    const todaysAttendanceQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'attendance'), where('batchId', '==', batchId), where('date', '==', todayDateString));
+    }, [firestore, batchId, todayDateString]);
+    const { data: todaysAttendanceData, isLoading: isAttendanceLoading } = useCollection<Attendance>(todaysAttendanceQuery);
+
+    const todaysAttendanceMap = useMemo(() => {
+        const map = new Map<string, 'present' | 'absent'>();
+        todaysAttendanceData?.forEach(att => {
+            map.set(att.studentId, att.status);
+        });
+        return map;
+    }, [todaysAttendanceData]);
+
     
     const materialsRef = useMemoFirebase(() => {
         if (!firestore || !batchId || !user) return null;
@@ -337,7 +382,7 @@ export default function BatchManagementPage() {
             const firestoreBatch = writeBatch(firestore);
 
             // 1. Delete all related documents in root collections (enrollments, fees, testResults)
-            const collectionsToDelete = ['enrollments', 'fees', 'testResults'];
+            const collectionsToDelete = ['enrollments', 'fees', 'testResults', 'attendance'];
             for (const coll of collectionsToDelete) {
                 const q = query(collection(firestore, coll), where('batchId', '==', batchId));
                 const snapshot = await getDocs(q);
@@ -610,12 +655,47 @@ export default function BatchManagementPage() {
     
         await firestoreBatch.commit();
     };
+    
+    const handleMarkAttendance = async (student: UserProfile, status: 'present' | 'absent') => {
+        if (!firestore || !user || !batchId) return;
+        setMarkingAttendanceId(student.id);
+
+        const attendanceId = `${batchId}_${student.id}_${todayDateString}`;
+        const attendanceRef = doc(firestore, 'attendance', attendanceId);
+
+        const attendanceData = {
+            studentId: student.id,
+            studentName: student.name,
+            teacherId: user.uid,
+            batchId: batchId,
+            date: todayDateString,
+            status: status,
+            createdAt: new Date().toISOString()
+        };
+        
+        try {
+            await setDoc(attendanceRef, attendanceData, { merge: true });
+
+            if (status === 'absent' && student.mobileNumber) {
+                const message = `Dear ${student.name}, you have been marked absent for the class on ${new Date().toLocaleString()}.`;
+                const phoneNumber = student.mobileNumber.replace(/[^0-9]/g, '');
+                const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
+                const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+            }
+        } catch (error) {
+            console.error("Error marking attendance:", error);
+        } finally {
+            setMarkingAttendanceId(null);
+        }
+    };
+
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading || resultsLoading;
+    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading || resultsLoading || areProfilesLoading || isAttendanceLoading;
 
     if (isLoading || !batch) {
         return (
@@ -765,8 +845,9 @@ export default function BatchManagementPage() {
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+                        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="attendance">Attendance</TabsTrigger>
                             <TabsTrigger value="tests">Tests ({tests?.length || 0})</TabsTrigger>
                             <TabsTrigger value="performance">Performance</TabsTrigger>
                             <TabsTrigger value="materials">Materials ({materials?.length || 0})</TabsTrigger>
@@ -863,6 +944,54 @@ export default function BatchManagementPage() {
                                             <Users className="h-12 w-12 text-muted-foreground mb-4" />
                                             <h3 className="text-lg font-semibold">No Students Enrolled</h3>
                                             <p className="text-muted-foreground mt-1">Share the batch code to get students to join!</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        
+                        <TabsContent value="attendance" className="mt-4">
+                             <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>Mark Attendance for Today</CardTitle>
+                                    <CardDescription>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {enrichedStudents.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {enrichedStudents.map(student => {
+                                                const status = todaysAttendanceMap.get(student.id);
+                                                const isMarking = markingAttendanceId === student.id;
+                                                return (
+                                                    <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 hover:shadow-md">
+                                                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                            <Avatar><AvatarFallback>{getInitials(student.name)}</AvatarFallback></Avatar>
+                                                            <p className="font-semibold break-words">{student.name}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                            {status ? (
+                                                                <span className={cn(
+                                                                    "font-bold text-sm px-3 py-1 rounded-full",
+                                                                    status === 'present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                                )}>
+                                                                    {status === 'present' ? 'Present' : 'Absent'}
+                                                                </span>
+                                                            ) : (
+                                                                <>
+                                                                    <Button size="sm" variant="outline" onClick={() => handleMarkAttendance(student, 'absent')} disabled={isMarking}>{isMarking && <Loader2 className="h-4 w-4 animate-spin"/>} Absent</Button>
+                                                                    <Button size="sm" onClick={() => handleMarkAttendance(student, 'present')} disabled={isMarking}>{isMarking && <Loader2 className="h-4 w-4 animate-spin"/>} Present</Button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <CalendarCheck2 className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Students to Mark</h3>
+                                            <p className="text-muted-foreground mt-1">There are no approved students in this batch yet.</p>
                                         </div>
                                     )}
                                 </CardContent>
