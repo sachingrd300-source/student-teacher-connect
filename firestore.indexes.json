@@ -160,6 +160,14 @@
       ]
     },
     {
+        "collectionGroup": "fees",
+        "queryScope": "COLLECTION",
+        "fields": [
+            { "fieldPath": "studentId", "order": "ASCENDING" },
+            { "fieldPath": "batchId", "order": "ASCENDING" }
+        ]
+    },
+    {
       "collectionGroup": "supportTickets",
       "queryScope": "COLLECTION",
       "fields": [
