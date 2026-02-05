@@ -165,6 +165,7 @@ export default function SchoolDetailsPage() {
     // Fetch profiles of teachers in the school
     const teachersQuery = useMemoFirebase(() => {
         if (!firestore || !school || !school.teacherIds || school.teacherIds.length === 0) return null;
+        // Firestore 'in' queries are limited to 30 elements.
         const teacherIds = school.teacherIds.slice(0, 30);
         if (teacherIds.length === 0) return null;
         return query(collection(firestore, 'users'), where('__name__', 'in', teacherIds));
@@ -413,13 +414,27 @@ export default function SchoolDetailsPage() {
             router.push('/dashboard/teacher/school');
         }
     };
-
-
-    // --- Loading and Render ---
-
-    const isLoading = isUserLoading || schoolLoading || profileLoading;
     
-    // --- Render Functions ---
+    const isLoading = isUserLoading || schoolLoading || profileLoading || teachersLoading;
+    
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center flex-col gap-4">
+                <Building2 className="h-12 w-12 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading School Details...</p>
+            </div>
+        );
+    }
+
+    if (!school) {
+        return (
+             <div className="flex h-screen items-center justify-center flex-col gap-4">
+                <Building2 className="h-12 w-12 text-destructive" />
+                <p className="text-muted-foreground">Could not load school data or you do not have permission.</p>
+                <Button variant="outline" onClick={() => router.back()} className="mt-4">Go Back</Button>
+            </div>
+        );
+    }
     
     const renderSidebar = ({ forMobile = false }: { forMobile?: boolean }) => {
         const navItems = [
@@ -436,17 +451,8 @@ export default function SchoolDetailsPage() {
         <aside className="flex flex-col h-full">
              { !forMobile && (
                 <div className="p-4">
-                    {school ? (
-                        <>
-                            <h2 className="text-lg font-semibold tracking-tight font-serif">{school.name}</h2>
-                            <p className="text-sm text-muted-foreground">{school.academicYear}</p>
-                        </>
-                    ) : (
-                        <div className="space-y-2 animate-pulse">
-                           <div className="h-6 bg-muted rounded w-3/4"></div>
-                           <div className="h-4 bg-muted rounded w-1/2"></div>
-                        </div>
-                    )}
+                    <h2 className="text-lg font-semibold tracking-tight font-serif">{school.name}</h2>
+                    <p className="text-sm text-muted-foreground">{school.academicYear}</p>
                 </div>
              )}
             <div className="flex flex-col gap-1 p-4">
@@ -460,7 +466,7 @@ export default function SchoolDetailsPage() {
             </div>
              <div className="mt-auto p-4 text-center">
                  <Wrapper>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)} disabled={!school}>Edit School Info</Button>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingSchool(true)}>Edit School Info</Button>
                  </Wrapper>
             </div>
         </aside>
@@ -777,16 +783,16 @@ export default function SchoolDetailsPage() {
                      <div className="max-w-6xl mx-auto">
                         <div className="md:hidden mb-4 flex items-center justify-between">
                             <Button variant="ghost" onClick={handleBack} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                             <h1 className="text-xl font-bold font-serif capitalize">{school?.name || 'School'}</h1>
+                             <h1 className="text-xl font-bold font-serif capitalize">{school.name}</h1>
                              <Sheet open={isSidebarOpen} onOpenChange={setSidebarOpen}>
                                 <SheetTrigger asChild>
                                     <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-64 p-0">
                                     <SheetHeader className="p-4 text-left border-b">
-                                        <SheetTitle>{school?.name || 'School Menu'}</SheetTitle>
+                                        <SheetTitle>{school.name}</SheetTitle>
                                         <SheetDescription>
-                                            {school?.academicYear}
+                                            {school.academicYear}
                                         </SheetDescription>
                                     </SheetHeader>
                                     {renderSidebar({ forMobile: true })}
@@ -796,19 +802,7 @@ export default function SchoolDetailsPage() {
                         <div className="hidden md:block mb-4">
                              <Button variant="ghost" onClick={handleBack} size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Button>
                         </div>
-                        {isLoading ? (
-                            <div className="flex h-[60vh] items-center justify-center flex-col gap-4">
-                                <Building2 className="h-12 w-12 animate-pulse text-primary" />
-                                <p className="text-muted-foreground">Loading School Details...</p>
-                            </div>
-                        ) : school ? (
-                            renderCurrentView()
-                        ) : (
-                             <div className="flex h-[60vh] items-center justify-center flex-col gap-4">
-                                <Building2 className="h-12 w-12 text-destructive" />
-                                <p className="text-muted-foreground">Could not load school data.</p>
-                            </div>
-                        )}
+                        {renderCurrentView()}
                     </div>
                 </main>
             </div>
