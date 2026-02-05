@@ -1029,7 +1029,11 @@ export default function AdminDashboardPage() {
                                     <h3 className="font-semibold text-lg">{app.teacherName}</h3>
                                     {app.processedAt && <p className="text-sm text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}
                                 </div>
-                                <span className="text-sm font-medium text-destructive mt-4 sm:mt-0">Rejected</span>
+                                <div className="flex gap-2 mt-4 sm:mt-0 self-end sm:self-center">
+                                    <Button className={`${approveButtonClass}`} size="sm" onClick={() => handleApplication(app, 'approved', type)}>
+                                        <CheckCircle className="mr-2 h-4 w-4" /> Re-Approve
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                     </div>
