@@ -1559,7 +1559,7 @@ export default function AdminDashboardPage() {
                             )}
                         </TabsContent>
                         <TabsContent value="homeTutors" className="mt-4">
-                            {approvedTutors.length > 0 ? (
+                            {approvedTutors && approvedTutors.length > 0 ? (
                                 <div className="grid md:grid-cols-2 gap-6">
                                     {approvedTutors.map(teacher => (
                                         <Card key={teacher.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
