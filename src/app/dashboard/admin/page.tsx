@@ -403,8 +403,9 @@ export default function AdminDashboardPage() {
     };
     
     const handleAssignTeacher = (booking: HomeBooking, teacherId: string) => {
-        const teacher = approvedTutors?.find(t => t.id === teacherId);
-        if (!firestore || !teacher) return;
+        if (!firestore || !approvedTutors) return;
+        const teacher = approvedTutors.find(t => t.id === teacherId);
+        if (!teacher) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         
         const updateData = {
@@ -430,8 +431,9 @@ export default function AdminDashboardPage() {
     };
 
     const handleAssignCoachingTeacher = (booking: HomeBooking, teacherId: string) => {
-        const teacher = achieverTeachers?.find(t => t.id === teacherId);
-        if (!firestore || !teacher) return;
+        if (!firestore || !achieverTeachers) return;
+        const teacher = achieverTeachers.find(t => t.id === teacherId);
+        if (!teacher) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         
         const updateData = {
@@ -1336,7 +1338,7 @@ export default function AdminDashboardPage() {
                                 <TabsTrigger value="books">Books ({filteredMaterials.books.length})</TabsTrigger>
                                 <TabsTrigger value="pyqs">PYQs ({filteredMaterials.pyqs.length})</TabsTrigger>
                                 <TabsTrigger value="dpps">DPPs ({filteredMaterials.dpps.length})</TabsTrigger>
-                                <TabsTrigger value="objective">Objective ({filteredMaterials.objective.length})</TabsTrigger>
+                                <TabsTrigger value="objective">Objective Questions ({filteredMaterials.objective.length})</TabsTrigger>
                             </TabsList>
                             <TabsContent value="all" className="mt-6">{renderMaterialList(materials || [])}</TabsContent>
                             <TabsContent value="notes" className="mt-6">{renderMaterialList(filteredMaterials.notes)}</TabsContent>
@@ -1363,7 +1365,7 @@ export default function AdminDashboardPage() {
                                 </RadioGroup>
                             </div>
                             <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle || ''} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective</SelectItem></SelectContent></Select></div>
+                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective Questions</SelectItem></SelectContent></Select></div>
                             
                             <AnimatePresence mode="wait">
                                 {uploadMethod === 'file' ? (
@@ -1910,5 +1912,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    

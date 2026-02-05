@@ -190,7 +190,7 @@ export default function FreeMaterialsPage() {
                             <TabsTrigger value="books">Books</TabsTrigger>
                             <TabsTrigger value="pyqs">PYQs</TabsTrigger>
                             <TabsTrigger value="dpps">DPPs</TabsTrigger>
-                            <TabsTrigger value="objective">Objective</TabsTrigger>
+                            <TabsTrigger value="objective">Objective Questions</TabsTrigger>
                         </TabsList>
                         <TabsContent value="all" className="mt-6">
                             {isOverallEmpty ? (
@@ -224,5 +224,3 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
-
-    
