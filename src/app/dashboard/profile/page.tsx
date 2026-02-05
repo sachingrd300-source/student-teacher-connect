@@ -87,6 +87,7 @@ export default function ProfilePage() {
     // Teacher state
     const [subject, setSubject] = useState('');
     const [coachingCenterName, setCoachingCenterName] = useState('');
+    const [coachingAddress, setCoachingAddress] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [fee, setFee] = useState('');
     const [googleMapsLink, setGoogleMapsLink] = useState('');
@@ -129,6 +130,7 @@ export default function ProfilePage() {
             if (userProfile.role === 'teacher') {
                 setSubject(userProfile.subject || '');
                 setCoachingCenterName(userProfile.coachingCenterName || '');
+                setCoachingAddress(userProfile.coachingAddress || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
                 setFee(userProfile.fee || '');
                 setGoogleMapsLink(userProfile.googleMapsLink || '');
@@ -184,6 +186,7 @@ export default function ProfilePage() {
             if (!isCommunityAssociate) {
                 dataToUpdate.homeAddress = homeAddress.trim();
                 dataToUpdate.coachingCenterName = coachingCenterName.trim();
+                dataToUpdate.coachingAddress = coachingAddress.trim();
                 dataToUpdate.fee = fee.trim();
                 dataToUpdate.googleMapsLink = googleMapsLink.trim();
             }
@@ -237,6 +240,7 @@ export default function ProfilePage() {
             if (userProfile.role === 'teacher') {
                 setSubject(userProfile.subject || '');
                 setCoachingCenterName(userProfile.coachingCenterName || '');
+                setCoachingAddress(userProfile.coachingAddress || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
                 setFee(userProfile.fee || '');
                 setGoogleMapsLink(userProfile.googleMapsLink || '');
@@ -398,9 +402,21 @@ export default function ProfilePage() {
                                         </div>
                                     )}
                                     <div className="grid gap-2">
-                                        <Label>Coaching Address</Label>
-                                        <p className="text-sm font-medium whitespace-pre-wrap">{userProfile.coachingAddress || <span className="text-muted-foreground">Not set by admin</span>}</p>
-                                        <p className="text-xs text-muted-foreground">This is your public coaching address, managed by the admin.</p>
+                                        <Label htmlFor="coachingAddress">Coaching Address</Label>
+                                        {isEditing ? (
+                                            <>
+                                            <Textarea
+                                                id="coachingAddress"
+                                                value={coachingAddress}
+                                                onChange={(e) => setCoachingAddress(e.target.value)}
+                                                placeholder="Public address of your coaching center"
+                                                disabled={isEditing && isCommunityAssociate}
+                                            />
+                                            {isCommunityAssociate && <p className="text-xs text-muted-foreground">Coaching address is managed by the admin for community associates.</p>}
+                                            </>
+                                        ) : (
+                                            <p className="text-sm font-medium whitespace-pre-wrap">{coachingAddress || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="googleMapsLink">Google Maps Link</Label>
