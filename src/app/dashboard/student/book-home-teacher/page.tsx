@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, addDoc, collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,85 +104,78 @@ export default function BookHomeTeacherPage() {
     }
     
     return (
-        <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={userProfile} />
-            <main className="flex-1 p-4 md:p-8 bg-muted/20">
-                <div className="max-w-2xl mx-auto">
-                    <Button variant="ghost" onClick={() => router.push('/dashboard/student')} className="mb-4">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Dashboard
-                    </Button>
-                     <Card className="rounded-2xl shadow-lg">
-                        <CardHeader>
-                            <CardTitle>Book a Home Tutor</CardTitle>
-                            <CardDescription>Fill out the details below to request a personalized home tutor. Our team will review your request and assign a suitable teacher.</CardDescription>
-                            <CardDescription className="!mt-4 text-info font-semibold border-l-4 border-info pl-4">
-                                एक विशेष ऑफर उपलब्ध है! यदि आपके पास 10 से अधिक छात्र हैं, तो प्रति छात्र शुल्क ₹300 लगेगा।
-                            </CardDescription>
-                        </CardHeader>
-                        <form onSubmit={handleSubmit}>
-                            <CardContent className="grid gap-6">
-                               <div className="grid sm:grid-cols-2 gap-4">
-                                     <div className="grid gap-2">
-                                        <Label htmlFor="studentName">Student Name</Label>
-                                        <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="fatherName">Father's Name</Label>
-                                        <Input id="fatherName" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
-                                    </div>
-                               </div>
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                     <div className="grid gap-2">
-                                        <Label htmlFor="studentClass">Class</Label>
-                                        <Input id="studentClass" value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="e.g., 10th Grade" required />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="subject">Subject</Label>
-                                        <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Mathematics" required />
-                                    </div>
-                               </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="mobileNumber">Mobile Number</Label>
-                                    <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
+        <div className="max-w-2xl mx-auto">
+            <Button variant="ghost" onClick={() => router.push('/dashboard/student')} className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+            </Button>
+             <Card className="rounded-2xl shadow-lg">
+                <CardHeader>
+                    <CardTitle>Book a Home Tutor</CardTitle>
+                    <CardDescription>Fill out the details below to request a personalized home tutor. Our team will review your request and assign a suitable teacher.</CardDescription>
+                    <CardDescription className="!mt-4 text-info font-semibold border-l-4 border-info pl-4">
+                        एक विशेष ऑफर उपलब्ध है! यदि आपके पास 10 से अधिक छात्र हैं, तो प्रति छात्र शुल्क ₹300 लगेगा।
+                    </CardDescription>
+                </CardHeader>
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="grid gap-6">
+                       <div className="grid sm:grid-cols-2 gap-4">
+                             <div className="grid gap-2">
+                                <Label htmlFor="studentName">Student Name</Label>
+                                <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="fatherName">Father's Name</Label>
+                                <Input id="fatherName" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
+                            </div>
+                       </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                             <div className="grid gap-2">
+                                <Label htmlFor="studentClass">Class</Label>
+                                <Input id="studentClass" value={studentClass} onChange={(e) => setStudentClass(e.target.value)} placeholder="e.g., 10th Grade" required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="subject">Subject</Label>
+                                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Mathematics" required />
+                            </div>
+                       </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="mobileNumber">Mobile Number</Label>
+                            <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="student-address">Full Address</Label>
+                            <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address for the tutor" required />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Tuition For</Label>
+                            <RadioGroup value={tuitionType} onValueChange={(value) => setTuitionType(value as 'single_student' | 'siblings')} className="flex gap-4 pt-1">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="single_student" id="single_student" />
+                                    <Label htmlFor="single_student" className="font-normal">Only one student</Label>
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="student-address">Full Address</Label>
-                                    <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address for the tutor" required />
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="siblings" id="siblings" />
+                                    <Label htmlFor="siblings" className="font-normal">Brother/Sister</Label>
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label>Tuition For</Label>
-                                    <RadioGroup value={tuitionType} onValueChange={(value) => setTuitionType(value as 'single_student' | 'siblings')} className="flex gap-4 pt-1">
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="single_student" id="single_student" />
-                                            <Label htmlFor="single_student" className="font-normal">Only one student</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="siblings" id="siblings" />
-                                            <Label htmlFor="siblings" className="font-normal">Brother/Sister</Label>
-                                        </div>
-                                    </RadioGroup>
-                                </div>
-                            </CardContent>
-                            <CardFooter className="flex-col items-start gap-4">
-                                 <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                    Send Request
-                                 </Button>
-                                 {submitStatus.message && (
-                                    <p className={`text-sm font-medium ${
-                                        submitStatus.type === 'error' ? 'text-destructive' : 'text-green-600'
-                                    }`}>
-                                        {submitStatus.message}
-                                    </p>
-                                )}
-                            </CardFooter>
-                        </form>
-                    </Card>
-                </div>
-            </main>
+                            </RadioGroup>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex-col items-start gap-4">
+                         <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            Send Request
+                         </Button>
+                         {submitStatus.message && (
+                            <p className={`text-sm font-medium ${
+                                submitStatus.type === 'error' ? 'text-destructive' : 'text-green-600'
+                            }`}>
+                                {submitStatus.message}
+                            </p>
+                        )}
+                    </CardFooter>
+                </form>
+            </Card>
         </div>
     )
 }
-
-    
