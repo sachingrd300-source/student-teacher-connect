@@ -43,7 +43,7 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
     }
   };
   
-  const dashboardHomeLink = userProfile?.role === 'teacher' ? (userProfile as any).teacherType === 'school' ? '/dashboard/teacher/school' : '/dashboard/teacher/coaching' : '/dashboard';
+  const dashboardHomeLink = userProfile?.role === 'teacher' ? '/dashboard/teacher/coaching' : '/dashboard';
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">

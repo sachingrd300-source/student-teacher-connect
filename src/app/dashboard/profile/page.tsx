@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info, Check } from 'lucide-react';
+import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Award, Shield, Gem, Rocket, Star, Info, Check, FileText, Download } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -45,9 +45,11 @@ interface UserInventoryItem {
     id: string;
     itemId: string;
     itemName: string;
-    itemType: 'item' | 'badge';
+    itemType: 'item' | 'badge' | 'digital';
     badgeIcon?: BadgeIconType;
     itemImageUrl?: string;
+    digitalFileType?: 'pdf' | 'url';
+    digitalFileUrl?: string;
     purchasedAt: string;
 }
 
@@ -484,13 +486,28 @@ export default function ProfilePage() {
                                 <CardTitle className="flex items-center">
                                     <Package className="mr-3 h-6 w-6 text-primary"/> My Inventory
                                 </CardTitle>
-                                <CardDescription>Items and badges you've collected. Click a badge to equip it!</CardDescription>
+                                <CardDescription>Items and badges you've collected. Click a badge to equip it or a digital item to open it.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {inventory && inventory.length > 0 ? (
                                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                                         {inventory.map(item => {
                                             const isEquipped = item.itemType === 'badge' && userProfile.equippedBadgeIcon === item.badgeIcon;
+                                            
+                                            if (item.itemType === 'digital') {
+                                                return (
+                                                    <a key={item.id} href={item.digitalFileUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center gap-2 group">
+                                                         <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 flex items-center justify-center bg-muted transition-all cursor-pointer group-hover:border-primary group-hover:scale-105 border-transparent">
+                                                            <FileText className="h-12 w-12 text-primary" />
+                                                            <div className="absolute bottom-0 right-0 p-1 bg-primary rounded-tl-lg">
+                                                                <Download className="h-4 w-4 text-primary-foreground" />
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs font-semibold leading-tight">{item.itemName}</p>
+                                                    </a>
+                                                )
+                                            }
+
                                             return (
                                                 <div key={item.id} className="flex flex-col items-center text-center gap-2">
                                                     <button

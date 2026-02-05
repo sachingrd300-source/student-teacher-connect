@@ -9,7 +9,6 @@ import { Loader2, School } from 'lucide-react';
 interface UserProfile {
     name: string;
     role: 'student' | 'teacher' | 'admin' | 'parent';
-    teacherType?: 'coaching' | 'school';
     coins?: number;
     streak?: number;
     lastLoginDate?: string; // YYYY-MM-DD
@@ -101,7 +100,7 @@ export default function DashboardPage() {
                  router.replace('/login');
             }
         }
-    }, [user, isUserLoading, profileLoading, router, firestore, userProfile?.role, userProfile?.teacherType, userProfile?.lastLoginDate]);
+    }, [user, isUserLoading, profileLoading, router, firestore, userProfile?.role, userProfile?.lastLoginDate]);
 
 
     // Show a loading screen while we determine where to redirect.

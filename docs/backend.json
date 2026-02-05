@@ -23,11 +23,6 @@
           "description": "The role of the user.",
           "enum": ["student", "teacher", "admin", "parent"]
         },
-        "teacherType": {
-          "type": "string",
-          "description": "Specifies the management focus for a teacher.",
-          "enum": ["coaching", "school"]
-        },
         "teacherWorkStatus": {
           "type": "string",
           "description": "Specifies the work status for a coaching teacher, indicating if they run their own center, are an associate of the community, or both.",
