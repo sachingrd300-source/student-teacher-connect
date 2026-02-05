@@ -140,8 +140,7 @@ export default function StudentBatchPage() {
     }, [firestore, user?.uid, batchId]);
     const { data: enrollments, isLoading: isEnrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
 
-    const isEnrolledAndApproved = useMemo(() => (enrollments ? enrollments.length > 0 : false), [enrollments]);
-    const enrollment = useMemo(() => (isEnrolledAndApproved && enrollments ? enrollments[0] : null), [isEnrolledAndApproved, enrollments]);
+    const enrollment = useMemo(() => (enrollments && enrollments.length > 0 ? enrollments[0] : null), [enrollments]);
 
     const studyMaterialsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
@@ -178,8 +177,9 @@ export default function StudentBatchPage() {
     const { data: tests, isLoading: isTestsLoading } = useCollection<Test>(testsQuery);
 
     const testResultsQuery = useMemoFirebase(() => {
-        if (!firestore || !batchId || !user?.uid || !tests || tests.length === 0) return null;
-        const testIds = (tests && tests.length > 0) ? tests.map(t => t.id) : [' '];
+        if (!firestore || !batchId || !user?.uid) return null;
+        const testIds = (tests && tests.length > 0) ? tests.map(t => t.id) : [];
+        if (testIds.length === 0) return null; // No need to query if there are no tests
         return query(
             collection(firestore, 'testResults'),
             where('studentId', '==', user.uid),
@@ -261,21 +261,17 @@ export default function StudentBatchPage() {
     }, [feesData]);
 
 
-    useEffect(() => {
-        if (isUserLoading || isBatchLoading) return;
-        
-        if (!user) {
-            router.replace('/login');
-            return;
-        }
-
-        if (!batch) {
-            router.replace('/dashboard/student');
-            return;
-        }
-    }, [user, batch, isUserLoading, isBatchLoading, router]);
-
     const isLoading = isUserLoading || isProfileLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading || isAttendanceLoading;
+
+    // The check for enrollment status
+    const isEnrolledAndApproved = useMemo(() => enrollments?.length > 0, [enrollments]);
+
+    // This effect is ONLY for auth check, not for content logic.
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            router.replace('/login');
+        }
+    }, [user, isUserLoading, router]);
 
     if (isLoading) {
         return (
@@ -286,12 +282,13 @@ export default function StudentBatchPage() {
         );
     }
     
+    // After loading, check if user is approved.
     if (!isEnrolledAndApproved) {
         return (
-            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4 text-center p-4">
                  <XCircle className="h-16 w-16 text-destructive" />
                 <h2 className="text-2xl font-bold">Access Denied</h2>
-                <p className="text-muted-foreground">You are not enrolled in this batch.</p>
+                <p className="text-muted-foreground max-w-sm">You are not enrolled in this batch or your request is still pending. If you believe this is an error, please contact your teacher.</p>
                 <Button variant="outline" asChild>
                     <Link href="/dashboard/student">
                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -303,16 +300,18 @@ export default function StudentBatchPage() {
     }
 
     if (!currentUserProfile || !batch) {
+         // This is a fallback, should ideally not be hit if logic is correct
          return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
                 <Brain className="h-16 w-16 animate-pulse text-primary" />
-                <p className="text-muted-foreground">Loading Batch Details...</p>
+                <p className="text-muted-foreground">Finalizing details...</p>
             </div>
         );
     }
 
     const getTestResult = (testId: string) => {
-        const result = testResults?.find(res => res.testId === testId);
+        if (!testResults) return 'N/A';
+        const result = testResults.find(res => res.testId === testId);
         return result ? result.marksObtained : 'N/A';
     };
     
@@ -577,7 +576,7 @@ export default function StudentBatchPage() {
                 </div>
             </main>
             
-            {feeToPay && user && (
+            {feeToPay && user && batch && currentUserProfile && (
                  <PaymentDialog 
                     isOpen={!!feeToPay}
                     onClose={() => setFeeToPay(null)}
