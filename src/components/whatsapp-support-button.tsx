@@ -14,8 +14,7 @@ const WhatsAppIcon = (props: React.ComponentProps<'svg'>) => (
 );
 
 const WhatsAppSupportButton = () => {
-  // TODO: Replace with your actual business WhatsApp number, e.g., '911234567890'
-  const supportNumber = '911234567890'; 
+  const supportNumber = '919523496514'; 
   const message = "Hello Achievers Community, I need some help.";
   const whatsappUrl = `https://wa.me/${supportNumber}?text=${encodeURIComponent(message)}`;
 
