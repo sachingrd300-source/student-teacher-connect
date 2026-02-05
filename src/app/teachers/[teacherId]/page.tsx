@@ -19,6 +19,7 @@ interface TeacherProfile {
     bio?: string;
     coachingCenterName?: string;
     coachingAddress?: string;
+    googleMapsLink?: string;
     whatsappNumber?: string;
     fee?: string;
 }
@@ -170,6 +171,17 @@ export default function TeacherProfilePage() {
                                 <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Coaching Address" value={teacherProfile.coachingAddress} />
                                 <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="WhatsApp" value={teacherProfile.whatsappNumber} />
                             </div>
+
+                            {teacherProfile.googleMapsLink && (
+                                <div className="mt-4 text-center">
+                                    <Button asChild>
+                                        <a href={teacherProfile.googleMapsLink} target="_blank" rel="noopener noreferrer">
+                                            <MapPin className="mr-2 h-4 w-4" />
+                                            View on Google Maps
+                                        </a>
+                                    </Button>
+                                </div>
+                            )}
 
                         </CardContent>
                     </Card>

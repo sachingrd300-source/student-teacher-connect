@@ -64,6 +64,11 @@
             "type": "string",
             "description": "The public address of the teacher's coaching center."
         },
+        "googleMapsLink": {
+          "type": "string",
+          "format": "uri",
+          "description": "A Google Maps URL pointing to the teacher's coaching center location."
+        },
         "whatsappNumber": {
             "type": "string",
             "description": "The teacher's WhatsApp number for contact."

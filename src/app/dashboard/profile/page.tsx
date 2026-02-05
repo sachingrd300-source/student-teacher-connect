@@ -29,6 +29,7 @@ interface UserProfile {
     bio?: string;
     coachingCenterName?: string;
     coachingAddress?: string;
+    googleMapsLink?: string;
     homeAddress?: string;
     whatsappNumber?: string;
     fee?: string;
@@ -88,6 +89,7 @@ export default function ProfilePage() {
     const [coachingCenterName, setCoachingCenterName] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [fee, setFee] = useState('');
+    const [googleMapsLink, setGoogleMapsLink] = useState('');
     const [workStatus, setWorkStatus] = useState({
         ownCoaching: false,
         achieversAssociate: false,
@@ -129,6 +131,7 @@ export default function ProfilePage() {
                 setCoachingCenterName(userProfile.coachingCenterName || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
                 setFee(userProfile.fee || '');
+                setGoogleMapsLink(userProfile.googleMapsLink || '');
                 setWorkStatus({
                     ownCoaching: userProfile.teacherWorkStatus === 'own_coaching' || userProfile.teacherWorkStatus === 'both',
                     achieversAssociate: userProfile.teacherWorkStatus === 'achievers_associate' || userProfile.teacherWorkStatus === 'both',
@@ -182,6 +185,7 @@ export default function ProfilePage() {
                 dataToUpdate.homeAddress = homeAddress.trim();
                 dataToUpdate.coachingCenterName = coachingCenterName.trim();
                 dataToUpdate.fee = fee.trim();
+                dataToUpdate.googleMapsLink = googleMapsLink.trim();
             }
         } else if (userProfile.role === 'student') {
             dataToUpdate.mobileNumber = mobileNumber.trim();
@@ -235,6 +239,7 @@ export default function ProfilePage() {
                 setCoachingCenterName(userProfile.coachingCenterName || '');
                 setWhatsappNumber(userProfile.whatsappNumber || '');
                 setFee(userProfile.fee || '');
+                setGoogleMapsLink(userProfile.googleMapsLink || '');
                 setWorkStatus({
                     ownCoaching: userProfile.teacherWorkStatus === 'own_coaching' || userProfile.teacherWorkStatus === 'both',
                     achieversAssociate: userProfile.teacherWorkStatus === 'achievers_associate' || userProfile.teacherWorkStatus === 'both',
@@ -396,6 +401,18 @@ export default function ProfilePage() {
                                         <Label>Coaching Address</Label>
                                         <p className="text-sm font-medium whitespace-pre-wrap">{userProfile.coachingAddress || <span className="text-muted-foreground">Not set by admin</span>}</p>
                                         <p className="text-xs text-muted-foreground">This is your public coaching address, managed by the admin.</p>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="googleMapsLink">Google Maps Link</Label>
+                                        {isEditing ? (
+                                            <Input id="googleMapsLink" value={googleMapsLink} onChange={(e) => setGoogleMapsLink(e.target.value)} placeholder="https://maps.app.goo.gl/..." disabled={isEditing && isCommunityAssociate} />
+                                        ) : (
+                                            userProfile.googleMapsLink ? (
+                                                <a href={userProfile.googleMapsLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline break-all">{userProfile.googleMapsLink}</a>
+                                            ) : (
+                                                <p className="text-sm font-medium text-muted-foreground">Not set</p>
+                                            )
+                                        )}
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="coachingCenterName">Coaching Center Name</Label>
