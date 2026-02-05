@@ -6,7 +6,7 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -354,8 +354,8 @@ export default function StudentBatchPage() {
                                                         </div>
                                                     </div>
                                                     <a href={material.fileURL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2">
-                                                        Download
-                                                        <Download className="ml-2 h-4 w-4" />
+                                                        {material.fileType === 'link' ? 'Open Link' : 'View'}
+                                                        {material.fileType === 'link' ? <ArrowRight className="ml-2 h-4 w-4" /> : <Download className="ml-2 h-4 w-4" />}
                                                     </a>
                                                 </div>
                                             ))}

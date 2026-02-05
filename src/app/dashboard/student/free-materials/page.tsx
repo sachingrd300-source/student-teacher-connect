@@ -7,7 +7,7 @@ import { collection, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove } f
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Gift, School, Search, Bookmark, Loader2 } from 'lucide-react';
+import { Download, FileText, Gift, School, Search, Bookmark, Loader2, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
@@ -173,7 +173,8 @@ export default function FreeMaterialsPage() {
                                     </Button>
                                     <Button asChild size="sm">
                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
-                                            <Download className="mr-2 h-4 w-4" /> Download
+                                            {material.fileType === 'link' ? <ArrowRight className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+                                            {material.fileType === 'link' ? 'Open Link' : 'View'}
                                         </a>
                                     </Button>
                                  </div>
@@ -257,5 +258,3 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
-
-    

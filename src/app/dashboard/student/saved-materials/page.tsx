@@ -5,7 +5,7 @@ import { collection, query, where, doc, documentId, updateDoc, arrayRemove } fro
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Bookmark, Loader2, Trash2 } from 'lucide-react';
+import { Download, FileText, Bookmark, Loader2, Trash2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface UserProfile {
@@ -19,6 +19,7 @@ interface FreeMaterial {
     description?: string;
     fileURL: string;
     createdAt: string;
+    fileType: string;
 }
 
 const formatDate = (dateString: string) => {
@@ -124,7 +125,8 @@ export default function SavedMaterialsPage() {
                                                 </Button>
                                                 <Button asChild size="sm">
                                                     <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
-                                                        <Download className="mr-2 h-4 w-4" /> Download
+                                                        {material.fileType === 'link' ? <ArrowRight className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+                                                        {material.fileType === 'link' ? 'Open Link' : 'View'}
                                                     </a>
                                                 </Button>
                                              </div>
@@ -147,5 +149,3 @@ export default function SavedMaterialsPage() {
         </div>
     );
 }
-
-    
