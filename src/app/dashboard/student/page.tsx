@@ -323,53 +323,77 @@ export default function StudentDashboardPage() {
                         <CardContent>
                         {enrollments && enrollments.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {enrollments.map((enrollment) => (
-                                    <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                                        <div>
-                                            <div className="flex items-start gap-4 mb-4">
-                                                {renderStatusIcon(enrollment.status)}
-                                                <div className="flex-grow min-w-0">
-                                                    <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
-                                                    <p className="text-sm text-muted-foreground break-words">by {enrollment.teacherName}</p>
+                                {enrollments.map((enrollment) => {
+                                    if (enrollment.status === 'approved') {
+                                        return (
+                                            <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-green-50/50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50">
+                                                <div>
+                                                    <div className="flex items-start justify-between gap-4 mb-2">
+                                                        <div className="flex-grow min-w-0">
+                                                            <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
+                                                            <p className="text-sm text-muted-foreground break-words">by {enrollment.teacherName}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold">
+                                                            <CheckCircle className="h-5 w-5" />
+                                                            <span>Approved</span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        {`Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                    </p>
                                                 </div>
-                                            </div>
-                                             <p className="text-xs text-muted-foreground mt-1">
-                                                {enrollment.status === 'pending' 
-                                                    ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                    : enrollment.status === 'approved' ? `Approved: ${formatDate(enrollment.approvedAt)}`
-                                                    : `Unenrollment Requested`}
-                                            </p>
-                                        </div>
-                                        <CardFooter className="p-0 pt-4 flex flex-col sm:flex-row gap-2 mt-auto sm:self-end">
-                                            {enrollment.status === 'pending' ? (
-                                                <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
-                                                    Cancel Request
-                                                </Button>
-                                            ) : enrollment.status === 'unenrollment_requested' ? (
-                                                <Button variant="outline" size="sm" disabled>
-                                                    <Clock className="mr-2 h-4 w-4" /> Request Sent
-                                                </Button>
-                                            ) : ( // 'approved'
-                                                <>
+                                                <CardFooter className="p-0 pt-4 flex items-center justify-between mt-auto">
                                                     <Button 
-                                                        variant="outline" 
+                                                        variant="ghost" 
                                                         size="sm" 
+                                                        className="text-muted-foreground hover:text-destructive text-xs"
                                                         onClick={() => handleRequestUnenrollment(enrollment)}
                                                         disabled={isRequestingUnenroll === enrollment.id}
                                                     >
-                                                        {isRequestingUnenroll === enrollment.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                                        {isRequestingUnenroll === enrollment.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                                         Request Unenrollment
                                                     </Button>
-                                                    <Button asChild size="sm">
+                                                    <Button asChild>
                                                         <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
-                                                           <ArrowRight className="mr-2 h-4 w-4"/> View Batch
+                                                            Open Batch <ArrowRight className="ml-2 h-4 w-4"/>
                                                         </Link>
                                                     </Button>
-                                                </>
-                                            )}
-                                        </CardFooter>
-                                    </Card>
-                                ))}
+                                                </CardFooter>
+                                            </Card>
+                                        );
+                                    }
+
+                                    // Card for other statuses
+                                    return (
+                                        <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                            <div>
+                                                <div className="flex items-start gap-4 mb-4">
+                                                    {renderStatusIcon(enrollment.status)}
+                                                    <div className="flex-grow min-w-0">
+                                                        <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
+                                                        <p className="text-sm text-muted-foreground break-words">by {enrollment.teacherName}</p>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {enrollment.status === 'pending' 
+                                                        ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                        : `Unenrollment Requested`}
+                                                </p>
+                                            </div>
+                                            <CardFooter className="p-0 pt-4 flex flex-col sm:flex-row gap-2 mt-auto sm:self-end">
+                                                {enrollment.status === 'pending' ? (
+                                                    <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
+                                                        Cancel Request
+                                                    </Button>
+                                                ) : ( // unenrollment_requested
+                                                    <Button variant="outline" size="sm" disabled>
+                                                        <Clock className="mr-2 h-4 w-4" /> Request Sent
+                                                    </Button>
+                                                )}
+                                            </CardFooter>
+                                        </Card>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="w-full bg-background border-2 border-dashed rounded-lg p-12 text-center">
