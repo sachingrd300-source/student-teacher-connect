@@ -178,8 +178,14 @@ service cloud.firestore {
 
     match /supportTickets/{ticketId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if isAdmin();
-      allow list: if isAdmin();
+      allow read, list, update, delete: if isAdmin();
+    }
+    
+    match /orders/{orderId} {
+      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+      allow read, list, update, delete: if isAdmin();
     }
   }
 }
+
+    

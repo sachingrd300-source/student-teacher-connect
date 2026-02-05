@@ -448,6 +448,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "userName", "userRole", "message", "status", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a material order placed by a teacher.",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "material": { "type": "string" },
+        "quantity": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "teacherName", "material", "quantity", "status", "createdAt"]
     }
   },
   "auth": {
@@ -521,6 +536,12 @@
     "/supportTickets/{ticketId}": {
       "schema": { "$ref": "#/entities/SupportTicket" },
       "description": "Stores support tickets from users."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores material orders placed by teachers."
     }
   }
 }
+
+    
