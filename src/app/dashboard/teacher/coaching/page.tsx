@@ -478,7 +478,9 @@ export default function CoachingManagementPage() {
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-sm text-muted-foreground">Join the community to get a verified badge and attract more students.</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        हमसे जुड़ें और अपनी कोचिंग को और बेहतरीन बनाएं। या आप सिर्फ एक शिक्षक के रूप में भी जुड़ सकते हैं और कम्युनिटी आपको पढ़ाने के लिए केंद्र प्रदान करेगी।
+                                    </p>
                                     <Button asChild className="mt-3 w-full" size="sm">
                                         <Link href="/dashboard/teacher/apply-verified-coaching">Apply Now</Link>
                                     </Button>
@@ -524,5 +526,3 @@ export default function CoachingManagementPage() {
         </>
     );
 }
-
-    
