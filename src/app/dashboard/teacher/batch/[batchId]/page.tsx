@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
@@ -42,7 +42,7 @@ interface Enrollment {
     studentName: string;
     teacherId: string;
     batchId: string;
-    status: 'pending' | 'approved';
+    status: 'pending' | 'approved' | 'unenrollment_requested';
     createdAt: string;
     approvedAt?: string;
 }
@@ -157,17 +157,20 @@ export default function BatchManagementPage() {
     }, [firestore, batchId]);
     const { data: enrollmentsData, isLoading: areStudentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
-    const [pendingStudents, enrolledStudents] = useMemo(() => {
+    const [pendingStudents, enrolledStudents, unenrollmentRequests] = useMemo(() => {
         const pending: Enrollment[] = [];
         const enrolled: Enrollment[] = [];
+        const unenroll: Enrollment[] = [];
         enrollmentsData?.forEach(e => {
             if (e.status === 'pending') {
                 pending.push(e);
             } else if (e.status === 'approved') {
                 enrolled.push(e);
+            } else if (e.status === 'unenrollment_requested') {
+                unenroll.push(e);
             }
         });
-        return [pending, enrolled];
+        return [pending, enrolled, unenroll];
     }, [enrollmentsData]);
     
     const materialsRef = useMemoFirebase(() => {
@@ -583,6 +586,31 @@ export default function BatchManagementPage() {
         await firestoreBatch.commit();
     };
 
+    const handleApproveUnenrollment = async (enrollment: Enrollment) => {
+        if (!firestore || !batchId) return;
+        
+        const firestoreBatch = writeBatch(firestore);
+    
+        // 1. Remove student from the `approvedStudents` array in the batch document
+        const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
+        firestoreBatch.update(currentBatchRef, {
+            approvedStudents: arrayRemove(enrollment.studentId)
+        });
+    
+        // 2. Delete the enrollment document
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        firestoreBatch.delete(enrollmentRef);
+    
+        // 3. Log the activity
+        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+        firestoreBatch.set(doc(activityColRef), {
+            message: `Student "${enrollment.studentName}" has unenrolled from the batch.`,
+            createdAt: new Date().toISOString(),
+        });
+    
+        await firestoreBatch.commit();
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
@@ -772,6 +800,35 @@ export default function BatchManagementPage() {
                                             <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
                                             <h3 className="text-lg font-semibold">No Pending Requests</h3>
                                             <p className="text-muted-foreground mt-1">There are no pending requests for this batch.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                             <Card className="rounded-2xl shadow-lg">
+                                <CardHeader>
+                                    <CardTitle>Unenrollment Requests ({unenrollmentRequests.length})</CardTitle>
+                                    <CardDescription>Approve requests from students who wish to leave the batch.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {unenrollmentRequests.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {unenrollmentRequests.map(student => (
+                                                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 hover:shadow-md">
+                                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                        <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
+                                                        <p className="font-semibold break-words">{student.studentName}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 self-end sm:self-center mt-4 sm:mt-0">
+                                                        <Button size="sm" variant="destructive" onClick={() => handleApproveUnenrollment(student)}>Approve Unenrollment</Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 flex flex-col items-center">
+                                            <UserX className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Unenrollment Requests</h3>
+                                            <p className="text-muted-foreground mt-1">There are no pending unenrollment requests.</p>
                                         </div>
                                     )}
                                 </CardContent>

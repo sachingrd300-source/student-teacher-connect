@@ -102,10 +102,11 @@ service cloud.firestore {
                     && request.resource.data.studentId == request.auth.uid
                     && request.resource.data.status == 'pending';
       
-      allow update: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+      allow update: if (isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid))
+                    || (isStudent() && resource.data.studentId == request.auth.uid && request.resource.data.status == 'unenrollment_requested');
       
       allow delete: if isAdmin() 
-                    || (isStudent() && resource.data.studentId == request.auth.uid) 
+                    || (isStudent() && resource.data.studentId == request.auth.uid && resource.data.status == 'pending')
                     || (isTeacher() && resource.data.teacherId == request.auth.uid);
       
       allow get: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId));
@@ -188,5 +189,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

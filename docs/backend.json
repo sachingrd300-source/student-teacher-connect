@@ -144,9 +144,10 @@
             "teacherName": { "type": "string", "description": "The name of the teacher for the batch." },
             "batchId": { "type": "string" },
             "batchName": { "type": "string" },
-            "status": { "type": "string", "enum": ["pending", "approved"] },
+            "status": { "type": "string", "enum": ["pending", "approved", "unenrollment_requested"] },
             "createdAt": { "type": "string", "format": "date-time" },
-            "approvedAt": { "type": "string", "format": "date-time", "description": "The date and time when the enrollment was approved." }
+            "approvedAt": { "type": "string", "format": "date-time", "description": "The date and time when the enrollment was approved." },
+            "unenrollmentRequestedAt": { "type": "string", "format": "date-time", "description": "The date and time when the student requested to unenroll." }
         },
         "required": ["studentId", "studentName", "teacherId", "teacherName", "batchId", "batchName", "status", "createdAt"]
     },
@@ -574,5 +575,3 @@
     }
   }
 }
-
-    

@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, getDocs, orderBy, limit, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,7 @@ interface Enrollment {
     batchId: string;
     batchName: string;
     teacherName: string;
-    status: 'pending' | 'approved';
+    status: 'pending' | 'approved' | 'unenrollment_requested';
     createdAt: string;
     approvedAt?: string;
 }
@@ -121,6 +121,7 @@ export default function StudentDashboardPage() {
     const [batchCode, setBatchCode] = useState('');
     const [joinMessage, setJoinMessage] = useState({ type: '', text: '' });
     const [isJoining, setIsJoining] = useState(false);
+    const [isRequestingUnenroll, setIsRequestingUnenroll] = useState<string | null>(null);
     
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -216,6 +217,22 @@ export default function StudentDashboardPage() {
         await deleteDoc(doc(firestore, 'enrollments', enrollmentId));
     };
 
+    const handleRequestUnenrollment = async (enrollment: Enrollment) => {
+        if (!firestore) return;
+        setIsRequestingUnenroll(enrollment.id);
+        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
+        try {
+            await updateDoc(enrollmentRef, {
+                status: 'unenrollment_requested',
+                unenrollmentRequestedAt: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error("Error requesting unenrollment:", error);
+        } finally {
+            setIsRequestingUnenroll(null);
+        }
+    };
+
     const isLoading = isUserLoading || profileLoading || enrollmentsLoading || homeBookingsLoading || feesLoading;
 
     if (isLoading || !userProfile) {
@@ -227,11 +244,15 @@ export default function StudentDashboardPage() {
         );
     }
 
-    const renderStatusIcon = (status: 'pending' | 'approved') => {
-        if (status === 'approved') {
-            return <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />;
+    const renderStatusIcon = (status: 'pending' | 'approved' | 'unenrollment_requested') => {
+        switch (status) {
+            case 'approved':
+                return <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />;
+            case 'unenrollment_requested':
+                return <Clock className="h-5 w-5 text-orange-500 flex-shrink-0" />;
+            default: // pending
+                return <Clock className="h-5 w-5 text-yellow-500 flex-shrink-0" />;
         }
-        return <Clock className="h-5 w-5 text-yellow-500 flex-shrink-0" />;
     };
 
     const actionItems = [
@@ -315,7 +336,8 @@ export default function StudentDashboardPage() {
                                              <p className="text-xs text-muted-foreground mt-1">
                                                 {enrollment.status === 'pending' 
                                                     ? `Requested: ${formatDate(enrollment.createdAt)}` 
-                                                    : `Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                    : enrollment.status === 'approved' ? `Approved: ${formatDate(enrollment.approvedAt)}`
+                                                    : `Unenrollment Requested`}
                                             </p>
                                         </div>
                                         <CardFooter className="p-0 pt-4 flex gap-2 self-end">
@@ -323,10 +345,20 @@ export default function StudentDashboardPage() {
                                                 <Button variant="outline" size="sm" onClick={() => handleCancelRequest(enrollment.id)}>
                                                     Cancel Request
                                                 </Button>
-                                            ) : (
+                                            ) : enrollment.status === 'unenrollment_requested' ? (
+                                                <Button variant="outline" size="sm" disabled>
+                                                    <Clock className="mr-2 h-4 w-4" /> Request Sent
+                                                </Button>
+                                            ) : ( // 'approved'
                                                 <>
-                                                    <Button asChild variant="ghost" size="sm">
-                                                        <Link href={`/teachers/${enrollment.teacherId}`}>View Teacher</Link>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        onClick={() => handleRequestUnenrollment(enrollment)}
+                                                        disabled={isRequestingUnenroll === enrollment.id}
+                                                    >
+                                                        {isRequestingUnenroll === enrollment.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                                        Request Unenrollment
                                                     </Button>
                                                     <Button asChild size="sm">
                                                         <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
@@ -447,5 +479,3 @@ export default function StudentDashboardPage() {
         </motion.div>
     );
 }
-
-    
