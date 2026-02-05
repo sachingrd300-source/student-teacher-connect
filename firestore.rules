@@ -106,12 +106,12 @@ service cloud.firestore {
       
       allow get: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.teacherId));
       
-      allow list: if isAdmin() || isStudent() || isTeacher();
+      allow list: if isSignedIn();
     }
 
     match /fees/{feeId} {
        allow get: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid) || (isStudent() && resource.data.studentId == request.auth.uid);
-       allow list: if isAdmin() || isTeacher() || isStudent();
+       allow list: if isSignedIn();
        allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
        allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
        allow delete: if isAdmin();
@@ -122,7 +122,7 @@ service cloud.firestore {
                    (isTeacher() && resource.data.teacherId == request.auth.uid) ||
                    (isStudent() && resource.data.studentId == request.auth.uid);
 
-      allow list: if isAdmin() || isTeacher() || isStudent();
+      allow list: if isSignedIn();
 
       allow create: if isAdmin() || 
                       (isTeacher() && request.resource.data.teacherId == request.auth.uid);
