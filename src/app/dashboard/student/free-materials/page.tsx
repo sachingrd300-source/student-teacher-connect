@@ -2,21 +2,23 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Gift, School, Search } from 'lucide-react';
+import { Download, FileText, Gift, School, Search, Bookmark, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
     name: string;
     role?: 'student' | 'teacher' | 'admin' | 'parent';
     coins?: number;
     streak?: number;
+    savedFreeMaterialIds?: string[];
 }
 
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps' | 'objective';
@@ -46,6 +48,12 @@ export default function FreeMaterialsPage() {
     const firestore = useFirestore();
     const [searchQuery, setSearchQuery] = useState('');
 
+    const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
+
+    const savedMaterialIds = useMemo(() => new Set(userProfile?.savedFreeMaterialIds || []), [userProfile]);
+    const [savingId, setSavingId] = useState<string | null>(null);
+
     const freeMaterialsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc'));
@@ -73,6 +81,24 @@ export default function FreeMaterialsPage() {
             objective: searchedMaterials.filter(m => m.category === 'objective'),
         }
     }, [searchedMaterials]);
+
+    const handleSaveToggle = async (materialId: string) => {
+        if (!userProfileRef) return;
+
+        setSavingId(materialId);
+        const isSaved = savedMaterialIds.has(materialId);
+
+        try {
+            await updateDoc(userProfileRef, {
+                savedFreeMaterialIds: isSaved ? arrayRemove(materialId) : arrayUnion(materialId)
+            });
+        } catch(error) {
+            console.error("Error toggling save state:", error);
+        } finally {
+            setSavingId(null);
+        }
+    };
+
 
     const cardVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -123,7 +149,10 @@ export default function FreeMaterialsPage() {
                     }
                 }}
             >
-                {materialList.map((material, i) => (
+                {materialList.map((material, i) => {
+                    const isSaved = savedMaterialIds.has(material.id);
+                    const isSaving = savingId === material.id;
+                    return (
                     <motion.div key={material.id} variants={cardVariants} custom={i} whileHover={{ y: -2 }} className="h-full">
                         <Card className="p-4 rounded-2xl shadow-md transition-shadow hover:shadow-lg">
                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
@@ -138,6 +167,10 @@ export default function FreeMaterialsPage() {
                                     </div>
                                 </div>
                                  <div className="flex gap-2 self-end sm:self-center flex-shrink-0">
+                                    <Button variant={isSaved ? "secondary" : "outline"} size="sm" onClick={() => handleSaveToggle(material.id)} disabled={isSaving}>
+                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Bookmark className={cn("mr-2 h-4 w-4", isSaved && "fill-current")} />}
+                                        {isSaved ? "Saved" : "Save"}
+                                    </Button>
                                     <Button asChild size="sm">
                                         <a href={material.fileURL} target="_blank" rel="noopener noreferrer">
                                             <Download className="mr-2 h-4 w-4" /> Download
@@ -147,12 +180,12 @@ export default function FreeMaterialsPage() {
                             </div>
                         </Card>
                     </motion.div>
-                ))}
+                )})}
             </motion.div>
         );
     };
 
-    if (materialsLoading) {
+    if (materialsLoading || profileLoading) {
         return (
             <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
                 <School className="h-16 w-16 animate-pulse text-primary" />
@@ -224,3 +257,5 @@ export default function FreeMaterialsPage() {
         </div>
     );
 }
+
+    

@@ -109,6 +109,13 @@
         "equippedBadgeIcon": {
           "type": "string",
           "description": "The Lucide icon name for the user's equipped badge."
+        },
+        "savedFreeMaterialIds": {
+          "type": "array",
+          "description": "An array of IDs of free materials saved by the student.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -43,6 +44,7 @@ interface UserProfile {
     streak?: number;
     referralCode?: string;
     equippedBadgeIcon?: BadgeIconType;
+    savedFreeMaterialIds?: string[];
 }
 
 interface UserInventoryItem {
