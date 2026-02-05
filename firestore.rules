@@ -179,7 +179,7 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
       allow read: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
-      allow list: if isSignedIn();
+      allow list: if isTeacher() || isAdmin();
       allow update, delete: if isAdmin();
     }
 
