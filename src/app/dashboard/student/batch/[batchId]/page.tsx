@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { PaymentDialog } from '@/components/payment-dialog';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
 
 
@@ -537,16 +536,9 @@ export default function StudentBatchPage() {
                                             <CardTitle>Performance Over Time</CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <ResponsiveContainer width="100%" height={300}>
-                                                <BarChart data={performanceData.chartData}>
-                                                    <CartesianGrid strokeDasharray="3 3" />
-                                                    <XAxis dataKey="name" tick={{fontSize: 12}} interval={0} angle={-30} textAnchor="end" height={70} />
-                                                    <YAxis unit="%" />
-                                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                                    <Legend />
-                                                    <Bar dataKey="Score (%)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                                </BarChart>
-                                            </ResponsiveContainer>
+                                           <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                                                Charts are temporarily unavailable.
+                                           </div>
                                         </CardContent>
                                     </Card>
                                 </div>

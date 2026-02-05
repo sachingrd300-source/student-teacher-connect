@@ -19,7 +19,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
 import { TestMarksDialog } from '@/components/test-marks-dialog';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -772,16 +771,9 @@ export default function BatchManagementPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={selectedTestChartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" tick={{fontSize: 12}} interval={0} />
-                                <YAxis unit="%" />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="Score (%)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                            Charts are temporarily unavailable.
+                        </div>
                     </CardContent>
                 </Card>
     
