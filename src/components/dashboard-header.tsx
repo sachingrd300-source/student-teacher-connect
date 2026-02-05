@@ -55,7 +55,7 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
         )}
         <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
             <School className="h-6 w-6 mr-1 text-primary" />
-            <span className="text-lg font-semibold font-serif">EduConnect Pro</span>
+            <span className="text-lg font-semibold font-serif hidden sm:inline">EduConnect Pro</span>
         </Link>
         
         <div className="flex items-center gap-4 ml-auto">
