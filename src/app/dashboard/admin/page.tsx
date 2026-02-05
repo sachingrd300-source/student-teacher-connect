@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
@@ -143,7 +142,6 @@ export default function AdminDashboardPage() {
     // Booking Payment Dialog State
     const [bookingForPayment, setBookingForPayment] = useState<HomeBooking | null>(null);
     const [isUploadMaterialDialogOpen, setIsUploadMaterialDialogOpen] = useState(false);
-
 
     useEffect(() => {
         if (itemType === 'badge' || itemType === 'digital') {
@@ -931,9 +929,9 @@ export default function AdminDashboardPage() {
                                 {adminActivities && adminActivities.length > 0 ? (
                                 <div className="grid gap-3">
                                     {adminActivities.slice(0, 5).map(activity => (
-                                        <div key={activity.id} className="flex justify-between items-center text-sm">
-                                            <p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p>
-                                            <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
+                                        <div key={activity.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-2 rounded-lg transition-colors hover:bg-accent/50">
+                                            <div className="flex-grow"><p className="font-medium text-sm"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p></div>
+                                            <div className="text-xs text-muted-foreground self-end sm:self-auto">{formatDate(activity.createdAt, true)}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -1170,7 +1168,7 @@ export default function AdminDashboardPage() {
                 <div className="grid gap-4">
                     {bookings.map(booking => (
                         <div key={booking.id} className="p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
                                     <p className="text-sm text-muted-foreground">Tuition for: <span className="font-medium text-foreground">{booking.tuitionType === 'siblings' ? 'Siblings' : 'Single Student'}</span></p>
@@ -1178,7 +1176,7 @@ export default function AdminDashboardPage() {
                                     <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
                                     <p className="text-sm text-muted-foreground">Address: {booking.studentAddress}</p>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 self-end sm:self-start">
                                     <span className={`text-xs font-bold py-1 px-2 rounded-full ${
                                         booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                                         booking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
@@ -1469,7 +1467,7 @@ export default function AdminDashboardPage() {
                         {shopItems && shopItems.length > 0 ? (
                             <div className="grid gap-4">
                                 {shopItems.map(item => (
-                                    <div key={item.id} className="flex items-start justify-between gap-4 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                    <div key={item.id} className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <div className="flex items-start gap-4">
                                             {item.itemType === 'digital' ? (
                                                 <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-primary">
@@ -1492,7 +1490,7 @@ export default function AdminDashboardPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)}><Trash className="mr-2 h-4 w-4" />Delete</Button>
+                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteShopItem(item)} className="self-end sm:self-center"><Trash className="mr-2 h-4 w-4" />Delete</Button>
                                     </div>
                                 ))}
                             </div>
@@ -1511,9 +1509,9 @@ export default function AdminDashboardPage() {
                     {adminActivities && adminActivities.length > 0 ? (
                         <div className="grid gap-4">
                             {adminActivities.map(activity => (
-                                <div key={activity.id} className="flex justify-between items-center p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                                    <div><p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p></div>
-                                    <div className="text-xs text-muted-foreground">{formatDate(activity.createdAt, true)}</div>
+                                <div key={activity.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                    <div className="flex-grow"><p className="font-medium"><span className="font-bold text-primary">{activity.adminName}</span> {activity.action}</p></div>
+                                    <div className="text-xs text-muted-foreground self-end sm:self-auto">{formatDate(activity.createdAt, true)}</div>
                                 </div>
                             ))}
                         </div>

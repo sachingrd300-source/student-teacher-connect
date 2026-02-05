@@ -424,7 +424,7 @@ export default function StudentDashboardPage() {
                                 activeBookings.map(booking => (
                                     <div key={booking.id} className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
                                         <p className="font-semibold text-sm">{booking.bookingType === 'homeTutor' ? 'Home Tutor Request' : 'Coaching Center Request'}</p>
-                                        <div className="flex justify-between items-start mt-1">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-1 gap-2">
                                             <div>
                                                 <p className="text-xs text-muted-foreground">Requested on {formatDate(booking.createdAt)}</p>
                                             </div>
