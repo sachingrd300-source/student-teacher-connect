@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -6,7 +7,7 @@ import { doc, collection, query, orderBy, where } from 'firebase/firestore';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown, ArrowRight, CalendarDays, Check, X } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Download, ListCollapse, Wallet, CreditCard, ClipboardCheck, Brain, Notebook, BookOpen, BarChart3, Trophy, TrendingDown, ArrowRight, CalendarDays, Check, X, XCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -129,19 +130,18 @@ export default function StudentBatchPage() {
     const { data: batch, isLoading: isBatchLoading } = useDoc<Batch>(batchRef);
 
     const enrollmentQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        // Query for all enrollments for this student
-        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
-    }, [firestore, user?.uid]);
+        if (!firestore || !user?.uid || !batchId) return null;
+        return query(
+            collection(firestore, 'enrollments'),
+            where('studentId', '==', user.uid),
+            where('batchId', '==', batchId),
+            where('status', '==', 'approved')
+        );
+    }, [firestore, user?.uid, batchId]);
     const { data: enrollments, isLoading: isEnrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
 
-    // Now, filter for the specific batch and check status on the client-side
-    const enrollment = useMemo(() => {
-        if (!enrollments) return null;
-        return enrollments.find(e => e.batchId === batchId && e.status === 'approved');
-    }, [enrollments, batchId]);
-
-    const isEnrolledAndApproved = !!enrollment;
+    const isEnrolledAndApproved = useMemo(() => (enrollments ? enrollments.length > 0 : false), [enrollments]);
+    const enrollment = useMemo(() => (isEnrolledAndApproved && enrollments ? enrollments[0] : null), [isEnrolledAndApproved, enrollments]);
 
     const studyMaterialsQuery = useMemoFirebase(() => {
         if (!firestore || !batchId) return null;
@@ -262,8 +262,8 @@ export default function StudentBatchPage() {
 
 
     useEffect(() => {
-        if (isUserLoading || isBatchLoading || isEnrollmentLoading || isProfileLoading) return;
-
+        if (isUserLoading || isBatchLoading) return;
+        
         if (!user) {
             router.replace('/login');
             return;
@@ -273,16 +273,37 @@ export default function StudentBatchPage() {
             router.replace('/dashboard/student');
             return;
         }
-
-        if (!isEnrolledAndApproved) {
-            router.replace('/dashboard/student');
-        }
-    }, [user, batch, isUserLoading, isBatchLoading, isEnrollmentLoading, isEnrolledAndApproved, router, isProfileLoading]);
+    }, [user, batch, isUserLoading, isBatchLoading, router]);
 
     const isLoading = isUserLoading || isProfileLoading || isBatchLoading || isEnrollmentLoading || isStudyMaterialsLoading || isActivitiesLoading || isFeesLoading || isTestsLoading || isTestResultsLoading || isAttendanceLoading;
 
-    if (isLoading || !currentUserProfile || !batch) {
+    if (isLoading) {
         return (
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <Brain className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Batch Details...</p>
+            </div>
+        );
+    }
+    
+    if (!isEnrolledAndApproved) {
+        return (
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                 <XCircle className="h-16 w-16 text-destructive" />
+                <h2 className="text-2xl font-bold">Access Denied</h2>
+                <p className="text-muted-foreground">You are not enrolled in this batch.</p>
+                <Button variant="outline" asChild>
+                    <Link href="/dashboard/student">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Go to Dashboard
+                    </Link>
+                </Button>
+            </div>
+        );
+    }
+
+    if (!currentUserProfile || !batch) {
+         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
                 <Brain className="h-16 w-16 animate-pulse text-primary" />
                 <p className="text-muted-foreground">Loading Batch Details...</p>

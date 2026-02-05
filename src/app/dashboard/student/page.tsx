@@ -69,9 +69,6 @@ const formatDate = (dateString?: string) => {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
     });
 };
 
@@ -326,22 +323,22 @@ export default function StudentDashboardPage() {
                                 {enrollments.map((enrollment) => {
                                     if (enrollment.status === 'approved') {
                                         return (
-                                            <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-green-50/50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50">
-                                                <div>
-                                                    <div className="flex items-start justify-between gap-4 mb-2">
-                                                        <div className="flex-grow min-w-0">
-                                                            <p className="font-semibold text-lg break-words">{enrollment.batchName}</p>
-                                                            <p className="text-sm text-muted-foreground break-words">by {enrollment.teacherName}</p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold">
-                                                            <CheckCircle className="h-5 w-5" />
+                                            <Card key={enrollment.id} className="p-4 flex flex-col justify-between shadow-md rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-gradient-to-tr from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800/50">
+                                                <CardHeader className="p-0">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <CardTitle className="text-lg">{enrollment.batchName}</CardTitle>
+                                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full">
+                                                            <CheckCircle className="h-4 w-4" />
                                                             <span>Approved</span>
                                                         </div>
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        {`Approved: ${formatDate(enrollment.approvedAt)}`}
+                                                    <CardDescription>by {enrollment.teacherName}</CardDescription>
+                                                </CardHeader>
+                                                <CardContent className="p-0 flex-grow mt-4">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {`Approved on ${formatDate(enrollment.approvedAt)}`}
                                                     </p>
-                                                </div>
+                                                </CardContent>
                                                 <CardFooter className="p-0 pt-4 flex items-center justify-between mt-auto">
                                                     <Button 
                                                         variant="ghost" 
@@ -353,7 +350,7 @@ export default function StudentDashboardPage() {
                                                         {isRequestingUnenroll === enrollment.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                                         Request Unenrollment
                                                     </Button>
-                                                    <Button asChild>
+                                                    <Button asChild size="sm">
                                                         <Link href={`/dashboard/student/batch/${enrollment.batchId}`}>
                                                             Open Batch <ArrowRight className="ml-2 h-4 w-4"/>
                                                         </Link>
@@ -376,7 +373,7 @@ export default function StudentDashboardPage() {
                                                 </div>
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     {enrollment.status === 'pending' 
-                                                        ? `Requested: ${formatDate(enrollment.createdAt)}` 
+                                                        ? `Requested on ${formatDate(enrollment.createdAt)}` 
                                                         : `Unenrollment Requested`}
                                                 </p>
                                             </div>
