@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { School, UserCircle, LogOut, User as UserIcon, Trophy, Home, Menu } from 'lucide-react';
+import { Award, UserCircle, LogOut, User as UserIcon, Trophy, Home, Menu } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 
 
@@ -54,8 +55,8 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
             </Button>
         )}
         <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
-            <School className="h-6 w-6 mr-1 text-primary" />
-            <span className="text-lg font-semibold font-serif hidden sm:inline">EduConnect Pro</span>
+            <Award className="h-6 w-6 mr-1 text-primary" />
+            <span className="text-lg font-semibold font-serif hidden sm:inline">Achievers Community</span>
         </Link>
         
         <div className="flex items-center gap-4 ml-auto">
