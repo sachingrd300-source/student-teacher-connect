@@ -34,7 +34,7 @@ import { BookingPaymentDialog } from '@/components/booking-payment-dialog';
 import { 
     Loader2, School, Users, FileText, ShoppingBag, Home, Briefcase, Trash, Upload,
     Check, X, Eye, PackageOpen, DollarSign, UserCheck, Gift, ArrowRight, Menu, Search, GraduationCap,
-    LayoutDashboard, Bell, TrendingUp, Users2, History, Building2, Coins, MoreHorizontal,
+    LayoutDashboard, Bell, TrendingUp, Users2, History, Coins, MoreHorizontal,
     Award, Shield, Gem, Rocket, Star, UserX, CheckCircle, Pencil, Save, Download
 } from 'lucide-react';
 
@@ -49,11 +49,10 @@ interface FreeMaterial { id: string; title: string; description?: string; fileUR
 type BadgeIconType = 'award' | 'shield' | 'gem' | 'rocket' | 'star';
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'badge' | 'digital'; badgeIcon?: BadgeIconType; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
-interface SchoolData { id: string; name: string; principalName: string; teacherIds?: string[]; classes?: { students?: any[] }[]; }
 interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
 
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'schools' | 'achievers';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'achievers';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -146,7 +145,6 @@ export default function AdminDashboardPage() {
     const [stats, setStats] = useState({
         teacherCount: 0,
         studentCount: 0,
-        schoolCount: 0,
         bookingCount: 0
     });
 
@@ -165,7 +163,6 @@ export default function AdminDashboardPage() {
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
-    const schoolsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'schools'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
     const enrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     
@@ -177,7 +174,6 @@ export default function AdminDashboardPage() {
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
-    const { data: schoolsData, isLoading: schoolsLoading } = useCollection<SchoolData>(schoolsQuery);
     const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
@@ -200,20 +196,17 @@ export default function AdminDashboardPage() {
             const fetchStats = async () => {
                 const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
                 const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
-                const schoolsQuery = query(collection(firestore, 'schools'));
                 const bookingsQuery = query(collection(firestore, 'homeBookings'));
 
-                const [teacherSnapshot, studentSnapshot, schoolSnapshot, bookingSnapshot] = await Promise.all([
+                const [teacherSnapshot, studentSnapshot, bookingSnapshot] = await Promise.all([
                     getCountFromServer(teachersQuery),
                     getCountFromServer(studentsQuery),
-                    getCountFromServer(schoolsQuery),
                     getCountFromServer(bookingsQuery)
                 ]);
 
                 setStats({
                     teacherCount: teacherSnapshot.data().count,
                     studentCount: studentSnapshot.data().count,
-                    schoolCount: schoolSnapshot.data().count,
                     bookingCount: bookingSnapshot.data().count
                 });
             };
@@ -727,7 +720,7 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || schoolsLoading || tutorsLoading || enrollmentsLoading;
+    const isLoading = isUserLoading || profileLoading || usersLoading || htAppsLoading || caAppsLoading || bookingsLoading || materialsLoading || shopItemsLoading || activitiesLoading || tutorsLoading || enrollmentsLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -762,7 +755,6 @@ export default function AdminDashboardPage() {
     const navItems = [
         { view: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
         { view: 'users' as AdminView, label: 'Users', icon: Users },
-        { view: 'schools' as AdminView, label: 'Schools', icon: Building2 },
         { view: 'achievers' as AdminView, label: 'Achievers', icon: Award },
         { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
@@ -805,7 +797,7 @@ export default function AdminDashboardPage() {
         >
             <motion.h1 variants={fadeInUp} className="text-3xl font-bold font-serif">Dashboard</motion.h1>
             
-            <motion.div variants={staggerContainer(0.1, 0.2)} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div variants={staggerContainer(0.1, 0.2)} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <motion.div variants={fadeInUp}>
                     <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/20 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -822,15 +814,6 @@ export default function AdminDashboardPage() {
                             <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </CardHeader>
                         <CardContent><div className="text-2xl font-bold text-green-950 dark:text-green-50">{stats.studentCount}</div></CardContent>
-                    </Card>
-                </motion.div>
-                <motion.div variants={fadeInUp}>
-                    <Card className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-yellow-500/20 bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-900/30 dark:to-yellow-900/50 border-yellow-200 dark:border-yellow-800">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium text-yellow-900 dark:text-yellow-200">Registered Schools</CardTitle>
-                            <Building2 className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                        </CardHeader>
-                        <CardContent><div className="text-2xl font-bold text-yellow-950 dark:text-yellow-50">{stats.schoolCount}</div></CardContent>
                     </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
@@ -1469,47 +1452,6 @@ export default function AdminDashboardPage() {
         </div>
     );
     
-    const renderSchoolsView = () => (
-        <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">School Management</h1>
-            <Card className="rounded-2xl shadow-lg">
-                <CardHeader>
-                    <CardTitle>Registered Schools</CardTitle>
-                    <CardDescription>An overview of all schools registered on the platform.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {schoolsData && schoolsData.length > 0 ? (
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {schoolsData.map(school => {
-                                const teacherCount = school.teacherIds?.length || 0;
-                                const studentCount = school.classes?.reduce((acc, c) => acc + (c.students?.length || 0), 0) || 0;
-                                return (
-                                    <Card key={school.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">{school.name}</CardTitle>
-                                            <CardDescription>Principal: {school.principalName}</CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                                            <div className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-muted-foreground" /> <span>{teacherCount} Teachers</span></div>
-                                            <div className="flex items-center gap-2"><GraduationCap className="h-4 w-4 text-muted-foreground" /> <span>{studentCount} Students</span></div>
-                                        </CardContent>
-                                        <CardFooter>
-                                            <Button asChild variant="outline" size="sm">
-                                                <Link href={`/dashboard/teacher/school/${school.id}`}>View Details</Link>
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                )
-                            })}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12">No schools have been created yet.</div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
-    );
-
     const renderAchieversView = () => (
         <div className="grid gap-8">
             <h1 className="text-3xl font-bold font-serif">Achievers Community Teachers</h1>
@@ -1559,7 +1501,6 @@ export default function AdminDashboardPage() {
             materials: renderMaterialsView(),
             shop: renderShopView(),
             activity: renderActivityLogView(),
-            schools: renderSchoolsView(),
             achievers: renderAchieversView(),
         };
 
@@ -1679,5 +1620,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-
-    

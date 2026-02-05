@@ -8,7 +8,6 @@ import { School } from 'lucide-react';
 
 interface UserProfile {
     role: 'teacher';
-    teacherType?: 'coaching' | 'school';
 }
 
 export default function TeacherDashboardPage() {
@@ -36,12 +35,7 @@ export default function TeacherDashboardPage() {
                 router.replace('/dashboard');
                 return;
             }
-
-            if (userProfile.teacherType === 'school') {
-                router.replace('/dashboard/teacher/school');
-            } else { // Defaults to 'coaching' or if undefined
-                router.replace('/dashboard/teacher/coaching');
-            }
+            router.replace('/dashboard/teacher/coaching');
         }
     }, [user, userProfile, isUserLoading, profileLoading, router]);
 

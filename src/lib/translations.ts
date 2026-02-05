@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     heroTitle: "Your Gateway to Quality Education",
@@ -10,8 +9,6 @@ export const translations = {
     featuresSectionDescription: "A comprehensive platform for both students and teachers.",
     feature1Title: "Coaching Management",
     feature1Description: "A dedicated dashboard for individual tutors to manage their batches, students, materials, and fees effortlessly.",
-    feature2Title: "School Management",
-    feature2Description: "A complete system for principals to manage teachers, classes, students, and school-wide announcements.",
     feature3Title: "Complete Student Hub",
     feature3Description: "Access free JAC board resources, track your progress, earn rewards, and find the best local tutors.",
     howItWorksTitle: "A Simple Path to Success",
@@ -89,8 +86,6 @@ export const translations = {
     featuresSectionDescription: "छात्रों और शिक्षकों दोनों के लिए एक व्यापक मंच।",
     feature1Title: "कोचिंग प्रबंधन",
     feature1Description: "व्यक्तिगत ट्यूटर्स के लिए अपने बैच, छात्रों, सामग्री और शुल्क को सहजता से प्रबंधित करने के लिए एक समर्पित डैशबोर्ड।",
-    feature2Title: "स्कूल प्रबंधन",
-    feature2Description: "प्रिंसिपलों के लिए शिक्षकों, कक्षाओं, छात्रों और स्कूल-व्यापी घोषणाओं का प्रबंधन करने के लिए एक संपूर्ण प्रणाली।",
     feature3Title: "संपूर्ण छात्र हब",
     feature3Description: "मुफ्त JAC बोर्ड संसाधनों तक पहुँचें, अपनी प्रगति को ट्रैक करें, पुरस्कार अर्जित करें, और सर्वश्रेष्ठ स्थानीय ट्यूटर खोजें।",
     howItWorksTitle: "सफलता का एक सरल मार्ग",

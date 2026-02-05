@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -25,7 +24,6 @@ interface UserProfile {
     name: string;
     email: string;
     role: 'student' | 'teacher' | 'admin' | 'parent';
-    teacherType?: 'coaching' | 'school';
     teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
     subject?: string;
     bio?: string;
@@ -429,44 +427,42 @@ export default function ProfilePage() {
                                             <p className="text-sm font-medium">{fee || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
                                     </div>
-                                    {userProfile.teacherType === 'coaching' && (
-                                        isEditing ? (
-                                            <div className="grid gap-2">
-                                                <Label>Business/Work Status</Label>
-                                                <div className="flex flex-col gap-2 pt-1">
-                                                    <div className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id="ownCoaching"
-                                                            checked={workStatus.ownCoaching}
-                                                            onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, ownCoaching: !!checked}))}
-                                                        />
-                                                        <Label htmlFor="ownCoaching" className="font-normal cursor-pointer">
-                                                            Own Coaching Center (कोचिंग संचालक)
-                                                        </Label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id="achieversAssociate"
-                                                            checked={workStatus.achieversAssociate}
-                                                            onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, achieversAssociate: !!checked}))}
-                                                        />
-                                                        <Label htmlFor="achieversAssociate" className="font-normal cursor-pointer">
-                                                            Join Achievers Community (अचीवर्स कम्युनिटी सहयोगी)
-                                                        </Label>
-                                                    </div>
+                                    {isEditing ? (
+                                        <div className="grid gap-2">
+                                            <Label>Business/Work Status</Label>
+                                            <div className="flex flex-col gap-2 pt-1">
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="ownCoaching"
+                                                        checked={workStatus.ownCoaching}
+                                                        onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, ownCoaching: !!checked}))}
+                                                    />
+                                                    <Label htmlFor="ownCoaching" className="font-normal cursor-pointer">
+                                                        Own Coaching Center (कोचिंग संचालक)
+                                                    </Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="achieversAssociate"
+                                                        checked={workStatus.achieversAssociate}
+                                                        onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, achieversAssociate: !!checked}))}
+                                                    />
+                                                    <Label htmlFor="achieversAssociate" className="font-normal cursor-pointer">
+                                                        Join Achievers Community (अचीवर्स कम्युनिटी सहयोगी)
+                                                    </Label>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div className="grid gap-2">
-                                                <Label>Business/Work Status</Label>
-                                                <p className="text-sm font-medium capitalize">
-                                                    {(userProfile.teacherWorkStatus === 'both' && 'Own Coaching & Achievers Community Associate') ||
-                                                    (userProfile.teacherWorkStatus === 'own_coaching' && 'Own Coaching Center') ||
-                                                    (userProfile.teacherWorkStatus === 'achievers_associate' && 'Achievers Community Associate') ||
-                                                    'Not set'}
-                                                </p>
-                                            </div>
-                                        )
+                                        </div>
+                                    ) : (
+                                        <div className="grid gap-2">
+                                            <Label>Business/Work Status</Label>
+                                            <p className="text-sm font-medium capitalize">
+                                                {(userProfile.teacherWorkStatus === 'both' && 'Own Coaching & Achievers Community Associate') ||
+                                                (userProfile.teacherWorkStatus === 'own_coaching' && 'Own Coaching Center') ||
+                                                (userProfile.teacherWorkStatus === 'achievers_associate' && 'Achievers Community Associate') ||
+                                                'Not set'}
+                                            </p>
+                                        </div>
                                     )}
                                 </>
                              )}

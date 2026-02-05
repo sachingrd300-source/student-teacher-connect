@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from "react";
@@ -78,11 +77,6 @@ export default function HomePage() {
           icon: <Briefcase className="w-8 h-8 text-primary" />,
           title: t.feature1Title,
           description: t.feature1Description
-      },
-      {
-          icon: <School className="w-8 h-8 text-primary" />,
-          title: t.feature2Title,
-          description: t.feature2Description
       },
       {
           icon: <GraduationCap className="w-8 h-8 text-primary" />,
@@ -213,7 +207,7 @@ export default function HomePage() {
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.3 }}
                     variants={staggerContainer(0.2, 0)}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-8"
                 >
                     {features.map((feature, index) => (
                         <motion.div key={index} variants={fadeInUp}>

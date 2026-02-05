@@ -27,11 +27,9 @@ export default function SignupPage() {
   const router = useRouter();
 
   const [name, setName] = useState('');
-  const [schoolName, setSchoolName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
-  const [teacherType, setTeacherType] = useState<'coaching' | 'school'>('coaching');
   const [referralCodeInput, setReferralCodeInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -45,11 +43,6 @@ export default function SignupPage() {
   const handleSignUp = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
-
-    if (role === 'teacher' && teacherType === 'school' && !schoolName.trim()) {
-        setError('School Name is required for school accounts.');
-        return;
-    }
     
     setIsSigningUp(true);
 
@@ -81,10 +74,8 @@ export default function SignupPage() {
       };
 
       if (role === 'teacher') {
-        dataToSet.teacherType = teacherType;
-        if (teacherType === 'coaching') {
-          dataToSet.teacherWorkStatus = 'own_coaching'; // Default status for new coaching teachers
-        }
+        dataToSet.teacherType = 'coaching';
+        dataToSet.teacherWorkStatus = 'own_coaching'; // Default status for new coaching teachers
       }
       
       // Handle referral only for students
@@ -115,24 +106,6 @@ export default function SignupPage() {
       dataToSet.coins = newUserInitialCoins;
       batch.set(newUserRef, dataToSet);
 
-      // If a school teacher signs up, also create a new school document
-      if (role === 'teacher' && teacherType === 'school') {
-          const schoolCode = nanoid(8).toUpperCase();
-          const newSchoolRef = doc(collection(firestore, 'schools'));
-          const newSchoolData = {
-              name: schoolName.trim(),
-              address: "", // Can be filled later
-              principalId: newUser.uid,
-              principalName: name.trim(),
-              code: schoolCode,
-              academicYear: "", // Can be filled later
-              teacherIds: [newUser.uid], // Principal is the first teacher
-              classes: [],
-              createdAt: new Date().toISOString(),
-          };
-          batch.set(newSchoolRef, newSchoolData);
-      }
-      
       await batch.commit();
       
     } catch (error: any) {
@@ -185,53 +158,10 @@ export default function SignupPage() {
                   </RadioGroup>
                 </div>
                 
-                <AnimatePresence>
-                  {role === 'teacher' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className="grid gap-2 overflow-hidden"
-                    >
-                      <div className="grid gap-2">
-                        <Label>I want to manage...</Label>
-                        <RadioGroup defaultValue="coaching" onValueChange={(value) => setTeacherType(value as 'coaching' | 'school')} className="flex gap-4 pt-1">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="coaching" id="focus-coaching" />
-                            <Label htmlFor="focus-coaching">My Coaching</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="school" id="focus-school" />
-                            <Label htmlFor="focus-school">A School</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
                 <div className="grid gap-2">
-                  <Label htmlFor="full-name">{role === 'teacher' && teacherType === 'school' ? 'Principal Name' : 'Full Name'}</Label>
-                  <Input id="full-name" placeholder={role === 'teacher' && teacherType === 'school' ? 'e.g. John Doe' : 'Full Name'} required value={name} onChange={(e) => setName(e.target.value)} />
+                  <Label htmlFor="full-name">Full Name</Label>
+                  <Input id="full-name" placeholder='Full Name' required value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
-
-                <AnimatePresence>
-                    {role === 'teacher' && teacherType === 'school' && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                            className="grid gap-2 overflow-hidden"
-                        >
-                            <div className="grid gap-2">
-                                <Label htmlFor="school-name">School Name</Label>
-                                <Input id="school-name" placeholder="e.g. Knowledge High School" required={role === 'teacher' && teacherType === 'school'} value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>

@@ -433,72 +433,6 @@
         "uploadedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["testId", "studentId", "studentName", "batchId", "teacherId", "marksObtained", "uploadedAt"]
-    },
-    "School": {
-      "title": "School",
-      "type": "object",
-      "description": "Represents a school managed by a principal user. The principal can directly add and manage teachers, classes, and students within the school document.",
-      "properties": {
-        "name": { "type": "string", "description": "The name of the school." },
-        "address": { "type": "string", "description": "The physical address of the school." },
-        "principalId": { "type": "string", "description": "The UID of the user who is the principal of the school." },
-        "principalName": { "type": "string", "description": "The name of the principal." },
-        "code": { "type": "string", "description": "A unique, shareable code for other teachers to join the school staff." },
-        "academicYear": { "type": "string", "description": "The current academic year session, e.g., '2024-2025'." },
-        "teacherIds": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "List of UIDs of teachers who are part of this school's staff. Managed by the principal."
-        },
-        "classes": {
-          "type": "array",
-          "description": "List of classes in the school, managed by the principal.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "string", "description": "Unique ID for the class (e.g., generated with nanoid)." },
-              "name": { "type": "string", "description": "The name of the class, e.g., 'Class 10' or '12th Grade'." },
-              "section": { "type": "string", "description": "The section of the class, e.g., 'A', 'B', 'Science'." },
-              "teacherId": { "type": "string", "description": "The UID of the teacher assigned to the class." },
-              "teacherName": { "type": "string", "description": "The name of the teacher assigned to the class." },
-              "students": {
-                "type": "array",
-                "description": "List of students enrolled in this class, directly added by the principal.",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "string", "description": "Unique ID for the student entry." },
-                    "name": { "type": "string", "description": "Full name of the student." },
-                    "rollNumber": { "type": "string", "description": "The student's roll number in the class." },
-                    "fatherName": { "type": "string", "description": "The student's father's name." },
-                    "mobileNumber": { "type": "string", "description": "The student's contact mobile number." },
-                    "address": { "type": "string", "description": "The student's physical address." },
-                    "admissionDate": { "type": "string", "format": "date-time", "description": "The date the student was admitted." },
-                    "fees": {
-                      "type": "array",
-                      "description": "A record of the student's monthly fee payments.",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "feeMonth": { "type": "number", "description": "The month of the fee (1-12)." },
-                          "feeYear": { "type": "number", "description": "The year of the fee." },
-                          "status": { "type": "string", "enum": ["paid", "unpaid"] },
-                          "paidOn": { "type": "string", "format": "date-time", "description": "The date the fee was marked as paid." }
-                        },
-                        "required": ["feeMonth", "feeYear", "status"]
-                      }
-                    }
-                  },
-                  "required": ["id", "name"]
-                }
-              }
-            },
-            "required": ["id", "name", "section"]
-          }
-        },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "principalId", "principalName", "code", "createdAt"]
     }
   },
   "auth": {
@@ -564,10 +498,6 @@
     "/testResults/{resultId}": {
       "schema": { "$ref": "#/entities/TestResult" },
       "description": "Stores student marks for tests."
-    },
-    "/schools/{schoolId}": {
-      "schema": { "$ref": "#/entities/School" },
-      "description": "Stores schools created and managed by principals."
     },
     "/adminActivities/{activityId}": {
       "schema": { "$ref": "#/entities/AdminActivity" },

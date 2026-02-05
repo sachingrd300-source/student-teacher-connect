@@ -88,11 +88,7 @@ export default function DashboardPage() {
 
 
             if (userProfile.role === 'teacher') {
-                if (userProfile.teacherType === 'school') {
-                    router.replace('/dashboard/teacher/school');
-                } else { // Defaults to coaching
-                    router.replace('/dashboard/teacher/coaching');
-                }
+                router.replace('/dashboard/teacher/coaching');
             } else if (userProfile.role === 'student') {
                 router.replace('/dashboard/student');
             } else if (userProfile.role === 'admin') {
