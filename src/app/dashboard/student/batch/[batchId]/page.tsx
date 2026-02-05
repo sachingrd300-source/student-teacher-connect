@@ -129,16 +129,18 @@ export default function StudentBatchPage() {
     const { data: batch, isLoading: isBatchLoading } = useDoc<Batch>(batchRef);
 
     const enrollmentQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid || !batchId) return null;
-        return query(
-            collection(firestore, 'enrollments'),
-            where('studentId', '==', user.uid),
-            where('batchId', '==', batchId),
-            where('status', '==', 'approved')
-        );
-    }, [firestore, user?.uid, batchId]);
+        if (!firestore || !user?.uid) return null;
+        // Query for all enrollments for this student
+        return query(collection(firestore, 'enrollments'), where('studentId', '==', user.uid));
+    }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: isEnrollmentLoading } = useCollection<Enrollment>(enrollmentQuery);
-    const enrollment = useMemo(() => enrollments?.[0], [enrollments]);
+
+    // Now, filter for the specific batch and check status on the client-side
+    const enrollment = useMemo(() => {
+        if (!enrollments) return null;
+        return enrollments.find(e => e.batchId === batchId && e.status === 'approved');
+    }, [enrollments, batchId]);
+
     const isEnrolledAndApproved = !!enrollment;
 
     const studyMaterialsQuery = useMemoFirebase(() => {

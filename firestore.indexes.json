@@ -99,6 +99,13 @@
       "collectionGroup": "enrollments",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "enrollments",
+      "queryScope": "COLLECTION",
+      "fields": [
         {
           "fieldPath": "createdAt",
           "order": "DESCENDING"
