@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 
 // --- Interfaces ---
-interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; whatsappNumber?: string; }
+interface UserProfile { id: string; name: string; email: string; role: 'admin' | 'student' | 'teacher'; isHomeTutor?: boolean; teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both'; createdAt: string; lastLoginDate?: string; coachingCenterName?: string; fee?: string; homeAddress?: string; coachingAddress?: string; whatsappNumber?: string; subject?: string; bio?: string; }
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
@@ -54,7 +54,7 @@ interface Order { id: string; teacherId: string; teacherName: string; material: 
 interface SupportTicket { id: string; userId: string; userName: string; userRole: string; message: string; status: 'open' | 'closed'; createdAt: string; }
 
 
-type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'achievers' | 'orders' | 'support';
+type AdminView = 'dashboard' | 'users' | 'applications' | 'bookings' | 'materials' | 'shop' | 'activity' | 'programs' | 'orders' | 'support';
 type ApplicationType = 'homeTutor' | 'communityAssociate';
 
 const badgeIcons: Record<BadgeIconType, React.ReactNode> = {
@@ -132,6 +132,12 @@ export default function AdminDashboardPage() {
     const [editingAchiever, setEditingAchiever] = useState<UserProfile | null>(null);
     const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
+
+    // Home Tutor Edit State
+    const [editingHomeTutor, setEditingHomeTutor] = useState<UserProfile | null>(null);
+    const [homeTutorFormState, setHomeTutorFormState] = useState({ subject: '', whatsappNumber: '', homeAddress: '', bio: '' });
+    const [isUpdatingHomeTutor, setIsUpdatingHomeTutor] = useState(false);
+
 
     // Booking Payment Dialog State
     const [bookingForPayment, setBookingForPayment] = useState<HomeBooking | null>(null);
@@ -726,6 +732,37 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const handleOpenEditHomeTutorDialog = (teacher: UserProfile) => {
+        setEditingHomeTutor(teacher);
+        setHomeTutorFormState({
+            subject: teacher.subject || '',
+            whatsappNumber: teacher.whatsappNumber || '',
+            homeAddress: teacher.homeAddress || '',
+            bio: teacher.bio || '',
+        });
+    };
+
+    const handleUpdateHomeTutor = async () => {
+        if (!firestore || !editingHomeTutor) return;
+        setIsUpdatingHomeTutor(true);
+        const tutorRef = doc(firestore, 'users', editingHomeTutor.id);
+        
+        try {
+            await updateDoc(tutorRef, homeTutorFormState);
+            logAdminAction(`Updated profile for Home Tutor: ${editingHomeTutor.name}`, editingHomeTutor.id);
+            setEditingHomeTutor(null);
+        } catch (error) {
+            console.error("Error updating home tutor:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: tutorRef.path,
+                requestResourceData: homeTutorFormState
+            }));
+        } finally {
+            setIsUpdatingHomeTutor(false);
+        }
+    };
+
     const handleUpdateOrderStatus = (order: Order, status: 'pending' | 'completed') => {
         if (!firestore) return;
         const orderRef = doc(firestore, 'orders', order.id);
@@ -777,7 +814,7 @@ export default function AdminDashboardPage() {
     const navItems = [
         { view: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
         { view: 'users' as AdminView, label: 'Users', icon: Users },
-        { view: 'achievers' as AdminView, label: 'Achievers', icon: Award },
+        { view: 'programs' as AdminView, label: 'Programs', icon: Award },
         { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
         { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
         { view: 'orders' as AdminView, label: 'Orders', icon: ShoppingBag },
@@ -1479,41 +1516,77 @@ export default function AdminDashboardPage() {
         </div>
     );
     
-    const renderAchieversView = () => (
+    const renderProgramsView = () => (
         <div className="grid gap-8">
-            <h1 className="text-3xl font-bold font-serif">Achievers Community Teachers</h1>
+            <h1 className="text-3xl font-bold font-serif">Teacher Programs</h1>
             <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
                     <CardTitle>Manage Teacher Profiles</CardTitle>
-                    <CardDescription>Edit the fee, address, and coaching center name for verified community teachers.</CardDescription>
+                    <CardDescription>Manage profiles for teachers in special programs.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {achieverTeachers.length > 0 ? (
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {achieverTeachers.map(teacher => (
-                                <Card key={teacher.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <div>
-                                            <CardTitle className="text-lg">{teacher.name}</CardTitle>
-                                            <CardDescription>{teacher.email}</CardDescription>
-                                        </div>
-                                        <Button variant="outline" size="sm" onClick={() => handleOpenEditAchieverDialog(teacher)}>
-                                            <Pencil className="mr-2 h-4 w-4" /> Edit
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent className="grid gap-2 text-sm">
-                                        <p><strong>Fee:</strong> {teacher.fee || <span className="text-muted-foreground">Not set</span>}</p>
-                                        <p><strong>Coaching Address:</strong> {teacher.coachingAddress || <span className="text-muted-foreground">Not set</span>}</p>
-                                        <p><strong>Center Name:</strong> {teacher.coachingCenterName || <span className="text-muted-foreground">Not set</span>}</p>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12">
-                            <p className="text-muted-foreground">No teachers have been approved for the Achievers Community program yet.</p>
-                        </div>
-                    )}
+                    <Tabs defaultValue="achievers" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="achievers">Achievers Community</TabsTrigger>
+                            <TabsTrigger value="homeTutors">Home Tutors</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="achievers" className="mt-4">
+                            {achieverTeachers.length > 0 ? (
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {achieverTeachers.map(teacher => (
+                                        <Card key={teacher.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                            <CardHeader className="flex flex-row items-center justify-between">
+                                                <div>
+                                                    <CardTitle className="text-lg">{teacher.name}</CardTitle>
+                                                    <CardDescription>{teacher.email}</CardDescription>
+                                                </div>
+                                                <Button variant="outline" size="sm" onClick={() => handleOpenEditAchieverDialog(teacher)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                </Button>
+                                            </CardHeader>
+                                            <CardContent className="grid gap-2 text-sm">
+                                                <p><strong>Fee:</strong> {teacher.fee || <span className="text-muted-foreground">Not set</span>}</p>
+                                                <p><strong>Coaching Address:</strong> {teacher.coachingAddress || <span className="text-muted-foreground">Not set</span>}</p>
+                                                <p><strong>Center Name:</strong> {teacher.coachingCenterName || <span className="text-muted-foreground">Not set</span>}</p>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <p className="text-muted-foreground">No teachers have been approved for the Achievers Community program yet.</p>
+                                </div>
+                            )}
+                        </TabsContent>
+                        <TabsContent value="homeTutors" className="mt-4">
+                            {approvedTutors.length > 0 ? (
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {approvedTutors.map(teacher => (
+                                        <Card key={teacher.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                            <CardHeader className="flex flex-row items-center justify-between">
+                                                <div>
+                                                    <CardTitle className="text-lg">{teacher.name}</CardTitle>
+                                                    <CardDescription>{teacher.email}</CardDescription>
+                                                </div>
+                                                <Button variant="outline" size="sm" onClick={() => handleOpenEditHomeTutorDialog(teacher)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                </Button>
+                                            </CardHeader>
+                                            <CardContent className="grid gap-2 text-sm">
+                                                <p><strong>Subject:</strong> {teacher.subject || <span className="text-muted-foreground">Not set</span>}</p>
+                                                <p><strong>WhatsApp:</strong> {teacher.whatsappNumber || <span className="text-muted-foreground">Not set</span>}</p>
+                                                <p><strong>Address:</strong> {teacher.homeAddress || <span className="text-muted-foreground">Not set</span>}</p>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <p className="text-muted-foreground">No teachers have been approved for the Home Tutor program yet.</p>
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
             </Card>
         </div>
@@ -1644,7 +1717,7 @@ export default function AdminDashboardPage() {
             materials: renderMaterialsView(),
             shop: renderShopView(),
             activity: renderActivityLogView(),
-            achievers: renderAchieversView(),
+            programs: renderProgramsView(),
             orders: renderOrdersView(),
             support: renderSupportView(),
         };
@@ -1704,6 +1777,64 @@ export default function AdminDashboardPage() {
                     </div>
                 </main>
             </div>
+            
+            <Dialog open={!!editingHomeTutor} onOpenChange={(isOpen) => !isOpen && setEditingHomeTutor(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Profile for {editingHomeTutor?.name}</DialogTitle>
+                        <DialogDescription>
+                            Update the public-facing details for this home tutor.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="tutor-subject">Subject</Label>
+                            <Input 
+                                id="tutor-subject" 
+                                value={homeTutorFormState.subject || ''} 
+                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, subject: e.target.value }))}
+                                placeholder="e.g., Physics, Maths"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="tutor-whatsapp">WhatsApp Number</Label>
+                            <Input 
+                                id="tutor-whatsapp" 
+                                value={homeTutorFormState.whatsappNumber || ''}
+                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                                placeholder="e.g., +91..."
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="tutor-address">Home Address</Label>
+                            <Textarea 
+                                id="tutor-address" 
+                                value={homeTutorFormState.homeAddress || ''}
+                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, homeAddress: e.target.value }))}
+                                placeholder="Tutor's home address"
+                            />
+                            <p className="text-xs text-muted-foreground">This address is private and used for verification only.</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="tutor-bio">Bio</Label>
+                            <Textarea 
+                                id="tutor-bio" 
+                                value={homeTutorFormState.bio || ''}
+                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, bio: e.target.value }))}
+                                placeholder="A short bio about the tutor"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleUpdateHomeTutor} disabled={isUpdatingHomeTutor}>
+                            {isUpdatingHomeTutor ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={!!editingAchiever} onOpenChange={(isOpen) => !isOpen && setEditingAchiever(null)}>
                 <DialogContent>
                     <DialogHeader>
