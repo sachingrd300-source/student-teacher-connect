@@ -58,6 +58,14 @@ interface HomeBooking {
     bookingType: 'homeTutor' | 'coachingCenter';
 }
 
+interface Order {
+    id: string;
+    material: string;
+    quantity: string;
+    status: 'pending' | 'completed';
+    createdAt: string;
+}
+
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -134,6 +142,17 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: assignedBookings, isLoading: assignedBookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
+
+    const ordersQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(
+            collection(firestore, 'orders'),
+            where('teacherId', '==', user.uid),
+            orderBy('createdAt', 'desc'),
+            limit(5)
+        );
+    }, [firestore, user?.uid]);
+    const { data: orders, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -252,7 +271,7 @@ export default function CoachingManagementPage() {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || assignedBookingsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || assignedBookingsLoading || ordersLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -458,6 +477,44 @@ export default function CoachingManagementPage() {
                                 <div className="text-center py-12">
                                     <h3 className="text-lg font-semibold">All Caught Up!</h3>
                                     <p className="text-muted-foreground mt-1">There are no new student requests right now. 👍</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className='rounded-2xl shadow-lg'>
+                        <CardHeader>
+                            <CardTitle>My Recent Orders</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {ordersLoading ? (
+                                <div className="text-center py-8">
+                                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            ) : orders && orders.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {orders.map(order => (
+                                        <div key={order.id} className="p-3 rounded-lg border">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-semibold">{order.material}</p>
+                                                    <p className="text-sm text-muted-foreground">{order.quantity}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Ordered: {formatDate(order.createdAt)}
+                                                    </p>
+                                                </div>
+                                                <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-muted-foreground">You haven't placed any orders yet.</p>
                                 </div>
                             )}
                         </CardContent>
