@@ -112,9 +112,12 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        allow list: if isAdmin() || (isTeacher() && request.query.teacherId == request.auth.uid);
-        allow get, delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
-        allow create, update: if isAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+        // Read access: admin or teacher who owns the parent batch
+        allow get, list: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+        // Write access: admin, or teacher who owns the parent batch AND is setting their own UID as teacherId
+        allow create, update: if isAdmin() || (isTeacherOwnerOfBatch(batchId) && request.resource.data.teacherId == request.auth.uid);
+        // Delete access: admin or teacher who owns the parent batch
+        allow delete: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
     }
     
