@@ -127,7 +127,7 @@ export default function FindTeachersPage() {
                             <CardContent className="flex-grow flex flex-col justify-between text-center">
                                  <div>
                                     {teacher.coachingCenterName && (
-                                        <p className="text-sm text-muted-foreground mb-4">{teacher.coachingCenterName}</p>
+                                        <p className="text-sm font-bold text-primary mb-4">{teacher.coachingCenterName}</p>
                                     )}
                                     {teacher.bio && (
                                          <p className="text-sm text-muted-foreground line-clamp-3">{teacher.bio}</p>

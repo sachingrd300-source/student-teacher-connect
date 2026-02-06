@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCopy, Send, Check, Home, Award } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface TeacherProfile {
     name: string;
@@ -256,10 +257,10 @@ const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string
             <div className="mt-1 flex-shrink-0">{icon}</div>
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="font-semibold break-words">{value}</p>
+                <p className={cn("font-semibold break-words", label === 'Coaching Center' && "text-primary font-bold")}>
+                    {value}
+                </p>
             </div>
         </div>
     );
 };
-
-    
