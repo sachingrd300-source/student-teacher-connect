@@ -15,11 +15,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX, Check, X } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX, Check, X, MessageSquareWarning } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
 import { TestMarksDialog } from '@/components/test-marks-dialog';
+import { ComplaintDialog } from '@/components/complaint-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -117,6 +118,7 @@ export default function BatchManagementPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [studentForFees, setStudentForFees] = useState<Enrollment | null>(null);
+    const [studentForComplaint, setStudentForComplaint] = useState<Enrollment | null>(null);
     const [selectedTest, setSelectedTest] = useState<Test | null>(null);
     
     // Batch form state
@@ -346,7 +348,7 @@ export default function BatchManagementPage() {
             }
 
             // 2. Delete documents in subcollections
-            const subcollections = ['tests', 'activity', 'materials'];
+            const subcollections = ['tests', 'activity', 'materials', 'attendance'];
             for (const subcoll of subcollections) {
                 const subcollRef = collection(firestore, 'batches', batchId, subcoll);
                 const snapshot = await getDocs(subcollRef);
@@ -847,6 +849,9 @@ export default function BatchManagementPage() {
                                                          <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
                                                             <Wallet className="mr-2 h-4 w-4" /> Fees
                                                         </Button>
+                                                        <Button variant="outline" size="sm" onClick={() => setStudentForComplaint(student)}>
+                                                            <MessageSquareWarning className="mr-2 h-4 w-4" /> Complaint
+                                                        </Button>
                                                         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleRemoveStudent(student)}>Remove</Button>
                                                     </div>
                                                 </div>
@@ -1044,6 +1049,15 @@ export default function BatchManagementPage() {
                     isOpen={!!studentForFees} 
                     onClose={() => setStudentForFees(null)} 
                     student={studentForFees} 
+                />
+            )}
+
+            {studentForComplaint && userProfile && (
+                <ComplaintDialog
+                    isOpen={!!studentForComplaint}
+                    onClose={() => setStudentForComplaint(null)}
+                    student={studentForComplaint}
+                    teacherName={userProfile.name}
                 />
             )}
 
