@@ -112,7 +112,9 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        allow read, write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+        allow list: if isAdmin() || (isTeacher() && request.query.teacherId == request.auth.uid);
+        allow get, delete: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+        allow create, update: if isAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
       }
     }
     
