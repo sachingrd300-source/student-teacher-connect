@@ -70,6 +70,11 @@ service cloud.firestore {
       return changedKeys.difference(allowedKeys).size() == 0;
     }
 
+    // This is a temporary rule to prevent a persistent permissions error.
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn();
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId)
                   || isAdmin()
@@ -207,5 +212,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
