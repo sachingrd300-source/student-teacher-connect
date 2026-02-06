@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useEffect } from 'react';
+import { doc, collection, query, where, getDocs, writeBatch, arrayRemove, limit } from 'firebase/firestore';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, User as UserIcon, ArrowLeft, Phone, MapPin, GraduationCap } from 'lucide-react';
+import { Loader2, Mail, User as UserIcon, ArrowLeft, Phone, MapPin, GraduationCap, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface StudentProfile {
@@ -30,15 +30,23 @@ interface UserProfile {
     streak?: number;
 }
 
+interface Batch {
+    teacherId: string;
+}
+
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
-export default function StudentProfilePage() {
+function StudentProfileContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const studentId = params.studentId as string;
+    const batchId = searchParams.get('batchId');
+
+    const [isRemoving, setIsRemoving] = useState(false);
 
     const studentProfileRef = useMemoFirebase(() => {
         if (!firestore || !studentId) return null;
@@ -51,12 +59,66 @@ export default function StudentProfilePage() {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
     const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
+
+    const batchRef = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return doc(firestore, 'batches', batchId);
+    }, [firestore, batchId]);
+    const { data: batchData } = useDoc<Batch>(batchRef);
+
+    const canRemove = useMemo(() => {
+        return user && batchData && batchData.teacherId === user.uid;
+    }, [user, batchData]);
     
     useEffect(() => {
         if (!isUserLoading && !user) {
             router.replace('/login');
         }
     }, [user, isUserLoading, router]);
+
+    const handleRemoveFromBatch = async () => {
+        if (!firestore || !batchId || !studentId || !canRemove || !studentProfile) return;
+
+        setIsRemoving(true);
+
+        try {
+            const enrollmentsRef = collection(firestore, 'enrollments');
+            const q = query(enrollmentsRef, where('studentId', '==', studentId), where('batchId', '==', batchId), limit(1));
+            const enrollmentSnapshot = await getDocs(q);
+
+            if (enrollmentSnapshot.empty) {
+                console.error("Enrollment document not found.");
+                setIsRemoving(false);
+                return;
+            }
+
+            const enrollmentDoc = enrollmentSnapshot.docs[0];
+
+            const firestoreBatch = writeBatch(firestore);
+
+            const currentBatchRef = doc(firestore, 'batches', batchId);
+            firestoreBatch.update(currentBatchRef, {
+                approvedStudents: arrayRemove(studentId)
+            });
+
+            firestoreBatch.delete(enrollmentDoc.ref);
+
+            const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+            firestoreBatch.set(doc(activityColRef), {
+                message: `Student "${studentProfile.name}" was removed from the batch.`,
+                createdAt: new Date().toISOString(),
+            });
+
+            await firestoreBatch.commit();
+            
+            router.push(`/dashboard/teacher/batch/${batchId}`);
+
+        } catch (error) {
+            console.error("Error removing student:", error);
+            setIsRemoving(false);
+        }
+    };
+
 
     const isLoading = isUserLoading || profileLoading;
 
@@ -84,7 +146,7 @@ export default function StudentProfilePage() {
             <DashboardHeader userProfile={currentUserProfile} />
             <main className="flex-1 p-4 md:p-8 bg-muted/20">
                 <div className="max-w-2xl mx-auto">
-                     <Button variant="ghost" onClick={() => router.push('/dashboard/teacher')} className="mb-4">
+                     <Button variant="ghost" onClick={() => router.back()} className="mb-4">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back
                     </Button>
@@ -111,6 +173,19 @@ export default function StudentProfilePage() {
                                 </div>
                             )}
                         </CardContent>
+                         {canRemove && (
+                            <CardFooter>
+                                <Button 
+                                    variant="destructive" 
+                                    onClick={handleRemoveFromBatch} 
+                                    disabled={isRemoving}
+                                    className="w-full"
+                                >
+                                    {isRemoving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                    Remove from Batch
+                                </Button>
+                            </CardFooter>
+                        )}
                     </Card>
                 </div>
             </main>
@@ -130,3 +205,17 @@ const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string
         </div>
     );
 };
+
+export default function StudentProfilePage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <GraduationCap className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Student Profile...</p>
+            </div>
+        }>
+            <StudentProfileContent />
+        </Suspense>
+    );
+}
+

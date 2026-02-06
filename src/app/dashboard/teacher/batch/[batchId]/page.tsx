@@ -374,28 +374,6 @@ export default function BatchManagementPage() {
             setIsSaving(false);
         }
     };
-    
-    const handleRemoveStudent = async (enrollment: Enrollment) => {
-        if (!firestore || !batchId) return;
-        
-        const firestoreBatch = writeBatch(firestore);
-
-        const currentBatchRef = doc(firestore, 'batches', enrollment.batchId);
-        firestoreBatch.update(currentBatchRef, {
-            approvedStudents: arrayRemove(enrollment.studentId)
-        });
-
-        const enrollmentRef = doc(firestore, 'enrollments', enrollment.id);
-        firestoreBatch.delete(enrollmentRef);
-
-        const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-        firestoreBatch.set(doc(activityColRef), {
-            message: `Student "${enrollment.studentName}" was removed from the batch.`,
-            createdAt: new Date().toISOString(),
-        });
-
-        await firestoreBatch.commit();
-    };
 
     const handleFileUpload = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -844,7 +822,7 @@ export default function BatchManagementPage() {
                                                     </div>
                                                     <div className="flex items-center gap-2 self-end sm:self-center flex-wrap mt-4 sm:mt-0">
                                                         <Button asChild variant="outline" size="sm">
-                                                            <Link href={`/students/${student.studentId}`}><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
+                                                            <Link href={`/students/${student.studentId}?batchId=${batchId}`}><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
                                                         </Button>
                                                          <Button variant="outline" size="sm" onClick={() => setStudentForFees(student)}>
                                                             <Wallet className="mr-2 h-4 w-4" /> Fees
@@ -852,7 +830,6 @@ export default function BatchManagementPage() {
                                                         <Button variant="outline" size="sm" onClick={() => setStudentForComplaint(student)}>
                                                             <MessageSquareWarning className="mr-2 h-4 w-4" /> Complaint
                                                         </Button>
-                                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleRemoveStudent(student)}>Remove</Button>
                                                     </div>
                                                 </div>
                                             ))}
