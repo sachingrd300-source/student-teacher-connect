@@ -468,6 +468,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["teacherId", "teacherName", "material", "quantity", "status", "createdAt"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents a student's attendance for a specific date in a batch.",
+      "properties": {
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "batchId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "date": { "type": "string", "format": "date", "description": "The date of attendance (YYYY-MM-DD)." },
+        "status": { "type": "string", "enum": ["present", "absent"] }
+      },
+      "required": ["studentId", "studentName", "batchId", "teacherId", "date", "status"]
     }
   },
   "auth": {
@@ -493,6 +507,10 @@
     "/batches/{batchId}/materials/{materialId}": {
       "schema": { "$ref": "#/entities/StudyMaterial" },
       "description": "Stores study materials for a specific batch."
+    },
+     "/batches/{batchId}/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/Attendance" },
+      "description": "Stores attendance records for a specific batch."
     },
     "/freeMaterials/{materialId}": {
       "schema": { "$ref": "#/entities/FreeMaterial" },

@@ -110,6 +110,10 @@ service cloud.firestore {
         allow get, list: if isAdmin() || isTeacherOwnerOfBatch(batchId) || isEnrolledInBatch(batchId);
         allow write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
+
+      match /attendance/{attendanceId} {
+        allow read, write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+      }
     }
     
     match /enrollments/{enrollmentId} {
@@ -133,7 +137,7 @@ service cloud.firestore {
        allow get: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid) || (isStudent() && resource.data.studentId == request.auth.uid);
        allow list: if isSignedIn();
        allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
-       allow update: if isTeacher() && resource.data.teacherId == request.auth.uid;
+       allow update: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
        allow delete: if isAdmin();
     }
     
