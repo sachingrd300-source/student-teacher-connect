@@ -54,7 +54,6 @@ export default function StudentDashboardLayout({
     { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
     { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },
     { href: '/dashboard/student/saved-materials', label: 'Saved Materials', icon: Bookmark },
-    { href: '/dashboard/student/rewards', label: 'My Rewards', icon: Gift },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },
   ];
 
@@ -138,5 +137,3 @@ export default function StudentDashboardLayout({
     </div>
   );
 }
-
-    
