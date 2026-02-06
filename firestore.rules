@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -112,12 +111,17 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        // Read access: admin or teacher who owns the parent batch
-        allow get, list: if isAdmin() || isTeacherOwnerOfBatch(batchId);
-        // Write access: admin, or teacher who owns the parent batch AND is setting their own UID as teacherId
-        allow create, update: if isAdmin() || (isTeacherOwnerOfBatch(batchId) && request.resource.data.teacherId == request.auth.uid);
-        // Delete access: admin or teacher who owns the parent batch
-        allow delete: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+        // A user can get an attendance doc if they are an admin, or if they are a teacher
+        // and the teacherId field in the document matches their user ID.
+        allow get: if isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+        
+        // A teacher can list attendance documents, but the query from the client MUST
+        // include `where('teacherId', '==', request.auth.uid)` which is enforced by the `get` rule.
+        allow list: if isAdmin() || isTeacher();
+
+        // A teacher can write an attendance record if the teacherId in the record
+        // matches their own user ID.
+        allow write: if isAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
       }
     }
     

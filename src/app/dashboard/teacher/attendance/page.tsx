@@ -77,11 +77,11 @@ export default function AttendancePage() {
     const { data: enrolledStudents, isLoading: studentsLoading } = useCollection<Enrollment>(enrolledStudentsQuery);
 
     const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedBatchId || !selectedDate) return null;
+        if (!firestore || !selectedBatchId || !selectedDate || !user?.uid) return null;
         return query(
             collection(firestore, 'batches', selectedBatchId, 'attendance'),
             where('date', '==', selectedDate),
-            where('teacherId', '==', user?.uid)
+            where('teacherId', '==', user.uid)
         );
     }, [firestore, selectedBatchId, selectedDate, user?.uid]);
     const { data: attendanceData, isLoading: attendanceLoading } = useCollection<AttendanceRecord>(attendanceQuery);
