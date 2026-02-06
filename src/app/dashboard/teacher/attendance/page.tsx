@@ -19,6 +19,7 @@ interface UserProfile {
     name: string;
     role?: 'student' | 'teacher' | 'admin' | 'parent';
     mobileNumber?: string;
+    parentMobileNumber?: string;
 }
 interface Batch {
     id: string;
@@ -79,9 +80,10 @@ export default function AttendancePage() {
         if (!firestore || !selectedBatchId || !selectedDate) return null;
         return query(
             collection(firestore, 'batches', selectedBatchId, 'attendance'),
-            where('date', '==', selectedDate)
+            where('date', '==', selectedDate),
+            where('teacherId', '==', user?.uid)
         );
-    }, [firestore, selectedBatchId, selectedDate]);
+    }, [firestore, selectedBatchId, selectedDate, user?.uid]);
     const { data: attendanceData, isLoading: attendanceLoading } = useCollection<AttendanceRecord>(attendanceQuery);
 
     const attendanceMap = useMemo(() => {
@@ -125,18 +127,21 @@ export default function AttendancePage() {
                  return;
             }
             const studentData = studentDocSnap.data() as UserProfile | undefined;
-            const mobileNumber = studentData?.mobileNumber;
+            // Prioritize parent's number, fallback to student's
+            const targetMobileNumber = studentData?.parentMobileNumber || studentData?.mobileNumber;
 
-            if (!mobileNumber) {
-                alert(`Cannot send reminder: Mobile number for ${studentName} is not available.`);
+            if (!targetMobileNumber) {
+                alert(`Cannot send reminder: Mobile number for ${studentName} or their parent is not available.`);
                 return;
             }
 
             const batchName = batches?.find(b => b.id === selectedBatchId)?.name || 'your class';
             const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-            const message = `Hello ${studentName}, this is a reminder from Achievers Community. You were marked absent from ${batchName} on ${formattedDate}. Please contact your teacher if this is incorrect.`;
             
-            const phoneNumber = mobileNumber.replace(/[^0-9]/g, '');
+            // Construct a message suitable for a parent
+            const message = `Hello, this is a reminder from Achievers Community regarding your child, ${studentName}. They were marked absent from the ${batchName} batch on ${formattedDate}. Please contact the teacher if you have any questions.`;
+            
+            const phoneNumber = targetMobileNumber.replace(/[^0-9]/g, '');
             const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
             const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
