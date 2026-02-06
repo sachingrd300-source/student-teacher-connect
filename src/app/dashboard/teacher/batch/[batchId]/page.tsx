@@ -340,7 +340,7 @@ export default function BatchManagementPage() {
             const firestoreBatch = writeBatch(firestore);
 
             // 1. Delete all related documents in root collections (enrollments, fees, testResults)
-            const collectionsToDelete = ['enrollments', 'fees', 'testResults', 'attendance'];
+            const collectionsToDelete = ['enrollments', 'fees', 'testResults'];
             for (const coll of collectionsToDelete) {
                 const q = query(collection(firestore, coll), where('batchId', '==', batchId));
                 const snapshot = await getDocs(q);
@@ -1095,5 +1095,3 @@ export default function BatchManagementPage() {
         </div>
     );
 }
-
-    
