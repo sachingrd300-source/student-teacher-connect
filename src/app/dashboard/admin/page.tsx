@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, ChangeEvent, Fragment } from 'react';
+import React, { useState, useMemo, useEffect, ChangeEvent, Fragment, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useStorage, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -78,8 +78,8 @@ const fadeInUp = {
   },
 };
 
-// --- Main Component ---
-export default function AdminDashboardPage() {
+// --- Main Component Content ---
+function AdminDashboardContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const storage = useStorage();
@@ -1880,5 +1880,19 @@ export default function AdminDashboardPage() {
                 }}
             />
         </div>
+    );
+}
+
+// --- Main Page Component ---
+export default function AdminDashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
+                <LayoutDashboard className="h-16 w-16 animate-pulse text-primary" />
+                <p className="text-muted-foreground">Loading Admin Portal...</p>
+            </div>
+        }>
+            <AdminDashboardContent />
+        </Suspense>
     );
 }
