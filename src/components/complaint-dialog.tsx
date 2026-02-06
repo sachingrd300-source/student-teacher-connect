@@ -19,6 +19,7 @@ interface Enrollment {
 
 interface UserProfile {
     mobileNumber?: string;
+    parentMobileNumber?: string;
 }
 
 interface ComplaintDialogProps {
@@ -48,18 +49,18 @@ export function ComplaintDialog({ isOpen, onClose, student, teacherName }: Compl
 
         if (studentSnap.exists()) {
             const studentData = studentSnap.data() as UserProfile;
-            const mobileNumber = studentData.mobileNumber;
+            const targetMobileNumber = studentData.parentMobileNumber || studentData.mobileNumber;
 
-            if (mobileNumber) {
+            if (targetMobileNumber) {
                 const fullMessage = `Hello, this is a message from ${teacherName} regarding your child, ${student.studentName}:\n\n"${complaintMessage.trim()}"\n\nPlease contact us for further details.\n\nThank you,\nAchievers Community`;
-                const phoneNumber = mobileNumber.replace(/[^0-9]/g, '');
+                const phoneNumber = targetMobileNumber.replace(/[^0-9]/g, '');
                 const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
                 const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(fullMessage)}`;
                 
                 window.open(whatsappUrl, '_blank');
                 onClose(); // Close dialog after opening whatsapp
             } else {
-                setError("This student does not have a mobile number saved in their profile. Please ask them to update it.");
+                setError("This student does not have a parent's or their own mobile number saved in their profile. Please ask them to update it.");
             }
         } else {
             setError("Could not find the student's profile to get their contact number.");
@@ -94,7 +95,7 @@ export function ComplaintDialog({ isOpen, onClose, student, teacherName }: Compl
                 <div>
                     <DialogTitle>Send Complaint about {student.studentName}</DialogTitle>
                     <DialogDescription>
-                        This message will be sent to the student's registered WhatsApp number.
+                        This message will be sent to the parent's WhatsApp number if available, otherwise to the student's.
                     </DialogDescription>
                 </div>
             </div>
@@ -126,4 +127,3 @@ export function ComplaintDialog({ isOpen, onClose, student, teacherName }: Compl
     </Dialog>
   );
 }
-

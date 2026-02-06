@@ -94,6 +94,10 @@
             "type": "string",
             "description": "The student's mobile phone number."
         },
+        "parentMobileNumber": {
+          "type": "string",
+          "description": "The student's parent's or guardian's mobile phone number."
+        },
         "homeAddress": {
             "type": "string",
             "description": "The user's private home address, primarily used for verification."

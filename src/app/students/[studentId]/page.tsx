@@ -17,6 +17,7 @@ interface StudentProfile {
     role: 'student';
     bio?: string;
     mobileNumber?: string;
+    parentMobileNumber?: string;
     homeAddress?: string;
     fatherName?: string;
     class?: string;
@@ -98,6 +99,7 @@ export default function StudentProfilePage() {
                         <CardContent className="mt-6 grid gap-4">
                             <InfoItem icon={<Mail className="w-5 h-5 text-primary" />} label="Email" value={studentProfile.email} />
                             <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="Mobile Number" value={studentProfile.mobileNumber} />
+                            <InfoItem icon={<Phone className="w-5 h-5 text-primary" />} label="Parent's Mobile Number" value={studentProfile.parentMobileNumber} />
                             <InfoItem icon={<UserIcon className="w-5 h-5 text-primary" />} label="Father's Name" value={studentProfile.fatherName} />
                             <InfoItem icon={<GraduationCap className="w-5 h-5 text-primary" />} label="Class" value={studentProfile.class} />
                             <InfoItem icon={<MapPin className="w-5 h-5 text-primary" />} label="Home Address" value={studentProfile.homeAddress} />

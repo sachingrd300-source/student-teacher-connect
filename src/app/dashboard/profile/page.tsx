@@ -35,6 +35,7 @@ interface UserProfile {
     whatsappNumber?: string;
     fee?: string;
     mobileNumber?: string;
+    parentMobileNumber?: string;
     fatherName?: string;
     class?: string;
     coins?: number;
@@ -85,6 +86,7 @@ export default function ProfilePage() {
 
     // Student state
     const [mobileNumber, setMobileNumber] = useState('');
+    const [parentMobileNumber, setParentMobileNumber] = useState('');
     const [fatherName, setFatherName] = useState('');
     const [studentClass, setStudentClass] = useState('');
 
@@ -128,6 +130,7 @@ export default function ProfilePage() {
                 });
             } else if (userProfile.role === 'student') {
                 setMobileNumber(userProfile.mobileNumber || '');
+                setParentMobileNumber(userProfile.parentMobileNumber || '');
                 setFatherName(userProfile.fatherName || '');
                 setStudentClass(userProfile.class || '');
             }
@@ -181,6 +184,7 @@ export default function ProfilePage() {
             }
         } else if (userProfile.role === 'student') {
             dataToUpdate.mobileNumber = mobileNumber.trim();
+            dataToUpdate.parentMobileNumber = parentMobileNumber.trim();
             dataToUpdate.fatherName = fatherName.trim();
             dataToUpdate.class = studentClass.trim();
             dataToUpdate.homeAddress = homeAddress.trim();
@@ -223,6 +227,7 @@ export default function ProfilePage() {
                 });
             } else if (userProfile.role === 'student') {
                 setMobileNumber(userProfile.mobileNumber || '');
+                setParentMobileNumber(userProfile.parentMobileNumber || '');
                 setFatherName(userProfile.fatherName || '');
                 setStudentClass(userProfile.class || '');
             }
@@ -355,6 +360,14 @@ export default function ProfilePage() {
                                             <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="e.g., +91..." />
                                         ) : (
                                             <p className="text-sm font-medium">{mobileNumber || <span className="text-muted-foreground">Not set</span>}</p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="parentMobileNumber">Parent's Mobile Number</Label>
+                                        {isEditing ? (
+                                            <Input id="parentMobileNumber" value={parentMobileNumber} onChange={(e) => setParentMobileNumber(e.target.value)} placeholder="Enter parent's contact number" />
+                                        ) : (
+                                            <p className="text-sm font-medium">{parentMobileNumber || <span className="text-muted-foreground">Not set</span>}</p>
                                         )}
                                     </div>
                                     <div className="grid gap-2">
@@ -583,5 +596,3 @@ export default function ProfilePage() {
         </div>
     )
 }
-
-    
