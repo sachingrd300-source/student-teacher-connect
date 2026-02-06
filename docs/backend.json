@@ -477,7 +477,7 @@
         "studentId": { "type": "string" },
         "studentName": { "type": "string" },
         "batchId": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
+        "date": { "type": "string", "format": "date", "description": "The date of the attendance record in YYYY-MM-DD format." },
         "status": { "type": "string", "enum": ["present", "absent"] },
         "markedBy": { "type": "string", "description": "UID of the teacher who marked attendance." }
       },
@@ -566,5 +566,3 @@
     }
   }
 }
-
-    

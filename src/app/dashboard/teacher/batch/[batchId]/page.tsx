@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX } from 'lucide-react';
+import { Loader2, Trash2, Edit, Clipboard, ArrowLeft, User as UserIcon, Upload, FileText, Download, Trash, Send, Wallet, ClipboardCheck, Pencil, PlusCircle, BookOpen, Notebook, Users, UserCheck, BookCopy, BarChart3, Trophy, TrendingDown, UserX, Check, X, MessageSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FeeManagementDialog } from '@/components/fee-management-dialog';
@@ -88,6 +88,14 @@ interface TestResult {
     uploadedAt: string;
 }
 
+interface Attendance {
+    id: string;
+    studentId: string;
+    date: string; // YYYY-MM-DD
+    status: 'present' | 'absent';
+}
+
+
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 const formatDate = (dateString: string) => {
@@ -143,6 +151,9 @@ export default function BatchManagementPage() {
     // Performance tab state
     const [selectedTestForAnalysis, setSelectedTestForAnalysis] = useState<string>('all');
     
+    // Attendance date
+    const [attendanceDate, setAttendanceDate] = useState(new Date());
+
 
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
@@ -199,6 +210,40 @@ export default function BatchManagementPage() {
         return query(collection(firestore, 'testResults'), where('batchId', '==', batchId));
     }, [firestore, batchId]);
     const { data: testResults, isLoading: resultsLoading } = useCollection<TestResult>(testResultsQuery);
+
+    // --- Attendance Data ---
+    const studentIds = useMemo(() => enrolledStudents.map(s => s.studentId), [enrolledStudents]);
+
+    const studentProfilesQuery = useMemoFirebase(() => {
+        if (!firestore || studentIds.length === 0) return null;
+        const idsToQuery = studentIds.slice(0, 30); // Firestore 'in' query limit
+        return query(collection(firestore, 'users'), where(documentId(), 'in', idsToQuery));
+    }, [firestore, studentIds]);
+    const { data: studentProfiles, isLoading: profilesLoading } = useCollection<UserProfile>(studentProfilesQuery);
+
+    const todayStr = attendanceDate.toISOString().split('T')[0];
+    const attendanceQuery = useMemoFirebase(() => {
+        if (!firestore || !batchId) return null;
+        return query(collection(firestore, 'attendance'), where('batchId', '==', batchId), where('date', '==', todayStr));
+    }, [firestore, batchId, todayStr]);
+    const { data: todaysAttendance, isLoading: attendanceLoading } = useCollection<Attendance>(attendanceQuery);
+    
+    const studentsWithProfiles = useMemo(() => {
+        if (!enrolledStudents || !studentProfiles) return [];
+        const profileMap = new Map(studentProfiles.map(p => [p.id, p]));
+        return enrolledStudents.map(enrollment => ({
+            ...enrollment,
+            profile: profileMap.get(enrollment.studentId),
+        }));
+    }, [enrolledStudents, studentProfiles]);
+
+    const attendanceStatusMap = useMemo(() => {
+        const map = new Map<string, 'present' | 'absent'>();
+        todaysAttendance?.forEach(att => {
+            map.set(att.studentId, att.status);
+        });
+        return map;
+    }, [todaysAttendance]);
 
 
     useEffect(() => {
@@ -613,13 +658,52 @@ export default function BatchManagementPage() {
     
         await firestoreBatch.commit();
     };
+
+    const handleMarkAttendance = async (student: { studentId: string, studentName: string }, status: 'present' | 'absent') => {
+        if (!firestore || !user || !batch) return;
+    
+        // Use the state date for consistency
+        const dateStr = attendanceDate.toISOString().split('T')[0];
+        const attendanceDocId = `${batch.id}_${student.studentId}_${dateStr}`;
+        const attendanceDocRef = doc(firestore, 'attendance', attendanceDocId);
+    
+        try {
+            await setDoc(attendanceDocRef, {
+                studentId: student.studentId,
+                studentName: student.studentName,
+                batchId: batch.id,
+                date: dateStr,
+                status: status,
+                markedBy: user.uid,
+            }, { merge: true }); // Using merge to create or update
+    
+        } catch (error) {
+            console.error("Error marking attendance: ", error);
+        }
+    };
+    
+    const handleSendReminder = (student: { studentName: string; profile?: UserProfile | null }) => {
+        if (!student.profile?.mobileNumber) {
+            alert(`${student.studentName} does not have a mobile number saved.`);
+            return;
+        }
+        
+        const dateStr = attendanceDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        const message = `Hello, this is a notice from ${userProfile?.name}. ${student.studentName} was marked absent from the '${batch?.name}' class on ${dateStr}.`;
+        
+        const phoneNumber = student.profile.mobileNumber.replace(/[^0-9]/g, '');
+        const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
+        
+        const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    };
     
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading || resultsLoading;
+    const isLoading = isAuthLoading || isBatchLoading || areStudentsLoading || materialsLoading || activitiesLoading || testsLoading || resultsLoading || profilesLoading || attendanceLoading;
 
     if (isLoading || !batch) {
         return (
@@ -725,6 +809,66 @@ export default function BatchManagementPage() {
         )
     }
 
+    const renderAttendanceView = () => {
+        return (
+            <Card className="rounded-2xl shadow-lg">
+                <CardHeader>
+                    <CardTitle>Mark Attendance for {attendanceDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardTitle>
+                    <CardDescription>Mark each student as present or absent for today's class. An 'absent' mark can trigger a WhatsApp reminder.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4">
+                        {studentsWithProfiles.length > 0 ? studentsWithProfiles.map(student => {
+                            const status = attendanceStatusMap.get(student.studentId);
+                            return (
+                                <div key={student.studentId} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 gap-4">
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <Avatar><AvatarFallback>{getInitials(student.studentName)}</AvatarFallback></Avatar>
+                                        <p className="font-semibold break-words">{student.studentName}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 self-end sm:self-center">
+                                        <Button
+                                            size="sm"
+                                            variant={status === 'present' ? 'default' : 'outline'}
+                                            onClick={() => handleMarkAttendance(student, 'present')}
+                                            className="bg-green-500 hover:bg-green-600 text-white data-[variant=outline]:bg-transparent data-[variant=outline]:text-green-500 border-green-500"
+                                        >
+                                            <Check className="mr-2 h-4 w-4"/> Present
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant={status === 'absent' ? 'destructive' : 'outline'}
+                                            onClick={() => handleMarkAttendance(student, 'absent')}
+                                        >
+                                            <X className="mr-2 h-4 w-4"/> Absent
+                                        </Button>
+                                        {status === 'absent' && (
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={() => handleSendReminder(student)}
+                                                disabled={!student.profile?.mobileNumber}
+                                                title={!student.profile?.mobileNumber ? "No mobile number available" : "Send WhatsApp reminder"}
+                                            >
+                                                <MessageSquare className="h-4 w-4"/>
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        }) : (
+                            <div className="text-center py-12 flex flex-col items-center">
+                                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold">No Students Enrolled</h3>
+                                <p className="text-muted-foreground mt-1">There are no students in this batch to mark attendance for.</p>
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
             <DashboardHeader userProfile={userProfile} />
@@ -762,8 +906,9 @@ export default function BatchManagementPage() {
                     </div>
 
                     <Tabs defaultValue={defaultTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+                        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6">
                             <TabsTrigger value="students">Students ({enrolledStudents?.length || 0})</TabsTrigger>
+                            <TabsTrigger value="attendance">Attendance</TabsTrigger>
                             <TabsTrigger value="tests">Tests ({tests?.length || 0})</TabsTrigger>
                             <TabsTrigger value="performance">Performance</TabsTrigger>
                             <TabsTrigger value="materials">Materials ({materials?.length || 0})</TabsTrigger>
@@ -864,6 +1009,10 @@ export default function BatchManagementPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+
+                        <TabsContent value="attendance" className="mt-4 grid gap-6">
+                            {renderAttendanceView()}
                         </TabsContent>
                         
                         <TabsContent value="tests" className="mt-4 grid gap-6">

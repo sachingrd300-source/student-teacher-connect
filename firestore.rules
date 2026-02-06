@@ -207,9 +207,7 @@ service cloud.firestore {
     }
 
     match /attendance/{attendanceId} {
-        allow read, write: if isAdmin();
+        allow read, write: if isTeacher() || isAdmin();
     }
   }
 }
-
-    
