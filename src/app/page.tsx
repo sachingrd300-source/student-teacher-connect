@@ -1,18 +1,15 @@
-
 'use client';
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, Search, GraduationCap, BookOpen, UserCheck, TrendingUp, Target, Users, Book, LayoutDashboard, BarChart3, Trophy, BookCopy, Wallet, ClipboardCheck, Megaphone, BookCheck, School, Award, Building2, User } from "lucide-react";
-import placeholderImages from '@/lib/placeholder-images.json';
+import { ArrowRight, Star, Briefcase, GraduationCap, Users, Book, Building2, User, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { translations } from "@/lib/translations";
-import { useUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, limit, query, where, getCountFromServer } from "firebase/firestore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -44,36 +41,25 @@ const testimonialsData = [
   {
     name: "Priya Sharma",
     roleKey: "testimonialRoleMathsTeacher",
-    avatar: "https://picsum.photos/seed/priya/100/100",
     text: "Achiever's Community has been a game-changer. I get a steady stream of students, and the platform makes management effortless."
   },
   {
     name: "Rohan Mehra",
     roleKey: "testimonialRoleStudent",
-    avatar: "https://picsum.photos/seed/rohan/100/100",
     text: "The free notes and PYQs for the Jharkhand Board were incredibly helpful for my exam preparation. My tutor is also excellent!"
   },
   {
     name: "Amit Kumar",
     roleKey: "testimonialRoleScienceTeacher",
-    avatar: "https://picsum.photos/seed/amit/100/100",
     text: "Joining was the best decision. I can focus on teaching, and the community handles the logistics. The platform is very easy to use."
   }
 ];
-
-interface TeacherProfile {
-    id: string;
-    name: string;
-    subject?: string;
-    bio?: string;
-}
 
 
 export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
   const firestore = useFirestore();
-  const { user } = useUser();
   const [counts, setCounts] = useState({
     teachers: '50+',
     students: '500+',
@@ -81,7 +67,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchCounts = async () => {
-        if (firestore && user) {
+        if (firestore) {
             try {
                 const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
                 const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
@@ -97,24 +83,33 @@ export default function HomePage() {
                 });
             } catch (error) {
                 console.warn("Could not fetch real-time user counts. Displaying static data.", error);
-                // Falls back to static data if not logged in or other error
             }
         }
     };
     fetchCounts();
-  }, [firestore, user]);
+  }, [firestore]);
 
   const features = [
       {
-          icon: <Briefcase className="w-8 h-8 text-primary" />,
+          icon: <User className="w-8 h-8 text-primary" />,
           title: t.feature1Title,
           description: t.feature1Description
       },
       {
-          icon: <GraduationCap className="w-8 h-8 text-primary" />,
+          icon: <Building2 className="w-8 h-8 text-primary" />,
+          title: t.feature2Title,
+          description: t.feature2Description
+      },
+      {
+          icon: <Book className="w-8 h-8 text-primary" />,
           title: t.feature3Title,
           description: t.feature3Description
-      }
+      },
+      {
+        icon: <Briefcase className="w-8 h-8 text-primary" />,
+        title: t.feature4Title,
+        description: t.feature4Description
+    }
   ];
 
   const howItWorks = {
@@ -153,70 +148,37 @@ export default function HomePage() {
           }
       ]
   }
-  
-  const platformFeatures = {
-    students: [
-      { icon: <LayoutDashboard className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature1 },
-      { icon: <BookCopy className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature2 },
-      { icon: <BarChart3 className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature3 },
-      { icon: <Trophy className="w-5 h-5 mr-3 text-primary"/>, text: t.platformStudentFeature4 },
-    ],
-    teachers: [
-      { icon: <Users className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature1 },
-      { icon: <Wallet className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature2 },
-      { icon: <ClipboardCheck className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature3 },
-      { icon: <Megaphone className="w-5 h-5 mr-3 text-primary"/>, text: t.platformTeacherFeature4 },
-    ]
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <MainHeader currentLanguage={language} onLanguageChange={setLanguage} />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative pt-24 md:pt-32 lg:pt-40 pb-16 md:pb-24 overflow-hidden">
-            <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-primary/5 rounded-full -z-10"></div>
-            <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-8 items-center relative z-10">
+        <section className="py-20 md:py-32 text-center">
+            <div className="container px-4 md:px-6">
                 <motion.div 
                     initial="hidden"
                     animate="visible"
                     variants={staggerContainer(0.3, 0)}
-                    className="text-center lg:text-left"
                 >
                     <motion.h1 variants={fadeInUp} className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter font-serif">
                         {t.heroTitle}
                     </motion.h1>
-                    <motion.p variants={fadeInUp} className="mt-4 max-w-lg mx-auto lg:mx-0 text-muted-foreground md:text-xl">
+                    <motion.p variants={fadeInUp} className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-xl">
                         {t.heroDescription}
                     </motion.p>
-                    <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                         <Button asChild size="lg">
-                        <Link href="/signup">
+                        <Link href="/signup/teacher">
                             {t.teacherApplyButton} <ArrowRight className="ml-2 h-5 w-5" />
                         </Link>
                         </Button>
-                        <Button asChild size="lg" variant="outline">
-                            <Link href="/signup/student">
+                        <Button asChild size="lg" variant="secondary">
+                            <Link href="/signup">
                                 {t.studentFindButton}
                             </Link>
                         </Button>
                     </motion.div>
-                </motion.div>
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    className="relative w-full max-w-xl mx-auto"
-                >
-                    <Image
-                        src={placeholderImages.hero.src}
-                        alt={placeholderImages.hero.alt}
-                        width={placeholderImages.hero.width}
-                        height={placeholderImages.hero.height}
-                        priority
-                        className="rounded-xl shadow-2xl"
-                        data-ai-hint={placeholderImages.hero.hint}
-                    />
                 </motion.div>
             </div>
         </section>
@@ -243,7 +205,7 @@ export default function HomePage() {
                 >
                     {features.map((feature, index) => (
                         <motion.div key={index} variants={fadeInUp}>
-                            <Card className="p-8 h-full text-center hover:shadow-xl transition-shadow duration-300 rounded-2xl shadow-lg">
+                             <Card className="p-8 h-full text-center hover:shadow-xl transition-shadow duration-300 rounded-2xl shadow-lg border-transparent hover:border-primary/20">
                                 <div className="inline-block p-4 bg-primary/10 rounded-full mb-4">
                                     {feature.icon}
                                 </div>
@@ -271,33 +233,28 @@ export default function HomePage() {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.howItWorksTitle}</h2>
-                    <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.howItWorksDescription}</p>
                 </motion.div>
                 <div className="grid md:grid-cols-2 gap-16">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer(0.3, 0)}>
-                        <h3 className="text-2xl font-bold mb-8">{t.forStudentsTitle}</h3>
-                        <div className="flex flex-col gap-8">
+                        <h3 className="text-2xl font-bold mb-8 flex items-center gap-3"><GraduationCap className="w-8 h-8 text-primary"/>{t.forStudentsTitle}</h3>
+                        <div className="flex flex-col gap-8 border-l-2 border-primary/20 pl-8">
                             {howItWorks.students.map((item, index) => (
-                                <motion.div key={index} variants={fadeInUp} className="flex items-start gap-6">
-                                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-xl z-10">{item.icon}</div>
-                                    <div>
-                                        <h4 className="font-bold text-lg">{item.title}</h4>
-                                        <p className="text-muted-foreground mt-1">{item.description}</p>
-                                    </div>
+                                <motion.div key={index} variants={fadeInUp} className="relative">
+                                    <div className="absolute -left-12 top-1 flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-md">{item.icon}</div>
+                                    <h4 className="font-bold text-lg">{item.title}</h4>
+                                    <p className="text-muted-foreground mt-1">{item.description}</p>
                                 </motion.div>
                             ))}
                         </div>
                     </motion.div>
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer(0.3, 0)}>
-                        <h3 className="text-2xl font-bold mb-8">{t.forTeachersTitle}</h3>
-                        <div className="flex flex-col gap-8">
+                        <h3 className="text-2xl font-bold mb-8 flex items-center gap-3"><Briefcase className="w-8 h-8 text-primary"/>{t.forTeachersTitle}</h3>
+                         <div className="flex flex-col gap-8 border-l-2 border-primary/20 pl-8">
                             {howItWorks.teachers.map((item, index) => (
-                                <motion.div key={index} variants={fadeInUp} className="flex items-start gap-6">
-                                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-xl z-10">{item.icon}</div>
-                                    <div>
-                                        <h4 className="font-bold text-lg">{item.title}</h4>
-                                        <p className="text-muted-foreground mt-1">{item.description}</p>
-                                    </div>
+                                <motion.div key={index} variants={fadeInUp} className="relative">
+                                     <div className="absolute -left-12 top-1 flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-md">{item.icon}</div>
+                                    <h4 className="font-bold text-lg">{item.title}</h4>
+                                    <p className="text-muted-foreground mt-1">{item.description}</p>
                                 </motion.div>
                             ))}
                         </div>
@@ -305,120 +262,7 @@ export default function HomePage() {
                 </div>
             </div>
         </section>
-        
-        {/* New Comprehensive Offerings Section */}
-        <section className="py-16 md:py-24 bg-muted/40">
-            <div className="container px-4 md:px-6">
-                <motion.div 
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.5 }}
-                    variants={fadeInUp}
-                    className="text-center mb-16"
-                >
-                    <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.comprehensiveCoverageTitle}</h2>
-                    <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.comprehensiveCoverageDescription}</p>
-                </motion.div>
-                <motion.div 
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.3 }}
-                    variants={staggerContainer(0.2, 0)}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8"
-                >
-                    <motion.div variants={fadeInUp}>
-                        <Card className="p-8 h-full shadow-lg rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <User className="w-10 h-10 text-primary mb-4" />
-                            <CardHeader className="p-0">
-                                <CardTitle>{t.individualTuitionTitle}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0 mt-2">
-                                <p className="text-muted-foreground">{t.individualTuitionDescription}</p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                    <motion.div variants={fadeInUp}>
-                         <Card className="p-8 h-full shadow-lg rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <Building2 className="w-10 h-10 text-primary mb-4" />
-                            <CardHeader className="p-0">
-                                <CardTitle>{t.coachingCenterTitle}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0 mt-2">
-                                <p className="text-muted-foreground">{t.coachingCenterDescription}</p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </motion.div>
-            </div>
-        </section>
 
-        {/* Platform Features Section */}
-        <section className="py-16 md:py-24 bg-background">
-          <div className="container px-4 md:px-6">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.5 }}
-              variants={fadeInUp}
-              className="text-center mb-12"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.platformTitle}</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.platformDescription}</p>
-            </motion.div>
-
-            <div className="grid lg:grid-cols-2 gap-12 items-center mt-12">
-                <motion.div 
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.5 }}
-                    variants={fadeInUp}
-                >
-                    <Image 
-                        src={placeholderImages.dashboardPreview.src} 
-                        alt="A mockup of the Achiever's Community dashboard on a laptop screen."
-                        width={placeholderImages.dashboardPreview.width}
-                        height={placeholderImages.dashboardPreview.height}
-                        className="rounded-lg shadow-2xl"
-                        data-ai-hint={placeholderImages.dashboardPreview.hint}
-                    />
-                </motion.div>
-                <motion.div 
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.3 }} 
-                    variants={staggerContainer(0.2, 0.2)}
-                >
-                    <Tabs defaultValue="students" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="students">{t.forStudentsTitle}</TabsTrigger>
-                            <TabsTrigger value="teachers">{t.forTeachersTitle}</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="students" className="mt-6">
-                            <ul className="space-y-4 text-lg">
-                              {platformFeatures.students.map((feature, index) => (
-                                <motion.li key={index} variants={fadeInUp} className="flex items-center">
-                                  {feature.icon}
-                                  <span className="flex-1">{feature.text}</span>
-                                </motion.li>
-                              ))}
-                            </ul>
-                        </TabsContent>
-                        <TabsContent value="teachers" className="mt-6">
-                            <ul className="space-y-4 text-lg">
-                              {platformFeatures.teachers.map((feature, index) => (
-                                <motion.li key={index} variants={fadeInUp} className="flex items-center">
-                                  {feature.icon}
-                                  <span className="flex-1">{feature.text}</span>
-                                </motion.li>
-                              ))}
-                            </ul>
-                        </TabsContent>
-                    </Tabs>
-                </motion.div>
-            </div>
-          </div>
-        </section>
-        
         {/* Numbers Section */}
         <section className="py-16 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
@@ -430,7 +274,6 @@ export default function HomePage() {
               className="text-center mb-12"
             >
               <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.numbersTitle}</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.numbersDescription}</p>
             </motion.div>
             <motion.div
               initial="hidden"
@@ -469,7 +312,6 @@ export default function HomePage() {
               className="text-center mb-16"
             >
               <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.testimonialsTitle}</h2>
-              <p className="mt-3 max-w-2xl mx-auto text-muted-foreground md:text-lg">{t.testimonialsDescription}</p>
             </motion.div>
             <motion.div 
                 initial="hidden"
@@ -490,7 +332,6 @@ export default function HomePage() {
                          <CardHeader className="bg-muted/50 p-6 border-t mt-4">
                             <div className="flex items-center">
                                 <Avatar className="h-12 w-12 mr-4">
-                                    <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
                                     <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -511,7 +352,6 @@ export default function HomePage() {
             <div className="container px-4 md:px-6 text-center">
                 <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
                     <h2 className="text-3xl md:text-4xl font-bold font-serif">{t.ctaTitle}</h2>
-                    <p className="mt-3 max-w-xl mx-auto text-muted-foreground md:text-lg">{t.ctaDescription}</p>
                     <div className="mt-8">
                         <Button asChild size="lg">
                             <Link href="/signup">
