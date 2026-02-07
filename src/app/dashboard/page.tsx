@@ -5,7 +5,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useEffect } from 'react';
-import { Loader2, School } from 'lucide-react';
+import Image from 'next/image';
 import { getLevelInfo } from '@/lib/rewards';
 
 interface UserProfile {
@@ -106,7 +106,7 @@ export default function DashboardPage() {
     // Show a loading screen while we determine where to redirect.
     return (
         <div className="flex h-screen flex-col items-center justify-center gap-4">
-            <School className="h-12 w-12 animate-pulse text-primary" />
+            <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
             <p className="text-muted-foreground">Redirecting to your dashboard... 🚀</p>
         </div>
     );

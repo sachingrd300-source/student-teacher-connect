@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment, Suspense } from 'react';
@@ -803,7 +804,7 @@ function AdminDashboardContent() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <LayoutDashboard className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         );
@@ -1856,7 +1857,7 @@ export default function AdminDashboardPage() {
     return (
         <Suspense fallback={
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <LayoutDashboard className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         }>

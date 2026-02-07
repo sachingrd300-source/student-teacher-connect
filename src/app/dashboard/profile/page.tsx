@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Edit, Save, UserCircle, Gift, Clipboard, Package, Info, Check, FileText, Download, Home, Building2 } from 'lucide-react';
+import { Loader2, Edit, Save, Gift, Clipboard, Package, Info, Check, FileText, Download, Home, Building2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -240,7 +240,7 @@ export default function ProfilePage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <UserCircle className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Profile...</p>
             </div>
         );
