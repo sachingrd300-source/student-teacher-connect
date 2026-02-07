@@ -126,9 +126,10 @@ export default function CoachingManagementPage() {
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
     const assignedBookingsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid || userProfile?.teacherWorkStatus === 'achievers_associate') return null; // Community associates don't manage their own bookings
+        if (!firestore || !user?.uid || profileLoading) return null;
+        if (userProfile?.teacherWorkStatus === 'achievers_associate') return null; // Community associates don't manage their own bookings
         return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-    }, [firestore, user?.uid, userProfile?.teacherWorkStatus]);
+    }, [firestore, user?.uid, userProfile, profileLoading]);
     const { data: assignedBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
 
     const demoRequests = useMemo(() => assignedBookings?.filter(b => b.bookingType === 'demoClass') || [], [assignedBookings]);
