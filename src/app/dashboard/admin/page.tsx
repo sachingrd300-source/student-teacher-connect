@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment, Suspense } from 'react';
@@ -129,10 +128,10 @@ function AdminDashboardContent() {
     const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
 
-    // Home Tutor Edit State
-    const [editingHomeTutor, setEditingHomeTutor] = useState<UserProfile | null>(null);
-    const [homeTutorFormState, setHomeTutorFormState] = useState({ subject: '', whatsappNumber: '', homeAddress: '', bio: '', experience: '' });
-    const [isUpdatingHomeTutor, setIsUpdatingHomeTutor] = useState(false);
+    // Home Teacher Edit State
+    const [editingHomeTeacher, setEditingHomeTeacher] = useState<UserProfile | null>(null);
+    const [homeTeacherFormState, setHomeTeacherFormState] = useState({ subject: '', whatsappNumber: '', homeAddress: '', bio: '', experience: '' });
+    const [isUpdatingHomeTeacher, setIsUpdatingHomeTeacher] = useState(false);
 
 
     // Booking Payment Dialog State
@@ -179,12 +178,12 @@ function AdminDashboardContent() {
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
-    const { data: approvedTutors, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
+    const { data: approvedTeachers, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     const { data: orders, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
     const { data: supportTickets, isLoading: supportTicketsLoading } = useCollection<SupportTicket>(supportTicketsQuery);
     
-    const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor') || [], [homeBookings]);
+    const homeTeacherBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor') || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
     const demoBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'demoClass') || [], [homeBookings]);
 
@@ -324,7 +323,7 @@ function AdminDashboardContent() {
         const batch = writeBatch(firestore);
 
         const collectionName = type === 'homeTutor' ? 'homeTutorApplications' : 'verifiedCoachingApplications';
-        const actionText = type === 'homeTutor' ? 'Home Tutor application' : 'Community Associate application';
+        const actionText = type === 'homeTutor' ? 'Home Teacher application' : 'Community Associate application';
 
         const applicationRef = doc(firestore, collectionName, application.id);
         const applicationUpdate = { status: newStatus, processedAt: new Date().toISOString() };
@@ -398,8 +397,8 @@ function AdminDashboardContent() {
     };
     
     const handleAssignTeacher = (booking: HomeBooking, teacherId: string) => {
-        if (!firestore || !approvedTutors) return;
-        const teacher = approvedTutors.find(t => t.id === teacherId);
+        if (!firestore || !approvedTeachers) return;
+        const teacher = approvedTeachers.find(t => t.id === teacherId);
         if (!teacher) return;
         const bookingDocRef = doc(firestore, 'homeBookings', booking.id);
         
@@ -751,9 +750,9 @@ function AdminDashboardContent() {
         }
     };
 
-    const handleOpenEditHomeTutorDialog = (teacher: UserProfile) => {
-        setEditingHomeTutor(teacher);
-        setHomeTutorFormState({
+    const handleOpenEditHomeTeacherDialog = (teacher: UserProfile) => {
+        setEditingHomeTeacher(teacher);
+        setHomeTeacherFormState({
             subject: teacher.subject || '',
             whatsappNumber: teacher.whatsappNumber || '',
             homeAddress: teacher.homeAddress || '',
@@ -762,24 +761,24 @@ function AdminDashboardContent() {
         });
     };
 
-    const handleUpdateHomeTutor = async () => {
-        if (!firestore || !editingHomeTutor) return;
-        setIsUpdatingHomeTutor(true);
-        const tutorRef = doc(firestore, 'users', editingHomeTutor.id);
+    const handleUpdateHomeTeacher = async () => {
+        if (!firestore || !editingHomeTeacher) return;
+        setIsUpdatingHomeTeacher(true);
+        const tutorRef = doc(firestore, 'users', editingHomeTeacher.id);
         
         try {
-            await updateDoc(tutorRef, homeTutorFormState);
-            logAdminAction(`Updated profile for Home Tutor: ${editingHomeTutor.name}`, editingHomeTutor.id);
-            setEditingHomeTutor(null);
+            await updateDoc(tutorRef, homeTeacherFormState);
+            logAdminAction(`Updated profile for Home Teacher: ${editingHomeTeacher.name}`, editingHomeTeacher.id);
+            setEditingHomeTeacher(null);
         } catch (error) {
-            console.error("Error updating home tutor:", error);
+            console.error("Error updating home teacher:", error);
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'update',
                 path: tutorRef.path,
-                requestResourceData: homeTutorFormState
+                requestResourceData: homeTeacherFormState
             }));
         } finally {
-            setIsUpdatingHomeTutor(false);
+            setIsUpdatingHomeTeacher(false);
         }
     };
 
@@ -1110,7 +1109,7 @@ function AdminDashboardContent() {
                 <CardContent className="p-4">
                     <Tabs defaultValue="homeTutor" className="w-full">
                         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 flex-col sm:flex-row h-auto sm:h-10">
-                            <TabsTrigger value="homeTutor">Home Tutor ({filteredHomeTutorApps.pending.length})</TabsTrigger>
+                            <TabsTrigger value="homeTutor">Home Teacher ({filteredHomeTutorApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="communityAssociate">Community Associate ({filteredCommunityApps.pending.length})</TabsTrigger>
                             <TabsTrigger value="studentEnrollments">Student Enrollments ({filteredEnrollments.pending.length})</TabsTrigger>
                         </TabsList>
@@ -1132,7 +1131,7 @@ function AdminDashboardContent() {
     const renderBookingsView = () => {
         const renderBookingList = (bookings: HomeBooking[], type: 'homeTutor' | 'coachingCenter' | 'demoClass') => {
             if (bookings.length === 0) {
-                return <div className="text-center py-12">No {type === 'homeTutor' ? 'home tutor' : type === 'coachingCenter' ? 'coaching center' : 'demo class'} bookings.</div>;
+                return <div className="text-center py-12">No {type === 'homeTutor' ? 'home teacher' : type === 'coachingCenter' ? 'coaching center' : 'demo class'} bookings.</div>;
             }
 
             return (
@@ -1179,12 +1178,12 @@ function AdminDashboardContent() {
                                         <div className="flex items-center gap-2">
                                             <Select onValueChange={(teacherId) => handleAssignTeacher(booking, teacherId)}>
                                                 <SelectTrigger className="w-full sm:w-[250px]">
-                                                    <SelectValue placeholder="Assign a Home Tutor" />
+                                                    <SelectValue placeholder="Assign a Home Teacher" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {approvedTutors && approvedTutors.length > 0 ? approvedTutors.map(tutor => (
+                                                    {approvedTeachers && approvedTeachers.length > 0 ? approvedTeachers.map(tutor => (
                                                         <SelectItem key={tutor.id} value={tutor.id}>{tutor.name}</SelectItem>
-                                                    )) : <p className="p-2 text-sm text-muted-foreground">No approved tutors</p>}
+                                                    )) : <p className="p-2 text-sm text-muted-foreground">No approved teachers</p>}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -1246,12 +1245,12 @@ function AdminDashboardContent() {
                     <CardContent className="p-4">
                          <Tabs defaultValue="homeTutor" className="w-full">
                             <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="homeTutor">Home Tutor</TabsTrigger>
+                                <TabsTrigger value="homeTutor">Home Teacher</TabsTrigger>
                                 <TabsTrigger value="coachingCenter">Coaching Center</TabsTrigger>
                                 <TabsTrigger value="demo">Demo Requests</TabsTrigger>
                             </TabsList>
                             <TabsContent value="homeTutor" className="mt-4">
-                                {renderBookingList(homeTutorBookings, 'homeTutor')}
+                                {renderBookingList(homeTeacherBookings, 'homeTutor')}
                             </TabsContent>
                             <TabsContent value="coachingCenter" className="mt-4">
                                 {renderBookingList(coachingCenterBookings, 'coachingCenter')}
@@ -1504,7 +1503,7 @@ function AdminDashboardContent() {
                     <Tabs defaultValue="achievers" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="achievers">Achiever's Community</TabsTrigger>
-                            <TabsTrigger value="homeTutors">Home Tutors</TabsTrigger>
+                            <TabsTrigger value="homeTutors">Home Teachers</TabsTrigger>
                         </TabsList>
                         <TabsContent value="achievers" className="mt-4">
                             {achieverTeachers.length > 0 ? (
@@ -1535,16 +1534,16 @@ function AdminDashboardContent() {
                             )}
                         </TabsContent>
                         <TabsContent value="homeTutors" className="mt-4">
-                            {approvedTutors && approvedTutors.length > 0 ? (
+                            {approvedTeachers && approvedTeachers.length > 0 ? (
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    {approvedTutors.map(teacher => (
+                                    {approvedTeachers.map(teacher => (
                                         <Card key={teacher.id} className="rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                             <CardHeader className="flex flex-row items-center justify-between">
                                                 <div>
                                                     <CardTitle className="text-lg">{teacher.name}</CardTitle>
                                                     <CardDescription>{teacher.email}</CardDescription>
                                                 </div>
-                                                <Button variant="outline" size="sm" onClick={() => handleOpenEditHomeTutorDialog(teacher)}>
+                                                <Button variant="outline" size="sm" onClick={() => handleOpenEditHomeTeacherDialog(teacher)}>
                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
                                                 </Button>
                                             </CardHeader>
@@ -1558,7 +1557,7 @@ function AdminDashboardContent() {
                                 </div>
                             ) : (
                                 <div className="text-center py-12">
-                                    <p className="text-muted-foreground">No teachers have been approved for the Home Tutor program yet.</p>
+                                    <p className="text-muted-foreground">No teachers have been approved for the Home Teacher program yet.</p>
                                 </div>
                             )}
                         </TabsContent>
@@ -1724,12 +1723,12 @@ function AdminDashboardContent() {
                 </main>
             </div>
             
-            <Dialog open={!!editingHomeTutor} onOpenChange={(isOpen) => !isOpen && setEditingHomeTutor(null)}>
+            <Dialog open={!!editingHomeTeacher} onOpenChange={(isOpen) => !isOpen && setEditingHomeTeacher(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Profile for {editingHomeTutor?.name}</DialogTitle>
+                        <DialogTitle>Edit Profile for {editingHomeTeacher?.name}</DialogTitle>
                         <DialogDescription>
-                            Update the public-facing details for this home tutor.
+                            Update the public-facing details for this home teacher.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -1737,8 +1736,8 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-subject">Subject</Label>
                             <Input 
                                 id="tutor-subject" 
-                                value={homeTutorFormState.subject || ''} 
-                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, subject: e.target.value }))}
+                                value={homeTeacherFormState.subject || ''} 
+                                onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, subject: e.target.value }))}
                                 placeholder="e.g., Physics, Maths"
                             />
                         </div>
@@ -1746,8 +1745,8 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-experience">Experience</Label>
                             <Input 
                                 id="tutor-experience" 
-                                value={homeTutorFormState.experience || ''} 
-                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, experience: e.target.value }))}
+                                value={homeTeacherFormState.experience || ''} 
+                                onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, experience: e.target.value }))}
                                 placeholder="e.g., 5+ years"
                             />
                         </div>
@@ -1755,8 +1754,8 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-whatsapp">WhatsApp Number</Label>
                             <Input 
                                 id="tutor-whatsapp" 
-                                value={homeTutorFormState.whatsappNumber || ''}
-                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                                value={homeTeacherFormState.whatsappNumber || ''}
+                                onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, whatsappNumber: e.target.value }))}
                                 placeholder="e.g., +91..."
                             />
                         </div>
@@ -1764,9 +1763,9 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-address">Home Address</Label>
                             <Textarea 
                                 id="tutor-address" 
-                                value={homeTutorFormState.homeAddress || ''}
-                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, homeAddress: e.target.value }))}
-                                placeholder="Tutor's home address"
+                                value={homeTeacherFormState.homeAddress || ''}
+                                onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, homeAddress: e.target.value }))}
+                                placeholder="Teacher's home address"
                             />
                             <p className="text-xs text-muted-foreground">This address is private and used for verification only.</p>
                         </div>
@@ -1774,16 +1773,16 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-bio">Bio</Label>
                             <Textarea 
                                 id="tutor-bio" 
-                                value={homeTutorFormState.bio || ''}
-                                onChange={(e) => setHomeTutorFormState(prev => ({ ...prev, bio: e.target.value }))}
-                                placeholder="A short bio about the tutor"
+                                value={homeTeacherFormState.bio || ''}
+                                onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, bio: e.target.value }))}
+                                placeholder="A short bio about the teacher"
                             />
                         </div>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                        <Button onClick={handleUpdateHomeTutor} disabled={isUpdatingHomeTutor}>
-                            {isUpdatingHomeTutor ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        <Button onClick={handleUpdateHomeTeacher} disabled={isUpdatingHomeTeacher}>
+                            {isUpdatingHomeTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save Changes
                         </Button>
                     </DialogFooter>

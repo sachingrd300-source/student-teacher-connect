@@ -16,6 +16,7 @@ import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Image from 'next/image';
 
 // Interfaces can be copied
 interface UserProfile {
@@ -40,7 +41,7 @@ interface Enrollment {
     teacherId: string;
     batchId: string;
     batchName: string;
-    status: 'pending' | 'approved';
+    status: 'pending' | 'approved' | 'unenrollment_requested';
     createdAt: string;
     approvedAt?: string;
 }
@@ -250,7 +251,7 @@ export default function CoachingManagementPage() {
     if (isLoading || !userProfile) {
         return (
              <div className="flex h-full items-center justify-center flex-col gap-4 py-16">
-                <School className="h-12 w-12 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Coaching Management...</p>
             </div>
         );
@@ -322,7 +323,7 @@ export default function CoachingManagementPage() {
                 <motion.div variants={fadeInUp}>
                 <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Home Tutor Program</CardTitle>
+                        <CardTitle className="text-sm font-medium">Home Teacher Program</CardTitle>
                         <Home className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -330,7 +331,7 @@ export default function CoachingManagementPage() {
                             <>
                                 <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
                                     <CheckCircle className="h-5 w-5" />
-                                    <span>Verified Home Tutor</span>
+                                    <span>Verified Home Teacher</span>
                                 </div>
                                     <p className="text-xs text-muted-foreground mt-2">You can now be assigned to home tuitions.</p>
                             </>
@@ -338,7 +339,7 @@ export default function CoachingManagementPage() {
                             <>
                                 <p className="text-xs text-muted-foreground">Join to get students for home tuition.</p>
                                 <Button asChild className="mt-3 w-full" size="sm">
-                                    <Link href="/dashboard/teacher/apply-home-tutor">Apply Now</Link>
+                                    <Link href="/dashboard/teacher/apply-home-teacher">Apply Now</Link>
                                 </Button>
                             </>
                         )}

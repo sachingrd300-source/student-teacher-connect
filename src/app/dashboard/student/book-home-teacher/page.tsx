@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Send, Home } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import Image from 'next/image';
 
 interface UserProfile {
     name: string;
@@ -97,7 +98,7 @@ export default function BookHomeTeacherPage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Home className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Booking Form...</p>
             </div>
         );
@@ -111,8 +112,8 @@ export default function BookHomeTeacherPage() {
             </Button>
              <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
-                    <CardTitle>Book a Home Tutor</CardTitle>
-                    <CardDescription>Fill out the details below to request a personalized home tutor. Our team will review your request and assign a suitable teacher.</CardDescription>
+                    <CardTitle>Book a Home Teacher</CardTitle>
+                    <CardDescription>Fill out the details below to request a personalized home teacher. Our team will review your request and assign a suitable teacher.</CardDescription>
                     <CardDescription className="!mt-4 text-info font-semibold border-l-4 border-info pl-4">
                         एक विशेष ऑफर उपलब्ध है! यदि आपके पास 10 से अधिक छात्र हैं, तो प्रति छात्र शुल्क ₹300 लगेगा।
                     </CardDescription>
@@ -145,7 +146,7 @@ export default function BookHomeTeacherPage() {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="student-address">Full Address</Label>
-                            <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address for the tutor" required />
+                            <Textarea id="student-address" value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} placeholder="Enter your complete address for the teacher" required />
                         </div>
                         <div className="grid gap-2">
                             <Label>Tuition For</Label>

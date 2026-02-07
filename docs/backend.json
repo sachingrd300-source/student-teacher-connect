@@ -31,7 +31,7 @@
         },
         "isHomeTutor": {
           "type": "boolean",
-          "description": "Indicates if the teacher is approved to be a home tutor."
+          "description": "Indicates if the teacher is approved to be a home teacher."
         },
         "bio": {
           "type": "string",
@@ -295,7 +295,7 @@
         },
         "assignedTeacherAddress": {
             "type": "string",
-            "description": "House address of the assigned home tutor."
+            "description": "House address of the assigned home teacher."
         },
         "assignedCoachingCenterName": {
             "type": "string",
@@ -311,7 +311,7 @@
         },
         "bookingFee": {
             "type": "number",
-            "description": "The one-time platform fee for securing the home tutor booking."
+            "description": "The one-time platform fee for securing the home teacher booking."
         },
         "paymentId": {
             "type": "string",
@@ -330,9 +330,9 @@
       ]
     },
     "HomeTutorApplication": {
-      "title": "Home Tutor Application",
+      "title": "Home Teacher Application",
       "type": "object",
-      "description": "Represents a teacher's application to be listed as a home tutor.",
+      "description": "Represents a teacher's application to be listed as a home teacher.",
       "properties": {
         "teacherId": { "type": "string" },
         "teacherName": { "type": "string" },
@@ -530,7 +530,7 @@
     },
     "/homeTutorApplications/{applicationId}": {
       "schema": { "$ref": "#/entities/HomeTutorApplication" },
-      "description": "Stores applications from teachers to become home tutors."
+      "description": "Stores applications from teachers to become home teachers."
     },
      "/verifiedCoachingApplications/{applicationId}": {
       "schema": { "$ref": "#/entities/VerifiedCoachingApplication" },

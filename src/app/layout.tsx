@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Achiever's Community",
-  description: "Join the best community of home tutors in Giridih. Find opportunities and grow with us.",
+  description: "Join the best community of home teachers in Giridih. Find opportunities and grow with us.",
 };
 
 export default function RootLayout({

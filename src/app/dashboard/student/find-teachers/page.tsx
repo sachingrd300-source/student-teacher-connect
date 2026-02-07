@@ -12,6 +12,7 @@ import { User, BookUser, Search, Users, Home, Building2, Loader2, Check } from '
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from 'next/image';
 
 
 interface TeacherProfile {
@@ -54,8 +55,8 @@ export default function FindTeachersPage() {
     
     const { data: teachers, isLoading: teachersLoading } = useCollection<TeacherProfile>(teachersQuery);
 
-    const { homeTutors, coachingTeachers } = useMemo(() => {
-        if (!teachers) return { homeTutors: [], coachingTeachers: [] };
+    const { homeTeachers, coachingTeachers } = useMemo(() => {
+        if (!teachers) return { homeTeachers: [], coachingTeachers: [] };
 
         const allFilteredBySearch = teachers.filter(teacher => {
             if (!searchQuery.trim()) return true;
@@ -66,10 +67,10 @@ export default function FindTeachersPage() {
             return nameMatch || subjectMatch || centerMatch;
         });
 
-        const homeTutors = allFilteredBySearch.filter(t => t.isHomeTutor);
+        const homeTeachersList = allFilteredBySearch.filter(t => t.isHomeTutor);
         const coachingTeachersList = allFilteredBySearch.filter(t => t.teacherWorkStatus === 'own_coaching' || t.teacherWorkStatus === 'achievers_associate' || t.teacherWorkStatus === 'both');
 
-        return { homeTutors, coachingTeachers: coachingTeachersList };
+        return { homeTeachers: homeTeachersList, coachingTeachers: coachingTeachersList };
     }, [teachers, searchQuery]);
 
     const handleBookDemo = async (teacher: TeacherProfile) => {
@@ -112,7 +113,7 @@ export default function FindTeachersPage() {
     if (teachersLoading || userProfileLoading) {
         return (
             <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
-                <Users className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Finding Teachers...</p>
             </div>
         );
@@ -137,7 +138,7 @@ export default function FindTeachersPage() {
                          <Search className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">No Teachers Found</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Your search for "{searchQuery}" did not match any {type === 'home' ? 'home tutors' : 'coaching teachers'}.
+                            Your search for "{searchQuery}" did not match any {type === 'home' ? 'home teachers' : 'coaching teachers'}.
                         </p>
                     </div>
                 );
@@ -145,9 +146,9 @@ export default function FindTeachersPage() {
              return (
                 <div className="text-center py-16">
                      <BookUser className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No {type === 'home' ? 'Home Tutors' : 'Coaching Teachers'} Found</h3>
+                    <h3 className="mt-4 text-lg font-semibold">No {type === 'home' ? 'Home Teachers' : 'Coaching Teachers'} Found</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        There are currently no {type === 'home' ? 'home tutors' : 'coaching teachers'} available. Please check back later.
+                        There are currently no {type === 'home' ? 'home teachers' : 'coaching teachers'} available. Please check back later.
                     </p>
                 </div>
             );
@@ -240,13 +241,13 @@ export default function FindTeachersPage() {
             <Tabs defaultValue="coaching" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto">
                     <TabsTrigger value="coaching"><Building2 className="mr-2 h-4 w-4" />Coaching Teachers</TabsTrigger>
-                    <TabsTrigger value="home"><Home className="mr-2 h-4 w-4" />Home Tutors</TabsTrigger>
+                    <TabsTrigger value="home"><Home className="mr-2 h-4 w-4" />Home Teachers</TabsTrigger>
                 </TabsList>
                 <TabsContent value="coaching" className="mt-8">
                     {renderTeacherList(coachingTeachers, 'coaching')}
                 </TabsContent>
                 <TabsContent value="home" className="mt-8">
-                    {renderTeacherList(homeTutors, 'home')}
+                    {renderTeacherList(homeTeachers, 'home')}
                 </TabsContent>
             </Tabs>
         </motion.div>

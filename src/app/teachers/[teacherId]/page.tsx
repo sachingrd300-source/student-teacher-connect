@@ -11,6 +11,7 @@ import { Loader2, Building, MapPin, Phone, Wallet, Briefcase, ArrowLeft, BookCop
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface TeacherProfile {
     name: string;
@@ -131,7 +132,7 @@ export default function TeacherProfilePage() {
     if (isLoading || !teacherProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Briefcase className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Teacher Profile...</p>
             </div>
         );
@@ -165,7 +166,7 @@ export default function TeacherProfilePage() {
                                 {teacherProfile.isHomeTutor && (
                                     <div className="flex items-center gap-1.5 text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 px-3 py-1 rounded-full">
                                         <Home className="h-4 w-4" />
-                                        <span>Home Tutor</span>
+                                        <span>Home Teacher</span>
                                     </div>
                                 )}
                                 {(teacherProfile.teacherWorkStatus === 'own_coaching' || teacherProfile.teacherWorkStatus === 'achievers_associate' || teacherProfile.teacherWorkStatus === 'both') && (
