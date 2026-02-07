@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -74,17 +73,20 @@ interface TestResult {
     marksObtained: number;
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString?: string, withTime: boolean = false) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    });
+    };
+    if (withTime) {
+        options.hour = 'numeric';
+        options.minute = '2-digit';
+        options.hour12 = true;
+    }
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
 };
 
 const getMonthsInRange = (startDate: Date, endDate: Date) => {
@@ -342,7 +344,7 @@ export default function StudentBatchPage() {
                                             {activities.map(activity => (
                                                 <div key={activity.id} className="p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                     <p className="text-sm text-muted-foreground">{activity.message}</p>
-                                                    <p className="text-xs text-muted-foreground mt-2">Posted: {formatDate(activity.createdAt)}</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">Posted: {formatDate(activity.createdAt, true)}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -412,7 +414,7 @@ export default function StudentBatchPage() {
                                                             <p className="font-semibold">{monthFormatter.format(new Date(year, month - 1))} {year}</p>
                                                             <p className="text-sm text-muted-foreground">Status: <span className={status === 'paid' ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>{status}</span></p>
                                                             {status === 'paid' && paidOn && (
-                                                                <p className="text-xs text-muted-foreground">Paid On: {new Date(paidOn).toLocaleDateString()}</p>
+                                                                <p className="text-xs text-muted-foreground">Paid On: {formatDate(paidOn)}</p>
                                                             )}
                                                         </div>
                                                         {status === 'unpaid' && (
@@ -447,7 +449,7 @@ export default function StudentBatchPage() {
                                                 <div key={test.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border bg-background transition-colors hover:bg-accent">
                                                     <div className="flex-1">
                                                         <p className="font-semibold">{test.title} ({test.subject})</p>
-                                                        <p className="text-sm text-muted-foreground">Date: {new Date(test.testDate).toLocaleDateString()}</p>
+                                                        <p className="text-sm text-muted-foreground">Date: {formatDate(test.testDate)}</p>
                                                         <p className="text-sm text-muted-foreground">Max Marks: {test.maxMarks}</p>
                                                     </div>
                                                     <div className="font-semibold text-lg self-end sm:self-center">

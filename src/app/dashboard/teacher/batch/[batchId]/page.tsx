@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, ChangeEvent, useMemo } from 'react';
@@ -91,17 +90,20 @@ interface TestResult {
 
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString?: string, withTime: boolean = false) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    });
+    };
+    if (withTime) {
+        options.hour = 'numeric';
+        options.minute = '2-digit';
+        options.hour12 = true;
+    }
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
 };
 
 export default function BatchManagementPage() {
@@ -886,7 +888,7 @@ export default function BatchManagementPage() {
                                                 <div key={test.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-background gap-4 transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-semibold break-words">{test.title} <span className="font-normal text-muted-foreground">- {test.subject}</span></p>
-                                                        <p className="text-sm text-muted-foreground mt-1">Date: {new Date(test.testDate).toLocaleDateString()}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">Date: {formatDate(test.testDate)}</p>
                                                         <p className="text-xs text-muted-foreground mt-1">Max Marks: {test.maxMarks}</p>
                                                     </div>
                                                     <Button variant="outline" size="sm" onClick={() => setSelectedTest(test)} className="self-end sm:self-center flex-shrink-0">
@@ -948,7 +950,7 @@ export default function BatchManagementPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <p className="font-semibold break-words">{material.title}</p>
                                                             <p className="text-sm text-muted-foreground mt-1 break-words">{material.description}</p>
-                                                            <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt)}</p>
+                                                            <p className="text-xs text-muted-foreground mt-2">Uploaded: {formatDate(material.createdAt, true)}</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2 self-end sm:self-center flex-shrink-0 mt-2 sm:mt-0">
@@ -1003,7 +1005,7 @@ export default function BatchManagementPage() {
                                             {activities.map(activity => (
                                                 <div key={activity.id} className="p-3 rounded-lg border bg-background transition-colors hover:bg-accent/50 hover:shadow-md">
                                                     <p className="font-medium">{activity.message}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt)}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">{formatDate(activity.createdAt, true)}</p>
                                                 </div>
                                             ))}
                                         </div>

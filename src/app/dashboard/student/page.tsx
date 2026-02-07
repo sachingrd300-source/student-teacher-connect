@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -49,14 +48,20 @@ interface Fee {
     feeYear: number;
 }
 
-const formatDate = (dateString?: string) => {
+const formatDate = (dateString?: string, withTime: boolean = false) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-    });
+    };
+    if (withTime) {
+        options.hour = 'numeric';
+        options.minute = '2-digit';
+        options.hour12 = true;
+    }
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
 };
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
@@ -310,7 +315,7 @@ export default function StudentDashboardPage() {
                                                 </CardHeader>
                                                 <CardContent className="p-0 flex-grow mt-4">
                                                     <p className="text-xs text-muted-foreground">
-                                                        {`Approved on ${formatDate(enrollment.approvedAt)}`}
+                                                        {`Approved on ${formatDate(enrollment.approvedAt, true)}`}
                                                     </p>
                                                 </CardContent>
                                                 <CardFooter className="p-0 pt-4 flex items-center justify-between mt-auto">
@@ -347,7 +352,7 @@ export default function StudentDashboardPage() {
                                                 </div>
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     {enrollment.status === 'pending' 
-                                                        ? `Requested on ${formatDate(enrollment.createdAt)}` 
+                                                        ? `Requested on ${formatDate(enrollment.createdAt, true)}` 
                                                         : `Unenrollment Requested`}
                                                 </p>
                                             </div>

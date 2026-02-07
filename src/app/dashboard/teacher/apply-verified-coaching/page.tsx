@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -30,14 +29,20 @@ interface CommunityAssociateApplication {
     createdAt: string;
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString?: string, withTime: boolean = false) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-    });
+    };
+    if (withTime) {
+        options.hour = 'numeric';
+        options.minute = '2-digit';
+        options.hour12 = true;
+    }
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
 };
 
 export default function ApplyCommunityAssociatePage() {
@@ -193,7 +198,7 @@ export default function ApplyCommunityAssociatePage() {
                     <CardDescription className="max-w-md mx-auto">{statusDescription}</CardDescription>
                 </CardHeader>
                 <CardContent className="text-center text-sm text-muted-foreground">
-                    Applied on {formatDate(existingApplication.createdAt)}
+                    Applied on {formatDate(existingApplication.createdAt, true)}
                 </CardContent>
             </Card>
         );

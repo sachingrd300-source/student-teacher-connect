@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment, Suspense } from 'react';
@@ -48,7 +47,7 @@ type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps' | 'objective';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'digital'; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
 interface AdminActivity { id: string; adminId: string; adminName: string; action: string; targetId?: string; createdAt: string; }
-interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; }
+interface Enrollment { id: string; studentId: string; studentName: string; teacherId: string; teacherName: string; batchId: string; batchName: string; status: 'pending' | 'approved'; createdAt: string; approvedAt?: string; }
 interface Order { id: string; teacherId: string; teacherName: string; material: string; quantity: string; description: string; status: 'pending' | 'completed'; createdAt: string; }
 interface SupportTicket { id: string; userId: string; userName: string; userRole: string; message: string; status: 'open' | 'closed'; createdAt: string; }
 
@@ -791,15 +790,20 @@ function AdminDashboardContent() {
     
     const getInitials = (name = '') => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
-    const formatDate = (dateString: string, withTime: boolean = false) => {
+    const formatDate = (dateString?: string, withTime: boolean = false) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        };
         if (withTime) {
-            options.hour = '2-digit';
+            options.hour = 'numeric';
             options.minute = '2-digit';
+            options.hour12 = true;
         }
-        return date.toLocaleString('en-US', options);
+        return new Intl.DateTimeFormat('en-IN', options).format(date);
     };
 
     // --- Render Functions ---
@@ -855,6 +859,7 @@ function AdminDashboardContent() {
                                     <div>
                                         <p className="font-semibold">{u.name}</p>
                                         <p className="text-sm text-muted-foreground capitalize">{u.role}</p>
+                                        <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt, true)}</p>
                                     </div>
                                 </div>
                             ))}
@@ -905,7 +910,7 @@ function AdminDashboardContent() {
                             </CardHeader>
                             <CardContent className="grid gap-1 text-sm flex-grow">
                                <p className="text-muted-foreground break-all">{u.email}</p>
-                               <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt)}</p>
+                               <p className="text-xs text-muted-foreground pt-1">Joined: {formatDate(u.createdAt, true)}</p>
                             </CardContent>
                             <CardFooter>
                                 <Button asChild variant="secondary" size="sm" className="w-full">
@@ -971,7 +976,7 @@ function AdminDashboardContent() {
                              <div key={app.id} className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-2xl border shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                 <div>
                                     <h3 className="font-semibold text-lg">{app.teacherName}</h3>
-                                    <p className="text-sm text-muted-foreground">Applied: {formatDate(app.createdAt)}</p>
+                                    <p className="text-sm text-muted-foreground">Applied: {formatDate(app.createdAt, true)}</p>
                                 </div>
                                 <div className="flex gap-2 mt-4 sm:mt-0 self-end sm:self-center">
                                     <Button className={`${approveButtonClass}`} size="sm" onClick={() => handleApplication(app, 'approved', type)}><Check className="mr-2 h-4 w-4" />Approve</Button>
@@ -989,7 +994,7 @@ function AdminDashboardContent() {
                              <div key={app.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-900 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                 <div>
                                     <h3 className="font-semibold text-lg">{app.teacherName}</h3>
-                                    {app.processedAt && <p className="text-sm text-muted-foreground">Approved: {formatDate(app.processedAt)}</p>}
+                                    {app.processedAt && <p className="text-sm text-muted-foreground">Approved: {formatDate(app.processedAt, true)}</p>}
                                 </div>
                                 <div className="flex gap-2 mt-4 sm:mt-0 self-end sm:self-center">
                                     <Button variant="destructive" size="sm" onClick={() => handleApplication(app, 'rejected', type)}>
@@ -1008,7 +1013,7 @@ function AdminDashboardContent() {
                             <div key={app.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-900 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                 <div>
                                     <h3 className="font-semibold text-lg">{app.teacherName}</h3>
-                                    {app.processedAt && <p className="text-sm text-muted-foreground">Rejected: {formatDate(app.processedAt)}</p>}
+                                    {app.processedAt && <p className="text-sm text-muted-foreground">Rejected: {formatDate(app.processedAt, true)}</p>}
                                 </div>
                                 <div className="flex gap-2 mt-4 sm:mt-0 self-end sm:self-center">
                                     <Button className={`${approveButtonClass}`} size="sm" onClick={() => handleApplication(app, 'approved', type)}>
@@ -1043,7 +1048,7 @@ function AdminDashboardContent() {
                                          <p className="text-sm text-muted-foreground">
                                             Wants to join <span className="font-medium text-foreground">"{enrollment.batchName}"</span> by {enrollment.teacherName}
                                         </p>
-                                        <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(enrollment.createdAt)}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(enrollment.createdAt, true)}</p>
                                     </div>
                                     <div className="flex gap-2 mt-4 sm:mt-0 self-end sm:self-center">
                                         <Button className="bg-info text-info-foreground hover:bg-info/90" size="sm" onClick={() => handleEnrollmentAction(enrollment, 'approved')}><Check className="mr-2 h-4 w-4" />Approve</Button>
@@ -1063,7 +1068,10 @@ function AdminDashboardContent() {
                                          <h3 className="font-semibold text-lg">{enrollment.studentName}</h3>
                                         <p className="text-sm text-muted-foreground">in <span className="font-medium text-foreground">"{enrollment.batchName}"</span> by {enrollment.teacherName}</p>
                                     </div>
-                                    <span className="text-sm font-medium text-green-600 mt-4 sm:mt-0">Approved</span>
+                                    <div className="text-right mt-4 sm:mt-0">
+                                        <p className="text-sm font-medium text-green-600">Approved</p>
+                                        {enrollment.approvedAt && <p className="text-xs text-muted-foreground">{formatDate(enrollment.approvedAt, true)}</p>}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1117,6 +1125,7 @@ function AdminDashboardContent() {
                                     <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
                                     <p className="text-sm text-muted-foreground">Address: {booking.studentAddress}</p>
                                     {booking.assignedTeacherName && <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>}
+                                    <p className="text-xs text-muted-foreground pt-1">Requested: {formatDate(booking.createdAt, true)}</p>
                                 </div>
                                 <div className="flex items-center gap-2 self-end sm:self-start">
                                     <span className={`text-xs font-bold py-1 px-2 rounded-full ${

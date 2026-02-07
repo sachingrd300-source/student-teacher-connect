@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -60,17 +59,20 @@ const getInitials = (name: string) => {
     return name.split(' ').map((n) => n[0]).join('');
 };
 
-const formatDate = (dateString?: string) => {
+const formatDate = (dateString?: string, withTime: boolean = false) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    });
+    };
+    if (withTime) {
+        options.hour = 'numeric';
+        options.minute = '2-digit';
+        options.hour12 = true;
+    }
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
 };
 
 const staggerContainer = (staggerChildren: number, delayChildren: number) => ({
@@ -417,7 +419,7 @@ export default function CoachingManagementPage() {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-semibold break-words">{req.studentName}</p>
                                                     <p className="text-sm text-muted-foreground break-words">Wants to join: <span className="font-medium">{req.batchName}</span></p>
-                                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt)}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Requested: {formatDate(req.createdAt, true)}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2 justify-end mt-4">
