@@ -58,12 +58,9 @@ service cloud.firestore {
         'savedFreeMaterialIds'
       ].toSet();
       let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
-      // Allow specific fields for daily login updates
-      let loginUpdateKeys = ['coins', 'streak', 'lastLoginDate'].toSet();
-       if (request.resource.data.diff(resource.data).affectedKeys().hasAll(['coins', 'streak', 'lastLoginDate'])) {
-          return true;
-       }
-      return changedKeys.difference(allowedKeys).size() == 0;
+      // Allow specific fields for daily login updates OR regular profile updates
+      return (request.resource.data.diff(resource.data).affectedKeys().hasAll(['coins', 'streak', 'lastLoginDate'])) ||
+             (changedKeys.difference(allowedKeys).size() == 0);
     }
 
     function isUpdatingOwnTeacherProfile() {
