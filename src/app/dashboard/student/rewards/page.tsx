@@ -12,6 +12,7 @@ interface UserProfile {
     role?: 'student' | 'teacher' | 'admin' | 'parent';
     coins?: number;
     streak?: number;
+    lastLoginDate?: string;
 }
 
 // Define the daily reward progression
@@ -42,7 +43,7 @@ export default function RewardsPage() {
     const currentStreak = userProfile?.streak || 0;
     const totalDaysInJourney = 7;
     const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
-
+    
     const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
         const day = i + 1;
         const reward = dailyRewards[i];
@@ -58,48 +59,61 @@ export default function RewardsPage() {
     });
     
     return (
-        <div className="max-w-4xl mx-auto grid gap-8">
+        <div className="max-w-2xl mx-auto grid gap-8">
             <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-2xl font-serif">Daily Rewards</CardTitle>
                     <CardDescription>Log in daily to build your streak and earn coins! You are currently on a <span className="font-bold text-primary">{currentStreak}-day</span> streak. 🔥</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-2">
-                    <div className="flex items-center pb-2 overflow-x-auto custom-scrollbar">
-                        <div className="inline-flex items-start gap-4 py-2 px-2">
-                            {days.map((day, index) => {
-                                const isCompleted = day.status === 'completed';
-                                const isToday = day.status === 'today';
-                                const isBonus = day.day === 7;
-                                
-                                const isLineFilled = day.status === 'completed' || day.status === 'today';
-                                const showLine = index < days.length - 1;
-
-                                return (
-                                    <div key={day.day} className="flex items-center">
-                                        <div className="flex flex-col items-center gap-2 text-center w-20 flex-shrink-0">
-                                            <div
-                                                className={cn(
-                                                    "relative flex items-center justify-center w-12 h-12 rounded-full border-2 font-semibold text-xs transition-all duration-300",
-                                                    isCompleted && "bg-green-100 border-green-500 text-green-700",
-                                                    isToday && "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 w-16 h-16",
-                                                    !isCompleted && !isToday && "bg-muted border-border text-muted-foreground"
-                                                )}
-                                            >
-                                                {isCompleted ? <Check className="w-6 h-6" /> : 
-                                                isToday ? <Sparkles className="w-7 h-7" /> :
-                                                (isBonus ? <Gift className="w-6 h-6" /> : `Day ${day.day}`)}
-                                            </div>
-                                            <p className={cn(
-                                                "text-xs font-bold",
-                                                isToday ? "text-primary" : "text-muted-foreground"
-                                            )}>+ {day.reward} Coins</p>
+                    <div className="grid gap-3">
+                        {days.map((day) => {
+                            const isCompleted = day.status === 'completed';
+                            const isToday = day.status === 'today';
+                            const isBonus = day.day === 7;
+                            
+                            return (
+                                <div 
+                                    key={day.day}
+                                    className={cn(
+                                        "flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-300",
+                                        isCompleted && "bg-green-100/50 dark:bg-green-900/20 border-green-500/50",
+                                        isToday && "border-primary ring-2 ring-primary/50 shadow-lg",
+                                        !isCompleted && !isToday && "bg-muted/50 border-transparent opacity-60"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div
+                                            className={cn(
+                                                "flex items-center justify-center w-12 h-12 rounded-full font-semibold text-lg",
+                                                isCompleted && "bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-200",
+                                                isToday && "bg-primary/10 text-primary",
+                                                !isCompleted && !isToday && "bg-muted text-muted-foreground"
+                                            )}
+                                        >
+                                            {isCompleted ? <Check className="w-7 h-7" /> : 
+                                            isToday ? <Sparkles className="w-7 h-7" /> :
+                                            (isBonus ? <Gift className="w-6 h-6" /> : day.day)}
                                         </div>
-                                        {showLine && <div className={cn("w-6 h-1 mx-2 rounded-full", isLineFilled ? 'bg-primary/50' : 'bg-border')} />}
+                                        <div>
+                                            <p className={cn(
+                                                "font-bold text-lg",
+                                                isToday && "text-primary"
+                                            )}>
+                                                {isBonus ? "Bonus Reward" : `Day ${day.day}`}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {isToday ? "Next reward to unlock!" : (isCompleted ? "Collected" : "Locked")}
+                                            </p>
+                                        </div>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    <div className="flex items-center gap-2 text-xl font-bold text-primary">
+                                        <span>+{day.reward}</span>
+                                        <span role="img" aria-label="Coin">🪙</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
