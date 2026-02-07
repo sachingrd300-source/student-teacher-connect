@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Award, UserCircle, LogOut, User as UserIcon, Trophy, Home, Menu } from 'lucide-react';
+import { Award, LogOut, User as UserIcon, Trophy, Home, Menu, PanelLeft } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 
 
@@ -48,12 +48,6 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-        {onMenuButtonClick && (
-            <Button variant="ghost" size="icon" className="hidden md:flex" onClick={onMenuButtonClick}>
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle sidebar</span>
-            </Button>
-        )}
         <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
             <Award className="h-6 w-6 mr-1 text-primary" />
             <span className="text-lg font-semibold font-serif hidden sm:inline">Achievers Community</span>
@@ -77,9 +71,9 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
             <ThemeToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="secondary" size="icon" className="rounded-full">
-                    <UserCircle className="h-5 w-5" />
-                    <span className="sr-only">Toggle user menu</span>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle user menu</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -102,6 +96,12 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
                             <span>Profile</span>
                         </Link>
                     </DropdownMenuItem>
+                    {onMenuButtonClick && (
+                        <DropdownMenuItem onClick={onMenuButtonClick} className="hidden md:flex">
+                            <PanelLeft className="h-4 w-4 mr-2" />
+                            <span>Toggle Sidebar</span>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
