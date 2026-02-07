@@ -1351,7 +1351,7 @@ function AdminDashboardContent() {
                                 </RadioGroup>
                             </div>
                             <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle || ''} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective Questions</SelectItem></SelectContent></Select></div>
+                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory || ''} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective Questions</SelectItem></SelectContent></Select></div>
                             
                             <AnimatePresence mode="wait">
                                 {uploadMethod === 'file' ? (
@@ -1865,3 +1865,5 @@ export default function AdminDashboardPage() {
         </Suspense>
     );
 }
+
+    
