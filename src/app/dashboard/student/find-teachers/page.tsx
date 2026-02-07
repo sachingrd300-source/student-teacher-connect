@@ -113,7 +113,7 @@ export default function FindTeachersPage() {
     if (teachersLoading || userProfileLoading) {
         return (
             <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Finding Teachers...</p>
             </div>
         );

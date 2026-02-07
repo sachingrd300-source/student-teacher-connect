@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, Send, ShoppingCart } from 'lucide-react';
+import { Loader2, ArrowLeft, Send } from 'lucide-react';
+import Image from 'next/image';
 
 interface UserProfile {
     name: string;
@@ -77,7 +78,7 @@ export default function PlaceOrderPage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <ShoppingCart className="h-16 w-16 animate-pulse text-primary" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Order Form...</p>
             </div>
         );

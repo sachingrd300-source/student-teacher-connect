@@ -165,7 +165,7 @@ function AdminDashboardContent() {
     const freeMaterialsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'freeMaterials'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const shopItemsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'shopItems'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const adminActivitiesQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'adminActivities'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
-    const approvedTutorsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
+    const approvedTeachersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'users'), where('isHomeTutor', '==', true)) : null, [firestore, userRole]);
     const enrollmentsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'enrollments'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const ordersQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
     const supportTicketsQuery = useMemoFirebase(() => (firestore && userRole === 'admin') ? query(collection(firestore, 'supportTickets'), orderBy('createdAt', 'desc')) : null, [firestore, userRole]);
@@ -178,7 +178,7 @@ function AdminDashboardContent() {
     const { data: materials, isLoading: materialsLoading } = useCollection<FreeMaterial>(freeMaterialsQuery);
     const { data: shopItems, isLoading: shopItemsLoading } = useCollection<ShopItem>(shopItemsQuery);
     const { data: adminActivities, isLoading: activitiesLoading } = useCollection<AdminActivity>(adminActivitiesQuery);
-    const { data: approvedTeachers, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTutorsQuery);
+    const { data: approvedTeachers, isLoading: tutorsLoading } = useCollection<UserProfile>(approvedTeachersQuery);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     const { data: orders, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
     const { data: supportTickets, isLoading: supportTicketsLoading } = useCollection<SupportTicket>(supportTicketsQuery);
@@ -803,7 +803,7 @@ function AdminDashboardContent() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         );
@@ -1349,8 +1349,8 @@ function AdminDashboardContent() {
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="method-url" /><Label htmlFor="method-url">From URL</Label></div>
                                 </RadioGroup>
                             </div>
-                            <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle || ''} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory || ''} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective Questions</SelectItem></SelectContent></Select></div>
+                            <div className="grid gap-2"><Label htmlFor="material-title-dialog">Material Title</Label><Input id="material-title-dialog" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="material-category-dialog">Category</Label><Select value={materialCategory} onValueChange={(value) => setMaterialCategory(value as any)} required><SelectTrigger id="material-category-dialog"><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent><SelectItem value="notes">Notes</SelectItem><SelectItem value="books">Books</SelectItem><SelectItem value="pyqs">PYQs</SelectItem><SelectItem value="dpps">DPPs</SelectItem><SelectItem value="objective">Objective Questions</SelectItem></SelectContent></Select></div>
                             
                             <AnimatePresence mode="wait">
                                 {uploadMethod === 'file' ? (
@@ -1361,12 +1361,12 @@ function AdminDashboardContent() {
                                 ) : (
                                     <motion.div key="url-upload" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-2 overflow-hidden">
                                         <Label htmlFor="material-url-dialog">URL</Label>
-                                        <Input id="material-url-dialog" type="url" value={materialUrl || ''} onChange={(e) => setMaterialUrl(e.target.value)} placeholder="https://example.com/document.pdf" required={uploadMethod === 'url'} />
+                                        <Input id="material-url-dialog" type="url" value={materialUrl} onChange={(e) => setMaterialUrl(e.target.value)} placeholder="https://example.com/document.pdf" required={uploadMethod === 'url'} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <div className="grid gap-2"><Label htmlFor="material-description-dialog">Description (Optional)</Label><Textarea id="material-description-dialog" value={materialDescription || ''} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
+                            <div className="grid gap-2"><Label htmlFor="material-description-dialog">Description (Optional)</Label><Textarea id="material-description-dialog" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} /></div>
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                                 <Button type="submit" disabled={isUploadingMaterial}>{isUploadingMaterial ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />} Upload Material</Button>
@@ -1402,14 +1402,14 @@ function AdminDashboardContent() {
                                 </RadioGroup>
                             </div>
 
-                            <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName || ''} onChange={(e) => setItemName(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="item-price">{itemPriceType === 'money' ? 'Price (INR)' : 'Price (Coins)'}</Label><Input id="item-price" type="number" step="1" value={itemPrice || ''} onChange={(e) => setItemPrice(e.target.value)} required /></div>
-                            <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription || ''} onChange={(e) => setItemDescription(e.target.value)} /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-name">Item Name</Label><Input id="item-name" value={itemName} onChange={(e) => setItemName(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-price">{itemPriceType === 'money' ? 'Price (INR)' : 'Price (Coins)'}</Label><Input id="item-price" type="number" step="1" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} required /></div>
+                            <div className="grid gap-2"><Label htmlFor="item-description">Description</Label><Textarea id="item-description" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></div>
                             
                             <AnimatePresence>
                                 {itemType === 'item' && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="grid gap-4 overflow-hidden">
-                                        {itemPriceType === 'money' && (<div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl || ''} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} /></div>)}
+                                        {itemPriceType === 'money' && (<div className="grid gap-2"><Label htmlFor="item-purchase-url">Purchase URL</Label><Input id="item-purchase-url" type="url" value={itemPurchaseUrl} onChange={(e) => setItemPurchaseUrl(e.target.value)} required={itemPriceType === 'money'} /></div>)}
                                         <div className="grid gap-2"><Label htmlFor="item-image">Item Image</Label><Input id="item-image" type="file" accept="image/*" onChange={(e: ChangeEvent<HTMLInputElement>) => setItemImage(e.target.files ? e.target.files[0] : null)} required={itemType === 'item'} /></div>
                                     </motion.div>
                                 )}
@@ -1425,7 +1425,7 @@ function AdminDashboardContent() {
                                         {digitalUploadMethod === 'file' ? (
                                             <div className="grid gap-2"><Label htmlFor="digital-file">File</Label><Input id="digital-file" type="file" onChange={(e: ChangeEvent<HTMLInputElement>) => setDigitalFile(e.target.files ? e.target.files[0] : null)} required={itemType === 'digital' && digitalUploadMethod === 'file'} /></div>
                                         ) : (
-                                            <div className="grid gap-2"><Label htmlFor="digital-url">URL</Label><Input id="digital-url" type="url" value={digitalUrl || ''} onChange={(e) => setDigitalUrl(e.target.value)} placeholder="https://example.com/resource" required={itemType === 'digital' && digitalUploadMethod === 'url'} /></div>
+                                            <div className="grid gap-2"><Label htmlFor="digital-url">URL</Label><Input id="digital-url" type="url" value={digitalUrl} onChange={(e) => setDigitalUrl(e.target.value)} placeholder="https://example.com/resource" required={itemType === 'digital' && digitalUploadMethod === 'url'} /></div>
                                         )}
                                     </motion.div>
                                 )}
@@ -1736,7 +1736,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-subject">Subject</Label>
                             <Input 
                                 id="tutor-subject" 
-                                value={homeTeacherFormState.subject || ''} 
+                                value={homeTeacherFormState.subject} 
                                 onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, subject: e.target.value }))}
                                 placeholder="e.g., Physics, Maths"
                             />
@@ -1745,7 +1745,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-experience">Experience</Label>
                             <Input 
                                 id="tutor-experience" 
-                                value={homeTeacherFormState.experience || ''} 
+                                value={homeTeacherFormState.experience} 
                                 onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, experience: e.target.value }))}
                                 placeholder="e.g., 5+ years"
                             />
@@ -1754,7 +1754,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-whatsapp">WhatsApp Number</Label>
                             <Input 
                                 id="tutor-whatsapp" 
-                                value={homeTeacherFormState.whatsappNumber || ''}
+                                value={homeTeacherFormState.whatsappNumber}
                                 onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, whatsappNumber: e.target.value }))}
                                 placeholder="e.g., +91..."
                             />
@@ -1763,7 +1763,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-address">Home Address</Label>
                             <Textarea 
                                 id="tutor-address" 
-                                value={homeTeacherFormState.homeAddress || ''}
+                                value={homeTeacherFormState.homeAddress}
                                 onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, homeAddress: e.target.value }))}
                                 placeholder="Teacher's home address"
                             />
@@ -1773,7 +1773,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="tutor-bio">Bio</Label>
                             <Textarea 
                                 id="tutor-bio" 
-                                value={homeTeacherFormState.bio || ''}
+                                value={homeTeacherFormState.bio}
                                 onChange={(e) => setHomeTeacherFormState(prev => ({ ...prev, bio: e.target.value }))}
                                 placeholder="A short bio about the teacher"
                             />
@@ -1802,7 +1802,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="achiever-fee">Fee Structure</Label>
                             <Input 
                                 id="achiever-fee" 
-                                value={achieverFormState.fee || ''} 
+                                value={achieverFormState.fee} 
                                 onChange={(e) => setAchieverFormState(prev => ({ ...prev, fee: e.target.value }))}
                                 placeholder="e.g., 500/month"
                             />
@@ -1811,7 +1811,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="achiever-coaching-address">Coaching Address</Label>
                             <Textarea 
                                 id="achiever-coaching-address" 
-                                value={achieverFormState.coachingAddress || ''}
+                                value={achieverFormState.coachingAddress}
                                 onChange={(e) => setAchieverFormState(prev => ({ ...prev, coachingAddress: e.target.value }))}
                                 placeholder="Public coaching address"
                             />
@@ -1820,7 +1820,7 @@ function AdminDashboardContent() {
                             <Label htmlFor="achiever-center-name">Coaching Center Name</Label>
                             <Input 
                                 id="achiever-center-name" 
-                                value={achieverFormState.coachingCenterName || ''}
+                                value={achieverFormState.coachingCenterName}
                                 onChange={(e) => setAchieverFormState(prev => ({ ...prev, coachingCenterName: e.target.value }))}
                                 placeholder="e.g., Success Tutorials"
                             />
@@ -1856,7 +1856,7 @@ export default function AdminDashboardPage() {
     return (
         <Suspense fallback={
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         }>

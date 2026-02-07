@@ -251,7 +251,7 @@ export default function CoachingManagementPage() {
     if (isLoading || !userProfile) {
         return (
              <div className="flex h-full items-center justify-center flex-col gap-4 py-16">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Coaching Management...</p>
             </div>
         );

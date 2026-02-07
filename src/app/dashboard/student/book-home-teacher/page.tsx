@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, Send, Home } from 'lucide-react';
+import { Loader2, ArrowLeft, Send } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
@@ -98,7 +98,7 @@ export default function BookHomeTeacherPage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Booking Form...</p>
             </div>
         );

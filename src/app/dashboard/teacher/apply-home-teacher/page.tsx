@@ -125,7 +125,7 @@ export default function ApplyHomeTeacherPage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Application...</p>
             </div>
         );

@@ -35,7 +35,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={32} height={32} />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={32} height={32} className="rounded-full" />
                 <span className="text-lg font-semibold font-serif hidden sm:inline">Achiever's Community</span>
             </Link>
             
@@ -123,7 +123,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                             <SheetTitle>
                                 <SheetClose asChild>
                                     <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-                                        <Image src="/logo.png" alt="Achiever's Community Logo" width={32} height={32} />
+                                        <Image src="/logo.png" alt="Achiever's Community Logo" width={32} height={32} className="rounded-full" />
                                         <span>Achiever's Community</span>
                                     </Link>
                                 </SheetClose>

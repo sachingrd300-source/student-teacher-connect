@@ -240,7 +240,7 @@ export default function ProfilePage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse rounded-full" />
                 <p className="text-muted-foreground">Loading Profile...</p>
             </div>
         );
@@ -297,7 +297,7 @@ export default function ProfilePage() {
                                         {userProfile.isHomeTutor && (
                                             <div className="flex items-center gap-1.5 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 px-2 py-1 rounded-full">
                                                 <Home className="h-4 w-4" />
-                                                <span>Home Tutor</span>
+                                                <span>Home Teacher</span>
                                             </div>
                                         )}
                                         {(userProfile.teacherWorkStatus === 'own_coaching' || userProfile.teacherWorkStatus === 'achievers_associate' || userProfile.teacherWorkStatus === 'both') && (
@@ -333,7 +333,7 @@ export default function ProfilePage() {
                                             placeholder={
                                                 userProfile.role === 'teacher' 
                                                 ? "Your home address for verification. This is private." 
-                                                : "Your home address for finding local tutors."
+                                                : "Your home address for finding local teachers."
                                             }
                                             required={userProfile.role === 'teacher' && !isCommunityAssociate}
                                             className={errors.homeAddress ? 'border-destructive' : ''}

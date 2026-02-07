@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -62,7 +61,7 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
     { href: '/dashboard/student', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/student/find-teachers', label: 'Find Teachers', icon: Search },
     { href: '/dashboard/student/book-coaching-seat', label: 'Book Coaching Seat', icon: BookCheck },
-    { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
+    { href: '/dashboard/student/book-home-teacher', label: 'Book Home Teacher', icon: Home },
     { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },
     { href: '/dashboard/student/saved-materials', label: 'Saved Materials', icon: Bookmark },
     { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },
@@ -71,7 +70,7 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
   const teacherNavItems = [
     { href: '/dashboard/teacher/coaching', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: CalendarCheck },
-    { href: '/dashboard/teacher/apply-home-tutor', label: 'Home Tutor Program', icon: Home },
+    { href: '/dashboard/teacher/apply-home-teacher', label: 'Home Teacher Program', icon: Home },
     { href: '/dashboard/teacher/apply-verified-coaching', label: 'Achiever\'s Community', icon: Award },
     { href: '/dashboard/teacher/place-order', label: 'Place Order', icon: ShoppingCart },
   ];
@@ -125,7 +124,7 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
-            <Image src="/logo.png" alt="Achiever's Community Logo" width={32} height={32} />
+            <Image src="/logo.png" alt="Achiever's Community Logo" width={32} height={32} className="rounded-full" />
             <span className="text-lg font-semibold font-serif hidden sm:inline">Achiever's Community</span>
         </Link>
         
