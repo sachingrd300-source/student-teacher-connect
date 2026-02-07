@@ -80,6 +80,8 @@ export default function FindTeachersPage() {
 
         setBookingState(prev => ({ ...prev, [teacher.id]: 'booking' }));
 
+        const isCommunityTeacher = teacher.teacherWorkStatus === 'achievers_associate' || teacher.teacherWorkStatus === 'both';
+
         try {
             await addDoc(collection(firestore, 'homeBookings'), {
                 bookingType: 'demoClass',
@@ -88,10 +90,14 @@ export default function FindTeachersPage() {
                 mobileNumber: userProfile.mobileNumber || '',
                 studentAddress: userProfile.homeAddress || '',
                 studentClass: userProfile.class || '',
-                subject: teacher.subject || '', // Pass teacher's subject
+                subject: teacher.subject || '',
                 status: 'Pending',
-                assignedTeacherId: teacher.id,
-                assignedTeacherName: teacher.name,
+                // Assign directly to teacher if they are independent, otherwise it's for admin to assign
+                assignedTeacherId: isCommunityTeacher ? null : teacher.id,
+                assignedTeacherName: isCommunityTeacher ? null : teacher.name,
+                // We can add a field to explicitly know who the request was for, even if admin manages it
+                requestedTeacherId: teacher.id, 
+                requestedTeacherName: teacher.name,
                 createdAt: new Date().toISOString(),
             });
             setBookingState(prev => ({ ...prev, [teacher.id]: 'booked' }));

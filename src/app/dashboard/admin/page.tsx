@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, ChangeEvent, Fragment, Suspense } from 'react';
@@ -42,7 +43,7 @@ interface UserProfile { id: string; name: string; email: string; role: 'admin' |
 interface ApplicationBase { id: string; teacherId: string; teacherName: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; processedAt?: string; }
 interface HomeTutorApplication extends ApplicationBase {}
 interface VerifiedCoachingApplication extends ApplicationBase {}
-interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter'; tuitionType?: 'single_student' | 'siblings'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
+interface HomeBooking { id: string; studentId: string; studentName: string; fatherName?: string; mobileNumber: string; studentAddress: string; studentClass: string; status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled'; createdAt: string; assignedTeacherId?: string; assignedTeacherName?: string; assignedTeacherMobile?: string; assignedTeacherAddress?: string; bookingType: 'homeTutor' | 'coachingCenter' | 'demoClass'; tuitionType?: 'single_student' | 'siblings'; assignedCoachingCenterName?: string; assignedCoachingAddress?: string; subject?: string; }
 type MaterialCategory = 'notes' | 'books' | 'pyqs' | 'dpps' | 'objective';
 interface FreeMaterial { id: string; title: string; description?: string; fileURL: string; fileName: string; fileType: string; category: MaterialCategory; createdAt: string; }
 interface ShopItem { id: string; name: string; description?: string; price: number; priceType: 'money' | 'coins'; itemType: 'item' | 'digital'; imageUrl?: string; imageName?: string; purchaseUrl?: string; digitalFileType?: 'pdf' | 'url'; digitalFileUrl?: string; digitalFileName?: string; createdAt: string; }
@@ -183,8 +184,9 @@ function AdminDashboardContent() {
     const { data: orders, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
     const { data: supportTickets, isLoading: supportTicketsLoading } = useCollection<SupportTicket>(supportTicketsQuery);
     
-    const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor' || !b.bookingType) || [], [homeBookings]);
+    const homeTutorBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'homeTutor') || [], [homeBookings]);
     const coachingCenterBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'coachingCenter') || [], [homeBookings]);
+    const demoBookings = useMemo(() => homeBookings?.filter(b => b.bookingType === 'demoClass') || [], [homeBookings]);
 
 
     // --- Auth & Role Check ---
@@ -1098,9 +1100,9 @@ function AdminDashboardContent() {
     );
 
     const renderBookingsView = () => {
-        const renderBookingList = (bookings: HomeBooking[], type: 'homeTutor' | 'coachingCenter') => {
+        const renderBookingList = (bookings: HomeBooking[], type: 'homeTutor' | 'coachingCenter' | 'demoClass') => {
             if (bookings.length === 0) {
-                return <div className="text-center py-12">No {type === 'homeTutor' ? 'home tutor' : 'coaching center'} bookings.</div>;
+                return <div className="text-center py-12">No {type === 'homeTutor' ? 'home tutor' : type === 'coachingCenter' ? 'coaching center' : 'demo class'} bookings.</div>;
             }
 
             return (
@@ -1110,10 +1112,11 @@ function AdminDashboardContent() {
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                 <div className="grid gap-1">
                                     <p className="font-semibold">{booking.studentName} - <span className="font-normal text-muted-foreground">{booking.studentClass}</span></p>
-                                    <p className="text-sm text-muted-foreground">Tuition for: <span className="font-medium text-foreground">{booking.tuitionType === 'siblings' ? 'Siblings' : 'Single Student'}</span></p>
+                                    {type !== 'demoClass' && <p className="text-sm text-muted-foreground">Tuition for: <span className="font-medium text-foreground">{booking.tuitionType === 'siblings' ? 'Siblings' : 'Single Student'}</span></p>}
                                     <p className="text-sm text-muted-foreground">Subject: <span className="font-medium text-foreground">{booking.subject || 'Not specified'}</span></p>
                                     <p className="text-sm text-muted-foreground">Contact: {booking.mobileNumber}</p>
                                     <p className="text-sm text-muted-foreground">Address: {booking.studentAddress}</p>
+                                    {booking.assignedTeacherName && <p className="text-sm text-muted-foreground">Assigned to: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>}
                                 </div>
                                 <div className="flex items-center gap-2 self-end sm:self-start">
                                     <span className={`text-xs font-bold py-1 px-2 rounded-full ${
@@ -1139,7 +1142,7 @@ function AdminDashboardContent() {
                                 </div>
                             </div>
                             
-                            {booking.status === 'Pending' && (
+                            {booking.status === 'Pending' && !booking.assignedTeacherId && (
                                 <div className="mt-4 pt-4 border-t">
                                     {type === 'homeTutor' ? (
                                         <div className="flex items-center gap-2">
@@ -1154,7 +1157,7 @@ function AdminDashboardContent() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                    ) : ( // coachingCenter
+                                    ) : ( // coachingCenter or demoClass for community teacher
                                         <div className="flex items-center gap-2">
                                             <Select onValueChange={(teacherId) => handleAssignCoachingTeacher(booking, teacherId)}>
                                                 <SelectTrigger className="w-full sm:w-[250px]">
@@ -1179,7 +1182,7 @@ function AdminDashboardContent() {
                                             <p className="text-muted-foreground">Mobile: <span className="font-semibold text-foreground">{booking.assignedTeacherMobile || 'N/A'}</span></p>
                                             <p className="text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedTeacherAddress || 'N/A'}</span></p>
                                         </div>
-                                    ) : ( // coachingCenter
+                                    ) : ( // coachingCenter or demoClass
                                         <div className="grid gap-1 text-sm">
                                             <p className="text-muted-foreground">Assigned Center: <span className="font-semibold text-foreground">{booking.assignedCoachingCenterName}</span></p>
                                             <p className="text-muted-foreground">via: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
@@ -1200,15 +1203,19 @@ function AdminDashboardContent() {
                  <Card className="rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                          <Tabs defaultValue="homeTutor" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="homeTutor">Home Tutor Bookings</TabsTrigger>
-                                <TabsTrigger value="coachingCenter">Coaching Center Bookings</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="homeTutor">Home Tutor</TabsTrigger>
+                                <TabsTrigger value="coachingCenter">Coaching Center</TabsTrigger>
+                                <TabsTrigger value="demo">Demo Requests</TabsTrigger>
                             </TabsList>
                             <TabsContent value="homeTutor" className="mt-4">
                                 {renderBookingList(homeTutorBookings, 'homeTutor')}
                             </TabsContent>
                             <TabsContent value="coachingCenter" className="mt-4">
                                 {renderBookingList(coachingCenterBookings, 'coachingCenter')}
+                            </TabsContent>
+                            <TabsContent value="demo" className="mt-4">
+                                {renderBookingList(demoBookings, 'demoClass')}
                             </TabsContent>
                         </Tabs>
                     </CardContent>
