@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -54,10 +55,13 @@ service cloud.firestore {
     function isUpdatingOwnStudentProfile() {
       let allowedKeys = [
         'name', 'bio', 'homeAddress', 'mobileNumber', 'fatherName', 'class', 'parentMobileNumber',
-        'savedFreeMaterialIds', 'coins', 'streak', 'lastLoginDate'
+        'savedFreeMaterialIds'
       ].toSet();
       let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
-      return changedKeys.difference(allowedKeys).size() == 0;
+      // Allow specific fields for daily login updates
+      let loginUpdateKeys = ['coins', 'streak', 'lastLoginDate'].toSet();
+      return changedKeys.difference(allowedKeys).size() == 0 ||
+             (request.resource.data.diff(resource.data).affectedKeys() - loginUpdateKeys).size() == 0;
     }
 
     function isUpdatingOwnTeacherProfile() {
@@ -111,7 +115,7 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        allow read, write: if isAdmin() || isOwner(get(/databases/$(database)/documents/batches/$(batchId)).data.teacherId);
+        allow read, write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
       }
     }
     

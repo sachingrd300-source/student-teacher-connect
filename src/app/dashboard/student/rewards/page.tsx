@@ -3,9 +3,11 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Gift, Sparkles, School } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Check, Gift, Sparkles, School, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getLevelInfo } from '@/lib/rewards';
+import { Progress } from '@/components/ui/progress';
 
 interface UserProfile {
     name: string;
@@ -15,8 +17,6 @@ interface UserProfile {
     lastLoginDate?: string;
 }
 
-// Define the daily reward progression
-const dailyRewards = [5, 10, 15, 20, 25, 30, 50]; // Day 1 to Day 7 (bonus)
 
 export default function RewardsPage() {
     const { user, isUserLoading } = useUser();
@@ -40,18 +40,18 @@ export default function RewardsPage() {
         );
     }
     
-    const currentStreak = userProfile?.streak || 0;
-    const totalDaysInJourney = 7;
-    const dayInCycle = currentStreak > 0 ? ((currentStreak - 1) % totalDaysInJourney) + 1 : 1;
-    
-    const days = Array.from({ length: totalDaysInJourney }, (_, i) => {
+    const totalStreak = userProfile?.streak || 0;
+    const { level, name, rewards, dayInLevel, totalDaysInLevel } = getLevelInfo(totalStreak);
+    const progressPercentage = (dayInLevel / totalDaysInLevel) * 100;
+
+    const days = Array.from({ length: rewards.length }, (_, i) => {
         const day = i + 1;
-        const reward = dailyRewards[i];
+        const reward = rewards[i];
         let status: 'completed' | 'today' | 'locked' = 'locked';
         
-        if (day < dayInCycle) {
+        if (day < dayInLevel) {
             status = 'completed';
-        } else if (day === dayInCycle) {
+        } else if (day === dayInLevel) {
             status = 'today';
         }
         
@@ -60,17 +60,24 @@ export default function RewardsPage() {
     
     return (
         <div className="max-w-2xl mx-auto grid gap-8">
-            <Card className="rounded-2xl shadow-lg">
-                <CardHeader>
-                    <CardTitle className="text-2xl font-serif">Daily Rewards</CardTitle>
-                    <CardDescription>Log in daily to build your streak and earn coins! You are currently on a <span className="font-bold text-primary">{currentStreak}-day</span> streak. 🔥</CardDescription>
+            <Card className="rounded-2xl shadow-lg overflow-hidden">
+                <CardHeader className="bg-muted/40 p-6">
+                    <CardTitle className="text-2xl font-serif flex items-center gap-3">
+                        <Trophy className="h-7 w-7 text-amber-500" />
+                        Level {level}: {name}
+                    </CardTitle>
+                    <CardDescription>
+                        You are on day {dayInLevel} of your {totalDaysInLevel}-day journey for this level. Keep it up!
+                    </CardDescription>
+                     <div className="pt-2">
+                        <Progress value={progressPercentage} className="h-2" />
+                    </div>
                 </CardHeader>
-                <CardContent className="pt-2">
+                <CardContent className="p-4 sm:p-6">
                     <div className="grid gap-3">
-                        {days.map((day) => {
+                        {days.map((day, index) => {
                             const isCompleted = day.status === 'completed';
                             const isToday = day.status === 'today';
-                            const isBonus = day.day === 7;
                             
                             return (
                                 <div 
@@ -79,7 +86,7 @@ export default function RewardsPage() {
                                         "flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-300",
                                         isCompleted && "bg-green-100/50 dark:bg-green-900/20 border-green-500/50",
                                         isToday && "border-primary ring-2 ring-primary/50 shadow-lg",
-                                        !isCompleted && !isToday && "bg-muted/50 border-transparent opacity-60"
+                                        !isCompleted && !isToday && "bg-muted/30 border-transparent opacity-70"
                                     )}
                                 >
                                     <div className="flex items-center gap-4">
@@ -93,21 +100,21 @@ export default function RewardsPage() {
                                         >
                                             {isCompleted ? <Check className="w-7 h-7" /> : 
                                             isToday ? <Sparkles className="w-7 h-7" /> :
-                                            (isBonus ? <Gift className="w-6 h-6" /> : day.day)}
+                                            (day.reward > 70 ? <Gift className="w-6 h-6" /> : day.day)}
                                         </div>
                                         <div>
                                             <p className={cn(
                                                 "font-bold text-lg",
                                                 isToday && "text-primary"
                                             )}>
-                                                {isBonus ? "Bonus Reward" : `Day ${day.day}`}
+                                                Day {day.day}
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                {isToday ? "Next reward to unlock!" : (isCompleted ? "Collected" : "Locked")}
+                                                {isToday ? "Today's Reward" : (isCompleted ? "Collected" : "Locked")}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xl font-bold text-primary">
+                                    <div className="flex items-center gap-2 text-xl font-bold text-amber-500">
                                         <span>+{day.reward}</span>
                                         <span role="img" aria-label="Coin">🪙</span>
                                     </div>
@@ -116,6 +123,9 @@ export default function RewardsPage() {
                         })}
                     </div>
                 </CardContent>
+                <CardFooter className="bg-muted/40 p-4 text-center">
+                     <p className="text-xs text-muted-foreground w-full">Your total streak is <span className="font-bold text-primary">{totalStreak} days</span>. Keep logging in daily!</p>
+                </CardFooter>
             </Card>
         </div>
     );

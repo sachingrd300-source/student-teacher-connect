@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -5,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { Loader2, School } from 'lucide-react';
+import { getLevelInfo } from '@/lib/rewards';
 
 interface UserProfile {
     name: string;
@@ -14,8 +16,6 @@ interface UserProfile {
     lastLoginDate?: string; // YYYY-MM-DD
 }
 
-// Define the daily reward progression
-const dailyRewards = [5, 10, 15, 20, 25, 30, 50]; // Day 1 to Day 7 (bonus)
 
 export default function DashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -61,8 +61,8 @@ export default function DashboardPage() {
                     yesterday.setDate(today.getDate() - 1);
 
                     if (lastLogin.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
-                        // It's a consecutive day login, cycle the streak from 1-7
-                        newStreak = (currentStreak % 7) + 1;
+                        // It's a consecutive day login
+                        newStreak = currentStreak + 1;
                     } else {
                         // Streak is broken, reset to 1
                         newStreak = 1;
@@ -72,9 +72,9 @@ export default function DashboardPage() {
                     newStreak = 1;
                 }
 
-                // Calculate coin reward based on the new streak (which is now 1-7)
-                const rewardIndex = newStreak - 1;
-                const dailyCoinReward = dailyRewards[rewardIndex];
+                // Calculate coin reward based on the new level-based system
+                const levelInfo = getLevelInfo(newStreak);
+                const dailyCoinReward = levelInfo.rewards[levelInfo.dayInLevel - 1];
                 const newCoins = currentCoins + dailyCoinReward;
 
                 updates.coins = newCoins;
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                  router.replace('/login');
             }
         }
-    }, [user, isUserLoading, profileLoading, router, firestore, userProfile?.role, userProfile?.lastLoginDate]);
+    }, [user, isUserLoading, profileLoading, router, firestore, userProfile?.role, userProfile?.lastLoginDate, userProfile?.streak, userProfile?.coins]);
 
 
     // Show a loading screen while we determine where to redirect.
