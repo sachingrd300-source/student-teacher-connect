@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, User, Globe, Sun, Moon } from 'lucide-react';
+import { Menu, User, Globe, Sun, Moon, Instagram, Facebook } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -173,6 +172,20 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                                     <Link href="/signup">Sign Up</Link>
                                 </Button>
                             </SheetClose>
+                            <hr className="my-2" />
+                            <p className="px-1 text-sm font-semibold text-muted-foreground">Follow Us</p>
+                            <div className="flex justify-center gap-6 pt-2">
+                                <SheetClose asChild>
+                                    <Link href="https://www.instagram.com/achieve.rs_community?igsh=MXduMmtmZW04N3p6Yw==" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                                        <Instagram className="h-7 w-7 text-muted-foreground hover:text-primary transition-colors" />
+                                    </Link>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <Link href="https://www.facebook.com/share/1AYdBY57G8/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                                        <Facebook className="h-7 w-7 text-muted-foreground hover:text-primary transition-colors" />
+                                    </Link>
+                                </SheetClose>
+                            </div>
                         </div>
                     </SheetContent>
                 </Sheet>

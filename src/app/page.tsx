@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, Briefcase, GraduationCap, Users, Book, Building2, User, CheckCircle } from "lucide-react";
+import { ArrowRight, Star, Briefcase, GraduationCap, Users, Book, Building2, User, CheckCircle, Instagram, Facebook } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -46,7 +46,7 @@ const testimonialsData = [
   {
     name: "Rohan Mehra",
     roleKey: "testimonialRoleStudent",
-    text: "The free notes and PYQs for the Jharkhand Board were incredibly helpful for my exam preparation. My tutor is also excellent!"
+    text: "The free notes and PYQs for the Jharkhand Board were incredibly helpful for my exam preparation. My teacher is also excellent!"
   },
   {
     name: "Amit Kumar",
@@ -365,9 +365,17 @@ export default function HomePage() {
       </main>
 
       <footer className="py-8 bg-background border-t">
-        <div className="container px-4 md:px-6 text-center text-muted-foreground">
+        <div className="container px-4 md:px-6 flex flex-col sm:flex-row justify-between items-center text-center text-muted-foreground gap-4">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
             <p>© {new Date().getFullYear()} Achiever's Community. All Rights Reserved.</p>
+          </motion.div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp} className="flex gap-4">
+            <Link href="https://www.instagram.com/achieve.rs_community?igsh=MXduMmtmZW04N3p6Yw==" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <Instagram className="h-6 w-6 hover:text-primary transition-colors" />
+            </Link>
+            <Link href="https://www.facebook.com/share/1AYdBY57G8/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <Facebook className="h-6 w-6 hover:text-primary transition-colors" />
+            </Link>
           </motion.div>
         </div>
       </footer>
