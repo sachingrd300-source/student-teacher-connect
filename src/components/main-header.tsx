@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, User, Globe, Sun, Moon, School } from 'lucide-react';
+import Image from 'next/image';
+import { Menu, User, Globe, Sun, Moon } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -34,7 +35,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
-                <School className="h-8 w-8 text-primary" />
+                <Image src="/logo.png" alt="Achievers Community Logo" width={32} height={32} />
                 <span className="text-lg font-semibold font-serif hidden sm:inline">Achievers Community</span>
             </Link>
             
@@ -122,7 +123,7 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                             <SheetTitle>
                                 <SheetClose asChild>
                                     <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-                                        <School className="h-8 w-8 text-primary" />
+                                        <Image src="/logo.png" alt="Achievers Community Logo" width={32} height={32} />
                                         <span>Achievers Community</span>
                                     </Link>
                                 </SheetClose>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/firebase';
@@ -17,7 +18,7 @@ import {
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { 
-    Award, LogOut, User as UserIcon, Home, Menu, Sun, Moon, School,
+    Award, LogOut, User as UserIcon, Home, Menu, Sun, Moon,
     // Student Icons
     LayoutDashboard, Search, BookOpen, BookCheck, Bookmark, ShoppingBag,
     // Teacher Icons
@@ -123,7 +124,7 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Link className="flex items-center gap-2 font-semibold" href={dashboardHomeLink}>
-            <School className="h-8 w-8 text-primary" />
+            <Image src="/logo.png" alt="Achievers Community Logo" width={32} height={32} />
             <span className="text-lg font-semibold font-serif hidden sm:inline">Achievers Community</span>
         </Link>
         
