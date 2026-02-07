@@ -27,7 +27,7 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-lg text-muted-foreground">
-                  Humara mission simple hai: Har student ko sahi guidance aur resources dena taaki wo apne sapno ko sach kar sakein. Chahe wo school exams hon ya competitive goals, hum education ko accessible aur result-oriented banane mein believe karte hain.
+                  Humara mission simple hai: Har student ko kam se kam fee mein behtareen education, sahi guidance aur resources dena taaki wo apne sapno ko sach kar sakein. Chahe wo school exams hon ya competitive goals, hum education ko accessible aur result-oriented banane mein believe karte hain.
                 </p>
               </CardContent>
             </Card>
@@ -61,8 +61,8 @@ export default function AboutPage() {
                 <div className="flex items-start gap-4">
                   <CheckCircle className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold">Platform for Coaching Centers</h3>
-                    <p className="text-muted-foreground">Private coaching centers bhi humare platform se judkar apne students ke liye hamari technology ka free mein upyog kar sakte hain. Isse teacher-student connectivity behtar hoti hai aur management aasan ho jaata hai.</p>
+                    <h3 className="font-semibold">A Platform for Every Coaching Center</h3>
+                    <p className="text-muted-foreground">Chhote se chhote private coaching centers bhi humare platform se judkar apne students ke liye hamari technology ka free mein upyog kar sakte hain. Isse teacher-student connectivity behtar hoti hai, management aasan ho jaata hai, aur aap samay par payment prapt kar sakte hain.</p>
                   </div>
                 </div>
               </CardContent>
@@ -83,7 +83,7 @@ export default function AboutPage() {
               <CardContent className="p-8">
                 <h3 className="text-2xl font-bold font-serif mb-2">Our Vision</h3>
                 <p className="text-lg opacity-90">
-                  Hum Giridih se shuru hokar ek aisi community banana chahte hain jahan har learner ek "Achiever" ban sake.
+                  Hum Giridih ke har gaon mein study centers kholkar ek aisi community banana chahte hain jahan har learner ek "Achiever" ban sake.
                 </p>
                  <blockquote className="mt-6 text-xl font-semibold italic">
                     "Join us, and let’s achieve greatness together!"
