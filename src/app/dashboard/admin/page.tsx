@@ -494,6 +494,33 @@ function AdminDashboardContent() {
             });
     };
 
+    const handleSendDemoReminderToTeacher = (booking: HomeBooking) => {
+        if (!allUsers || !booking.assignedTeacherId) {
+            alert('Teacher details not found.');
+            return;
+        }
+        const teacher = allUsers.find(u => u.id === booking.assignedTeacherId);
+        if (!teacher) {
+            alert('Could not find teacher profile.');
+            return;
+        }
+
+        const targetMobileNumber = teacher.whatsappNumber;
+        if (!targetMobileNumber) {
+            alert(`Cannot send reminder: WhatsApp number for teacher ${teacher.name} is not available.`);
+            return;
+        }
+
+        const message = `Hello ${teacher.name}, this is a reminder for your confirmed demo class with student ${booking.studentName}. Please coordinate with the student. Thank you, Achievers Community.`;
+        
+        const phoneNumber = targetMobileNumber.replace(/[^0-9]/g, '');
+        const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
+        const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        logAdminAction(`Sent demo reminder to teacher ${teacher.name} for booking ${booking.id}`);
+    };
+
+
     const handleMaterialUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!materialTitle.trim() || !materialCategory || !firestore) return;
@@ -1197,6 +1224,17 @@ function AdminDashboardContent() {
                                             <p className="text-muted-foreground">via: <span className="font-semibold text-foreground">{booking.assignedTeacherName}</span></p>
                                             <p className="text-sm text-muted-foreground">Address: <span className="font-semibold text-foreground">{booking.assignedCoachingAddress}</span></p>
                                         </div>
+                                    )}
+                                    {booking.status === 'Confirmed' && type === 'demoClass' && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="mt-4"
+                                            onClick={() => handleSendDemoReminderToTeacher(booking)}
+                                        >
+                                            <MessageSquare className="mr-2 h-4 w-4" />
+                                            Send Reminder to Teacher
+                                        </Button>
                                     )}
                                 </div>
                             )}
