@@ -73,6 +73,7 @@ export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
   const firestore = useFirestore();
+  const { user } = useUser();
   const [counts, setCounts] = useState({
     teachers: '50+',
     students: '500+',
@@ -80,7 +81,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchCounts = async () => {
-        if (firestore) {
+        if (firestore && user) {
             try {
                 const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
                 const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
@@ -101,7 +102,7 @@ export default function HomePage() {
         }
     };
     fetchCounts();
-  }, [firestore]);
+  }, [firestore, user]);
 
   const features = [
       {

@@ -115,7 +115,7 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        allow read, write: if isTeacherOwnerOfBatch(batchId);
+        allow read, list, write: if isTeacherOwnerOfBatch(batchId);
       }
     }
     
