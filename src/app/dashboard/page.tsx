@@ -53,7 +53,7 @@ export default function DashboardPage() {
                 const currentCoins = userProfile.coins || 0;
                 const currentStreak = userProfile.streak || 0;
                 
-                let newStreak = currentStreak;
+                let newStreak = 1;
 
                 if (lastLoginDate) {
                     const lastLogin = new Date(lastLoginDate);
@@ -61,10 +61,10 @@ export default function DashboardPage() {
                     yesterday.setDate(today.getDate() - 1);
 
                     if (lastLogin.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
-                        // It's a consecutive day login
-                        newStreak = currentStreak + 1;
+                        // It's a consecutive day login, cycle the streak from 1-7
+                        newStreak = (currentStreak % 7) + 1;
                     } else {
-                        // Streak is broken
+                        // Streak is broken, reset to 1
                         newStreak = 1;
                     }
                 } else {
@@ -72,8 +72,8 @@ export default function DashboardPage() {
                     newStreak = 1;
                 }
 
-                // Calculate coin reward based on the new streak
-                const rewardIndex = (newStreak - 1) % dailyRewards.length;
+                // Calculate coin reward based on the new streak (which is now 1-7)
+                const rewardIndex = newStreak - 1;
                 const dailyCoinReward = dailyRewards[rewardIndex];
                 const newCoins = currentCoins + dailyCoinReward;
 
