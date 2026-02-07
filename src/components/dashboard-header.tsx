@@ -12,9 +12,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { 
-    Award, LogOut, User as UserIcon, Home, Menu,
+    Award, LogOut, User as UserIcon, Home, Menu, Sun, Moon,
     // Student Icons
     LayoutDashboard, Search, BookOpen, BookCheck, Bookmark, ShoppingBag,
     // Teacher Icons
@@ -22,7 +25,7 @@ import {
     // Admin Icons
     Users, Briefcase, MessageSquare, FileText, Gift, History
 } from 'lucide-react';
-import { ThemeToggle } from './theme-toggle';
+import { useTheme } from 'next-themes';
 
 
 interface UserProfile {
@@ -39,6 +42,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
   const auth = useAuth();
   const router = useRouter();
+  const { setTheme } = useTheme();
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -138,7 +142,6 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
                     </Link>
                 </div>
             )}
-            <ThemeToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
@@ -158,13 +161,32 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
                             <span>Profile</span>
                         </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Navigation</DropdownMenuLabel>
+                    {renderNavItems()}
+                    <DropdownMenuSeparator />
+                     <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                            <Sun className="mr-2 h-4 w-4" />
+                            <span>Theme</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => setTheme("light")}>
+                                Light
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTheme("dark")}>
+                                Dark
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTheme("system")}>
+                                System
+                            </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Logout</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Navigation</DropdownMenuLabel>
-                    {renderNavItems()}
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>

@@ -1,14 +1,16 @@
-
 'use client';
 
 import Link from 'next/link';
-import { Award, Menu, User, UserPlus, Globe } from 'lucide-react';
+import { Award, Menu, User, Globe, Sun, Moon } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
 import {
   Sheet,
@@ -19,7 +21,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { ThemeToggle } from './theme-toggle';
+import { useTheme } from 'next-themes';
 
 interface MainHeaderProps {
     currentLanguage: 'en' | 'hi';
@@ -27,6 +29,8 @@ interface MainHeaderProps {
 }
 
 export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProps) {
+    const { setTheme } = useTheme();
+
     return (
         <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b sticky top-0 z-50">
             <Link className="flex items-center justify-center gap-2" href="/">
@@ -36,7 +40,6 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-2 ml-auto">
-                <ThemeToggle />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -76,11 +79,37 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                 <Button asChild>
                   <Link href="/signup">Sign Up</Link>
                 </Button>
+
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Menu className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <Sun className="mr-2 h-4 w-4" />
+                                <span>Theme</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => setTheme("light")}>
+                                    Light
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                                    Dark
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setTheme("system")}>
+                                    System
+                                </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </nav>
 
             {/* Mobile Navigation */}
             <div className="md:hidden ml-auto flex items-center gap-2">
-                <ThemeToggle />
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="outline" size="icon">
@@ -102,7 +131,8 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                                 Main navigation menu.
                             </SheetDescription>
                         </SheetHeader>
-                        <div className="grid gap-2">
+                        <div className="grid gap-4">
+                            <p className="px-1 text-sm font-semibold text-muted-foreground">Language</p>
                             <div className="grid grid-cols-2 gap-2">
                                 <SheetClose asChild>
                                     <Button variant={currentLanguage === 'en' ? 'default' : 'outline'} onClick={() => onLanguageChange('en')}>English</Button>
@@ -111,7 +141,21 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                                     <Button variant={currentLanguage === 'hi' ? 'default' : 'outline'} onClick={() => onLanguageChange('hi')}>हिंदी</Button>
                                 </SheetClose>
                             </div>
-                            <hr className="my-4" />
+                             <hr className="my-2" />
+                             <p className="px-1 text-sm font-semibold text-muted-foreground">Theme</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                <SheetClose asChild>
+                                    <Button variant="outline" onClick={() => setTheme('light')}><Sun className="mr-2 h-4 w-4" />Light</Button>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <Button variant="outline" onClick={() => setTheme('dark')}><Moon className="mr-2 h-4 w-4" />Dark</Button>
+                                </SheetClose>
+                                 <SheetClose asChild>
+                                    <Button variant="outline" onClick={() => setTheme('system')}>System</Button>
+                                </SheetClose>
+                            </div>
+                            <hr className="my-2" />
+                            <p className="px-1 text-sm font-semibold text-muted-foreground">Account</p>
                             <SheetClose asChild>
                                 <Button asChild variant="outline" className="w-full justify-start text-base py-6">
                                     <Link href="/login">Student Login</Link>
