@@ -521,83 +521,77 @@ function AdminDashboardContent() {
     };
 
 
-    const handleMaterialUpload = async (e: React.FormEvent) => {
+    const handleMaterialUpload = (e: React.FormEvent) => {
         e.preventDefault();
         if (!materialTitle.trim() || !materialCategory || !firestore) return;
-    
+
+        // Start loading spinner
         setIsUploadingMaterial(true);
-    
-        try {
-            let materialData: Omit<FreeMaterial, 'id'>;
-    
-            if (uploadMethod === 'file') {
-                if (!materialFile || !storage) {
-                    alert('Please select a file to upload.');
-                    setIsUploadingMaterial(false);
-                    return;
+
+        const processUpload = async () => {
+            try {
+                let materialData: Omit<FreeMaterial, 'id'| 'createdAt'> & {createdAt: string};
+        
+                if (uploadMethod === 'file') {
+                    if (!materialFile || !storage) {
+                        alert('Please select a file to upload.');
+                        return;
+                    }
+                    const fileName = `${Date.now()}_${materialFile.name}`;
+                    const fileRef = ref(storage, `freeMaterials/${fileName}`);
+                    const uploadTask = await uploadBytes(fileRef, materialFile);
+                    const downloadURL = await getDownloadURL(uploadTask.ref);
+                    
+                    materialData = {
+                        title: materialTitle.trim(),
+                        description: materialDescription.trim(),
+                        fileURL: downloadURL,
+                        fileName: fileName,
+                        fileType: materialFile.type,
+                        category: materialCategory,
+                        createdAt: new Date().toISOString()
+                    };
+                } else { // uploadMethod is 'url'
+                    if (!materialUrl.trim()) {
+                        alert('Please enter a valid URL.');
+                        return;
+                    }
+        
+                    materialData = {
+                        title: materialTitle.trim(),
+                        description: materialDescription.trim(),
+                        fileURL: materialUrl.trim(),
+                        fileName: materialUrl.trim(),
+                        fileType: 'link',
+                        category: materialCategory,
+                        createdAt: new Date().toISOString()
+                    };
                 }
-                const fileName = `${Date.now()}_${materialFile.name}`;
-                const fileRef = ref(storage, `freeMaterials/${fileName}`);
-                const uploadTask = await uploadBytes(fileRef, materialFile);
-                const downloadURL = await getDownloadURL(uploadTask.ref);
-                
-                materialData = {
-                    title: materialTitle.trim(),
-                    description: materialDescription.trim(),
-                    fileURL: downloadURL,
-                    fileName: fileName,
-                    fileType: materialFile.type,
-                    category: materialCategory,
-                    createdAt: new Date().toISOString()
-                };
-            } else { // uploadMethod is 'url'
-                if (!materialUrl.trim()) {
-                    alert('Please enter a valid URL.');
-                    setIsUploadingMaterial(false);
-                    return;
-                }
-    
-                materialData = {
-                    title: materialTitle.trim(),
-                    description: materialDescription.trim(),
-                    fileURL: materialUrl.trim(),
-                    fileName: materialUrl.trim(),
-                    fileType: 'link',
-                    category: materialCategory,
-                    createdAt: new Date().toISOString()
-                };
+        
+                const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
+                logAdminAction(`Uploaded free material: "${materialData.title}"`, docRef.id);
+        
+            } catch (error) {
+                console.error("Error uploading free material:", error);
+                alert("Upload failed. Check console for details. This could be a permissions issue with storage rules.");
             }
-    
-            // Close dialog and reset form immediately after getting data
+        };
+
+        // Run the upload and then clean up the UI
+        processUpload().finally(() => {
             setIsUploadingMaterial(false);
             setIsUploadMaterialDialogOpen(false);
-            const titleToLog = materialTitle.trim(); // Capture before reset
             setMaterialTitle('');
             setMaterialDescription('');
             setMaterialFile(null);
             setMaterialCategory('');
             setMaterialUrl('');
             setUploadMethod('file');
-            if (document.getElementById('material-file-dialog')) {
-                (document.getElementById('material-file-dialog') as HTMLInputElement).value = '';
+            const fileInput = document.getElementById('material-file-dialog') as HTMLInputElement;
+            if (fileInput) {
+                fileInput.value = '';
             }
-    
-            // Perform Firestore write in the background
-            (async () => {
-                try {
-                    const docRef = await addDoc(collection(firestore, 'freeMaterials'), materialData);
-                    logAdminAction(`Uploaded free material: "${titleToLog}"`, docRef.id);
-                } catch (firestoreError) {
-                    console.error("Error writing material to Firestore:", firestoreError);
-                    // We can't easily show an alert here as the dialog is closed.
-                }
-            })();
-    
-        } catch (error) {
-            console.error("Error uploading free material:", error);
-            alert("Upload failed. Check console for details. This could be a permissions issue with storage rules.");
-            setIsUploadingMaterial(false); // Ensure loader stops on error
-        }
+        });
     };
     
     const handleDeleteMaterial = (material: FreeMaterial) => {

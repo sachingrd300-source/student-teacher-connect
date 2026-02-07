@@ -377,62 +377,60 @@ export default function BatchManagementPage() {
         }
     };
 
-    const handleFileUpload = async (e: React.FormEvent) => {
+    const handleFileUpload = (e: React.FormEvent) => {
         e.preventDefault();
         if (!materialFile || !materialTitle.trim() || !storage || !batchId || !user || !firestore) return;
     
         setIsUploading(true);
-        const fileName = `${Date.now()}_${materialFile.name}`;
-        const fileRef = ref(storage, `materials/${batchId}/${fileName}`);
+        const fileToUpload = materialFile;
+        const title = materialTitle.trim();
+        const description = materialDescription.trim();
     
-        try {
-            const uploadTask = await uploadBytes(fileRef, materialFile);
-            const downloadURL = await getDownloadURL(uploadTask.ref);
-    
-            // Prepare data and reset form immediately
-            const materialData = {
-                title: materialTitle.trim(),
-                description: materialDescription.trim(),
-                fileURL: downloadURL,
-                fileName: fileName,
-                fileType: materialFile.type,
-                batchId: batchId,
-                teacherId: user.uid,
-                createdAt: new Date().toISOString(),
-            };
-            const activityMessage = `New material uploaded: "${materialData.title}"`;
+        // Perform the upload in the background
+        (async () => {
+            const fileName = `${Date.now()}_${fileToUpload.name}`;
+            const fileRef = ref(storage, `materials/${batchId}/${fileName}`);
             
-            setIsUploading(false);
-            setMaterialTitle('');
-            setMaterialDescription('');
-            setMaterialFile(null);
-            if (document.getElementById('material-file')) {
-                (document.getElementById('material-file') as HTMLInputElement).value = '';
+            try {
+                const uploadTask = await uploadBytes(fileRef, fileToUpload);
+                const downloadURL = await getDownloadURL(uploadTask.ref);
+        
+                const materialData = {
+                    title: title,
+                    description: description,
+                    fileURL: downloadURL,
+                    fileName: fileName,
+                    fileType: fileToUpload.type,
+                    batchId: batchId,
+                    teacherId: user!.uid,
+                    createdAt: new Date().toISOString(),
+                };
+        
+                const firestoreBatch = writeBatch(firestore);
+                const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
+                firestoreBatch.set(doc(materialsColRef), materialData);
+        
+                const activityColRef = collection(firestore, 'batches', batchId, 'activity');
+                firestoreBatch.set(doc(activityColRef), {
+                    message: `New material uploaded: "${materialData.title}"`,
+                    createdAt: new Date().toISOString(),
+                });
+        
+                await firestoreBatch.commit();
+            } catch (error) {
+                console.error("Error during background material upload:", error);
+                alert("Upload failed. Check console for details. This might be a permission issue.");
+            } finally {
+                setIsUploading(false);
             }
-    
-            // Perform Firestore write in the background
-            (async () => {
-                try {
-                    const firestoreBatch = writeBatch(firestore);
-                    const materialsColRef = collection(firestore, 'batches', batchId, 'materials');
-                    const activityColRef = collection(firestore, 'batches', batchId, 'activity');
-                    
-                    firestoreBatch.set(doc(materialsColRef), materialData);
-                    firestoreBatch.set(doc(activityColRef), {
-                        message: activityMessage,
-                        createdAt: new Date().toISOString(),
-                    });
-            
-                    await firestoreBatch.commit();
-                } catch (firestoreError) {
-                    console.error("Error writing material to Firestore:", firestoreError);
-                }
-            })();
-    
-        } catch (error) {
-            console.error("Error during material upload:", error);
-            alert("Upload failed. Check console for details. This might be a permission issue.");
-            setIsUploading(false);
+        })();
+        
+        // Immediately reset the UI
+        setMaterialTitle('');
+        setMaterialDescription('');
+        setMaterialFile(null);
+        if (document.getElementById('material-file')) {
+            (document.getElementById('material-file') as HTMLInputElement).value = '';
         }
     };
     
