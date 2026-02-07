@@ -60,8 +60,10 @@ service cloud.firestore {
       let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
       // Allow specific fields for daily login updates
       let loginUpdateKeys = ['coins', 'streak', 'lastLoginDate'].toSet();
-      return changedKeys.difference(allowedKeys).size() == 0 ||
-             (request.resource.data.diff(resource.data).affectedKeys() - loginUpdateKeys).size() == 0;
+       if (request.resource.data.diff(resource.data).affectedKeys().hasAll(['coins', 'streak', 'lastLoginDate'])) {
+          return true;
+       }
+      return changedKeys.difference(allowedKeys).size() == 0;
     }
 
     function isUpdatingOwnTeacherProfile() {
@@ -115,7 +117,8 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        allow read, list, write: if isTeacherOwnerOfBatch(batchId);
+        allow read, list: if isTeacherOwnerOfBatch(batchId);
+        allow write: if isTeacherOwnerOfBatch(batchId);
       }
     }
     
@@ -173,7 +176,7 @@ service cloud.firestore {
     match /homeBookings/{bookingId} {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isAdmin() || (isTeacher() && request.auth.uid == resource.data.assignedTeacherId) || (isStudent() && request.auth.uid == resource.data.studentId);
-      allow list: if isAdmin() || isTeacher() || isStudent();
+      allow list: if isSignedIn();
       allow update: if isAdmin() || (isTeacher() && resource.data.assignedTeacherId == request.auth.uid);
       allow delete: if isAdmin();
     }
