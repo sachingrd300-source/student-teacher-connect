@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -14,7 +13,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Award, LogOut, User as UserIcon, Trophy, Home, Menu, PanelLeft } from 'lucide-react';
+import { 
+    Award, LogOut, User as UserIcon, Home, Menu,
+    // Student Icons
+    LayoutDashboard, Search, BookOpen, BookCheck, Bookmark, ShoppingBag,
+    // Teacher Icons
+    CalendarCheck, ShoppingCart,
+    // Admin Icons
+    Users, Briefcase, MessageSquare, FileText, Gift, History
+} from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 
 
@@ -27,10 +34,9 @@ interface UserProfile {
 
 interface DashboardHeaderProps {
   userProfile: UserProfile | null | undefined;
-  onMenuButtonClick?: () => void;
 }
 
-export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHeaderProps) {
+export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
   const auth = useAuth();
   const router = useRouter();
 
@@ -44,7 +50,71 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
     }
   };
   
-  const dashboardHomeLink = userProfile?.role === 'teacher' ? '/dashboard/teacher/coaching' : '/dashboard';
+  const dashboardHomeLink = userProfile?.role === 'teacher' ? '/dashboard/teacher/coaching' : userProfile?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student';
+
+  const studentNavItems = [
+    { href: '/dashboard/student', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/student/find-teachers', label: 'Find Teachers', icon: Search },
+    { href: '/dashboard/student/book-coaching-seat', label: 'Book Coaching Seat', icon: BookCheck },
+    { href: '/dashboard/student/book-home-teacher', label: 'Book Home Tutor', icon: Home },
+    { href: '/dashboard/student/free-materials', label: 'Free Materials', icon: BookOpen },
+    { href: '/dashboard/student/saved-materials', label: 'Saved Materials', icon: Bookmark },
+    { href: '/dashboard/student/shop', label: 'Shop', icon: ShoppingBag },
+  ];
+
+  const teacherNavItems = [
+    { href: '/dashboard/teacher/coaching', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/teacher/attendance', label: 'Attendance', icon: CalendarCheck },
+    { href: '/dashboard/teacher/apply-home-tutor', label: 'Home Tutor Program', icon: Home },
+    { href: '/dashboard/teacher/apply-verified-coaching', label: 'Achievers Community', icon: Award },
+    { href: '/dashboard/teacher/place-order', label: 'Place Order', icon: ShoppingCart },
+  ];
+
+  const adminNavItems = [
+    { view: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { view: 'users', label: 'Users', icon: Users },
+    { view: 'programs', label: 'Programs', icon: Briefcase },
+    { view: 'applications', label: 'Applications', icon: Briefcase }, // Re-using icon
+    { view: 'bookings', label: 'Bookings', icon: Home },
+    { view: 'orders', label: 'Orders', icon: ShoppingCart },
+    { view: 'support', label: 'Support', icon: MessageSquare },
+    { view: 'materials', label: 'Materials', icon: FileText },
+    { view: 'shop', label: 'Shop', icon: Gift },
+    { view: 'activity', label: 'Activity', icon: History },
+  ];
+
+  const renderNavItems = () => {
+      let items = [];
+      switch(userProfile?.role) {
+          case 'student':
+              items = studentNavItems;
+              break;
+          case 'teacher':
+              items = teacherNavItems;
+              break;
+          case 'admin':
+              // Admin uses a different structure with 'view'
+              return adminNavItems.map(item => (
+                <DropdownMenuItem key={item.view} asChild>
+                    <Link href={`/dashboard/admin?view=${item.view}`}>
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                    </Link>
+                </DropdownMenuItem>
+              ));
+          default:
+              return null;
+      }
+      return items.map(item => (
+        <DropdownMenuItem key={item.href} asChild>
+            <Link href={item.href}>
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.label}</span>
+            </Link>
+        </DropdownMenuItem>
+      ));
+  }
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -76,37 +146,25 @@ export function DashboardHeader({ userProfile, onMenuButtonClick }: DashboardHea
                         <span className="sr-only">Toggle user menu</span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>
                         <p>My Account</p>
                         <p className="text-sm font-normal text-muted-foreground">{userProfile?.name}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                     {userProfile?.role === 'teacher' && (
-                        <DropdownMenuItem asChild>
-                           <Link href="/dashboard/teacher/apply-home-tutor">
-                                <Home className="mr-2 h-4 w-4" />
-                                <span>Home Tutor Program</span>
-                            </Link>
-                        </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem asChild>
                         <Link href="/dashboard/profile">
                             <UserIcon className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                         </Link>
                     </DropdownMenuItem>
-                    {onMenuButtonClick && (
-                        <DropdownMenuItem onClick={onMenuButtonClick} className="hidden md:flex">
-                            <PanelLeft className="h-4 w-4 mr-2" />
-                            <span>Toggle Sidebar</span>
-                        </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Logout</span>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Navigation</DropdownMenuLabel>
+                    {renderNavItems()}
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>

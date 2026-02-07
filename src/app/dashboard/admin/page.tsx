@@ -18,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
@@ -88,8 +87,14 @@ function AdminDashboardContent() {
 
     const initialView = searchParams.get('view') as AdminView | null;
     const [view, setView] = useState<AdminView>(initialView || 'dashboard');
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+
+    useEffect(() => {
+        const currentView = searchParams.get('view') as AdminView | null;
+        if (currentView && currentView !== view) {
+            setView(currentView);
+        }
+    }, [searchParams, view]);
+
 
     // --- Form States ---
     const [materialTitle, setMaterialTitle] = useState('');
@@ -794,63 +799,8 @@ function AdminDashboardContent() {
         }
         return date.toLocaleString('en-US', options);
     };
-    
-    const handleViewChange = (newView: AdminView) => {
-        setView(newView);
-        if (isSidebarOpen) {
-            setSidebarOpen(false);
-        }
-    };
 
     // --- Render Functions ---
-    const navItems = [
-        { view: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
-        { view: 'users' as AdminView, label: 'Users', icon: Users },
-        { view: 'programs' as AdminView, label: 'Programs', icon: Briefcase },
-        { view: 'applications' as AdminView, label: 'Applications', icon: Briefcase },
-        { view: 'bookings' as AdminView, label: 'Bookings', icon: Home },
-        { view: 'orders' as AdminView, label: 'Orders', icon: ShoppingBag },
-        { view: 'support' as AdminView, label: 'Support', icon: MessageSquare },
-        { view: 'materials' as AdminView, label: 'Materials', icon: FileText },
-        { view: 'shop' as AdminView, label: 'Shop', icon: Gift },
-        { view: 'activity' as AdminView, label: 'Activity', icon: History },
-    ];
-    
-    const renderSidebar = ({ forMobile = false }: { forMobile?: boolean }) => {
-        const Wrapper = (props: { children: React.ReactNode; }) =>
-            forMobile ? <SheetClose asChild>{props.children}</SheetClose> : <>{props.children}</>;
-
-        return (
-            <aside className="flex flex-col gap-2 p-4">
-                <div className="flex flex-col gap-1">
-                     {navItems.map(item => (
-                        <Wrapper key={item.view}>
-                             <Button variant={view === item.view ? 'secondary' : 'ghost'} className="justify-start w-full" onClick={() => handleViewChange(item.view)}>
-                                <item.icon className="mr-2 h-4 w-4" />
-                                {item.label}
-                                {item.view === 'applications' && totalPendingApps > 0 && (
-                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        {totalPendingApps}
-                                    </span>
-                                )}
-                                 {item.view === 'orders' && orders?.filter(o => o.status === 'pending').length > 0 && (
-                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        {orders.filter(o => o.status === 'pending').length}
-                                    </span>
-                                )}
-                                {item.view === 'support' && supportTickets?.filter(t => t.status === 'open').length > 0 && (
-                                    <span className="absolute right-4 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                        {supportTickets.filter(t => t.status === 'open').length}
-                                    </span>
-                                )}
-                            </Button>
-                        </Wrapper>
-                    ))}
-                </div>
-            </aside>
-        );
-    };
-    
     const renderDashboardView = () => (
         <motion.div 
             className="grid gap-8"
@@ -1716,40 +1666,10 @@ function AdminDashboardContent() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardHeader userProfile={userProfile} onMenuButtonClick={() => setIsSidebarVisible(!isSidebarVisible)} />
+            <DashboardHeader userProfile={userProfile} />
             <div className="flex flex-1">
-                <AnimatePresence>
-                    {isSidebarVisible && (
-                        <motion.div
-                            initial={{ x: '-100%', width: 0 }}
-                            animate={{ x: 0, width: '16rem' }}
-                            exit={{ x: '-100%', width: 0 }}
-                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                            className="hidden md:block fixed top-16 left-0 h-[calc(100vh-4rem)] border-r w-64 bg-muted/40"
-                        >
-                            {renderSidebar({ forMobile: false })}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                <main className={`flex-1 p-4 md:p-8 transition-all duration-300 ${isSidebarVisible ? 'md:ml-64' : 'ml-0'}`}>
+                <main className="flex-1 p-4 md:p-8">
                      <div className="max-w-6xl mx-auto">
-                        <div className="md:hidden mb-4 flex items-center justify-between">
-                            <h1 className="text-xl font-bold font-serif capitalize">{view}</h1>
-                             <Sheet open={isSidebarOpen} onOpenChange={setSidebarOpen}>
-                                <SheetTrigger asChild>
-                                    <Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button>
-                                </SheetTrigger>
-                                <SheetContent side="left" className="w-64 p-0">
-                                    <SheetHeader className="p-4 border-b text-left">
-                                        <SheetTitle>Admin Menu</SheetTitle>
-                                        <SheetDescription>
-                                          Navigate through the admin sections.
-                                        </SheetDescription>
-                                    </SheetHeader>
-                                    {renderSidebar({ forMobile: true })}
-                                </SheetContent>
-                            </Sheet>
-                        </div>
                         {renderCurrentView()}
                     </div>
                 </main>
