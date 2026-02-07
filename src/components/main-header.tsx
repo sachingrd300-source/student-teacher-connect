@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, User, Globe, Sun, Moon, Instagram, Facebook } from 'lucide-react';
+import { Menu, User, Globe, Sun, Moon, Instagram, Facebook, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -41,6 +41,9 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-2 ml-auto">
+                <Button variant="ghost" asChild>
+                    <Link href="/about">About Us</Link>
+                </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -156,7 +159,12 @@ export function MainHeader({ currentLanguage, onLanguageChange }: MainHeaderProp
                                 </SheetClose>
                             </div>
                             <hr className="my-2" />
-                            <p className="px-1 text-sm font-semibold text-muted-foreground">Account</p>
+                            <p className="px-1 text-sm font-semibold text-muted-foreground">Menu</p>
+                             <SheetClose asChild>
+                                <Button asChild variant="outline" className="w-full justify-start text-base py-6">
+                                    <Link href="/about"><Info className="mr-3 h-5 w-5" />About Us</Link>
+                                </Button>
+                            </SheetClose>
                             <SheetClose asChild>
                                 <Button asChild variant="outline" className="w-full justify-start text-base py-6">
                                     <Link href="/login">Student Login</Link>
