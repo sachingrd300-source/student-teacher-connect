@@ -58,6 +58,13 @@ export default function AboutPage() {
                     <p className="text-muted-foreground">Hum smart management systems ka use karte hain taaki students ki progress track ho sake aur unhe modern education mil sake.</p>
                   </div>
                 </div>
+                <div className="flex items-start gap-4">
+                  <CheckCircle className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold">Platform for Coaching Centers</h3>
+                    <p className="text-muted-foreground">Private coaching centers bhi humare platform se judkar apne students ke liye hamari technology ka free mein upyog kar sakte hain. Isse teacher-student connectivity behtar hoti hai aur management aasan ho jaata hai.</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
