@@ -72,6 +72,36 @@ interface TeacherProfile {
 export default function HomePage() {
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const t = translations[language];
+  const firestore = useFirestore();
+  const [counts, setCounts] = useState({
+    teachers: '50+',
+    students: '500+',
+  });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+        if (firestore) {
+            try {
+                const teachersQuery = query(collection(firestore, 'users'), where('role', '==', 'teacher'));
+                const studentsQuery = query(collection(firestore, 'users'), where('role', '==', 'student'));
+                
+                const [teacherSnapshot, studentSnapshot] = await Promise.all([
+                    getCountFromServer(teachersQuery),
+                    getCountFromServer(studentsQuery)
+                ]);
+
+                setCounts({
+                    teachers: teacherSnapshot.data().count.toString() + '+',
+                    students: studentSnapshot.data().count.toString() + '+',
+                });
+            } catch (error) {
+                console.warn("Could not fetch real-time user counts. Displaying static data.", error);
+                // Falls back to static data if not logged in or other error
+            }
+        }
+    };
+    fetchCounts();
+  }, [firestore]);
 
   const features = [
       {
@@ -410,12 +440,12 @@ export default function HomePage() {
             >
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Briefcase className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-5xl font-bold">50+</p>
+                <p className="text-5xl font-bold">{counts.teachers}</p>
                 <p className="text-muted-foreground mt-2">{t.teachersLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
                 <Users className="h-10 w-10 text-primary mx-auto mb-4"/>
-                <p className="text-5xl font-bold">500+</p>
+                <p className="text-5xl font-bold">{counts.students}</p>
                 <p className="text-muted-foreground mt-2">{t.studentsLabel}</p>
               </motion.div>
               <motion.div variants={fadeInUp} className="p-8 bg-card rounded-2xl shadow-lg text-center">
