@@ -125,15 +125,6 @@ export default function CoachingManagementPage() {
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
 
-    const assignedBookingsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid || profileLoading) return null;
-        if (userProfile?.teacherWorkStatus === 'achievers_associate') return null; // Community associates don't manage their own bookings
-        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-    }, [firestore, user?.uid, userProfile, profileLoading]);
-    const { data: assignedBookings, isLoading: bookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
-
-    const demoRequests = useMemo(() => assignedBookings?.filter(b => b.bookingType === 'demoClass') || [], [assignedBookings]);
-
     useEffect(() => {
         const hour = new Date().getHours();
         if (hour < 12) {
@@ -247,18 +238,11 @@ export default function CoachingManagementPage() {
         await firestoreBatch.commit();
     };
 
-    const handleUpdateBookingStatus = (bookingId: string, status: 'Confirmed' | 'Completed' | 'Cancelled') => {
-        if (!firestore) return;
-        const bookingRef = doc(firestore, 'homeBookings', bookingId);
-        updateDoc(bookingRef, { status })
-            .catch(error => console.error("Error updating booking status:", error));
-    };
-
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || bookingsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -413,54 +397,6 @@ export default function CoachingManagementPage() {
                             )}
                         </CardContent>
                     </Card>
-                    {userProfile?.teacherWorkStatus !== 'achievers_associate' && (
-                        <Card className='rounded-2xl shadow-lg'>
-                            <CardHeader>
-                                <CardTitle>Assigned Bookings & Demos ({demoRequests.length})</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {demoRequests.length > 0 ? (
-                                    <div className="grid gap-4">
-                                        {demoRequests.map(booking => (
-                                            <div key={booking.id} className="p-4 rounded-lg border transition-all duration-300 hover:shadow-xl">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <p className="font-semibold">{booking.studentName}</p>
-                                                        <p className="text-sm text-muted-foreground">Subject: {booking.subject || 'N/A'}</p>
-                                                        <p className="text-xs text-muted-foreground mt-1">Received: {formatDate(booking.createdAt)}</p>
-                                                    </div>
-                                                    <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                                        booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                        booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
-                                                        booking.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                    }`}>
-                                                        {booking.status}
-                                                    </span>
-                                                </div>
-                                                <div className="flex gap-2 justify-end mt-4">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="outline" size="sm">Manage</Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent>
-                                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking.id, 'Confirmed')}>Confirm</DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateBookingStatus(booking.id, 'Completed')}>Mark as Completed</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive" onClick={() => handleUpdateBookingStatus(booking.id, 'Cancelled')}>Cancel</DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <h3 className="text-lg font-semibold">No Demo Requests</h3>
-                                        <p className="text-muted-foreground mt-1">New demo class requests will appear here.</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
                 </motion.div>
 
                 <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
