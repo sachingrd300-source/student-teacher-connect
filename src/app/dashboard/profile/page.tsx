@@ -240,7 +240,7 @@ export default function ProfilePage() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Profile...</p>
             </div>
         );
@@ -394,7 +394,7 @@ export default function ProfilePage() {
                                     {isCommunityAssociate && (
                                         <div className="p-3 bg-accent/50 text-accent-foreground rounded-lg text-sm flex items-start gap-3">
                                             <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                                            <div>As an Achievers Community Associate, some details like your fee, coaching name, and coaching address are managed by the admin. You can still edit other details like your bio and subject.</div>
+                                            <div>As an Achiever's Community Associate, some details like your fee, coaching name, and coaching address are managed by the admin. You can still edit other details like your bio and subject.</div>
                                         </div>
                                     )}
                                     <div className="grid gap-2">
@@ -487,7 +487,7 @@ export default function ProfilePage() {
                                                         onCheckedChange={(checked) => setWorkStatus(prev => ({...prev, achieversAssociate: !!checked}))}
                                                     />
                                                     <Label htmlFor="achieversAssociate" className="font-normal cursor-pointer">
-                                                        Join Achievers Community (अचीवर्स कम्युनिटी सहयोगी)
+                                                        Join Achiever's Community (अचीवर्स कम्युनिटी सहयोगी)
                                                     </Label>
                                                 </div>
                                             </div>
@@ -496,9 +496,9 @@ export default function ProfilePage() {
                                         <div className="grid gap-2">
                                             <Label>Business/Work Status</Label>
                                             <p className="text-sm font-medium capitalize">
-                                                {(userProfile.teacherWorkStatus === 'both' && 'Own Coaching & Achievers Community Associate') ||
+                                                {(userProfile.teacherWorkStatus === 'both' && "Own Coaching & Achiever's Community Associate") ||
                                                 (userProfile.teacherWorkStatus === 'own_coaching' && 'Own Coaching Center') ||
-                                                (userProfile.teacherWorkStatus === 'achievers_associate' && 'Achievers Community Associate') ||
+                                                (userProfile.teacherWorkStatus === 'achievers_associate' && "Achiever's Community Associate") ||
                                                 'Not set'}
                                             </p>
                                         </div>

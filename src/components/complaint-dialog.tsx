@@ -52,7 +52,7 @@ export function ComplaintDialog({ isOpen, onClose, student, teacherName }: Compl
             const targetMobileNumber = studentData.parentMobileNumber || studentData.mobileNumber;
 
             if (targetMobileNumber) {
-                const fullMessage = `Hello, this is a message from ${teacherName} regarding your child, ${student.studentName}:\n\n"${complaintMessage.trim()}"\n\nPlease contact us for further details.\n\nThank you,\nAchievers Community`;
+                const fullMessage = `Hello, this is a message from ${teacherName} regarding your child, ${student.studentName}:\n\n"${complaintMessage.trim()}"\n\nPlease contact us for further details.\n\nThank you,\nAchiever's Community`;
                 const phoneNumber = targetMobileNumber.replace(/[^0-9]/g, '');
                 const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
                 const whatsappUrl = `https://wa.me/${formattedPhoneNumber}?text=${encodeURIComponent(fullMessage)}`;

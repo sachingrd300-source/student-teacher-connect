@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
@@ -444,7 +445,7 @@ export default function CoachingManagementPage() {
 
                     <Card className='rounded-2xl shadow-lg'>
                         <CardHeader>
-                            <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achievers Community Program</CardTitle>
+                            <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-primary"/> Achiever's Community Program</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {isCommunityAssociate ? (

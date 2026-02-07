@@ -124,7 +124,7 @@ function AdminDashboardContent() {
     const [digitalUploadMethod, setDigitalUploadMethod] = useState<'file' | 'url'>('file');
 
 
-    // Achievers Edit State
+    // Achiever's Edit State
     const [editingAchiever, setEditingAchiever] = useState<UserProfile | null>(null);
     const [achieverFormState, setAchieverFormState] = useState({ fee: '', coachingAddress: '', coachingCenterName: '' });
     const [isUpdatingAchiever, setIsUpdatingAchiever] = useState(false);
@@ -512,7 +512,7 @@ function AdminDashboardContent() {
             return;
         }
 
-        const message = `Hello ${teacher.name}, this is a reminder for your confirmed demo class with student ${booking.studentName}. Please coordinate with the student. Thank you, Achievers Community.`;
+        const message = `Hello ${teacher.name}, this is a reminder for your confirmed demo class with student ${booking.studentName}. Please coordinate with the student. Thank you, Achiever's Community.`;
         
         const phoneNumber = targetMobileNumber.replace(/[^0-9]/g, '');
         const formattedPhoneNumber = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
@@ -804,7 +804,7 @@ function AdminDashboardContent() {
     if (isLoading || !userProfile) {
         return (
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         );
@@ -1503,7 +1503,7 @@ function AdminDashboardContent() {
                 <CardContent>
                     <Tabs defaultValue="achievers" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="achievers">Achievers Community</TabsTrigger>
+                            <TabsTrigger value="achievers">Achiever's Community</TabsTrigger>
                             <TabsTrigger value="homeTutors">Home Tutors</TabsTrigger>
                         </TabsList>
                         <TabsContent value="achievers" className="mt-4">
@@ -1530,7 +1530,7 @@ function AdminDashboardContent() {
                                 </div>
                             ) : (
                                 <div className="text-center py-12">
-                                    <p className="text-muted-foreground">No teachers have been approved for the Achievers Community program yet.</p>
+                                    <p className="text-muted-foreground">No teachers have been approved for the Achiever's Community program yet.</p>
                                 </div>
                             )}
                         </TabsContent>
@@ -1795,7 +1795,7 @@ function AdminDashboardContent() {
                     <DialogHeader>
                         <DialogTitle>Edit Profile for {editingAchiever?.name}</DialogTitle>
                         <DialogDescription>
-                            As this teacher is part of the Achievers Community, you can set their public-facing details.
+                            As this teacher is part of the Achiever's Community, you can set their public-facing details.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -1857,7 +1857,7 @@ export default function AdminDashboardPage() {
     return (
         <Suspense fallback={
             <div className="flex h-screen flex-col items-center justify-center bg-background gap-4">
-                <Image src="/logo.png" alt="Achievers Community Logo" width={80} height={80} className="animate-pulse" />
+                <Image src="/logo.png" alt="Achiever's Community Logo" width={80} height={80} className="animate-pulse" />
                 <p className="text-muted-foreground">Loading Admin Portal...</p>
             </div>
         }>
@@ -1865,5 +1865,3 @@ export default function AdminDashboardPage() {
         </Suspense>
     );
 }
-
-    

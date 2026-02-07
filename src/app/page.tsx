@@ -45,7 +45,7 @@ const testimonialsData = [
     name: "Priya Sharma",
     roleKey: "testimonialRoleMathsTeacher",
     avatar: "https://picsum.photos/seed/priya/100/100",
-    text: "Achievers Community has been a game-changer. I get a steady stream of students, and the platform makes management effortless."
+    text: "Achiever's Community has been a game-changer. I get a steady stream of students, and the platform makes management effortless."
   },
   {
     name: "Rohan Mehra",
@@ -375,7 +375,7 @@ export default function HomePage() {
                 >
                     <Image 
                         src={placeholderImages.dashboardPreview.src} 
-                        alt="A mockup of the Achievers Community dashboard on a laptop screen."
+                        alt="A mockup of the Achiever's Community dashboard on a laptop screen."
                         width={placeholderImages.dashboardPreview.width}
                         height={placeholderImages.dashboardPreview.height}
                         className="rounded-lg shadow-2xl"
@@ -527,7 +527,7 @@ export default function HomePage() {
       <footer className="py-8 bg-background border-t">
         <div className="container px-4 md:px-6 text-center text-muted-foreground">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={fadeInUp}>
-            <p>© {new Date().getFullYear()} Achievers Community. All Rights Reserved.</p>
+            <p>© {new Date().getFullYear()} Achiever's Community. All Rights Reserved.</p>
           </motion.div>
         </div>
       </footer>

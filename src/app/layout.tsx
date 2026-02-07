@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Achievers Community",
+  title: "Achiever's Community",
   description: "Join the best community of home tutors in Giridih. Find opportunities and grow with us.",
 };
 

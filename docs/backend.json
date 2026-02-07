@@ -346,7 +346,7 @@
     "VerifiedCoachingApplication": {
       "title": "Community Associate Application",
       "type": "object",
-      "description": "Represents a teacher's application to join the Achievers Community as a verified associate.",
+      "description": "Represents a teacher's application to join the Achiever's Community as a verified associate.",
       "properties": {
         "teacherId": { "type": "string" },
         "teacherName": { "type": "string" },
@@ -534,7 +534,7 @@
     },
      "/verifiedCoachingApplications/{applicationId}": {
       "schema": { "$ref": "#/entities/VerifiedCoachingApplication" },
-      "description": "Stores applications from teachers to join the Achievers Community."
+      "description": "Stores applications from teachers to join the Achiever's Community."
     },
     "/batches/{batchId}/activity/{activityId}": {
       "schema": { "$ref": "#/entities/Activity" },

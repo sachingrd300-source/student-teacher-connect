@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -134,7 +135,7 @@ export default function ApplyCommunityAssociatePage() {
             return (
                 <Card className="rounded-2xl shadow-lg">
                     <CardHeader>
-                        <CardTitle>Apply to be an Achievers Community Associate</CardTitle>
+                        <CardTitle>Apply to be an Achiever's Community Associate</CardTitle>
                         <CardDescription>Please fill out your details below. This will be used for your public profile if your application is approved.</CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSubmitApplication}>
