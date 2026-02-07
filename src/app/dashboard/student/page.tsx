@@ -41,19 +41,6 @@ interface Enrollment {
     approvedAt?: string;
 }
 
-interface HomeBooking {
-    id: string;
-    studentId: string;
-    status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
-    assignedTeacherName?: string;
-    assignedTeacherMobile?: string;
-    assignedTeacherAddress?: string;
-    createdAt: string;
-    bookingType: 'homeTutor' | 'coachingCenter';
-    assignedCoachingCenterName?: string;
-    assignedCoachingAddress?: string;
-}
-
 interface Fee {
     id: string;
     batchId: string;
@@ -133,19 +120,6 @@ export default function StudentDashboardPage() {
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
     
-    const homeBookingsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(
-            collection(firestore, "homeBookings"),
-            where("studentId", "==", user.uid)
-        );
-    }, [firestore, user]);
-    const { data: homeBookings, isLoading: homeBookingsLoading } = useCollection<HomeBooking>(homeBookingsQuery);
-
-    const activeBookings = useMemo(() => {
-        return homeBookings?.filter(b => b.status !== 'Completed' && b.status !== 'Cancelled').sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
-    }, [homeBookings]);
-
     const unpaidFeesQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return query(
@@ -230,7 +204,7 @@ export default function StudentDashboardPage() {
         }
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || homeBookingsLoading || feesLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || feesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -428,70 +402,6 @@ export default function StudentDashboardPage() {
                                 ))
                             ) : (
                                 <p className="text-sm text-center text-muted-foreground py-8">No pending fees. Great job! 🎉</p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="rounded-2xl shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="flex items-center"><Home className="mr-3 h-5 w-5 text-primary"/> My Active Bookings</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            {homeBookingsLoading ? (
-                                <div className="flex justify-center items-center py-8">
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                </div>
-                            ) : activeBookings.length > 0 ? (
-                                activeBookings.map(booking => (
-                                    <div key={booking.id} className="p-4 rounded-lg border bg-background transition-all duration-300 hover:shadow-md hover:border-primary/50">
-                                        <p className="font-semibold text-sm">{booking.bookingType === 'homeTutor' ? 'Home Tutor Request' : 'Coaching Center Request'}</p>
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-1 gap-2">
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Requested on {formatDate(booking.createdAt)}</p>
-                                            </div>
-                                            <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                                booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                booking.status === 'Awaiting Payment' ? 'bg-orange-100 text-orange-800' :
-                                                booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {booking.status}
-                                            </span>
-                                        </div>
-                                        {(booking.status === 'Confirmed' || booking.status === 'Awaiting Payment') && (
-                                            booking.bookingType === 'homeTutor' ? (
-                                                booking.assignedTeacherName && (
-                                                    <div className="mt-3 pt-3 border-t grid gap-1">
-                                                        <p className="text-sm text-muted-foreground">Assigned Teacher:</p>
-                                                        <p className="font-semibold text-primary">{booking.assignedTeacherName}</p>
-                                                        {booking.assignedTeacherMobile && <p className="text-xs text-muted-foreground">Mobile: {booking.assignedTeacherMobile}</p>}
-                                                        {booking.assignedTeacherAddress && <p className="text-xs text-muted-foreground">Address: {booking.assignedTeacherAddress}</p>}
-                                                    </div>
-                                                )
-                                            ) : ( // coachingCenter
-                                                booking.assignedCoachingCenterName && (
-                                                    <div className="mt-3 pt-3 border-t">
-                                                        <p className="text-sm text-muted-foreground">Assigned Center:</p>
-                                                        <p className="font-semibold text-primary">{booking.assignedCoachingCenterName}</p>
-                                                        <p className="text-xs text-muted-foreground mt-1">Teacher: {booking.assignedTeacherName}</p>
-                                                        <p className="text-xs text-muted-foreground">Address: {booking.assignedCoachingAddress}</p>
-                                                    </div>
-                                                )
-                                            )
-                                        )}
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-8">
-                                    <p className="text-sm text-muted-foreground mb-3">You have no active bookings.</p>
-                                    <div className="flex gap-2 justify-center">
-                                        <Button asChild size="sm">
-                                            <Link href="/dashboard/student/book-home-teacher">Book Home Tutor</Link>
-                                        </Button>
-                                         <Button asChild size="sm" variant="outline">
-                                            <Link href="/dashboard/student/book-coaching-seat">Book Coaching Seat</Link>
-                                        </Button>
-                                    </div>
-                                </div>
                             )}
                         </CardContent>
                     </Card>

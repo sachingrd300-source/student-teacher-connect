@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award, Building2 } from 'lucide-react';
+import { Loader2, PlusCircle, Clipboard, Settings, School, UserCheck, ArrowLeft, Check, X, Users, BookCopy, Home, Briefcase, CheckCircle, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -43,21 +43,6 @@ interface Enrollment {
     createdAt: string;
     approvedAt?: string;
 }
-
-interface HomeBooking {
-    id: string;
-    studentId: string;
-    studentName: string;
-    mobileNumber: string;
-    studentAddress: string;
-    studentClass: string;
-    subject?: string;
-    fatherName?: string;
-    status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
-    createdAt: string;
-    bookingType: 'homeTutor' | 'coachingCenter' | 'demoClass';
-}
-
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -109,7 +94,6 @@ export default function CoachingManagementPage() {
     const [newBatchName, setNewBatchName] = useState('');
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
     const [greeting, setGreeting] = useState('');
-    const [updatingBookingId, setUpdatingBookingId] = useState<string | null>(null);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -129,12 +113,6 @@ export default function CoachingManagementPage() {
         return query(collection(firestore, 'enrollments'), where('teacherId', '==', user.uid));
     }, [firestore, user?.uid]);
     const { data: enrollments, isLoading: enrollmentsLoading } = useCollection<Enrollment>(enrollmentsQuery);
-
-    const assignedBookingsQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid), orderBy('createdAt', 'desc'));
-    }, [firestore, user?.uid]);
-    const { data: assignedBookings, isLoading: assignedBookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -249,25 +227,11 @@ export default function CoachingManagementPage() {
         await firestoreBatch.commit();
     };
 
-    const handleUpdateBookingStatus = async (booking: HomeBooking, status: 'Confirmed' | 'Completed' | 'Cancelled') => {
-        if (!firestore) return;
-        setUpdatingBookingId(booking.id);
-        const bookingRef = doc(firestore, 'homeBookings', booking.id);
-        try {
-            await updateDoc(bookingRef, { status });
-        } catch (error) {
-            console.error("Error updating booking status:", error);
-            alert("Failed to update status. Please check permissions.");
-        } finally {
-            setUpdatingBookingId(null);
-        }
-    };
-
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
-    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading || assignedBookingsLoading;
+    const isLoading = isUserLoading || profileLoading || enrollmentsLoading || batchesLoading;
 
     if (isLoading || !userProfile) {
         return (
@@ -301,7 +265,7 @@ export default function CoachingManagementPage() {
             </motion.div>
 
             <motion.div
-                    className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-8"
+                    className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-8"
                     initial="hidden"
                     animate="visible"
                     variants={staggerContainer(0.1, 0.2)}
@@ -317,18 +281,6 @@ export default function CoachingManagementPage() {
                          <p className="text-xs text-muted-foreground">in your batches</p>
                     </CardContent>
                 </Card>
-                </motion.div>
-                 <motion.div variants={fadeInUp}>
-                    <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Assigned Students</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{assignedBookings?.length || 0}</div>
-                            <p className="text-xs text-muted-foreground">from admin</p>
-                        </CardContent>
-                    </Card>
                 </motion.div>
                 <motion.div variants={fadeInUp}>
                 <Card className='rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'>
@@ -434,76 +386,6 @@ export default function CoachingManagementPage() {
                             )}
                         </CardContent>
                     </Card>
-
-                    <Card className="rounded-2xl shadow-lg">
-                        <CardHeader>
-                            <CardTitle>Assigned Bookings & Demos ({assignedBookings?.length || 0})</CardTitle>
-                            <CardDescription>Students assigned by admin, or demo requests from students.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {assignedBookingsLoading ? (
-                                <div className="flex justify-center items-center py-8">
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                </div>
-                            ) : assignedBookings && assignedBookings.length > 0 ? (
-                                <div className="grid gap-4">
-                                    {assignedBookings.map(booking => (
-                                        <div key={booking.id} className="p-4 rounded-lg border bg-background transition-colors hover:bg-accent/50">
-                                            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                                                <div>
-                                                    <p className="font-semibold">{booking.studentName} <span className="text-sm font-normal text-muted-foreground">({booking.studentClass})</span></p>
-                                                    <p className="text-sm text-muted-foreground">{booking.subject}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">Contact: {booking.mobileNumber}</p>
-                                                </div>
-                                                <div className="flex flex-col items-end gap-2 self-start sm:self-center">
-                                                    <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                                        booking.bookingType === 'demoClass' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300' :
-                                                        booking.bookingType === 'homeTutor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                                    }`}>
-                                                        {booking.bookingType === 'demoClass' ? 'Demo Request' : booking.bookingType === 'homeTutor' ? 'Home Tutor' : 'Coaching'}
-                                                    </span>
-                                                    <span className={`text-xs font-bold py-1 px-2 rounded-full ${
-                                                        booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                        booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                                    }`}>
-                                                        {booking.status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            {booking.status === 'Pending' && (
-                                                <div className="mt-4 flex flex-wrap gap-2">
-                                                    <Button size="sm" onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')} disabled={updatingBookingId === booking.id}>
-                                                        {updatingBookingId === booking.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
-                                                        Confirm
-                                                    </Button>
-                                                    <Button size="sm" variant="destructive" onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')} disabled={updatingBookingId === booking.id}>
-                                                        <X className="mr-2 h-4 w-4" />
-                                                        Cancel
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" asChild>
-                                                        <a href={`https://wa.me/${booking.mobileNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer">Contact Student</a>
-                                                    </Button>
-                                                </div>
-                                            )}
-                                            {booking.status === 'Confirmed' && (
-                                                <div className="mt-4 flex flex-wrap gap-2">
-                                                    <Button size="sm" onClick={() => handleUpdateBookingStatus(booking, 'Completed')} disabled={updatingBookingId === booking.id}>
-                                                        {updatingBookingId === booking.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                                        Mark as Completed
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <p className="text-muted-foreground">You have no assigned bookings or demo requests.</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
                 </motion.div>
 
                 <motion.div variants={fadeInUp} className="lg:col-span-1 grid gap-8 content-start">
