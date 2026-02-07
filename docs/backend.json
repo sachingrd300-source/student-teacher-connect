@@ -241,7 +241,7 @@
         "bookingType": {
             "type": "string",
             "description": "The type of booking requested by the student.",
-            "enum": ["homeTutor", "coachingCenter"]
+            "enum": ["homeTutor", "coachingCenter", "demoClass"]
         },
         "tuitionType": {
             "type": "string",

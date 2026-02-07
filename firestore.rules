@@ -115,7 +115,7 @@ service cloud.firestore {
       }
 
       match /attendance/{attendanceId} {
-        allow read, write: if isAdmin() || isTeacherOwnerOfBatch(batchId);
+        allow read, write: if isTeacherOwnerOfBatch(batchId);
       }
     }
     
@@ -174,7 +174,8 @@ service cloud.firestore {
       allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
       allow get: if isAdmin() || (isTeacher() && request.auth.uid == resource.data.assignedTeacherId) || (isStudent() && request.auth.uid == resource.data.studentId);
       allow list: if isAdmin() || isTeacher() || isStudent();
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || (isTeacher() && resource.data.assignedTeacherId == request.auth.uid);
+      allow delete: if isAdmin();
     }
     
     match /homeTutorApplications/{applicationId} {

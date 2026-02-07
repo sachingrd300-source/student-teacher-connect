@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, deleteDoc, writeBatch, arrayUnion, orderBy, limit, updateDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ interface HomeBooking {
     fatherName?: string;
     status: 'Pending' | 'Awaiting Payment' | 'Confirmed' | 'Completed' | 'Cancelled';
     createdAt: string;
-    bookingType: 'homeTutor' | 'coachingCenter';
+    bookingType: 'homeTutor' | 'coachingCenter' | 'demoClass';
 }
 
 
@@ -109,6 +109,7 @@ export default function CoachingManagementPage() {
     const [newBatchName, setNewBatchName] = useState('');
     const [isCreatingBatch, setIsCreatingBatch] = useState(false);
     const [greeting, setGreeting] = useState('');
+    const [updatingBookingId, setUpdatingBookingId] = useState<string | null>(null);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -131,7 +132,7 @@ export default function CoachingManagementPage() {
 
     const assignedBookingsQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid));
+        return query(collection(firestore, 'homeBookings'), where('assignedTeacherId', '==', user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user?.uid]);
     const { data: assignedBookings, isLoading: assignedBookingsLoading } = useCollection<HomeBooking>(assignedBookingsQuery);
 
@@ -246,6 +247,20 @@ export default function CoachingManagementPage() {
         });
 
         await firestoreBatch.commit();
+    };
+
+    const handleUpdateBookingStatus = async (booking: HomeBooking, status: 'Confirmed' | 'Completed' | 'Cancelled') => {
+        if (!firestore) return;
+        setUpdatingBookingId(booking.id);
+        const bookingRef = doc(firestore, 'homeBookings', booking.id);
+        try {
+            await updateDoc(bookingRef, { status });
+        } catch (error) {
+            console.error("Error updating booking status:", error);
+            alert("Failed to update status. Please check permissions.");
+        } finally {
+            setUpdatingBookingId(null);
+        }
     };
 
     const copyToClipboard = (text: string) => {
@@ -415,6 +430,75 @@ export default function CoachingManagementPage() {
                                     <Button size="sm" onClick={() => setCreateBatchOpen(true)}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Batch
                                     </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="rounded-2xl shadow-lg">
+                        <CardHeader>
+                            <CardTitle>Assigned Bookings & Demos ({assignedBookings?.length || 0})</CardTitle>
+                            <CardDescription>Students assigned by admin, or demo requests from students.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {assignedBookingsLoading ? (
+                                <div className="flex justify-center items-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            ) : assignedBookings && assignedBookings.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {assignedBookings.map(booking => (
+                                        <div key={booking.id} className="p-4 rounded-lg border bg-background transition-colors hover:bg-accent/50">
+                                            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                                                <div>
+                                                    <p className="font-semibold">{booking.studentName} <span className="text-sm font-normal text-muted-foreground">({booking.studentClass})</span></p>
+                                                    <p className="text-sm text-muted-foreground">{booking.subject}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Contact: {booking.mobileNumber}</p>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-2 self-start sm:self-center">
+                                                    <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                        booking.bookingType === 'demoClass' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300' :
+                                                        booking.bookingType === 'homeTutor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                                    }`}>
+                                                        {booking.bookingType === 'demoClass' ? 'Demo Request' : booking.bookingType === 'homeTutor' ? 'Home Tutor' : 'Coaching'}
+                                                    </span>
+                                                    <span className={`text-xs font-bold py-1 px-2 rounded-full ${
+                                                        booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                        booking.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                                    }`}>
+                                                        {booking.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {booking.status === 'Pending' && (
+                                                <div className="mt-4 flex flex-wrap gap-2">
+                                                    <Button size="sm" onClick={() => handleUpdateBookingStatus(booking, 'Confirmed')} disabled={updatingBookingId === booking.id}>
+                                                        {updatingBookingId === booking.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
+                                                        Confirm
+                                                    </Button>
+                                                    <Button size="sm" variant="destructive" onClick={() => handleUpdateBookingStatus(booking, 'Cancelled')} disabled={updatingBookingId === booking.id}>
+                                                        <X className="mr-2 h-4 w-4" />
+                                                        Cancel
+                                                    </Button>
+                                                    <Button size="sm" variant="outline" asChild>
+                                                        <a href={`https://wa.me/${booking.mobileNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer">Contact Student</a>
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            {booking.status === 'Confirmed' && (
+                                                <div className="mt-4 flex flex-wrap gap-2">
+                                                    <Button size="sm" onClick={() => handleUpdateBookingStatus(booking, 'Completed')} disabled={updatingBookingId === booking.id}>
+                                                        {updatingBookingId === booking.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                                        Mark as Completed
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <p className="text-muted-foreground">You have no assigned bookings or demo requests.</p>
                                 </div>
                             )}
                         </CardContent>

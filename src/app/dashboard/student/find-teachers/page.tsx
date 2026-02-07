@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc, addDoc } from 'firebase/firestore';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, BookUser, Search, Users, Home, Building2 } from 'lucide-react';
+import { User, BookUser, Search, Users, Home, Building2, Loader2, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,11 +26,26 @@ interface TeacherProfile {
     teacherWorkStatus?: 'own_coaching' | 'achievers_associate' | 'both';
 }
 
+interface CurrentUserProfile {
+    name: string;
+    homeAddress?: string;
+    mobileNumber?: string;
+    class?: string;
+}
+
 const getInitials = (name = '') => name.split(' ').map((n) => n[0]).join('');
 
 export default function FindTeachersPage() {
     const firestore = useFirestore();
     const [searchQuery, setSearchQuery] = useState('');
+    const { user } = useUser();
+    const [bookingState, setBookingState] = useState<{ [teacherId: string]: 'idle' | 'booking' | 'booked' }>({});
+
+    const userProfileRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userProfile, isLoading: userProfileLoading } = useDoc<CurrentUserProfile>(userProfileRef);
 
     const teachersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -57,8 +72,38 @@ export default function FindTeachersPage() {
         return { homeTutors, coachingTeachers: coachingTeachersList };
     }, [teachers, searchQuery]);
 
+    const handleBookDemo = async (teacher: TeacherProfile) => {
+        if (!firestore || !user || !userProfile) {
+            alert("Please complete your profile to book a demo class.");
+            return;
+        }
 
-    if (teachersLoading) {
+        setBookingState(prev => ({ ...prev, [teacher.id]: 'booking' }));
+
+        try {
+            await addDoc(collection(firestore, 'homeBookings'), {
+                bookingType: 'demoClass',
+                studentId: user.uid,
+                studentName: userProfile.name,
+                mobileNumber: userProfile.mobileNumber || '',
+                studentAddress: userProfile.homeAddress || '',
+                studentClass: userProfile.class || '',
+                subject: teacher.subject || '', // Pass teacher's subject
+                status: 'Pending',
+                assignedTeacherId: teacher.id,
+                assignedTeacherName: teacher.name,
+                createdAt: new Date().toISOString(),
+            });
+            setBookingState(prev => ({ ...prev, [teacher.id]: 'booked' }));
+        } catch (error) {
+            console.error("Error booking demo class:", error);
+            alert("Failed to send request. Please try again.");
+            setBookingState(prev => ({ ...prev, [teacher.id]: 'idle' }));
+        }
+    };
+
+
+    if (teachersLoading || userProfileLoading) {
         return (
             <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
                 <Users className="h-16 w-16 animate-pulse text-primary" />
@@ -124,7 +169,7 @@ export default function FindTeachersPage() {
                                     <CardDescription className="text-primary font-semibold">{teacher.subject}</CardDescription>
                                 )}
                             </CardHeader>
-                            <CardContent className="flex-grow flex flex-col justify-between text-center">
+                            <CardContent className="flex-grow text-center">
                                  <div>
                                     {teacher.coachingCenterName && (
                                         <p className="text-sm font-bold text-primary mb-4">{teacher.coachingCenterName}</p>
@@ -133,12 +178,24 @@ export default function FindTeachersPage() {
                                          <p className="text-sm text-muted-foreground line-clamp-3">{teacher.bio}</p>
                                     )}
                                 </div>
-                                <Button asChild className="mt-6 w-full">
+                            </CardContent>
+                             <CardFooter className="p-4 pt-0 flex flex-col items-stretch gap-2">
+                                <Button asChild className="w-full">
                                     <Link href={`/teachers/${teacher.id}`}>
                                         <User className="mr-2 h-4 w-4" /> View Profile
                                     </Link>
                                 </Button>
-                            </CardContent>
+                                <Button
+                                    onClick={() => handleBookDemo(teacher)}
+                                    disabled={bookingState[teacher.id] === 'booking' || bookingState[teacher.id] === 'booked'}
+                                    className="w-full"
+                                    variant="secondary"
+                                >
+                                    {bookingState[teacher.id] === 'booking' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {bookingState[teacher.id] === 'booked' && <Check className="mr-2 h-4 w-4" />}
+                                    {bookingState[teacher.id] === 'booked' ? 'Request Sent' : 'Book Demo Class'}
+                                </Button>
+                            </CardFooter>
                         </Card>
                     </motion.div>
                 ))}
